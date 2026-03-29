@@ -1,111 +1,134 @@
-import React, { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
-  Box,
-  Drawer,
   AppBar,
-  Toolbar,
-  List,
-  Typography,
+  Box,
+  Button,
+  CssBaseline,
   Divider,
+  Drawer,
   IconButton,
+  List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  CssBaseline,
   Stack,
-  Button,
+  Toolbar,
+  Typography,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  Dashboard as DashIcon,
-  ShoppingCart as SaleIcon,
-  Inventory as ProductIcon,
   AddBox,
   AddShoppingCart,
+  Inventory as ProductIcon,
+  Menu as MenuIcon,
+  ShoppingCart as SaleIcon,
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import NovaVendaDialog from './nova-venda-dialog';
 import NovoProdutoDialog from './novo-produto-dialog';
 
-const drawerWidth = 240;
+const drawerWidth = 256;
 
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
 }
+
+const navigationItems = [
+  { text: 'Vendas', icon: <SaleIcon />, path: '/vendas' },
+  { text: 'Produtos', icon: <ProductIcon />, path: '/produtos' },
+];
 
 export default function MainLayout({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openVenda, setOpenVenda] = useState(false);
   const [openProduto, setOpenProduto] = useState(false);
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
   const drawer = (
-    <div>
+    <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
       <Toolbar>
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 'bold', color: 'primary.main' }}
-        >
-          AKKAI 3D
-        </Typography>
+        <Box>
+          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 800 }}>
+            AKKAI 3D
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Operação de estoque e vendas
+          </Typography>
+        </Box>
       </Toolbar>
       <Divider />
-      <List>
-        {[
-          { text: 'Dashboard', icon: <DashIcon />, path: '/' },
-          { text: 'Vendas', icon: <SaleIcon />, path: '/vendas' },
-          { text: 'Produtos', icon: <ProductIcon />, path: '/produtos' },
-        ].map((item) => (
-          <ListItem key={item.text} disablePadding>
-            {/* Adicione o componente Link e o atributo to */}
-            <ListItemButton component={Link} to={item.path}>
+      <List sx={{ px: 1.5, py: 2 }}>
+        {navigationItems.map((item) => (
+          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              component={NavLink}
+              to={item.path}
+              onClick={() => setMobileOpen(false)}
+              sx={{
+                borderRadius: 2,
+                '&.active': {
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  '& .MuiListItemIcon-root': {
+                    color: 'primary.contrastText',
+                  },
+                },
+              }}
+            >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
-    </div>
+    </Box>
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <CssBaseline />
 
-      {/* CABEÇALHO */}
       <AppBar
         position="fixed"
+        color="inherit"
+        elevation={0}
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: 1,
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          ml: { md: `${drawerWidth}px` },
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'rgba(255,255,255,0.9)',
+          backdropFilter: 'blur(8px)',
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ gap: 2 }}>
           <IconButton
             color="inherit"
             edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            onClick={() => setMobileOpen((current) => !current)}
+            sx={{ display: { md: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
 
-          {/* Botões de Ação Rápida à Esquerda */}
-          <Stack direction="row" spacing={2}>
+          <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+            <Typography variant="h6" fontWeight={700} noWrap>
+              Painel Operacional
+            </Typography>
+            <Typography variant="body2" color="text.secondary" noWrap>
+              Cadastre produtos e registre vendas com rapidez durante a operação.
+            </Typography>
+          </Stack>
+
+          <Box sx={{ flexGrow: 1 }} />
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <Button
               variant="contained"
               startIcon={<AddShoppingCart />}
               size="small"
-              onClick={() => setOpenVenda(true)} // ABRE O MODAL
+              onClick={() => setOpenVenda(true)}
             >
-              Venda
+              Nova venda
             </Button>
             <Button
               variant="outlined"
@@ -113,28 +136,20 @@ export default function MainLayout({ children }: Props) {
               size="small"
               onClick={() => setOpenProduto(true)}
             >
-              Produto
+              Novo produto
             </Button>
           </Stack>
-
-          {/* Espaçador para empurrar qualquer item futuro para a direita */}
-          <Box sx={{ flexGrow: 1 }} />
         </Toolbar>
       </AppBar>
 
-      {/* MENU LATERAL (Drawer) */}
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
-        {/* Mobile Drawer */}
+      <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={handleDrawerToggle}
+          onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
+            display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
@@ -144,47 +159,38 @@ export default function MainLayout({ children }: Props) {
           {drawer}
         </Drawer>
 
-        {/* Desktop Drawer */}
         <Drawer
           variant="permanent"
+          open
           sx={{
-            display: { xs: 'none', sm: 'block' },
+            display: { xs: 'none', md: 'block' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
+              borderRight: '1px solid',
+              borderColor: 'divider',
             },
           }}
-          open
         >
           {drawer}
         </Drawer>
       </Box>
 
-      {/* CENTRO (Área das Páginas) */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          minHeight: '100vh',
-          bgcolor: '#f5f5f5', // Fundo levemente cinza para destacar os cards brancos
+          width: { md: `calc(100% - ${drawerWidth}px)` },
+          px: { xs: 2, md: 4 },
+          py: 3,
         }}
       >
-        {/* Spacer para o conteúdo não ficar embaixo da AppBar */}
         <Toolbar />
-
         {children}
-        <NovaVendaDialog
-          open={openVenda}
-          onClose={() => setOpenVenda(false)}
-          //key={openVenda ? 'aberto' : 'fechado'}
-        />
-        <NovoProdutoDialog
-          open={openProduto}
-          onClose={() => setOpenProduto(false)}
-        />
       </Box>
+
+      <NovaVendaDialog open={openVenda} onClose={() => setOpenVenda(false)} />
+      <NovoProdutoDialog open={openProduto} onClose={() => setOpenProduto(false)} />
     </Box>
   );
 }

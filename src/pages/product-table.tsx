@@ -1,78 +1,119 @@
-import { useEffect } from 'react';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
-import { useProductStore } from '../store/useProductSotre';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { useProductStore } from '../store/useProductStore';
 import { formatCurrency } from '../utils/moeda';
 
-export default function BasicTable() {
-  const { produtos, isLoading, fetchProdutos } = useProductStore();
+export default function ProductTablePage() {
+  const { fetchErrorMessage, fetchProdutos, isFetching, produtos } = useProductStore();
+  const [search, setSearch] = useState('');
+
   useEffect(() => {
-    fetchProdutos();
+    void fetchProdutos();
   }, [fetchProdutos]);
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
+  const produtosFiltrados = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return produtos;
+    }
+
+    return produtos.filter((produto) =>
+      [produto.nome, produto.codigo, produto.categoria?.nome ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(query),
     );
-  }
+  }, [produtos, search]);
 
   return (
-    <TableContainer component={Paper} sx={{ elevation: 3, borderRadius: 2 }}>
-      <Table sx={{ minWidth: 650 }} aria-label="tabela de produtos">
-        <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
-          <TableRow>
-            <TableCell>
-              <strong>Código</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Nome</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Descrição</strong>
-            </TableCell>
-            <TableCell align="right">
-              <strong>Valor</strong>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {produtos.length > 0 ? (
-            produtos.map((produto) => (
-              <TableRow
-                key={produto.id}
-                sx={{
-                  '&:last-child td, &:last-child th': { border: 0 },
-                  '&:hover': { bgcolor: '#fafafa' },
-                }}
-              >
-                <TableCell component="th" scope="row">
-                  {produto.codigo}
-                </TableCell>
-                <TableCell>{produto.nome}</TableCell>
-                <TableCell>{produto.descricao}</TableCell>
-                <TableCell align="right">
-                  {formatCurrency(produto.valor)}
+    <Stack spacing={3}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        spacing={2}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Produtos
+          </Typography>
+          <Typography color="text.secondary">
+            Consulte nome, código, categoria e valor dos produtos cadastrados.
+          </Typography>
+        </Box>
+
+        <TextField
+          label="Pesquisar produto"
+          placeholder="Nome, código ou categoria"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          sx={{ minWidth: { xs: '100%', md: 320 } }}
+        />
+      </Stack>
+
+      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
+        <Table sx={{ minWidth: 760 }} aria-label="tabela de produtos">
+          <TableHead sx={{ backgroundColor: 'grey.100' }}>
+            <TableRow>
+              <TableCell><strong>Código</strong></TableCell>
+              <TableCell><strong>Nome</strong></TableCell>
+              <TableCell><strong>Categoria</strong></TableCell>
+              <TableCell><strong>Descrição</strong></TableCell>
+              <TableCell align="right"><strong>Valor</strong></TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {isFetching ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <CircularProgress />
                 </TableCell>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={4} align="center">
-                Nenhum produto encontrado.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+            ) : produtosFiltrados.length > 0 ? (
+              produtosFiltrados.map((produto) => (
+                <TableRow
+                  key={produto.id}
+                  sx={{
+                    '&:last-child td, &:last-child th': { border: 0 },
+                    '&:hover': { bgcolor: 'grey.50' },
+                  }}
+                >
+                  <TableCell component="th" scope="row">
+                    {produto.codigo}
+                  </TableCell>
+                  <TableCell>{produto.nome}</TableCell>
+                  <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
+                  <TableCell>{produto.descricao || '-'}</TableCell>
+                  <TableCell align="right">{formatCurrency(produto.valor)}</TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  Nenhum produto encontrado para a pesquisa informada.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Stack>
   );
 }

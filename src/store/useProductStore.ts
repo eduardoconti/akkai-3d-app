@@ -1,37 +1,33 @@
 import { create } from 'zustand';
 import { apiClient, getProblemDetailsFromError } from '../shared/api/http-client';
 import type { ActionResult } from '../shared/types/action-result';
-import type {
-  Feira,
-  InserirVendaInput,
-  Venda,
-} from '../shared/types/domain';
+import type { Categoria, Produto, ProdutoInput } from '../shared/types/domain';
 
-interface SaleState {
-  vendas: Venda[];
-  feiras: Feira[];
+interface ProductState {
+  produtos: Produto[];
+  categorias: Categoria[];
   isFetching: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
-  fetchVendas: () => Promise<void>;
-  fetchFeiras: () => Promise<void>;
-  criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
+  fetchProdutos: () => Promise<void>;
+  fetchCategorias: () => Promise<void>;
+  criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
   clearSubmitError: () => void;
 }
 
-export const useSaleStore = create<SaleState>((set) => ({
-  vendas: [],
-  feiras: [],
+export const useProductStore = create<ProductState>((set) => ({
+  produtos: [],
+  categorias: [],
   isFetching: false,
   isSubmitting: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
-  fetchVendas: async () => {
+  fetchProdutos: async () => {
     set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const vendas = await apiClient.get<Venda[]>('/venda');
-      set({ vendas });
+      const produtos = await apiClient.get<Produto[]>('/produto');
+      set({ produtos });
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });
@@ -39,11 +35,11 @@ export const useSaleStore = create<SaleState>((set) => ({
       set({ isFetching: false });
     }
   },
-  fetchFeiras: async () => {
+  fetchCategorias: async () => {
     set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const feiras = await apiClient.get<Feira[]>('/venda/feiras');
-      set({ feiras });
+      const categorias = await apiClient.get<Categoria[]>('/produto/categorias');
+      set({ categorias });
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });
@@ -51,11 +47,11 @@ export const useSaleStore = create<SaleState>((set) => ({
       set({ isFetching: false });
     }
   },
-  criarVenda: async (dados) => {
+  criarProduto: async (novoProduto) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
-      const venda = await apiClient.post<Venda>('/venda', dados);
-      return { success: true, data: venda };
+      const produto = await apiClient.post<Produto>('/produto', novoProduto);
+      return { success: true, data: produto };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });
@@ -68,5 +64,3 @@ export const useSaleStore = create<SaleState>((set) => ({
     set({ submitErrorMessage: null });
   },
 }));
-
-export type { InserirVendaInput, MeioPagamento, TipoVenda, Venda } from '../shared/types/domain';

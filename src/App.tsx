@@ -1,18 +1,16 @@
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/main-layout';
-import BasicTable from './pages/product-table';
-import SalesTable from './pages/sales-table';
+import ProductTablePage from './pages/product-table';
+import SalesTablePage from './pages/sales-table';
 
 function App() {
   return (
     <Router>
       <MainLayout>
         <Routes>
-          {/* Rota de Produtos */}
-          <Route path="/produtos" element={<BasicTable />} />
-
-          {/* Rota de Vendas */}
-          <Route path="/vendas" element={<SalesTable />} />
+          <Route path="/" element={<Navigate to="/vendas" replace />} />
+          <Route path="/produtos" element={<ProductTablePage />} />
+          <Route path="/vendas" element={<SalesTablePage />} />
         </Routes>
       </MainLayout>
     </Router>
