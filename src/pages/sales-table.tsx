@@ -1,31 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
+  Alert,
   Box,
+  Chip,
+  CircularProgress,
   Collapse,
   IconButton,
+  MenuItem,
+  Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
-  Paper,
-  Chip,
-  CircularProgress,
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { useSaleStore, type Venda } from '../store/useSaleStore';
 import { formatCurrency } from '../utils/moeda';
+import { getMeioPagamentoLabel, getTipoVendaLabel } from '../shared/utils/venda';
+import type { TipoVenda } from '../shared/types/domain';
 
-function Row({ venda }: { venda: Venda }) {
+function SaleRow({ venda }: { venda: Venda }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <TableRow
         sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }}
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((current) => !current)}
       >
         <TableCell>
           <IconButton size="small">
@@ -33,46 +39,38 @@ function Row({ venda }: { venda: Venda }) {
           </IconButton>
         </TableCell>
         <TableCell component="th" scope="row">
-          {venda.id}
+          #{venda.id}
         </TableCell>
         <TableCell>
-          {new Date(venda.dataInclusao).toLocaleDateString('pt-BR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {new Date(venda.dataInclusao).toLocaleString('pt-BR')}
         </TableCell>
         <TableCell>
           <Chip
-            label={venda.tipo}
+            label={getTipoVendaLabel(venda.tipo)}
             size="small"
-            color="primary"
+            color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
             variant="outlined"
           />
         </TableCell>
-        <TableCell>{venda.meioPagamento}</TableCell>
-        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+        <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
+        <TableCell>{getMeioPagamentoLabel(venda.meioPagamento)}</TableCell>
+        <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatCurrency(venda.valorTotal)}
         </TableCell>
       </TableRow>
 
-      {/* AREA EXPANSÍVEL */}
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 2, bgcolor: '#fafafa', p: 2, borderRadius: 1 }}>
-              <Typography
-                variant="subtitle2"
-                gutterBottom
-                component="div"
-                sx={{ fontWeight: 'bold' }}
-              >
+            <Box sx={{ m: 2, bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Itens da Venda #{venda.id}
               </Typography>
               <Table size="small">
                 <TableHead>
                   <TableRow>
                     <TableCell>ID Produto</TableCell>
-                    <TableCell align="left">Nome</TableCell>
+                    <TableCell>Nome</TableCell>
                     <TableCell align="right">Qtd</TableCell>
                     <TableCell align="right">Unitário</TableCell>
                     <TableCell align="right">Desconto</TableCell>
@@ -83,7 +81,7 @@ function Row({ venda }: { venda: Venda }) {
                   {venda.itens.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>{item.idProduto}</TableCell>
-                      <TableCell align="left">{item.produto.nome}</TableCell>
+                      <TableCell>{item.produto.nome}</TableCell>
                       <TableCell align="right">{item.quantidade}</TableCell>
                       <TableCell align="right">
                         {formatCurrency(item.valorUnitario)}
@@ -106,50 +104,118 @@ function Row({ venda }: { venda: Venda }) {
   );
 }
 
-export default function SalesTable() {
-  const { vendas, fetchVendas, isLoading } = useSaleStore();
+export default function SalesTablePage() {
+  const { fetchErrorMessage, fetchVendas, isFetching, vendas } = useSaleStore();
+  const [search, setSearch] = useState('');
+  const [tipo, setTipo] = useState<'TODOS' | TipoVenda>('TODOS');
 
   useEffect(() => {
-    fetchVendas();
+    void fetchVendas();
   }, [fetchVendas]);
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const vendasFiltradas = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return vendas.filter((venda) => {
+      const matchTipo = tipo === 'TODOS' || venda.tipo === tipo;
+
+      if (!matchTipo) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const produtos = venda.itens.map((item) => item.produto.nome).join(' ');
+      const haystack = [
+        venda.id,
+        venda.feira?.nome ?? '',
+        venda.tipo,
+        venda.meioPagamento,
+        produtos,
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [search, tipo, vendas]);
 
   return (
-    <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
-      <Table aria-label="vendas table">
-        <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-          <TableRow>
-            <TableCell width={50} />
-            <TableCell>
-              <strong>ID</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Data</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Tipo</strong>
-            </TableCell>
-            <TableCell>
-              <strong>Pagamento</strong>
-            </TableCell>
-            <TableCell align="right">
-              <strong>Total</strong>
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {vendas.map((venda) => (
-            <Row key={venda.id} venda={venda} />
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <Stack spacing={3}>
+      <Stack
+        direction={{ xs: 'column', lg: 'row' }}
+        justifyContent="space-between"
+        spacing={2}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Vendas
+          </Typography>
+          <Typography color="text.secondary">
+            Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
+          </Typography>
+        </Box>
+
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <TextField
+            label="Pesquisar venda"
+            placeholder="ID, feira, pagamento ou produto"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            sx={{ minWidth: { xs: '100%', md: 320 } }}
+          />
+
+          <TextField
+            select
+            label="Tipo"
+            value={tipo}
+            onChange={(event) => setTipo(event.target.value as 'TODOS' | TipoVenda)}
+            sx={{ minWidth: 180 }}
+          >
+            <MenuItem value="TODOS">Todos</MenuItem>
+            <MenuItem value="FEIRA">Feira</MenuItem>
+            <MenuItem value="LOJA">Loja</MenuItem>
+            <MenuItem value="ONLINE">Online</MenuItem>
+          </TextField>
+        </Stack>
+      </Stack>
+
+      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+
+      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
+        <Table aria-label="tabela de vendas">
+          <TableHead sx={{ bgcolor: 'grey.100' }}>
+            <TableRow>
+              <TableCell width={48} />
+              <TableCell><strong>ID</strong></TableCell>
+              <TableCell><strong>Data</strong></TableCell>
+              <TableCell><strong>Tipo</strong></TableCell>
+              <TableCell><strong>Feira</strong></TableCell>
+              <TableCell><strong>Pagamento</strong></TableCell>
+              <TableCell align="right"><strong>Total</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {isFetching ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
+            ) : vendasFiltradas.length > 0 ? (
+              vendasFiltradas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  Nenhuma venda encontrada para os filtros informados.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Stack>
   );
 }

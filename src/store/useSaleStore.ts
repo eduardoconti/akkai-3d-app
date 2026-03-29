@@ -1,75 +1,72 @@
 import { create } from 'zustand';
-import type { Produto } from './useProductSotre';
-
-export interface VendaItem {
-  id: number;
-  idProduto: number;
-  quantidade: number;
-  valorUnitario: number;
-  valorTotal: number;
-  desconto: number;
-  produto: Produto;
-}
-
-export interface Venda {
-  id: number;
-  dataInclusao: string;
-  valorTotal: number;
-  tipo: string;
-  meioPagamento: string;
-  desconto: number;
-  itens: VendaItem[];
-}
+import { apiClient, getProblemDetailsFromError } from '../shared/api/http-client';
+import type { ActionResult } from '../shared/types/action-result';
+import type {
+  Feira,
+  InserirVendaInput,
+  Venda,
+} from '../shared/types/domain';
 
 interface SaleState {
   vendas: Venda[];
-  isLoading: boolean;
+  feiras: Feira[];
+  isFetching: boolean;
+  isSubmitting: boolean;
+  fetchErrorMessage: string | null;
+  submitErrorMessage: string | null;
   fetchVendas: () => Promise<void>;
-  criarVenda: (dados: InserirVendaInput) => Promise<boolean>;
+  fetchFeiras: () => Promise<void>;
+  criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
+  clearSubmitError: () => void;
 }
 
 export const useSaleStore = create<SaleState>((set) => ({
   vendas: [],
-  isLoading: false,
+  feiras: [],
+  isFetching: false,
+  isSubmitting: false,
+  fetchErrorMessage: null,
+  submitErrorMessage: null,
   fetchVendas: async () => {
-    set({ isLoading: true });
+    set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const response = await fetch('http://localhost:3000/venda');
-      const data = await response.json();
-      set({ vendas: data, isLoading: false });
+      const vendas = await apiClient.get<Venda[]>('/venda');
+      set({ vendas });
     } catch (error) {
-      console.error('Erro ao buscar vendas:', error);
-      set({ isLoading: false });
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
     }
   },
-  criarVenda: async (dados: InserirVendaInput) => {
+  fetchFeiras: async () => {
+    set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const response = await fetch('http://localhost:3000/venda', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dados),
-      });
-      return response.ok;
+      const feiras = await apiClient.get<Feira[]>('/venda/feiras');
+      set({ feiras });
     } catch (error) {
-      console.error('Erro ao criar venda:', error);
-      return false;
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
     }
+  },
+  criarVenda: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const venda = await apiClient.post<Venda>('/venda', dados);
+      return { success: true, data: venda };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  clearSubmitError: () => {
+    set({ submitErrorMessage: null });
   },
 }));
 
-export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
-
-export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
-
-export interface InserirVendaInput {
-  meioPagamento: MeioPagamento;
-  tipo: TipoVenda;
-  desconto?: number;
-  itens: {
-    quantidade: number;
-    desconto?: number;
-    idProduto: number;
-  }[];
-}
-
-// Dentro do seu useSaleStore...
+export type { InserirVendaInput, MeioPagamento, TipoVenda, Venda } from '../shared/types/domain';
