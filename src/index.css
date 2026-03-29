@@ -2,8 +2,8 @@
   font-family: 'Roboto', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #2d241e;
-  background: #f3efe8;
+  color: #261743;
+  background: #f4eaff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,7 +23,7 @@ body,
 }
 
 body {
-  background: #f3efe8;
+  background: #f4eaff;
 }
 
 a {
