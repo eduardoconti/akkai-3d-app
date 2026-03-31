@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
+  createCategory,
   createProduct,
   listCategories,
   listProducts,
+  type CategoriaInput,
 } from '@/features/products/api/products-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type { Categoria, Produto, ProdutoInput } from '@/shared/lib/types/domain';
@@ -18,6 +20,7 @@ interface ProductStoreState {
   fetchProdutos: () => Promise<void>;
   fetchCategorias: () => Promise<void>;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
+  criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
   clearSubmitError: () => void;
 }
 
@@ -57,6 +60,19 @@ export const useProductStore = create<ProductStoreState>((set) => ({
     try {
       const produto = await createProduct(novoProduto);
       return { success: true, data: produto };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  criarCategoria: async (novaCategoria) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const categoria = await createCategory(novaCategoria);
+      return { success: true, data: categoria };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });

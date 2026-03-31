@@ -1,7 +1,12 @@
 import type { MeioPagamento, TipoVenda } from '@/shared/lib/types/domain';
 
+export type SaleItemType = 'CATALOGO' | 'AVULSO';
+
 export type SaleFormItem = {
+  tipoItem: SaleItemType;
   idProduto: number | null;
+  nomeProduto: string;
+  valorUnitario: number;
   quantidade: number;
   desconto: number;
 };
@@ -21,12 +26,17 @@ export type SaleFormErrors = {
 
 export type SaleItemErrors = Array<{
   idProduto?: string;
+  nomeProduto?: string;
+  valorUnitario?: string;
   quantidade?: string;
   desconto?: string;
 }>;
 
 export const emptySaleItem: SaleFormItem = {
+  tipoItem: 'CATALOGO',
   idProduto: null,
+  nomeProduto: '',
+  valorUnitario: 0,
   quantidade: 1,
   desconto: 0,
 };
