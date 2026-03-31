@@ -5,8 +5,10 @@ import type {
   EstoqueInput,
   OrigemEntradaEstoque,
   OrigemSaidaEstoque,
+  PesquisaPaginada,
   Produto,
   ProdutoInput,
+  ResultadoPaginado,
 } from '@/shared/lib/types/domain';
 
 export interface CategoriaInput {
@@ -14,8 +16,10 @@ export interface CategoriaInput {
   idAscendente?: number;
 }
 
-export function listProducts(): Promise<Produto[]> {
-  return httpClient.get<Produto[]>('/produto');
+export function listProducts(
+  query: PesquisaPaginada,
+): Promise<ResultadoPaginado<Produto>> {
+  return httpClient.get<ResultadoPaginado<Produto>>('/produto', query);
 }
 
 export function listCategories(): Promise<Categoria[]> {

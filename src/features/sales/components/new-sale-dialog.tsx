@@ -52,10 +52,7 @@ function getCatalogProductValue(
   return product?.valor ?? 0;
 }
 
-export default function NewSaleDialog({
-  open,
-  onClose,
-}: NewSaleDialogProps) {
+export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   const {
     fetchErrorMessage: productFetchErrorMessage,
     fetchProdutos,
@@ -269,8 +266,8 @@ export default function NewSaleDialog({
 
         {form.tipo === 'FEIRA' && feiras.length === 0 ? (
           <Alert severity="info" sx={{ mb: 3 }}>
-            Nenhuma feira cadastrada até o momento. Cadastre uma feira no backend
-            antes de registrar vendas desse tipo.
+            Nenhuma feira cadastrada até o momento. Cadastre uma feira no
+            backend antes de registrar vendas desse tipo.
           </Alert>
         ) : null}
 
@@ -341,7 +338,9 @@ export default function NewSaleDialog({
                   setForm((current) => ({
                     ...current,
                     idFeira:
-                      event.target.value === '' ? '' : Number(event.target.value),
+                      event.target.value === ''
+                        ? ''
+                        : Number(event.target.value),
                   }));
                 }}
                 error={Boolean(
@@ -373,7 +372,8 @@ export default function NewSaleDialog({
         ) : null}
 
         {form.itens.map((item, index) => {
-          const itemLabel = item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
+          const itemLabel =
+            item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
 
           return (
             <Box
@@ -392,7 +392,10 @@ export default function NewSaleDialog({
                     label="Tipo do item"
                     value={item.tipoItem}
                     onChange={(event) =>
-                      handleChangeItemType(index, event.target.value as SaleItemType)
+                      handleChangeItemType(
+                        index,
+                        event.target.value as SaleItemType,
+                      )
                     }
                   >
                     <MenuItem value="CATALOGO">Catalogo</MenuItem>
@@ -401,54 +404,85 @@ export default function NewSaleDialog({
                 </Grid>
 
                 {item.tipoItem === 'CATALOGO' ? (
-                  <Grid size={{ xs: 12, sm: 5 }}>
-                    <Autocomplete
-                      options={produtos}
-                      getOptionLabel={(option) => `${option.nome} (${option.codigo})`}
-                      value={
-                        produtos.find((produto) => produto.id === item.idProduto) ?? null
-                      }
-                      loading={isFetching}
-                      onChange={(_event, newValue) => {
-                        updateItem(index, {
-                          idProduto: newValue?.id ?? null,
-                          nomeProduto: newValue?.nome ?? '',
-                          valorUnitario: newValue ? newValue.valor / 100 : 0,
-                        });
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Produto"
-                          error={Boolean(
-                            itemErrors[index]?.idProduto ||
-                              getFieldMessage(problem, `itens[${index}].idProduto`),
-                          )}
-                          helperText={
-                            itemErrors[index]?.idProduto ??
-                            getFieldMessage(problem, `itens[${index}].idProduto`)
-                          }
-                        />
-                      )}
-                    />
-                  </Grid>
+                  <>
+                    <Grid size={{ xs: 12, sm: 4 }}>
+                      <Autocomplete
+                        options={produtos}
+                        getOptionLabel={(option) =>
+                          `${option.nome} (${option.codigo})`
+                        }
+                        value={
+                          produtos.find(
+                            (produto) => produto.id === item.idProduto,
+                          ) ?? null
+                        }
+                        loading={isFetching}
+                        onChange={(_event, newValue) => {
+                          updateItem(index, {
+                            idProduto: newValue?.id ?? null,
+                            nomeProduto: newValue?.nome ?? '',
+                            valorUnitario: newValue ? newValue.valor / 100 : 0,
+                          });
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Produto"
+                            error={Boolean(
+                              itemErrors[index]?.idProduto ||
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              ),
+                            )}
+                            helperText={
+                              itemErrors[index]?.idProduto ??
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              )
+                            }
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 2 }}>
+                      <CurrencyField
+                        fullWidth
+                        label="Valor unitário"
+                        value={getCatalogProductValue(item, produtos) / 100}
+                        onValueChange={() => undefined}
+                        name={`valorCatalogo-${index}`}
+                        disabled
+                      />
+                    </Grid>
+                  </>
                 ) : (
                   <>
-                    <Grid size={{ xs: 12, sm: 3 }}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <TextField
                         fullWidth
                         label="Nome do item"
                         value={item.nomeProduto}
                         onChange={(event) => {
-                          updateItem(index, { nomeProduto: event.target.value });
+                          updateItem(index, {
+                            nomeProduto: event.target.value,
+                          });
                         }}
                         error={Boolean(
                           itemErrors[index]?.nomeProduto ||
-                            getFieldMessage(problem, `itens[${index}].nomeProduto`),
+                          getFieldMessage(
+                            problem,
+                            `itens[${index}].nomeProduto`,
+                          ),
                         )}
                         helperText={
                           itemErrors[index]?.nomeProduto ??
-                          getFieldMessage(problem, `itens[${index}].nomeProduto`)
+                          getFieldMessage(
+                            problem,
+                            `itens[${index}].nomeProduto`,
+                          )
                         }
                       />
                     </Grid>
@@ -464,11 +498,17 @@ export default function NewSaleDialog({
                         name={`valorUnitario-${index}`}
                         error={Boolean(
                           itemErrors[index]?.valorUnitario ||
-                            getFieldMessage(problem, `itens[${index}].valorUnitario`),
+                          getFieldMessage(
+                            problem,
+                            `itens[${index}].valorUnitario`,
+                          ),
                         )}
                         helperText={
                           itemErrors[index]?.valorUnitario ??
-                          getFieldMessage(problem, `itens[${index}].valorUnitario`)
+                          getFieldMessage(
+                            problem,
+                            `itens[${index}].valorUnitario`,
+                          )
                         }
                       />
                     </Grid>
@@ -488,7 +528,7 @@ export default function NewSaleDialog({
                     }}
                     error={Boolean(
                       itemErrors[index]?.quantidade ||
-                        getFieldMessage(problem, `itens[${index}].quantidade`),
+                      getFieldMessage(problem, `itens[${index}].quantidade`),
                     )}
                     helperText={
                       itemErrors[index]?.quantidade ??
@@ -497,10 +537,10 @@ export default function NewSaleDialog({
                   />
                 </Grid>
 
-                <Grid size={{ xs: 6, sm: 3 }}>
+                <Grid size={{ xs: 4, sm: 2 }}>
                   <CurrencyField
                     fullWidth
-                    label="Desconto Item (R$)"
+                    label="Desconto"
                     value={item.desconto}
                     onValueChange={(desconto) => {
                       updateItem(index, { desconto });
@@ -508,7 +548,7 @@ export default function NewSaleDialog({
                     name={`descontoItem-${index}`}
                     error={Boolean(
                       itemErrors[index]?.desconto ||
-                        getFieldMessage(problem, `itens[${index}].desconto`),
+                      getFieldMessage(problem, `itens[${index}].desconto`),
                     )}
                     helperText={
                       itemErrors[index]?.desconto ??
@@ -540,7 +580,12 @@ export default function NewSaleDialog({
           );
         })}
 
-        <Button startIcon={<Add />} onClick={handleAddItem} variant="text" sx={{ mt: 1 }}>
+        <Button
+          startIcon={<Add />}
+          onClick={handleAddItem}
+          variant="text"
+          sx={{ mt: 1 }}
+        >
           Adicionar outro item
         </Button>
       </DialogContent>
@@ -549,15 +594,30 @@ export default function NewSaleDialog({
         <Box sx={{ px: 3, pt: 2, pb: 1 }}>
           <Grid container spacing={1}>
             <Grid size={{ xs: 12, sm: 6 }} sx={{ ml: 'auto' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  mb: 0.5,
+                }}
+              >
                 <Typography variant="body2" color="text.secondary">
-                  Subtotal ({form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'})
+                  Subtotal ({form.itens.length}{' '}
+                  {form.itens.length === 1 ? 'item' : 'itens'})
                 </Typography>
-                <Typography variant="body2">{formatCurrency(totals.subtotal)}</Typography>
+                <Typography variant="body2">
+                  {formatCurrency(totals.subtotal)}
+                </Typography>
               </Box>
 
               {totals.itemDiscounts > 0 ? (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 0.5,
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Descontos nos itens
                   </Typography>
@@ -568,7 +628,13 @@ export default function NewSaleDialog({
               ) : null}
 
               {totals.saleDiscount > 0 ? (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    mb: 0.5,
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Desconto na venda
                   </Typography>
@@ -580,7 +646,13 @@ export default function NewSaleDialog({
 
               <Divider sx={{ my: 1 }} />
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
                 <Typography variant="subtitle1" fontWeight={700}>
                   Total
                 </Typography>
@@ -592,7 +664,15 @@ export default function NewSaleDialog({
           </Grid>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, px: 3, py: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 1,
+            px: 3,
+            py: 2,
+          }}
+        >
           <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
             Cancelar
           </Button>

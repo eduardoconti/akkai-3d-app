@@ -9,34 +9,69 @@ import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Feira,
   InserirVendaInput,
+  PesquisaPaginadaVendas,
+  ResultadoPaginado,
   Venda,
 } from '@/shared/lib/types/domain';
+
+const paginacaoInicial: PesquisaPaginadaVendas = {
+  pagina: 1,
+  tamanhoPagina: 10,
+  termo: '',
+};
 
 interface SaleStoreState {
   vendas: Venda[];
   feiras: Feira[];
+  paginacao: PesquisaPaginadaVendas;
+  totalItens: number;
+  totalPaginas: number;
   isFetching: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
-  fetchVendas: () => Promise<void>;
+  fetchVendas: (
+    query?: Partial<PesquisaPaginadaVendas>,
+  ) => Promise<ResultadoPaginado<Venda> | void>;
   fetchFeiras: () => Promise<void>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
   clearSubmitError: () => void;
 }
 
-export const useSaleStore = create<SaleStoreState>((set) => ({
+export const useSaleStore = create<SaleStoreState>((set, get) => ({
   vendas: [],
   feiras: [],
+  paginacao: paginacaoInicial,
+  totalItens: 0,
+  totalPaginas: 1,
   isFetching: false,
   isSubmitting: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
-  fetchVendas: async () => {
+  fetchVendas: async (query) => {
+    const currentPagination = get().paginacao;
+    const nextPagination: PesquisaPaginadaVendas = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      termo: query?.termo ?? currentPagination.termo ?? '',
+      tipo: query?.tipo ?? currentPagination.tipo,
+    };
+
     set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const vendas = await listSales();
-      set({ vendas });
+      const response = await listSales(nextPagination);
+      set({
+        vendas: response.itens,
+        paginacao: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo ?? '',
+          tipo: nextPagination.tipo,
+        },
+        totalItens: response.totalItens,
+        totalPaginas: response.totalPaginas,
+      });
+      return response;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });

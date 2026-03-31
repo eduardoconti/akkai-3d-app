@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -14,6 +14,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -111,42 +112,30 @@ function SaleRow({ venda }: { venda: Venda }) {
 }
 
 export default function SalesPage() {
-  const { fetchErrorMessage, fetchVendas, isFetching, vendas } = useSaleStore();
-  const [search, setSearch] = useState('');
+  const {
+    fetchErrorMessage,
+    fetchVendas,
+    isFetching,
+    paginacao,
+    totalItens,
+    vendas,
+  } = useSaleStore();
+  const [searchInput, setSearchInput] = useState('');
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
 
   useEffect(() => {
-    void fetchVendas();
-  }, [fetchVendas]);
+    const timeout = window.setTimeout(() => {
+      void fetchVendas({
+        pagina: 1,
+        termo: searchInput.trim(),
+        tipo: type === 'TODOS' ? undefined : type,
+      });
+    }, 300);
 
-  const filteredSales = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    return vendas.filter((venda) => {
-      const matchesType = type === 'TODOS' || venda.tipo === type;
-
-      if (!matchesType) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      const productNames = venda.itens.map((item) => getSaleItemName(item)).join(' ');
-      const haystack = [
-        venda.id,
-        venda.feira?.nome ?? '',
-        venda.tipo,
-        venda.meioPagamento,
-        productNames,
-      ]
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
-  }, [search, type, vendas]);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [fetchVendas, searchInput, type]);
 
   return (
     <Stack spacing={3}>
@@ -168,8 +157,8 @@ export default function SalesPage() {
           <TextField
             label="Pesquisar venda"
             placeholder="ID, feira, pagamento ou produto"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
             sx={{ minWidth: { xs: '100%', md: 320 } }}
           />
 
@@ -224,8 +213,8 @@ export default function SalesPage() {
                   <CircularProgress />
                 </TableCell>
               </TableRow>
-            ) : filteredSales.length > 0 ? (
-              filteredSales.map((venda) => <SaleRow key={venda.id} venda={venda} />)
+            ) : vendas.length > 0 ? (
+              vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
             ) : (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
@@ -235,6 +224,27 @@ export default function SalesPage() {
             )}
           </TableBody>
         </Table>
+
+        <TablePagination
+          component="div"
+          count={totalItens}
+          page={Math.max(0, paginacao.pagina - 1)}
+          onPageChange={(_event, newPage) => {
+            void fetchVendas({ pagina: newPage + 1 });
+          }}
+          rowsPerPage={paginacao.tamanhoPagina}
+          onRowsPerPageChange={(event) => {
+            void fetchVendas({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="Itens por página"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+          }
+        />
       </TableContainer>
     </Stack>
   );
