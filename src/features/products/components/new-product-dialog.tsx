@@ -21,6 +21,7 @@ import {
   CurrencyField,
   FormFeedbackAlert,
   getFieldMessage,
+  useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
 
@@ -44,6 +45,7 @@ export default function NewProductDialog({
     clearSubmitError,
   } = useProductStore();
 
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [form, setForm] = useState<ProductFormState>(initialProductFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<ProductFormErrors>({});
@@ -118,6 +120,7 @@ export default function NewProductDialog({
     }
 
     await fetchProdutos();
+    showSuccess('Produto cadastrado com sucesso.');
     handleClose();
   };
 

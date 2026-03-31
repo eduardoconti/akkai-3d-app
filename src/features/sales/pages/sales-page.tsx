@@ -26,6 +26,10 @@ import {
 } from '../utils/format-sale-labels';
 import { formatCurrency, type TipoVenda, type Venda } from '@/shared';
 
+function getSaleItemName(vendaItem: Venda['itens'][number]): string {
+  return vendaItem.nomeProduto || vendaItem.produto?.nome || 'Item sem nome';
+}
+
 function SaleRow({ venda }: { venda: Venda }) {
   const [open, setOpen] = useState(false);
 
@@ -82,8 +86,8 @@ function SaleRow({ venda }: { venda: Venda }) {
                 <TableBody>
                   {venda.itens.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell>{item.idProduto}</TableCell>
-                      <TableCell>{item.produto.nome}</TableCell>
+                      <TableCell>{item.idProduto ?? '-'}</TableCell>
+                      <TableCell>{getSaleItemName(item)}</TableCell>
                       <TableCell align="right">{item.quantidade}</TableCell>
                       <TableCell align="right">
                         {formatCurrency(item.valorUnitario)}
@@ -129,7 +133,7 @@ export default function SalesPage() {
         return true;
       }
 
-      const productNames = venda.itens.map((item) => item.produto.nome).join(' ');
+      const productNames = venda.itens.map((item) => getSaleItemName(item)).join(' ');
       const haystack = [
         venda.id,
         venda.feira?.nome ?? '',

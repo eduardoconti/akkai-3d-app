@@ -9,9 +9,30 @@ export interface Produto {
   nome: string;
   codigo: string;
   descricao?: string;
+  estoqueMinimo?: number;
+  idCategoria: number;
   valor: number;
+  quantidadeEstoque: number;
   categoria?: Categoria;
 }
+
+export interface DetalheProduto {
+  id: number;
+  nome: string;
+  codigo: string;
+  descricao?: string;
+  estoqueMinimo?: number;
+  idCategoria: number;
+  valor: number;
+  categoria: {
+    id: number;
+    nome: string;
+  };
+  quantidadeEstoque: number;
+}
+
+export type OrigemEntradaEstoque = 'COMPRA' | 'AJUSTE' | 'PRODUCAO';
+export type OrigemSaidaEstoque = 'AJUSTE' | 'PERDA';
 
 export interface Feira {
   id: number;
@@ -26,12 +47,13 @@ export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
 
 export interface VendaItem {
   id: number;
-  idProduto: number;
+  idProduto?: number;
+  nomeProduto: string;
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
   desconto: number;
-  produto: Produto;
+  produto?: Produto | null;
 }
 
 export interface Venda {
@@ -50,14 +72,22 @@ export interface ProdutoInput {
   nome: string;
   codigo: string;
   descricao?: string;
+  estoqueMinimo?: number;
   idCategoria: number;
   valor: number;
+}
+
+export interface EstoqueInput<TOrigem extends string> {
+  quantidade: number;
+  origem: TOrigem;
 }
 
 export interface InserirVendaItemInput {
   quantidade: number;
   desconto?: number;
-  idProduto: number;
+  idProduto?: number;
+  nomeProduto?: string;
+  valorUnitario?: number;
 }
 
 export interface InserirVendaInput {

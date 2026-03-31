@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   AppBar,
   Box,
   Button,
+  Collapse,
   Divider,
   Drawer,
   IconButton,
@@ -16,15 +17,20 @@ import {
   Typography,
 } from '@mui/material';
 import {
-  AddBox,
   AddShoppingCart,
+  Category as CategoryIcon,
+  ExpandLess,
+  ExpandMore,
+  FormatListBulleted,
   Inventory as ProductIcon,
   Menu as MenuIcon,
+  PostAdd,
   ShoppingCart as SaleIcon,
 } from '@mui/icons-material';
-import { NavLink } from 'react-router-dom';
-import { NewProductDialog } from '@/features/products';
+import { NavLink, useLocation } from 'react-router-dom';
+import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { NewSaleDialog } from '@/features/sales';
+import { GlobalFeedbackSnackbar } from '@/shared';
 
 const DRAWER_WIDTH = 256;
 
@@ -32,15 +38,20 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
-const navigationItems = [
-  { label: 'Vendas', icon: <SaleIcon />, path: '/vendas' },
-  { label: 'Produtos', icon: <ProductIcon />, path: '/produtos' },
-];
-
 export default function MainLayout({ children }: MainLayoutProps) {
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [productsMenuOpen, setProductsMenuOpen] = useState(true);
+
+  const productsSectionActive = useMemo(
+    () => location.pathname.startsWith('/produtos'),
+    [location.pathname],
+  );
+
+  const closeMobileMenu = () => setMobileOpen(false);
 
   const drawerContent = (
     <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
@@ -59,30 +70,102 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </Toolbar>
       <Divider />
       <List sx={{ px: 1.5, py: 2 }}>
-        {navigationItems.map((item) => (
-          <ListItem key={item.label} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              component={NavLink}
-              to={item.path}
-              onClick={() => setMobileOpen(false)}
-              sx={{
-                borderRadius: 2,
-                '&.active': {
-                  background:
-                    'linear-gradient(135deg, rgba(18,150,212,0.95) 0%, rgba(11,110,163,0.95) 100%)',
-                  color: 'primary.contrastText',
-                  boxShadow: '0 12px 24px rgba(18, 150, 212, 0.24)',
-                  '& .MuiListItemIcon-root': {
-                    color: 'secondary.main',
-                  },
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            component={NavLink}
+            to="/vendas"
+            onClick={closeMobileMenu}
+            sx={{
+              borderRadius: 2,
+              '&.active': {
+                background:
+                  'linear-gradient(135deg, rgba(18,150,212,0.95) 0%, rgba(11,110,163,0.95) 100%)',
+                color: 'primary.contrastText',
+                boxShadow: '0 12px 24px rgba(18, 150, 212, 0.24)',
+                '& .MuiListItemIcon-root': {
+                  color: 'secondary.main',
                 },
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+              },
+            }}
+          >
+            <ListItemIcon>
+              <SaleIcon />
+            </ListItemIcon>
+            <ListItemText primary="Vendas" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            onClick={() => setProductsMenuOpen((current) => !current)}
+            sx={{
+              borderRadius: 2,
+              backgroundColor: productsSectionActive
+                ? 'rgba(18,150,212,0.08)'
+                : 'transparent',
+            }}
+          >
+            <ListItemIcon>
+              <ProductIcon color={productsSectionActive ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Produtos" />
+            {productsMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={productsMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/produtos"
+                onClick={closeMobileMenu}
+                sx={{
+                  borderRadius: 2,
+                  '&.active': {
+                    backgroundColor: 'rgba(18,150,212,0.12)',
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <FormatListBulleted fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Listar" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => {
+                  closeMobileMenu();
+                  setProductDialogOpen(true);
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon>
+                  <PostAdd fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Novo produto" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  closeMobileMenu();
+                  setCategoryDialogOpen(true);
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon>
+                  <CategoryIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Nova categoria" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
       </List>
     </Box>
   );
@@ -116,32 +199,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Painel Operacional
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              Cadastre produtos e registre vendas com rapidez durante a
-              operação.
+              Cadastre produtos e registre vendas com rapidez durante a operação.
             </Typography>
           </Stack>
 
           <Box sx={{ flexGrow: 1 }} />
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-            <Button
-              variant="contained"
-              startIcon={<AddShoppingCart />}
-              size="small"
-              onClick={() => setSaleDialogOpen(true)}
-            >
-              Nova venda
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<AddBox />}
-              size="small"
-              onClick={() => setProductDialogOpen(true)}
-            >
-              Novo produto
-            </Button>
-          </Stack>
+          <Button
+            variant="contained"
+            startIcon={<AddShoppingCart />}
+            size="small"
+            onClick={() => setSaleDialogOpen(true)}
+          >
+            Nova venda
+          </Button>
         </Toolbar>
       </AppBar>
 
@@ -152,7 +223,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <Drawer
           variant="temporary"
           open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
+          onClose={closeMobileMenu}
           ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', md: 'none' },
@@ -203,6 +274,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
         open={productDialogOpen}
         onClose={() => setProductDialogOpen(false)}
       />
+      <NewCategoryDialog
+        open={categoryDialogOpen}
+        onClose={() => setCategoryDialogOpen(false)}
+      />
+      <GlobalFeedbackSnackbar />
     </Box>
   );
 }
