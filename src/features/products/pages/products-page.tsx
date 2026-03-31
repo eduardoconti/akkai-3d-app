@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -11,6 +11,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -61,29 +62,26 @@ function getStockState(produto: Produto): StockState {
 }
 
 export default function ProductsPage() {
-  const { fetchErrorMessage, fetchProdutos, isFetching, produtos } =
-    useProductStore();
-  const [search, setSearch] = useState('');
+  const {
+    fetchErrorMessage,
+    fetchProdutos,
+    isFetching,
+    paginacao,
+    produtos,
+    totalItens,
+  } = useProductStore();
+  const [searchInput, setSearchInput] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
   useEffect(() => {
-    void fetchProdutos();
-  }, [fetchProdutos]);
+    const timeout = window.setTimeout(() => {
+      void fetchProdutos({ pagina: 1, termo: searchInput.trim() });
+    }, 300);
 
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-
-    if (!query) {
-      return produtos;
-    }
-
-    return produtos.filter((produto) =>
-      [produto.nome, produto.codigo, produto.categoria?.nome ?? '']
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [produtos, search]);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [fetchProdutos, searchInput]);
 
   return (
     <Stack spacing={3}>
@@ -105,8 +103,8 @@ export default function ProductsPage() {
         <TextField
           label="Pesquisar produto"
           placeholder="Nome, código ou categoria"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
           sx={{ minWidth: { xs: '100%', md: 320 } }}
         />
       </Stack>
@@ -150,8 +148,8 @@ export default function ProductsPage() {
                   <CircularProgress />
                 </TableCell>
               </TableRow>
-            ) : filteredProducts.length > 0 ? (
-              filteredProducts.map((produto) => {
+            ) : produtos.length > 0 ? (
+              produtos.map((produto) => {
                 const stockState = getStockState(produto);
 
                 return (
@@ -196,13 +194,36 @@ export default function ProductsPage() {
             )}
           </TableBody>
         </Table>
+
+        <TablePagination
+          component="div"
+          count={totalItens}
+          page={Math.max(0, paginacao.pagina - 1)}
+          onPageChange={(_event, newPage) => {
+            void fetchProdutos({ pagina: newPage + 1 });
+          }}
+          rowsPerPage={paginacao.tamanhoPagina}
+          onRowsPerPageChange={(event) => {
+            void fetchProdutos({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="Itens por página"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+          }
+        />
       </TableContainer>
 
       <EditProductDialog
         open={editingProductId !== null}
         productId={editingProductId}
         onClose={() => setEditingProductId(null)}
-        onUpdated={fetchProdutos}
+        onUpdated={async () => {
+          await fetchProdutos();
+        }}
       />
     </Stack>
   );

@@ -61,13 +61,13 @@ type StockFormState = {
 const initialStockFormState: StockFormState = {
   tipo: 'ENTRADA',
   quantidade: 1,
-  origem: 'COMPRA',
+  origem: 'PRODUCAO',
 };
 
 const entryOrigins: Array<{ value: OrigemEntradaEstoque; label: string }> = [
+  { value: 'PRODUCAO', label: 'Producao' },
   { value: 'COMPRA', label: 'Compra' },
   { value: 'AJUSTE', label: 'Ajuste' },
-  { value: 'PRODUCAO', label: 'Producao' },
 ];
 
 const exitOrigins: Array<{ value: OrigemSaidaEstoque; label: string }> = [
@@ -89,7 +89,9 @@ export default function EditProductDialog({
     initialStockFormState,
   );
   const [productName, setProductName] = useState('');
-  const [quantidadeEstoque, setQuantidadeEstoque] = useState<number | null>(null);
+  const [quantidadeEstoque, setQuantidadeEstoque] = useState<number | null>(
+    null,
+  );
   const [estoqueMinimoAtual, setEstoqueMinimoAtual] = useState<number | null>(
     null,
   );

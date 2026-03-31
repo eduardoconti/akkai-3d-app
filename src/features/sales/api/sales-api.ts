@@ -1,8 +1,16 @@
 import { httpClient } from '@/shared/lib/api/http-client';
-import type { Feira, InserirVendaInput, Venda } from '@/shared/lib/types/domain';
+import type {
+  Feira,
+  InserirVendaInput,
+  PesquisaPaginadaVendas,
+  ResultadoPaginado,
+  Venda,
+} from '@/shared/lib/types/domain';
 
-export function listSales(): Promise<Venda[]> {
-  return httpClient.get<Venda[]>('/venda');
+export function listSales(
+  query: PesquisaPaginadaVendas,
+): Promise<ResultadoPaginado<Venda>> {
+  return httpClient.get<ResultadoPaginado<Venda>>('/venda', query);
 }
 
 export function listFairs(): Promise<Feira[]> {

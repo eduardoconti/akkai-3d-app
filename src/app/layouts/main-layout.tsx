@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import {
   AddShoppingCart,
+  Assessment,
   Category as CategoryIcon,
   ExpandLess,
   ExpandMore,
@@ -45,9 +46,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
+  const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
 
   const productsSectionActive = useMemo(
     () => location.pathname.startsWith('/produtos'),
+    [location.pathname],
+  );
+  const reportsSectionActive = useMemo(
+    () => location.pathname.startsWith('/relatorios'),
     [location.pathname],
   );
 
@@ -106,7 +112,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
             }}
           >
             <ListItemIcon>
-              <ProductIcon color={productsSectionActive ? 'primary' : 'inherit'} />
+              <ProductIcon
+                color={productsSectionActive ? 'primary' : 'inherit'}
+              />
             </ListItemIcon>
             <ListItemText primary="Produtos" />
             {productsMenuOpen ? <ExpandLess /> : <ExpandMore />}
@@ -166,6 +174,50 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </ListItem>
           </List>
         </Collapse>
+
+        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+          <ListItemButton
+            onClick={() => setReportsMenuOpen((current) => !current)}
+            sx={{
+              borderRadius: 2,
+              backgroundColor: reportsSectionActive
+                ? 'rgba(18,150,212,0.08)'
+                : 'transparent',
+            }}
+          >
+            <ListItemIcon>
+              <Assessment
+                color={reportsSectionActive ? 'primary' : 'inherit'}
+              />
+            </ListItemIcon>
+            <ListItemText primary="Relatórios" />
+            {reportsMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={reportsMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={NavLink}
+                to="/relatorios/resumo"
+                onClick={closeMobileMenu}
+                sx={{
+                  borderRadius: 2,
+                  '&.active': {
+                    backgroundColor: 'rgba(18,150,212,0.12)',
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <FormatListBulleted fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Resumo" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
       </List>
     </Box>
   );
@@ -199,7 +251,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               Painel Operacional
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              Cadastre produtos e registre vendas com rapidez durante a operação.
+              Cadastre produtos e registre vendas com rapidez durante a
+              operação.
             </Typography>
           </Stack>
 

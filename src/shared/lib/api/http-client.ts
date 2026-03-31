@@ -101,6 +101,31 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+function buildQueryString(query?: object): string {
+  if (!query) {
+    return '';
+  }
+
+  const searchParams = new URLSearchParams();
+
+  Object.entries(query as Record<string, unknown>).forEach(([key, value]) => {
+    if (
+      value === undefined ||
+      value === '' ||
+      (typeof value !== 'string' &&
+        typeof value !== 'number' &&
+        typeof value !== 'boolean')
+    ) {
+      return;
+    }
+
+    searchParams.set(key, String(value));
+  });
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : '';
+}
+
 export function getProblemDetailsFromError(error: unknown): ProblemDetails {
   if (error instanceof ApiProblemError) {
     return error.problem;
@@ -110,7 +135,8 @@ export function getProblemDetailsFromError(error: unknown): ProblemDetails {
 }
 
 export const httpClient = {
-  get: <T>(path: string) => request<T>(path),
+  get: <T>(path: string, query?: object) =>
+    request<T>(`${path}${buildQueryString(query)}`),
   post: <T>(path: string, body: unknown) =>
     request<T>(path, {
       method: 'POST',

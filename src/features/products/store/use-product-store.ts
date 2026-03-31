@@ -8,34 +8,71 @@ import {
   type CategoriaInput,
 } from '@/features/products/api/products-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
-import type { Categoria, Produto, ProdutoInput } from '@/shared/lib/types/domain';
+import type {
+  Categoria,
+  PesquisaPaginada,
+  Produto,
+  ProdutoInput,
+  ResultadoPaginado,
+} from '@/shared/lib/types/domain';
+
+const paginacaoInicial: PesquisaPaginada = {
+  pagina: 1,
+  tamanhoPagina: 10,
+  termo: '',
+};
 
 interface ProductStoreState {
   produtos: Produto[];
   categorias: Categoria[];
+  paginacao: PesquisaPaginada;
+  totalItens: number;
+  totalPaginas: number;
   isFetching: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
-  fetchProdutos: () => Promise<void>;
+  fetchProdutos: (
+    query?: Partial<PesquisaPaginada>,
+  ) => Promise<ResultadoPaginado<Produto> | void>;
   fetchCategorias: () => Promise<void>;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
   criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
   clearSubmitError: () => void;
 }
 
-export const useProductStore = create<ProductStoreState>((set) => ({
+export const useProductStore = create<ProductStoreState>((set, get) => ({
   produtos: [],
   categorias: [],
+  paginacao: paginacaoInicial,
+  totalItens: 0,
+  totalPaginas: 1,
   isFetching: false,
   isSubmitting: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
-  fetchProdutos: async () => {
+  fetchProdutos: async (query) => {
+    const currentPagination = get().paginacao;
+    const nextPagination: PesquisaPaginada = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      termo: query?.termo ?? currentPagination.termo ?? '',
+    };
+
     set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const produtos = await listProducts();
-      set({ produtos });
+      const response = await listProducts(nextPagination);
+      set({
+        produtos: response.itens,
+        paginacao: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo ?? '',
+        },
+        totalItens: response.totalItens,
+        totalPaginas: response.totalPaginas,
+      });
+      return response;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });

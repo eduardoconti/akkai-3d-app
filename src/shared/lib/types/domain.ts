@@ -97,3 +97,21 @@ export interface InserirVendaInput {
   desconto?: number;
   itens: InserirVendaItemInput[];
 }
+
+export interface PesquisaPaginada {
+  pagina: number;
+  tamanhoPagina: number;
+  termo?: string;
+}
+
+export interface PesquisaPaginadaVendas extends PesquisaPaginada {
+  tipo?: TipoVenda;
+}
+
+export interface ResultadoPaginado<T> {
+  itens: T[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+}
