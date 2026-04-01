@@ -15,12 +15,14 @@ export type SaleFormState = {
   meioPagamento: MeioPagamento;
   tipo: TipoVenda;
   idFeira: number | '';
+  idCarteira: number | '';
   desconto: number;
   itens: SaleFormItem[];
 };
 
 export type SaleFormErrors = {
   idFeira?: string;
+  idCarteira?: string;
   itens?: string;
 };
 
@@ -45,6 +47,7 @@ export const initialSaleFormState: SaleFormState = {
   meioPagamento: 'PIX',
   tipo: 'FEIRA',
   idFeira: '',
+  idCarteira: '',
   desconto: 0,
   itens: [{ ...emptySaleItem }],
 };

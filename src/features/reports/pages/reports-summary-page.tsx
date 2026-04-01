@@ -6,7 +6,6 @@ import {
   CircularProgress,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -16,6 +15,7 @@ import {
   type SalesSummary,
 } from '@/features/reports/api/reports-api';
 import {
+  DatePickerField,
   FormFeedbackAlert,
   formatCurrency,
   getProblemDetailsFromError,
@@ -27,31 +27,6 @@ function getCurrentDateInput(): string {
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  return `${day}/${month}/${year}`;
-}
-
-function normalizeDateInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-
-  if (digits.length <= 2) {
-    return digits;
-  }
-
-  if (digits.length <= 4) {
-    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  }
-
-  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-function convertDateToApiFormat(value: string): string | null {
-  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
-
-  if (!match) {
-    return null;
-  }
-
-  const [, day, month, year] = match;
   return `${year}-${month}-${day}`;
 }
 
@@ -93,11 +68,8 @@ export default function ReportsSummaryPage() {
     setLocalError(null);
     setIsLoading(true);
 
-    const apiDataInicio = convertDateToApiFormat(dataInicio);
-    const apiDataFim = convertDateToApiFormat(dataFim);
-
-    if (!apiDataInicio || !apiDataFim) {
-      setLocalError('Informe as datas no formato dd/mm/aaaa.');
+    if (!dataInicio || !dataFim) {
+      setLocalError('Selecione as datas inicial e final.');
       setSummary(null);
       setIsLoading(false);
       return;
@@ -105,8 +77,8 @@ export default function ReportsSummaryPage() {
 
     try {
       const result = await getSalesSummary({
-        dataInicio: apiDataInicio,
-        dataFim: apiDataFim,
+        dataInicio,
+        dataFim,
       });
       setSummary(result);
     } catch (error) {
@@ -129,30 +101,22 @@ export default function ReportsSummaryPage() {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
+      <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Stack spacing={2.5}>
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
+              <DatePickerField
                 label="Data inicial"
                 value={dataInicio}
-                placeholder="dd/mm/aaaa"
-                onChange={(event) =>
-                  setDataInicio(normalizeDateInput(event.target.value))
-                }
+                onValueChange={setDataInicio}
               />
             </Grid>
 
             <Grid size={{ xs: 12, sm: 4 }}>
-              <TextField
-                fullWidth
+              <DatePickerField
                 label="Data final"
                 value={dataFim}
-                placeholder="dd/mm/aaaa"
-                onChange={(event) =>
-                  setDataFim(normalizeDateInput(event.target.value))
-                }
+                onValueChange={setDataFim}
               />
             </Grid>
 

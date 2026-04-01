@@ -4,9 +4,11 @@ import {
   createSale,
   listFairs,
   listSales,
+  listWallets,
 } from '@/features/sales/api/sales-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
+  Carteira,
   Feira,
   InserirVendaInput,
   PesquisaPaginadaVendas,
@@ -23,6 +25,7 @@ const paginacaoInicial: PesquisaPaginadaVendas = {
 interface SaleStoreState {
   vendas: Venda[];
   feiras: Feira[];
+  carteiras: Carteira[];
   paginacao: PesquisaPaginadaVendas;
   totalItens: number;
   totalPaginas: number;
@@ -34,6 +37,7 @@ interface SaleStoreState {
     query?: Partial<PesquisaPaginadaVendas>,
   ) => Promise<ResultadoPaginado<Venda> | void>;
   fetchFeiras: () => Promise<void>;
+  fetchCarteiras: () => Promise<void>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
   clearSubmitError: () => void;
 }
@@ -41,6 +45,7 @@ interface SaleStoreState {
 export const useSaleStore = create<SaleStoreState>((set, get) => ({
   vendas: [],
   feiras: [],
+  carteiras: [],
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
@@ -84,6 +89,18 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     try {
       const feiras = await listFairs();
       set({ feiras });
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
+    }
+  },
+  fetchCarteiras: async () => {
+    set({ isFetching: true, fetchErrorMessage: null });
+    try {
+      const carteiras = await listWallets();
+      set({ carteiras });
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });

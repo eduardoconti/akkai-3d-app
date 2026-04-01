@@ -44,6 +44,32 @@ export interface Feira {
 
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
+export type CategoriaDespesa =
+  | 'DESPESA_FIXA'
+  | 'MATERIA_PRIMA'
+  | 'EMBALAGEM'
+  | 'EVENTO'
+  | 'TRANSPORTE'
+  | 'OUTROS';
+
+export interface Carteira {
+  id: number;
+  nome: string;
+  ativa: boolean;
+  saldoAtual: number;
+}
+
+export interface Despesa {
+  id: number;
+  dataLancamento: string;
+  descricao: string;
+  valor: number;
+  categoria: CategoriaDespesa;
+  meioPagamento: MeioPagamento;
+  idCarteira: number;
+  observacao?: string;
+  carteira?: Carteira;
+}
 
 export interface VendaItem {
   id: number;
@@ -64,7 +90,9 @@ export interface Venda {
   meioPagamento: MeioPagamento;
   desconto: number;
   idFeira?: number;
+  idCarteira: number;
   feira?: Feira | null;
+  carteira?: Carteira | null;
   itens: VendaItem[];
 }
 
@@ -94,6 +122,7 @@ export interface InserirVendaInput {
   meioPagamento: MeioPagamento;
   tipo: TipoVenda;
   idFeira?: number;
+  idCarteira: number;
   desconto?: number;
   itens: InserirVendaItemInput[];
 }
@@ -106,6 +135,26 @@ export interface PesquisaPaginada {
 
 export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   tipo?: TipoVenda;
+}
+
+export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
+  dataInicio?: string;
+  dataFim?: string;
+}
+
+export interface CarteiraInput {
+  nome: string;
+  ativa?: boolean;
+}
+
+export interface DespesaInput {
+  dataLancamento: string;
+  descricao: string;
+  valor: number;
+  categoria: CategoriaDespesa;
+  meioPagamento: MeioPagamento;
+  idCarteira: number;
+  observacao?: string;
 }
 
 export interface ResultadoPaginado<T> {

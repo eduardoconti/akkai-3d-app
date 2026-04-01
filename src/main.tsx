@@ -1,15 +1,18 @@
 import ReactDOM from 'react-dom/client';
-import { CssBaseline, ThemeProvider } from '@mui/material';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { App } from '@/app';
 import { AuthProvider } from '@/features/auth';
-import theme from '@/theme/theme';
+import { ThemeModeProvider } from '@/theme/theme-mode-context';
 import '@/index.css';
+import 'dayjs/locale/pt-br';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <AuthProvider>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <App />
-    </ThemeProvider>
+    <ThemeModeProvider>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+        <App />
+      </LocalizationProvider>
+    </ThemeModeProvider>
   </AuthProvider>,
 );

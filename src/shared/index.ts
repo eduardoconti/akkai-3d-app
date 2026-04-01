@@ -1,4 +1,5 @@
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
+export { default as DatePickerField } from './components/form/date-picker-field';
 export { default as CurrencyField } from './components/form/currency-field';
 export { default as FormFeedbackAlert } from './components/form/form-feedback-alert';
 export { default as MoneyInput } from './components/inputs/money-input';
@@ -10,8 +11,13 @@ export {
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
 export type { ActionResult } from './lib/types/action-result';
 export type {
+  Carteira,
+  CarteiraInput,
+  CategoriaDespesa,
   Categoria,
   DetalheProduto,
+  Despesa,
+  DespesaInput,
   EstoqueInput,
   Feira,
   InserirVendaInput,
@@ -19,6 +25,7 @@ export type {
   MeioPagamento,
   OrigemEntradaEstoque,
   OrigemSaidaEstoque,
+  PesquisaPaginadaDespesas,
   Produto,
   ProdutoInput,
   PesquisaPaginada,

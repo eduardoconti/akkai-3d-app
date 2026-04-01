@@ -60,6 +60,7 @@ function SaleRow({ venda }: { venda: Venda }) {
           />
         </TableCell>
         <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
+        <TableCell>{venda.carteira?.nome ?? '-'}</TableCell>
         <TableCell>{getPaymentMethodLabel(venda.meioPagamento)}</TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatCurrency(venda.valorTotal)}
@@ -67,9 +68,19 @@ function SaleRow({ venda }: { venda: Venda }) {
       </TableRow>
 
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ m: 2, bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
+            <Box
+              sx={{
+                m: 2,
+                bgcolor: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'rgba(255,255,255,0.03)'
+                    : 'grey.50',
+                p: 2,
+                borderRadius: 2,
+              }}
+            >
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Itens da Venda #{venda.id}
               </Typography>
@@ -181,9 +192,9 @@ export default function SalesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
+      <TableContainer component={Paper}>
         <Table aria-label="tabela de vendas">
-          <TableHead sx={{ bgcolor: 'grey.100' }}>
+          <TableHead>
             <TableRow>
               <TableCell width={48} />
               <TableCell>
@@ -199,6 +210,9 @@ export default function SalesPage() {
                 <strong>Feira</strong>
               </TableCell>
               <TableCell>
+                <strong>Carteira</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Pagamento</strong>
               </TableCell>
               <TableCell align="right">
@@ -209,7 +223,7 @@ export default function SalesPage() {
           <TableBody>
             {isFetching ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
@@ -217,7 +231,7 @@ export default function SalesPage() {
               vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                   Nenhuma venda encontrada para os filtros informados.
                 </TableCell>
               </TableRow>
