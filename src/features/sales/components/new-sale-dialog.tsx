@@ -61,7 +61,9 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   } = useProductStore();
   const {
     criarVenda,
+    carteiras,
     fetchErrorMessage: saleFetchErrorMessage,
+    fetchCarteiras,
     feiras,
     fetchFeiras,
     fetchVendas,
@@ -81,6 +83,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     if (open) {
       void fetchProdutos();
       void fetchFeiras();
+      void fetchCarteiras();
       return;
     }
 
@@ -89,7 +92,18 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     setLocalErrors({});
     setItemErrors([]);
     clearSubmitError();
-  }, [open, fetchFeiras, fetchProdutos, clearSubmitError]);
+  }, [open, fetchCarteiras, fetchFeiras, fetchProdutos, clearSubmitError]);
+
+  useEffect(() => {
+    const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
+
+    if (open && form.idCarteira === '' && carteiraPadrao) {
+      setForm((current) => ({
+        ...current,
+        idCarteira: carteiraPadrao.id,
+      }));
+    }
+  }, [open, carteiras, form.idCarteira]);
 
   const totals = useMemo(() => {
     let subtotal = 0;
@@ -196,6 +210,11 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       nextLocalErrors.idFeira = 'Selecione a feira em que a venda aconteceu.';
     }
 
+    if (form.idCarteira === '') {
+      nextLocalErrors.idCarteira =
+        'Selecione a carteira que recebeu essa venda.';
+    }
+
     if (form.itens.length === 0) {
       nextLocalErrors.itens = 'Adicione ao menos um item na venda.';
     }
@@ -221,6 +240,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       meioPagamento: form.meioPagamento,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
+      idCarteira: form.idCarteira === '' ? 0 : form.idCarteira,
       desconto: Math.round(form.desconto * 100),
       itens: form.itens.map((item) => {
         if (item.tipoItem === 'CATALOGO') {
@@ -271,6 +291,13 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
           </Alert>
         ) : null}
 
+        {carteiras.length === 0 ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Nenhuma carteira cadastrada até o momento. Cadastre uma carteira
+            para registrar vendas.
+          </Alert>
+        ) : null}
+
         <Grid container spacing={2} sx={{ mb: 4 }}>
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
@@ -290,6 +317,39 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
               <MenuItem value="FEIRA">Feira</MenuItem>
               <MenuItem value="LOJA">Loja</MenuItem>
               <MenuItem value="ONLINE">Online</MenuItem>
+            </TextField>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              select
+              fullWidth
+              label="Carteira"
+              value={form.idCarteira}
+              onChange={(event) => {
+                setForm((current) => ({
+                  ...current,
+                  idCarteira:
+                    event.target.value === '' ? '' : Number(event.target.value),
+                }));
+              }}
+              error={Boolean(
+                localErrors.idCarteira ||
+                  getFieldMessage(problem, 'idCarteira'),
+              )}
+              helperText={
+                localErrors.idCarteira ??
+                getFieldMessage(problem, 'idCarteira')
+              }
+            >
+              <MenuItem value="">Selecione uma carteira</MenuItem>
+              {carteiras
+                .filter((carteira) => carteira.ativa)
+                .map((carteira) => (
+                  <MenuItem key={carteira.id} value={carteira.id}>
+                    {carteira.nome}
+                  </MenuItem>
+                ))}
             </TextField>
           </Grid>
 

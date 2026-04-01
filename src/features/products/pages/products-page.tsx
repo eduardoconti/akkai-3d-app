@@ -16,6 +16,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import { useProductStore } from '../store/use-product-store';
 import { formatCurrency, type Produto } from '@/shared';
@@ -56,7 +57,12 @@ function getStockState(produto: Produto): StockState {
     label: 'Normal',
     chipColor: 'success',
     rowSx: {
-      '&:hover': { backgroundColor: 'grey.50' },
+      '&:hover': {
+        backgroundColor: (theme: Theme) =>
+          theme.palette.mode === 'dark'
+            ? 'rgba(255,255,255,0.03)'
+            : theme.palette.grey[50],
+      },
     },
   };
 }
@@ -113,9 +119,9 @@ export default function ProductsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: 2 }}>
+      <TableContainer component={Paper}>
         <Table sx={{ minWidth: 980 }} aria-label="tabela de produtos">
-          <TableHead sx={{ backgroundColor: 'grey.100' }}>
+          <TableHead>
             <TableRow>
               <TableCell>
                 <strong>Código</strong>

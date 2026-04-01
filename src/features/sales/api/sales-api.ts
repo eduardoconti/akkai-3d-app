@@ -1,5 +1,6 @@
 import { httpClient } from '@/shared/lib/api/http-client';
 import type {
+  Carteira,
   Feira,
   InserirVendaInput,
   PesquisaPaginadaVendas,
@@ -15,6 +16,10 @@ export function listSales(
 
 export function listFairs(): Promise<Feira[]> {
   return httpClient.get<Feira[]>('/venda/feiras');
+}
+
+export function listWallets(): Promise<Carteira[]> {
+  return httpClient.get<Carteira[]>('/financeiro/carteiras');
 }
 
 export function createSale(input: InserirVendaInput): Promise<Venda> {

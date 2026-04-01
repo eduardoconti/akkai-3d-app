@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
+import { FinanceExpensesPage, FinanceWalletsPage } from '@/features/finance';
 import { ProductsPage } from '@/features/products';
 import { ReportsSummaryPage } from '@/features/reports';
 import { SalesPage } from '@/features/sales';
@@ -28,6 +29,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<Navigate to="/vendas" replace />} />
+            <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
+            <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
             <Route path="/vendas" element={<SalesPage />} />

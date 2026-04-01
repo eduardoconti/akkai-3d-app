@@ -19,11 +19,15 @@ import {
 import {
   AddShoppingCart,
   Assessment,
+  AttachMoney,
+  Balance,
   Category as CategoryIcon,
+  DarkMode,
   ExpandLess,
   ExpandMore,
   FormatListBulleted,
   Inventory as ProductIcon,
+  LightMode,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   PostAdd,
@@ -31,9 +35,11 @@ import {
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
+import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { NewSaleDialog } from '@/features/sales';
 import { GlobalFeedbackSnackbar } from '@/shared';
+import { useThemeMode } from '@/theme/use-theme-mode';
 
 const DRAWER_WIDTH = 256;
 
@@ -44,10 +50,14 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
+  const { mode, toggleColorMode } = useThemeMode();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
 
@@ -57,6 +67,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
   const reportsSectionActive = useMemo(
     () => location.pathname.startsWith('/relatorios'),
+    [location.pathname],
+  );
+  const financeSectionActive = useMemo(
+    () => location.pathname.startsWith('/financeiro'),
     [location.pathname],
   );
 
@@ -180,6 +194,98 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
+            onClick={() => setFinanceMenuOpen((current) => !current)}
+            sx={{
+              borderRadius: 2,
+              backgroundColor: financeSectionActive
+                ? 'rgba(18,150,212,0.08)'
+                : 'transparent',
+            }}
+          >
+            <ListItemIcon>
+              <Balance color={financeSectionActive ? 'primary' : 'inherit'} />
+            </ListItemIcon>
+            <ListItemText primary="Financeiro" />
+            {financeMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={financeMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/financeiro/carteiras"
+                onClick={closeMobileMenu}
+                sx={{
+                  borderRadius: 2,
+                  '&.active': {
+                    backgroundColor: 'rgba(18,150,212,0.12)',
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <Balance fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Carteiras" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => {
+                  closeMobileMenu();
+                  setWalletDialogOpen(true);
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon>
+                  <Balance fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Nova carteira" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/financeiro/despesas"
+                onClick={closeMobileMenu}
+                sx={{
+                  borderRadius: 2,
+                  '&.active': {
+                    backgroundColor: 'rgba(18,150,212,0.12)',
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                <ListItemIcon>
+                  <AttachMoney fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Despesas" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  closeMobileMenu();
+                  setExpenseDialogOpen(true);
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon>
+                  <AttachMoney fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Nova despesa" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
+        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+          <ListItemButton
             onClick={() => setReportsMenuOpen((current) => !current)}
             sx={{
               borderRadius: 2,
@@ -273,6 +379,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </Typography>
           </Stack>
 
+          <IconButton
+            color="inherit"
+            onClick={toggleColorMode}
+            aria-label={
+              mode === 'light'
+                ? 'Ativar modo escuro'
+                : 'Ativar modo claro'
+            }
+          >
+            {mode === 'light' ? <DarkMode /> : <LightMode />}
+          </IconButton>
+
           <Button
             variant="contained"
             startIcon={<AddShoppingCart />}
@@ -353,6 +471,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewProductDialog
         open={productDialogOpen}
         onClose={() => setProductDialogOpen(false)}
+      />
+      <NewWalletDialog
+        open={walletDialogOpen}
+        onClose={() => setWalletDialogOpen(false)}
+      />
+      <NewExpenseDialog
+        open={expenseDialogOpen}
+        onClose={() => setExpenseDialogOpen(false)}
       />
       <NewCategoryDialog
         open={categoryDialogOpen}
