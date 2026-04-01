@@ -24,11 +24,13 @@ import {
   ExpandMore,
   FormatListBulleted,
   Inventory as ProductIcon,
+  Logout as LogoutIcon,
   Menu as MenuIcon,
   PostAdd,
   ShoppingCart as SaleIcon,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '@/features/auth';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { NewSaleDialog } from '@/features/sales';
 import { GlobalFeedbackSnackbar } from '@/shared';
@@ -41,6 +43,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
+  const { logout, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -258,6 +261,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
           <Box sx={{ flexGrow: 1 }} />
 
+          <Stack
+            spacing={0}
+            sx={{ display: { xs: 'none', md: 'flex' }, minWidth: 0 }}
+          >
+            <Typography variant="body2" fontWeight={700} noWrap>
+              {user?.name ?? 'Usuário'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {user?.email ?? ''}
+            </Typography>
+          </Stack>
+
           <Button
             variant="contained"
             startIcon={<AddShoppingCart />}
@@ -265,6 +280,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setSaleDialogOpen(true)}
           >
             Nova venda
+          </Button>
+
+          <Button
+            variant="text"
+            color="inherit"
+            startIcon={<LogoutIcon />}
+            size="small"
+            onClick={() => {
+              void logout();
+            }}
+          >
+            Sair
           </Button>
         </Toolbar>
       </AppBar>

@@ -75,11 +75,16 @@ function buildProblemFromResponse(
   };
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  hasRetried = false,
+): Promise<T> {
   let response: Response;
 
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(init?.headers ?? {}),
@@ -88,6 +93,29 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch {
     throw new ApiProblemError(fallbackProblems.network);
+  }
+
+  if (
+    response.status === 401 &&
+    !hasRetried &&
+    !path.startsWith('/auth/login') &&
+    !path.startsWith('/auth/refresh')
+  ) {
+    try {
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (refreshResponse.ok) {
+        return request<T>(path, init, true);
+      }
+    } catch {
+      throw new ApiProblemError(fallbackProblems.network);
+    }
   }
 
   const body = await parseResponse(response);
