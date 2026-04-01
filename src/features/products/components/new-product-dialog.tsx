@@ -40,7 +40,7 @@ export default function NewProductDialog({
     submitErrorMessage,
     fetchCategorias,
     fetchProdutos,
-    isFetching,
+    isFetchingCategories,
     isSubmitting,
     clearSubmitError,
   } = useProductStore();
@@ -209,7 +209,7 @@ export default function NewProductDialog({
               }}
               error={Boolean(getErrorMessage('idCategoria'))}
               helperText={getErrorMessage('idCategoria')}
-              disabled={isFetching}
+              disabled={isFetchingCategories}
             >
               <MenuItem value="">Selecione uma categoria</MenuItem>
               {categoryOptions.map((category) => (

@@ -56,7 +56,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   const {
     fetchErrorMessage: productFetchErrorMessage,
     fetchProdutos,
-    isFetching: isFetchingProducts,
+    isFetchingProducts,
     produtos,
   } = useProductStore();
   const {

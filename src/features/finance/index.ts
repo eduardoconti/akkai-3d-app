@@ -1,4 +1,5 @@
 export * from './api/finance-api';
+export { default as EditWalletDialog } from './components/edit-wallet-dialog';
 export { default as NewExpenseDialog } from './components/new-expense-dialog';
 export { default as NewWalletDialog } from './components/new-wallet-dialog';
 export { default as FinanceExpensesPage } from './pages/finance-expenses-page';

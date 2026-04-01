@@ -137,17 +137,37 @@ function buildQueryString(query?: object): string {
   const searchParams = new URLSearchParams();
 
   Object.entries(query as Record<string, unknown>).forEach(([key, value]) => {
-    if (
-      value === undefined ||
-      value === '' ||
-      (typeof value !== 'string' &&
-        typeof value !== 'number' &&
-        typeof value !== 'boolean')
-    ) {
+    if (value === undefined || value === '') {
       return;
     }
 
-    searchParams.set(key, String(value));
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return;
+      }
+
+      searchParams.set(
+        key,
+        value
+          .filter(
+            (item) =>
+              typeof item === 'string' ||
+              typeof item === 'number' ||
+              typeof item === 'boolean',
+          )
+          .map((item) => String(item))
+          .join(','),
+      );
+      return;
+    }
+
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean'
+    ) {
+      searchParams.set(key, String(value));
+    }
   });
 
   const queryString = searchParams.toString();

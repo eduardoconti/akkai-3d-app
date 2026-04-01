@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
   Table,
@@ -15,9 +16,11 @@ import {
   TableRow,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AddCircleOutline } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
@@ -65,6 +68,8 @@ function getCurrentDateInput(): string {
 }
 
 export default function FinanceExpensesPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     despesas,
     fetchDespesas,
@@ -147,64 +152,119 @@ export default function FinanceExpensesPage() {
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 
-      <TableContainer component={Paper}>
-        <Table aria-label="tabela de despesas">
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <strong>Data</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Descrição</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Categoria</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Pagamento</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Carteira</strong>
-              </TableCell>
-              <TableCell align="right">
-                <strong>Valor</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      <Paper sx={{ overflow: 'hidden' }}>
+        {isMobile ? (
+          <Stack divider={<Divider flexItem />} aria-label="lista de despesas">
             {isFetching ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress />
+              </Box>
             ) : despesas.length > 0 ? (
               despesas.map((despesa) => (
-                <TableRow key={despesa.id}>
-                  <TableCell>
-                    {formatApiDateToDisplay(despesa.dataLancamento)}
-                  </TableCell>
-                  <TableCell>{despesa.descricao}</TableCell>
-                  <TableCell>{getExpenseCategoryLabel(despesa.categoria)}</TableCell>
-                  <TableCell>{getPaymentMethodLabel(despesa.meioPagamento)}</TableCell>
-                  <TableCell>{despesa.carteira?.nome ?? '-'}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{ color: 'error.main', fontWeight: 700 }}
-                  >
-                    {formatCurrency(despesa.valor)}
-                  </TableCell>
-                </TableRow>
+                <Box key={despesa.id} sx={{ px: 2, py: 2 }}>
+                  <Stack spacing={1.25}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      spacing={1}
+                    >
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatApiDateToDisplay(despesa.dataLancamento)}
+                        </Typography>
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {despesa.descricao}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                        color="error.main"
+                      >
+                        {formatCurrency(despesa.valor)}
+                      </Typography>
+                    </Stack>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Categoria: {getExpenseCategoryLabel(despesa.categoria)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Pagamento: {getPaymentMethodLabel(despesa.meioPagamento)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Carteira: {despesa.carteira?.nome ?? '-'}
+                    </Typography>
+                  </Stack>
+                </Box>
               ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                  Nenhuma despesa encontrada para os filtros informados.
-                </TableCell>
-              </TableRow>
+              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                Nenhuma despesa encontrada para os filtros informados.
+              </Box>
             )}
-          </TableBody>
-        </Table>
+          </Stack>
+        ) : (
+          <TableContainer>
+            <Table aria-label="tabela de despesas">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <strong>Data</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Descrição</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Categoria</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Pagamento</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Carteira</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Valor</strong>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {isFetching ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : despesas.length > 0 ? (
+                  despesas.map((despesa) => (
+                    <TableRow key={despesa.id}>
+                      <TableCell>
+                        {formatApiDateToDisplay(despesa.dataLancamento)}
+                      </TableCell>
+                      <TableCell>{despesa.descricao}</TableCell>
+                      <TableCell>{getExpenseCategoryLabel(despesa.categoria)}</TableCell>
+                      <TableCell>{getPaymentMethodLabel(despesa.meioPagamento)}</TableCell>
+                      <TableCell>{despesa.carteira?.nome ?? '-'}</TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ color: 'error.main', fontWeight: 700 }}
+                      >
+                        {formatCurrency(despesa.valor)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                      Nenhuma despesa encontrada para os filtros informados.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <TablePagination
           component="div"
@@ -225,8 +285,16 @@ export default function FinanceExpensesPage() {
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
           }
+          sx={{
+            '.MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
+              gap: 1,
+              px: { xs: 1, sm: 2 },
+            },
+          }}
         />
-      </TableContainer>
+      </Paper>
 
       <NewExpenseDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </Stack>

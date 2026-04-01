@@ -1,4 +1,30 @@
-import { alpha, createTheme, type PaletteMode } from '@mui/material/styles';
+import {
+  alpha,
+  createTheme,
+  type PaletteMode,
+  type Theme,
+} from '@mui/material/styles';
+
+export function getActiveMenuStyles(theme: Theme) {
+  return {
+    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.95)} 0%, ${alpha(theme.palette.primary.dark, 0.95)} 100%)`,
+    color: theme.palette.primary.contrastText,
+    boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.24)}`,
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.secondary.main,
+    },
+  };
+}
+
+export function getActiveSubmenuStyles(theme: Theme) {
+  return {
+    backgroundColor: alpha(theme.palette.primary.main, 0.14),
+    color: theme.palette.primary.main,
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.primary.main,
+    },
+  };
+}
 
 export function buildTheme(mode: PaletteMode) {
   const isDark = mode === 'dark';
@@ -69,10 +95,17 @@ export function buildTheme(mode: PaletteMode) {
       MuiTableContainer: {
         styleOverrides: {
           root: {
-            borderRadius: 24,
-            boxShadow: isDark
-              ? '0 16px 44px rgba(6, 2, 18, 0.42)'
-              : '0 16px 44px rgba(72, 20, 132, 0.12)',
+            borderRadius: 0,
+            overflow: 'visible',
+            boxShadow: 'none',
+          },
+        },
+      },
+      MuiTable: {
+        styleOverrides: {
+          root: {
+            borderCollapse: 'separate',
+            borderSpacing: 0,
           },
         },
       },

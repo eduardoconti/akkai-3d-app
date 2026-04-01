@@ -1,8 +1,10 @@
+import { useId } from 'react';
 import dayjs from 'dayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import type { TextFieldProps } from '@mui/material';
 
 interface DatePickerFieldProps {
+  id?: string;
   label: string;
   value: string;
   onValueChange: (value: string) => void;
@@ -12,12 +14,15 @@ interface DatePickerFieldProps {
 }
 
 export default function DatePickerField({
+  id,
   label,
   value,
   onValueChange,
   slotProps,
   ...props
 }: DatePickerFieldProps) {
+  const generatedId = useId();
+
   return (
     <DatePicker
       {...props}
@@ -29,6 +34,7 @@ export default function DatePickerField({
       }}
       slotProps={{
         textField: {
+          id: id ?? generatedId,
           fullWidth: true,
           InputLabelProps: {
             shrink: true,

@@ -12,8 +12,19 @@ export function listWallets(): Promise<Carteira[]> {
   return httpClient.get<Carteira[]>('/financeiro/carteiras');
 }
 
+export function getWalletById(id: number): Promise<Carteira> {
+  return httpClient.get<Carteira>(`/financeiro/carteiras/${id}`);
+}
+
 export function createWallet(input: CarteiraInput): Promise<Carteira> {
   return httpClient.post<Carteira>('/financeiro/carteiras', input);
+}
+
+export function updateWallet(
+  id: number,
+  input: CarteiraInput,
+): Promise<Carteira> {
+  return httpClient.put<Carteira>(`/financeiro/carteiras/${id}`, input);
 }
 
 export function listExpenses(

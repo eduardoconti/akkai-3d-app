@@ -16,6 +16,7 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material';
+import { type Theme } from '@mui/material/styles';
 import {
   AddShoppingCart,
   Assessment,
@@ -28,6 +29,7 @@ import {
   FormatListBulleted,
   Inventory as ProductIcon,
   LightMode,
+  LocalFireDepartment,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   PostAdd,
@@ -39,6 +41,10 @@ import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { NewSaleDialog } from '@/features/sales';
 import { GlobalFeedbackSnackbar } from '@/shared';
+import {
+  getActiveMenuStyles,
+  getActiveSubmenuStyles,
+} from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 
 const DRAWER_WIDTH = 256;
@@ -76,6 +82,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const closeMobileMenu = () => setMobileOpen(false);
 
+  const openDialog = (open: () => void) => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    closeMobileMenu();
+    open();
+  };
+
   const drawerContent = (
     <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
       <Toolbar>
@@ -98,18 +115,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             component={NavLink}
             to="/vendas"
             onClick={closeMobileMenu}
-            sx={{
+            sx={(theme: Theme) => ({
               borderRadius: 2,
-              '&.active': {
-                background:
-                  'linear-gradient(135deg, rgba(18,150,212,0.95) 0%, rgba(11,110,163,0.95) 100%)',
-                color: 'primary.contrastText',
-                boxShadow: '0 12px 24px rgba(18, 150, 212, 0.24)',
-                '& .MuiListItemIcon-root': {
-                  color: 'secondary.main',
-                },
-              },
-            }}
+              '&.active': getActiveMenuStyles(theme),
+            })}
           >
             <ListItemIcon>
               <SaleIcon />
@@ -121,17 +130,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             onClick={() => setProductsMenuOpen((current) => !current)}
-            sx={{
+            sx={(theme: Theme) => ({
               borderRadius: 2,
-              backgroundColor: productsSectionActive
-                ? 'rgba(18,150,212,0.08)'
-                : 'transparent',
-            }}
+              ...(productsSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
           >
             <ListItemIcon>
-              <ProductIcon
-                color={productsSectionActive ? 'primary' : 'inherit'}
-              />
+              <ProductIcon />
             </ListItemIcon>
             <ListItemText primary="Produtos" />
             {productsMenuOpen ? <ExpandLess /> : <ExpandMore />}
@@ -145,13 +150,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 component={NavLink}
                 to="/produtos"
                 onClick={closeMobileMenu}
-                sx={{
+                sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  '&.active': {
-                    backgroundColor: 'rgba(18,150,212,0.12)',
-                    color: 'primary.main',
-                  },
-                }}
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
               >
                 <ListItemIcon>
                   <FormatListBulleted fontSize="small" />
@@ -163,8 +165,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
-                  closeMobileMenu();
-                  setProductDialogOpen(true);
+                  openDialog(() => setProductDialogOpen(true));
                 }}
                 sx={{ borderRadius: 2 }}
               >
@@ -178,8 +179,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => {
-                  closeMobileMenu();
-                  setCategoryDialogOpen(true);
+                  openDialog(() => setCategoryDialogOpen(true));
                 }}
                 sx={{ borderRadius: 2 }}
               >
@@ -195,15 +195,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
             onClick={() => setFinanceMenuOpen((current) => !current)}
-            sx={{
+            sx={(theme: Theme) => ({
               borderRadius: 2,
-              backgroundColor: financeSectionActive
-                ? 'rgba(18,150,212,0.08)'
-                : 'transparent',
-            }}
+              ...(financeSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
           >
             <ListItemIcon>
-              <Balance color={financeSectionActive ? 'primary' : 'inherit'} />
+              <Balance />
             </ListItemIcon>
             <ListItemText primary="Financeiro" />
             {financeMenuOpen ? <ExpandLess /> : <ExpandMore />}
@@ -217,13 +215,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 component={NavLink}
                 to="/financeiro/carteiras"
                 onClick={closeMobileMenu}
-                sx={{
+                sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  '&.active': {
-                    backgroundColor: 'rgba(18,150,212,0.12)',
-                    color: 'primary.main',
-                  },
-                }}
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
               >
                 <ListItemIcon>
                   <Balance fontSize="small" />
@@ -235,8 +230,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
-                  closeMobileMenu();
-                  setWalletDialogOpen(true);
+                  openDialog(() => setWalletDialogOpen(true));
                 }}
                 sx={{ borderRadius: 2 }}
               >
@@ -252,13 +246,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 component={NavLink}
                 to="/financeiro/despesas"
                 onClick={closeMobileMenu}
-                sx={{
+                sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  '&.active': {
-                    backgroundColor: 'rgba(18,150,212,0.12)',
-                    color: 'primary.main',
-                  },
-                }}
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
               >
                 <ListItemIcon>
                   <AttachMoney fontSize="small" />
@@ -270,8 +261,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding>
               <ListItemButton
                 onClick={() => {
-                  closeMobileMenu();
-                  setExpenseDialogOpen(true);
+                  openDialog(() => setExpenseDialogOpen(true));
                 }}
                 sx={{ borderRadius: 2 }}
               >
@@ -287,17 +277,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
             onClick={() => setReportsMenuOpen((current) => !current)}
-            sx={{
+            sx={(theme: Theme) => ({
               borderRadius: 2,
-              backgroundColor: reportsSectionActive
-                ? 'rgba(18,150,212,0.08)'
-                : 'transparent',
-            }}
+              ...(reportsSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
           >
             <ListItemIcon>
-              <Assessment
-                color={reportsSectionActive ? 'primary' : 'inherit'}
-              />
+              <Assessment />
             </ListItemIcon>
             <ListItemText primary="Relatórios" />
             {reportsMenuOpen ? <ExpandLess /> : <ExpandMore />}
@@ -309,15 +295,29 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding>
               <ListItemButton
                 component={NavLink}
+                to="/relatorios/produtos-mais-vendidos"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemIcon>
+                  <LocalFireDepartment fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Mais vendidos" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mt: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
                 to="/relatorios/resumo"
                 onClick={closeMobileMenu}
-                sx={{
+                sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  '&.active': {
-                    backgroundColor: 'rgba(18,150,212,0.12)',
-                    color: 'primary.main',
-                  },
-                }}
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
               >
                 <ListItemIcon>
                   <FormatListBulleted fontSize="small" />
@@ -345,7 +345,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <Toolbar sx={{ gap: 2 }}>
+        <Toolbar
+          sx={{
+            gap: 1.5,
+            py: { xs: 1, md: 0 },
+            minHeight: { xs: 72, md: 64 },
+            alignItems: { xs: 'flex-start', md: 'center' },
+            flexWrap: { xs: 'wrap', md: 'nowrap' },
+          }}
+        >
           <IconButton
             color="inherit"
             edge="start"
@@ -355,21 +363,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <MenuIcon />
           </IconButton>
 
-          <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-            <Typography variant="h6" fontWeight={800} noWrap>
+          <Stack
+            spacing={0.25}
+            sx={{ minWidth: 0, flexGrow: 1, pr: { xs: 1, md: 0 } }}
+          >
+            <Typography variant="h6" fontWeight={800} noWrap={false}>
               Painel Operacional
             </Typography>
-            <Typography variant="body2" color="text.secondary" noWrap>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: { xs: 'none', sm: 'block' } }}
+            >
               Cadastre produtos e registre vendas com rapidez durante a
               operação.
             </Typography>
           </Stack>
 
-          <Box sx={{ flexGrow: 1 }} />
-
           <Stack
             spacing={0}
-            sx={{ display: { xs: 'none', md: 'flex' }, minWidth: 0 }}
+            sx={{
+              display: { xs: 'none', lg: 'flex' },
+              minWidth: 0,
+              ml: 'auto',
+            }}
           >
             <Typography variant="body2" fontWeight={700} noWrap>
               {user?.name ?? 'Usuário'}
@@ -391,32 +408,44 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {mode === 'light' ? <DarkMode /> : <LightMode />}
           </IconButton>
 
-          <Button
-            variant="contained"
-            startIcon={<AddShoppingCart />}
-            size="small"
-            onClick={() => setSaleDialogOpen(true)}
-          >
-            Nova venda
-          </Button>
-
-          <Button
-            variant="text"
-            color="inherit"
-            startIcon={<LogoutIcon />}
-            size="small"
-            onClick={() => {
-              void logout();
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              justifyContent: { xs: 'space-between', sm: 'flex-end' },
+              alignItems: 'center',
             }}
           >
-            Sair
-          </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddShoppingCart />}
+              size="small"
+              onClick={() => openDialog(() => setSaleDialogOpen(true))}
+              sx={{ flexShrink: 0 }}
+            >
+              Nova venda
+            </Button>
+
+            <Button
+              variant="text"
+              color="inherit"
+              startIcon={<LogoutIcon />}
+              size="small"
+              onClick={() => {
+                void logout();
+              }}
+              sx={{ flexShrink: 0 }}
+            >
+              Sair
+            </Button>
+          </Stack>
         </Toolbar>
       </AppBar>
 
       <Box
         component="nav"
-        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+        sx={{ width: { xs: 0, md: DRAWER_WIDTH }, flexShrink: 0 }}
       >
         <Drawer
           variant="temporary"
@@ -455,12 +484,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          px: { xs: 2, md: 4 },
-          py: 3,
+          minWidth: 0,
+          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          overflowX: 'hidden',
+          px: { xs: 1.5, sm: 2, md: 4 },
+          py: { xs: 2, md: 3 },
         }}
       >
-        <Toolbar />
+        <Toolbar sx={{ minHeight: { xs: 88, sm: 96, md: 64 } }} />
         {children}
       </Box>
 
