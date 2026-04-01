@@ -9,7 +9,10 @@ import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
 import { FinanceExpensesPage, FinanceWalletsPage } from '@/features/finance';
 import { ProductsPage } from '@/features/products';
-import { ReportsSummaryPage } from '@/features/reports';
+import {
+  ReportsBestSellingProductsPage,
+  ReportsSummaryPage,
+} from '@/features/reports';
 import { SalesPage } from '@/features/sales';
 
 function ProtectedLayout() {
@@ -32,6 +35,10 @@ function App() {
             <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
             <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
+            <Route
+              path="/relatorios/produtos-mais-vendidos"
+              element={<ReportsBestSellingProductsPage />}
+            />
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
             <Route path="/vendas" element={<SalesPage />} />
           </Route>

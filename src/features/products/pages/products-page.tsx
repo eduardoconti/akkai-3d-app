@@ -4,6 +4,7 @@ import {
   Box,
   Chip,
   CircularProgress,
+  Divider,
   Paper,
   Stack,
   Table,
@@ -15,8 +16,9 @@ import {
   TableRow,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import { useProductStore } from '../store/use-product-store';
 import { formatCurrency, type Produto } from '@/shared';
@@ -68,10 +70,12 @@ function getStockState(produto: Produto): StockState {
 }
 
 export default function ProductsPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     fetchErrorMessage,
     fetchProdutos,
-    isFetching,
+    isFetchingProducts,
     paginacao,
     produtos,
     totalItens,
@@ -119,87 +123,176 @@ export default function ProductsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 980 }} aria-label="tabela de produtos">
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <strong>Código</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Nome</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Categoria</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Descrição</strong>
-              </TableCell>
-              <TableCell align="right">
-                <strong>Quantidade</strong>
-              </TableCell>
-              <TableCell align="center">
-                <strong>Estoque Atual</strong>
-              </TableCell>
-              <TableCell align="right">
-                <strong>Valor</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {isFetching ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
+      <Paper sx={{ overflow: 'hidden' }}>
+        {isMobile ? (
+          <Stack divider={<Divider flexItem />} aria-label="lista de produtos">
+            {isFetchingProducts ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress />
+              </Box>
             ) : produtos.length > 0 ? (
               produtos.map((produto) => {
                 const stockState = getStockState(produto);
 
                 return (
-                  <TableRow
+                  <Box
                     key={produto.id}
                     onClick={() => setEditingProductId(produto.id)}
                     sx={{
-                      '&:last-child td, &:last-child th': { border: 0 },
                       cursor: 'pointer',
+                      px: 2,
+                      py: 2,
                       ...stockState.rowSx,
                     }}
                   >
-                    <TableCell component="th" scope="row">
-                      {produto.codigo}
-                    </TableCell>
-                    <TableCell>{produto.nome}</TableCell>
-                    <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
-                    <TableCell>{produto.descricao || '-'}</TableCell>
-                    <TableCell align="right">
-                      {produto.quantidadeEstoque}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        label={stockState.label}
-                        size="small"
-                        color={stockState.chipColor}
-                        variant="filled"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      {formatCurrency(produto.valor)}
-                    </TableCell>
-                  </TableRow>
+                    <Stack spacing={1.5}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        spacing={1.5}
+                      >
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            {produto.codigo}
+                          </Typography>
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            {produto.nome}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={stockState.label}
+                          size="small"
+                          color={stockState.chipColor}
+                          variant="filled"
+                        />
+                      </Stack>
+
+                      <Stack spacing={0.75}>
+                        <Typography variant="body2" color="text.secondary">
+                          Categoria: {produto.categoria?.nome ?? '-'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Descrição: {produto.descricao || '-'}
+                        </Typography>
+                      </Stack>
+
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        spacing={2}
+                      >
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Quantidade
+                          </Typography>
+                          <Typography variant="body1" fontWeight={700}>
+                            {produto.quantidadeEstoque}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Valor
+                          </Typography>
+                          <Typography variant="body1" fontWeight={700}>
+                            {formatCurrency(produto.valor)}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Stack>
+                  </Box>
                 );
               })
             ) : (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                  Nenhum produto encontrado para a pesquisa informada.
-                </TableCell>
-              </TableRow>
+              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                Nenhum produto encontrado para a pesquisa informada.
+              </Box>
             )}
-          </TableBody>
-        </Table>
+          </Stack>
+        ) : (
+          <TableContainer>
+            <Table sx={{ minWidth: 860 }} aria-label="tabela de produtos">
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    <strong>Código</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Nome</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Categoria</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Descrição</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Quantidade</strong>
+                  </TableCell>
+                  <TableCell align="center">
+                    <strong>Estoque Atual</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Valor</strong>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {isFetchingProducts ? (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : produtos.length > 0 ? (
+                  produtos.map((produto) => {
+                    const stockState = getStockState(produto);
+
+                    return (
+                      <TableRow
+                        key={produto.id}
+                        onClick={() => setEditingProductId(produto.id)}
+                        sx={{
+                          '&:last-child td, &:last-child th': { border: 0 },
+                          cursor: 'pointer',
+                          ...stockState.rowSx,
+                        }}
+                      >
+                        <TableCell component="th" scope="row">
+                          {produto.codigo}
+                        </TableCell>
+                        <TableCell>{produto.nome}</TableCell>
+                        <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
+                        <TableCell>{produto.descricao || '-'}</TableCell>
+                        <TableCell align="right">
+                          {produto.quantidadeEstoque}
+                        </TableCell>
+                        <TableCell align="center">
+                          <Chip
+                            label={stockState.label}
+                            size="small"
+                            color={stockState.chipColor}
+                            variant="filled"
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          {formatCurrency(produto.valor)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                      Nenhum produto encontrado para a pesquisa informada.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <TablePagination
           component="div"
@@ -220,8 +313,16 @@ export default function ProductsPage() {
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
           }
+          sx={{
+            '.MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
+              gap: 1,
+              px: { xs: 1, sm: 2 },
+            },
+          }}
         />
-      </TableContainer>
+      </Paper>
 
       <EditProductDialog
         open={editingProductId !== null}

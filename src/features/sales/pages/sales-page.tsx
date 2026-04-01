@@ -5,6 +5,7 @@ import {
   Chip,
   CircularProgress,
   Collapse,
+  Divider,
   IconButton,
   MenuItem,
   Paper,
@@ -18,8 +19,10 @@ import {
   TableRow,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import { useSaleStore } from '../store/use-sale-store';
 import {
   getPaymentMethodLabel,
@@ -123,6 +126,8 @@ function SaleRow({ venda }: { venda: Venda }) {
 }
 
 export default function SalesPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     fetchErrorMessage,
     fetchVendas,
@@ -192,52 +197,117 @@ export default function SalesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <TableContainer component={Paper}>
-        <Table aria-label="tabela de vendas">
-          <TableHead>
-            <TableRow>
-              <TableCell width={48} />
-              <TableCell>
-                <strong>ID</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Data</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Tipo</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Feira</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Carteira</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Pagamento</strong>
-              </TableCell>
-              <TableCell align="right">
-                <strong>Total</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
+      <Paper sx={{ overflow: 'hidden' }}>
+        {isMobile ? (
+          <Stack divider={<Divider flexItem />} aria-label="lista de vendas">
             {isFetching ? (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                  <CircularProgress />
-                </TableCell>
-              </TableRow>
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress />
+              </Box>
             ) : vendas.length > 0 ? (
-              vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
+              vendas.map((venda) => (
+                <Box key={venda.id} sx={{ px: 2, py: 2 }}>
+                  <Stack spacing={1.25}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      spacing={1}
+                    >
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">
+                          Venda #{venda.id}
+                        </Typography>
+                        <Typography variant="body2">
+                          {new Date(venda.dataInclusao).toLocaleString('pt-BR')}
+                        </Typography>
+                      </Box>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        {formatCurrency(venda.valorTotal)}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      <Chip
+                        label={getSaleTypeLabel(venda.tipo)}
+                        size="small"
+                        color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
+                        variant="outlined"
+                      />
+                      <Chip
+                        label={getPaymentMethodLabel(venda.meioPagamento)}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </Stack>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Feira: {venda.feira?.nome ?? '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Carteira: {venda.carteira?.nome ?? '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Itens: {venda.itens.map(getSaleItemName).join(', ')}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                  Nenhuma venda encontrada para os filtros informados.
-                </TableCell>
-              </TableRow>
+              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                Nenhuma venda encontrada para os filtros informados.
+              </Box>
             )}
-          </TableBody>
-        </Table>
+          </Stack>
+        ) : (
+          <TableContainer>
+            <Table aria-label="tabela de vendas">
+              <TableHead>
+                <TableRow>
+                  <TableCell width={48} />
+                  <TableCell>
+                    <strong>ID</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Data</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Tipo</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Feira</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Carteira</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Pagamento</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Total</strong>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {isFetching ? (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : vendas.length > 0 ? (
+                  vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                      Nenhuma venda encontrada para os filtros informados.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <TablePagination
           component="div"
@@ -258,8 +328,16 @@ export default function SalesPage() {
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
           }
+          sx={{
+            '.MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
+              gap: 1,
+              px: { xs: 1, sm: 2 },
+            },
+          }}
         />
-      </TableContainer>
+      </Paper>
     </Stack>
   );
 }

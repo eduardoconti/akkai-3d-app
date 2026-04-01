@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import {
   createExpense,
   createWallet,
+  getWalletById,
   listExpenses,
   listWallets,
+  updateWallet,
 } from '@/features/finance/api/finance-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
@@ -35,10 +37,15 @@ interface FinanceStoreState {
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
   fetchCarteiras: () => Promise<void>;
+  obterCarteiraPorId: (id: number) => Promise<Carteira>;
   fetchDespesas: (
     query?: Partial<PesquisaPaginadaDespesas>,
   ) => Promise<ResultadoPaginado<Despesa> | void>;
   criarCarteira: (dados: CarteiraInput) => Promise<ActionResult<Carteira>>;
+  atualizarCarteira: (
+    id: number,
+    dados: CarteiraInput,
+  ) => Promise<ActionResult<Carteira>>;
   criarDespesa: (dados: DespesaInput) => Promise<ActionResult<Despesa>>;
   clearSubmitError: () => void;
 }
@@ -64,6 +71,9 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     } finally {
       set({ isFetching: false });
     }
+  },
+  obterCarteiraPorId: async (id) => {
+    return getWalletById(id);
   },
   fetchDespesas: async (query) => {
     const currentPagination = get().paginacao;
@@ -102,6 +112,19 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
       const carteira = await createWallet(dados);
+      return { success: true, data: carteira };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarCarteira: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const carteira = await updateWallet(id, dados);
       return { success: true, data: carteira };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);

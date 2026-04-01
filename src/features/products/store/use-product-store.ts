@@ -28,7 +28,8 @@ interface ProductStoreState {
   paginacao: PesquisaPaginada;
   totalItens: number;
   totalPaginas: number;
-  isFetching: boolean;
+  isFetchingProducts: boolean;
+  isFetchingCategories: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
@@ -47,7 +48,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
-  isFetching: false,
+  isFetchingProducts: false,
+  isFetchingCategories: false,
   isSubmitting: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
@@ -59,7 +61,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       termo: query?.termo ?? currentPagination.termo ?? '',
     };
 
-    set({ isFetching: true, fetchErrorMessage: null });
+    set({ isFetchingProducts: true, fetchErrorMessage: null });
     try {
       const response = await listProducts(nextPagination);
       set({
@@ -77,11 +79,11 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });
     } finally {
-      set({ isFetching: false });
+      set({ isFetchingProducts: false });
     }
   },
   fetchCategorias: async () => {
-    set({ isFetching: true, fetchErrorMessage: null });
+    set({ isFetchingCategories: true, fetchErrorMessage: null });
     try {
       const categorias = await listCategories();
       set({ categorias });
@@ -89,7 +91,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       const problem = getProblemDetailsFromError(error);
       set({ fetchErrorMessage: problem.detail });
     } finally {
-      set({ isFetching: false });
+      set({ isFetchingCategories: false });
     }
   },
   criarProduto: async (novoProduto) => {

@@ -38,7 +38,7 @@ export default function NewCategoryDialog({
     criarCategoria,
     submitErrorMessage,
     fetchCategorias,
-    isFetching,
+    isFetchingCategories,
     isSubmitting,
     clearSubmitError,
   } = useProductStore();
@@ -156,7 +156,7 @@ export default function NewCategoryDialog({
                 }));
               }}
               helperText="Opcional. Use se esta categoria fizer parte de outra."
-              disabled={isFetching}
+              disabled={isFetchingCategories}
             >
               <MenuItem value="">Sem categoria pai</MenuItem>
               {categoryOptions.map((category) => (
