@@ -80,7 +80,7 @@ export interface VendaItem {
   quantidade: number;
   valorUnitario: number;
   valorTotal: number;
-  desconto: number;
+  brinde: boolean;
   produto?: Produto | null;
 }
 
@@ -114,7 +114,7 @@ export interface EstoqueInput<TOrigem extends string> {
 
 export interface InserirVendaItemInput {
   quantidade: number;
-  desconto?: number;
+  brinde?: boolean;
   idProduto?: number;
   nomeProduto?: string;
   valorUnitario?: number;

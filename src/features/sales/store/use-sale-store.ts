@@ -56,10 +56,11 @@ function buildOfflineSale(
 
   const itens = dados.itens.map((item, index) => {
     const produto = produtos.find((current) => current.id === item.idProduto) ?? null;
-    const valorUnitario = item.idProduto
-      ? getCatalogProductValue(item, produtos)
-      : item.valorUnitario ?? 0;
-    const desconto = item.desconto ?? 0;
+    const valorUnitario = item.brinde
+      ? 0
+      : item.idProduto
+        ? getCatalogProductValue(item, produtos)
+        : item.valorUnitario ?? 0;
 
     return {
       id: saleId - index - 1,
@@ -67,8 +68,8 @@ function buildOfflineSale(
       nomeProduto: item.nomeProduto?.trim() || produto?.nome || 'Item avulso',
       quantidade: item.quantidade,
       valorUnitario,
-      desconto,
-      valorTotal: Math.max(0, valorUnitario * item.quantidade - desconto),
+      brinde: item.brinde ?? false,
+      valorTotal: Math.max(0, valorUnitario * item.quantidade),
       produto,
     };
   });

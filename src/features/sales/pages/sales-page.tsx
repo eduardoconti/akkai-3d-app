@@ -65,13 +65,16 @@ function SaleRow({ venda }: { venda: Venda }) {
         <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
         <TableCell>{venda.carteira?.nome ?? '-'}</TableCell>
         <TableCell>{getPaymentMethodLabel(venda.meioPagamento)}</TableCell>
+        <TableCell align="right">
+          {venda.desconto > 0 ? formatCurrency(venda.desconto) : '-'}
+        </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatCurrency(venda.valorTotal)}
         </TableCell>
       </TableRow>
 
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box
               sx={{
@@ -94,7 +97,6 @@ function SaleRow({ venda }: { venda: Venda }) {
                     <TableCell>Nome</TableCell>
                     <TableCell align="right">Qtd</TableCell>
                     <TableCell align="right">Unitário</TableCell>
-                    <TableCell align="right">Desconto</TableCell>
                     <TableCell align="right">Total Item</TableCell>
                   </TableRow>
                 </TableHead>
@@ -106,9 +108,6 @@ function SaleRow({ venda }: { venda: Venda }) {
                       <TableCell align="right">{item.quantidade}</TableCell>
                       <TableCell align="right">
                         {formatCurrency(item.valorUnitario)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: 'error.main' }}>
-                        {formatCurrency(item.desconto)}
                       </TableCell>
                       <TableCell align="right">
                         {formatCurrency(item.valorTotal)}
@@ -248,6 +247,9 @@ export default function SalesPage() {
                       Carteira: {venda.carteira?.nome ?? '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
+                      Desconto: {venda.desconto > 0 ? formatCurrency(venda.desconto) : '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
                       Itens: {venda.itens.map(getSaleItemName).join(', ')}
                     </Typography>
                   </Stack>
@@ -284,6 +286,9 @@ export default function SalesPage() {
                     <strong>Pagamento</strong>
                   </TableCell>
                   <TableCell align="right">
+                    <strong>Desconto</strong>
+                  </TableCell>
+                  <TableCell align="right">
                     <strong>Total</strong>
                   </TableCell>
                 </TableRow>
@@ -291,7 +296,7 @@ export default function SalesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -299,7 +304,7 @@ export default function SalesPage() {
                   vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                       Nenhuma venda encontrada para os filtros informados.
                     </TableCell>
                   </TableRow>

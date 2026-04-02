@@ -4,24 +4,33 @@ import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   CircularProgress,
   Dialog,
-  DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   MenuItem,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Add, Delete, ShoppingCartCheckout } from '@mui/icons-material';
+import { Add, Close, Delete, ShoppingCartCheckout } from '@mui/icons-material';
 import { useProductStore } from '@/features/products/store/use-product-store';
 import { useSaleStore } from '@/features/sales/store/use-sale-store';
 import {
   emptySaleItem,
   initialSaleFormState,
+  type DiscountMode,
   type SaleFormErrors,
   type SaleFormItem,
   type SaleFormState,
@@ -51,6 +60,36 @@ function getCatalogProductValue(
 ) {
   const product = produtos.find((current) => current.id === item.idProduto);
   return product?.valor ?? 0;
+}
+
+function calculateSaleDiscount(
+  subtotal: number,
+  discountValue: number,
+  discountMode: DiscountMode,
+) {
+  if (discountMode === 'PERCENTUAL') {
+    const normalizedDiscount = Math.min(Math.max(discountValue, 0), 99);
+    return Math.round((subtotal * normalizedDiscount) / 100);
+  }
+
+  return Math.round(Math.min(Math.max(discountValue, 0), 999.99) * 100);
+}
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <Typography
+      variant="overline"
+      sx={{
+        display: 'block',
+        mb: 1.25,
+        color: 'text.secondary',
+        fontWeight: 800,
+        letterSpacing: '0.08em',
+      }}
+    >
+      {children}
+    </Typography>
+  );
 }
 
 export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
@@ -113,25 +152,26 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
 
   const totals = useMemo(() => {
     let subtotal = 0;
-    let itemDiscounts = 0;
-
     form.itens.forEach((item) => {
-      const unitValue =
-        item.tipoItem === 'CATALOGO'
+      const unitValue = item.brinde
+        ? 0
+        : item.tipoItem === 'CATALOGO'
           ? getCatalogProductValue(item, produtos)
           : Math.round(item.valorUnitario * 100);
 
       subtotal += unitValue * item.quantidade;
-      itemDiscounts += Math.round((item.desconto ?? 0) * 100);
     });
 
-    const saleDiscount = Math.round((form.desconto ?? 0) * 100);
+    const saleDiscount = calculateSaleDiscount(
+      subtotal,
+      form.desconto ?? 0,
+      form.descontoModo,
+    );
 
     return {
       subtotal,
-      itemDiscounts,
       saleDiscount,
-      total: Math.max(0, subtotal - itemDiscounts - saleDiscount),
+      total: Math.max(0, subtotal - saleDiscount),
     };
   }, [form, produtos]);
 
@@ -180,7 +220,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       nomeProduto: '',
       valorUnitario: 0,
       quantidade: 1,
-      desconto: 0,
+      brinde: false,
     });
   };
 
@@ -197,16 +237,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
         errors.nomeProduto = 'Informe o nome do item avulso.';
       }
 
-      if (item.tipoItem === 'AVULSO' && item.valorUnitario <= 0) {
+      if (item.tipoItem === 'AVULSO' && !item.brinde && item.valorUnitario <= 0) {
         errors.valorUnitario = 'Informe um valor unitário maior que zero.';
       }
 
       if (item.quantidade < 1) {
         errors.quantidade = 'Informe uma quantidade de pelo menos 1 unidade.';
-      }
-
-      if (item.desconto < 0) {
-        errors.desconto = 'O desconto do item não pode ser negativo.';
       }
 
       return errors;
@@ -219,6 +255,18 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     if (form.idCarteira === '') {
       nextLocalErrors.idCarteira =
         'Selecione a carteira que recebeu essa venda.';
+    }
+
+    if (form.desconto < 0) {
+      nextLocalErrors.desconto = 'Informe um desconto válido.';
+    }
+
+    if (form.descontoModo === 'PERCENTUAL' && form.desconto > 99) {
+      nextLocalErrors.desconto = 'O desconto em % deve ser de no máximo 99.';
+    }
+
+    if (form.descontoModo === 'VALOR' && form.desconto > 999.99) {
+      nextLocalErrors.desconto = 'O desconto em R$ deve ser de no máximo 999,99.';
     }
 
     if (form.itens.length === 0) {
@@ -247,13 +295,13 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
       idCarteira: form.idCarteira === '' ? 0 : form.idCarteira,
-      desconto: Math.round(form.desconto * 100),
+      desconto: totals.saleDiscount,
       itens: form.itens.map((item) => {
         if (item.tipoItem === 'CATALOGO') {
           return {
             idProduto: item.idProduto ?? undefined,
             quantidade: item.quantidade,
-            desconto: Math.round(item.desconto * 100),
+            brinde: item.brinde,
           };
         }
 
@@ -261,7 +309,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
           nomeProduto: item.nomeProduto.trim(),
           valorUnitario: Math.round(item.valorUnitario * 100),
           quantidade: item.quantidade,
-          desconto: Math.round(item.desconto * 100),
+          brinde: item.brinde,
         };
       }),
     });
@@ -289,11 +337,42 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     saleFetchErrorMessage ??
     productFetchErrorMessage;
 
-  return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ fontWeight: 700 }}>Nova Venda Rápida</DialogTitle>
+  const discountHelperText =
+    localErrors.desconto ??
+    getFieldMessage(problem, 'desconto') ??
+    (form.desconto > 0 && totals.subtotal > 0
+      ? form.descontoModo === 'PERCENTUAL'
+        ? `${form.desconto}% = ${formatCurrency(totals.saleDiscount)}`
+        : `${((totals.saleDiscount / totals.subtotal) * 100).toFixed(1)}% = ${formatCurrency(totals.saleDiscount)}`
+      : undefined);
 
-      <DialogContent dividers>
+  return (
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              Nova venda rápida
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Preencha os dados para registrar a venda.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={handleClose} aria-label="Fechar modal de venda">
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
+
+      <DialogContent dividers sx={{ px: 3, py: 3 }}>
         <FormFeedbackAlert message={globalMessage} />
 
         {!isOnline ? (
@@ -317,394 +396,701 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
           </Alert>
         ) : null}
 
-        <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Tipo de Venda"
-              value={form.tipo}
-              onChange={(event) => {
-                const type = event.target.value as TipoVenda;
-                setForm((current) => ({
-                  ...current,
-                  tipo: type,
-                  idFeira: type === 'FEIRA' ? current.idFeira : '',
-                }));
-              }}
-            >
-              <MenuItem value="FEIRA">Feira</MenuItem>
-              <MenuItem value="LOJA">Loja</MenuItem>
-              <MenuItem value="ONLINE">Online</MenuItem>
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Carteira"
-              value={form.idCarteira}
-              onChange={(event) => {
-                setForm((current) => ({
-                  ...current,
-                  idCarteira:
-                    event.target.value === '' ? '' : Number(event.target.value),
-                }));
-              }}
-              error={Boolean(
-                localErrors.idCarteira ||
-                  getFieldMessage(problem, 'idCarteira'),
-              )}
-              helperText={
-                localErrors.idCarteira ??
-                getFieldMessage(problem, 'idCarteira')
-              }
-            >
-              <MenuItem value="">Selecione uma carteira</MenuItem>
-              {carteiras
-                .filter((carteira) => carteira.ativa)
-                .map((carteira) => (
-                  <MenuItem key={carteira.id} value={carteira.id}>
-                    {carteira.nome}
-                  </MenuItem>
-                ))}
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Meio de Pagamento"
-              value={form.meioPagamento}
-              onChange={(event) => {
-                setForm((current) => ({
-                  ...current,
-                  meioPagamento: event.target.value as MeioPagamento,
-                }));
-              }}
-            >
-              <MenuItem value="DEB">Cartão débito</MenuItem>
-              <MenuItem value="CRE">Cartão crédito</MenuItem>
-              <MenuItem value="DIN">Dinheiro</MenuItem>
-              <MenuItem value="PIX">Pix</MenuItem>
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <CurrencyField
-              fullWidth
-              label="Desconto na Venda (R$)"
-              value={form.desconto}
-              onValueChange={(desconto) => {
-                setForm((current) => ({ ...current, desconto }));
-              }}
-              name="desconto"
-              error={Boolean(getFieldMessage(problem, 'desconto'))}
-              helperText={getFieldMessage(problem, 'desconto')}
-            />
-          </Grid>
-
-          {form.tipo === 'FEIRA' ? (
-            <Grid size={{ xs: 12, sm: 6 }}>
+        <Box sx={{ mb: 3 }}>
+          <SectionLabel>Configuração</SectionLabel>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <TextField
                 select
                 fullWidth
-                label="Feira"
-                value={form.idFeira}
+                label="Tipo de venda"
+                value={form.tipo}
+                onChange={(event) => {
+                  const type = event.target.value as TipoVenda;
+                  setForm((current) => ({
+                    ...current,
+                    tipo: type,
+                    idFeira: type === 'FEIRA' ? current.idFeira : '',
+                  }));
+                }}
+              >
+                <MenuItem value="FEIRA">Feira</MenuItem>
+                <MenuItem value="LOJA">Loja</MenuItem>
+                <MenuItem value="ONLINE">Online</MenuItem>
+              </TextField>
+            </Grid>
+
+            {form.tipo === 'FEIRA' ? (
+              <Grid size={{ xs: 12, md: 3 }}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Feira"
+                  value={form.idFeira}
+                  onChange={(event) => {
+                    setForm((current) => ({
+                      ...current,
+                      idFeira:
+                        event.target.value === ''
+                          ? ''
+                          : Number(event.target.value),
+                    }));
+                  }}
+                  error={Boolean(
+                    localErrors.idFeira || getFieldMessage(problem, 'idFeira'),
+                  )}
+                  helperText={
+                    localErrors.idFeira ?? getFieldMessage(problem, 'idFeira')
+                  }
+                >
+                  <MenuItem value="">Selecione uma feira</MenuItem>
+                  {feiras.map((feira) => (
+                    <MenuItem key={feira.id} value={feira.id}>
+                      {feira.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : null}
+
+            <Grid size={{ xs: 12, md: form.tipo === 'FEIRA' ? 3 : 4.5 }}>
+              <TextField
+                select
+                fullWidth
+                label="Carteira"
+                value={form.idCarteira}
                 onChange={(event) => {
                   setForm((current) => ({
                     ...current,
-                    idFeira:
-                      event.target.value === ''
-                        ? ''
-                        : Number(event.target.value),
+                    idCarteira:
+                      event.target.value === '' ? '' : Number(event.target.value),
                   }));
                 }}
                 error={Boolean(
-                  localErrors.idFeira || getFieldMessage(problem, 'idFeira'),
+                  localErrors.idCarteira ||
+                    getFieldMessage(problem, 'idCarteira'),
                 )}
                 helperText={
-                  localErrors.idFeira ?? getFieldMessage(problem, 'idFeira')
+                  localErrors.idCarteira ??
+                  getFieldMessage(problem, 'idCarteira')
                 }
               >
-                <MenuItem value="">Selecione uma feira</MenuItem>
-                {feiras.map((feira) => (
-                  <MenuItem key={feira.id} value={feira.id}>
-                    {feira.nome}
-                  </MenuItem>
-                ))}
+                <MenuItem value="">Selecione uma carteira</MenuItem>
+                {carteiras
+                  .filter((carteira) => carteira.ativa)
+                  .map((carteira) => (
+                    <MenuItem key={carteira.id} value={carteira.id}>
+                      {carteira.nome}
+                    </MenuItem>
+                  ))}
               </TextField>
             </Grid>
+
+            <Grid size={{ xs: 12, md: form.tipo === 'FEIRA' ? 3 : 4.5 }}>
+              <TextField
+                select
+                fullWidth
+                label="Pagamento"
+                value={form.meioPagamento}
+                onChange={(event) => {
+                  setForm((current) => ({
+                    ...current,
+                    meioPagamento: event.target.value as MeioPagamento,
+                  }));
+                }}
+              >
+                <MenuItem value="DEB">Cartão débito</MenuItem>
+                <MenuItem value="CRE">Cartão crédito</MenuItem>
+                <MenuItem value="DIN">Dinheiro</MenuItem>
+                <MenuItem value="PIX">Pix</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <SectionLabel>Itens da venda</SectionLabel>
+
+          {localErrors.itens ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {localErrors.itens}
+            </Alert>
           ) : null}
-        </Grid>
 
-        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 700 }}>
-          Itens da Venda
-        </Typography>
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            <Stack spacing={1.5}>
+              {form.itens.map((item, index) => {
+                const itemLabel =
+                  item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
 
-        {localErrors.itens ? (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            {localErrors.itens}
-          </Alert>
-        ) : null}
-
-        {form.itens.map((item, index) => {
-          const itemLabel = item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
-
-          return (
-            <Box
-              key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
-              sx={{
-                mb: 2,
-                px: 0,
-                py: 0.5,
-              }}
-            >
-              <Grid container spacing={2} alignItems="center">
-                <Grid size={{ xs: 12, sm: 2 }}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Tipo do item"
-                    value={item.tipoItem}
-                    onChange={(event) =>
-                      handleChangeItemType(
-                        index,
-                        event.target.value as SaleItemType,
-                      )
-                    }
+                return (
+                  <Box
+                    key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
+                    sx={{
+                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                      borderRadius: 3,
+                      p: 1.5,
+                    }}
                   >
-                    <MenuItem value="CATALOGO">Catalogo</MenuItem>
-                    <MenuItem value="AVULSO">Avulso</MenuItem>
-                  </TextField>
-                </Grid>
+                    <Grid container spacing={1.5}>
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          select
+                          fullWidth
+                          size="small"
+                          label="Tipo"
+                          value={item.tipoItem}
+                          onChange={(event) =>
+                            handleChangeItemType(
+                              index,
+                              event.target.value as SaleItemType,
+                            )
+                          }
+                        >
+                          <MenuItem value="CATALOGO">Catálogo</MenuItem>
+                          <MenuItem value="AVULSO">Avulso</MenuItem>
+                        </TextField>
+                      </Grid>
 
-                {item.tipoItem === 'CATALOGO' ? (
-                  <>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Autocomplete
-                        options={produtos}
-                        getOptionLabel={(option) => `${option.nome} (${option.codigo})`}
-                        value={
-                          produtos.find((produto) => produto.id === item.idProduto) ??
-                          null
-                        }
-                        loading={isFetching}
-                        onChange={(_event, newValue) => {
-                          updateItem(index, {
-                            idProduto: newValue?.id ?? null,
-                            nomeProduto: newValue?.nome ?? '',
-                            valorUnitario: newValue ? newValue.valor / 100 : 0,
-                          });
-                        }}
-                        renderInput={(params) => (
+                      <Grid size={{ xs: 12 }}>
+                        {item.tipoItem === 'CATALOGO' ? (
+                          <Autocomplete
+                            options={produtos}
+                            getOptionLabel={(option) =>
+                              `${option.nome} (${option.codigo})`
+                            }
+                            value={
+                              produtos.find(
+                                (produto) => produto.id === item.idProduto,
+                              ) ?? null
+                            }
+                            loading={isFetching}
+                            onChange={(_event, newValue) => {
+                              updateItem(index, {
+                                idProduto: newValue?.id ?? null,
+                                nomeProduto: newValue?.nome ?? '',
+                                valorUnitario: newValue ? newValue.valor / 100 : 0,
+                              });
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                size="small"
+                                label="Produto"
+                                error={Boolean(
+                                  itemErrors[index]?.idProduto ||
+                                    getFieldMessage(
+                                      problem,
+                                      `itens[${index}].idProduto`,
+                                    ),
+                                )}
+                                helperText={
+                                  itemErrors[index]?.idProduto ??
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].idProduto`,
+                                  )
+                                }
+                              />
+                            )}
+                          />
+                        ) : (
                           <TextField
-                            {...params}
-                            label="Produto"
+                            fullWidth
+                            size="small"
+                            label="Nome do item"
+                            value={item.nomeProduto}
+                            onChange={(event) => {
+                              updateItem(index, {
+                                nomeProduto: event.target.value,
+                              });
+                            }}
                             error={Boolean(
-                              itemErrors[index]?.idProduto ||
+                              itemErrors[index]?.nomeProduto ||
                                 getFieldMessage(
                                   problem,
-                                  `itens[${index}].idProduto`,
+                                  `itens[${index}].nomeProduto`,
                                 ),
                             )}
                             helperText={
-                              itemErrors[index]?.idProduto ??
-                              getFieldMessage(problem, `itens[${index}].idProduto`)
+                              itemErrors[index]?.nomeProduto ??
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].nomeProduto`,
+                              )
                             }
                           />
                         )}
-                      />
-                    </Grid>
+                      </Grid>
 
-                    <Grid size={{ xs: 12, sm: 2 }}>
-                      <CurrencyField
-                        fullWidth
-                        label="Valor unitário"
-                        value={getCatalogProductValue(item, produtos) / 100}
-                        onValueChange={() => undefined}
-                        name={`valorCatalogo-${index}`}
-                        disabled
-                      />
-                    </Grid>
-                  </>
-                ) : (
-                  <>
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        fullWidth
-                        label="Nome do item"
-                        value={item.nomeProduto}
-                        onChange={(event) => {
-                          updateItem(index, {
-                            nomeProduto: event.target.value,
-                          });
-                        }}
-                        error={Boolean(
-                          itemErrors[index]?.nomeProduto ||
-                            getFieldMessage(problem, `itens[${index}].nomeProduto`),
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        {item.tipoItem === 'CATALOGO' ? (
+                          <CurrencyField
+                            fullWidth
+                            label="Valor unit."
+                            value={
+                              item.brinde
+                                ? 0
+                                : getCatalogProductValue(item, produtos) / 100
+                            }
+                            onValueChange={() => undefined}
+                            name={`valorCatalogo-${index}`}
+                            disabled
+                          />
+                        ) : (
+                          <CurrencyField
+                            fullWidth
+                            label="Valor unit."
+                            value={item.brinde ? 0 : item.valorUnitario}
+                            onValueChange={(valorUnitario) => {
+                              updateItem(index, { valorUnitario });
+                            }}
+                            name={`valorUnitario-${index}`}
+                            disabled={item.brinde}
+                            error={Boolean(
+                              itemErrors[index]?.valorUnitario ||
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].valorUnitario`,
+                                ),
+                            )}
+                            helperText={
+                              itemErrors[index]?.valorUnitario ??
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].valorUnitario`,
+                              )
+                            }
+                          />
                         )}
-                        helperText={
-                          itemErrors[index]?.nomeProduto ??
-                          getFieldMessage(problem, `itens[${index}].nomeProduto`)
-                        }
-                      />
-                    </Grid>
+                      </Grid>
 
-                    <Grid size={{ xs: 12, sm: 2 }}>
-                      <CurrencyField
-                        fullWidth
-                        label="Valor unitário"
-                        value={item.valorUnitario}
-                        onValueChange={(valorUnitario) => {
-                          updateItem(index, { valorUnitario });
-                        }}
-                        name={`valorUnitario-${index}`}
-                        error={Boolean(
-                          itemErrors[index]?.valorUnitario ||
-                            getFieldMessage(problem, `itens[${index}].valorUnitario`),
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Qtd"
+                          type="number"
+                          value={item.quantidade}
+                          onChange={(event) => {
+                            updateItem(index, {
+                              quantidade: Number(event.target.value),
+                            });
+                          }}
+                          error={Boolean(
+                            itemErrors[index]?.quantidade ||
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].quantidade`,
+                              ),
+                          )}
+                          helperText={
+                            itemErrors[index]?.quantidade ??
+                            getFieldMessage(problem, `itens[${index}].quantidade`)
+                          }
+                        />
+                      </Grid>
+
+                      <Grid size={{ xs: 12 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Checkbox
+                              checked={item.brinde}
+                              onChange={(event) => {
+                                const checked = event.target.checked;
+                                updateItem(index, {
+                                  brinde: checked,
+                                  valorUnitario:
+                                    checked && item.tipoItem === 'AVULSO'
+                                      ? 0
+                                      : item.valorUnitario,
+                                });
+                              }}
+                              inputProps={{
+                                'aria-label': `Brinde do item ${itemLabel}`,
+                              }}
+                            />
+                            <Typography variant="body2">Brinde</Typography>
+                          </Box>
+
+                          <IconButton
+                            onClick={() => handleRemoveItem(index)}
+                            color="error"
+                            disabled={form.itens.length === 1 || isSubmitting}
+                            aria-label={`Remover item ${itemLabel}`}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                );
+              })}
+
+              <Button startIcon={<Add />} onClick={handleAddItem} variant="text">
+                Adicionar item
+              </Button>
+            </Stack>
+          </Box>
+
+          <TableContainer
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              borderRadius: 3,
+              overflowX: 'auto',
+            }}
+          >
+            <Table sx={{ minWidth: 920 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Tipo</TableCell>
+                  <TableCell>Produto / Item</TableCell>
+                  <TableCell>Valor unit.</TableCell>
+                  <TableCell>Qtd</TableCell>
+                  <TableCell>Brinde</TableCell>
+                  <TableCell width={56} />
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {form.itens.map((item, index) => {
+                  const itemLabel =
+                    item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
+
+                  return (
+                    <TableRow key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}>
+                      <TableCell sx={{ verticalAlign: 'top', minWidth: 150 }}>
+                        <TextField
+                          select
+                          fullWidth
+                          size="small"
+                          label="Tipo"
+                          value={item.tipoItem}
+                          onChange={(event) =>
+                            handleChangeItemType(
+                              index,
+                              event.target.value as SaleItemType,
+                            )
+                          }
+                        >
+                          <MenuItem value="CATALOGO">Catálogo</MenuItem>
+                          <MenuItem value="AVULSO">Avulso</MenuItem>
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ verticalAlign: 'top', minWidth: 300 }}>
+                        {item.tipoItem === 'CATALOGO' ? (
+                          <Autocomplete
+                            options={produtos}
+                            getOptionLabel={(option) =>
+                              `${option.nome} (${option.codigo})`
+                            }
+                            value={
+                              produtos.find(
+                                (produto) => produto.id === item.idProduto,
+                              ) ?? null
+                            }
+                            loading={isFetching}
+                            onChange={(_event, newValue) => {
+                              updateItem(index, {
+                                idProduto: newValue?.id ?? null,
+                                nomeProduto: newValue?.nome ?? '',
+                                valorUnitario: newValue ? newValue.valor / 100 : 0,
+                              });
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                size="small"
+                                label="Produto"
+                                error={Boolean(
+                                  itemErrors[index]?.idProduto ||
+                                    getFieldMessage(
+                                      problem,
+                                      `itens[${index}].idProduto`,
+                                    ),
+                                )}
+                                helperText={
+                                  itemErrors[index]?.idProduto ??
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].idProduto`,
+                                  )
+                                }
+                              />
+                            )}
+                          />
+                        ) : (
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="Nome do item"
+                            value={item.nomeProduto}
+                            onChange={(event) => {
+                              updateItem(index, {
+                                nomeProduto: event.target.value,
+                              });
+                            }}
+                            error={Boolean(
+                              itemErrors[index]?.nomeProduto ||
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].nomeProduto`,
+                                ),
+                            )}
+                            helperText={
+                              itemErrors[index]?.nomeProduto ??
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].nomeProduto`,
+                              )
+                            }
+                          />
                         )}
-                        helperText={
-                          itemErrors[index]?.valorUnitario ??
-                          getFieldMessage(problem, `itens[${index}].valorUnitario`)
-                        }
-                      />
-                    </Grid>
-                  </>
-                )}
+                      </TableCell>
 
-                <Grid size={{ xs: 4, sm: 1 }}>
-                  <TextField
-                    fullWidth
-                    label="Qtd"
-                    type="number"
-                    value={item.quantidade}
-                    onChange={(event) => {
-                      updateItem(index, {
-                        quantidade: Number(event.target.value),
-                      });
-                    }}
-                    error={Boolean(
-                      itemErrors[index]?.quantidade ||
-                        getFieldMessage(problem, `itens[${index}].quantidade`),
-                    )}
-                    helperText={
-                      itemErrors[index]?.quantidade ??
-                      getFieldMessage(problem, `itens[${index}].quantidade`)
-                    }
-                  />
-                </Grid>
+                      <TableCell sx={{ verticalAlign: 'top', minWidth: 170 }}>
+                        {item.tipoItem === 'CATALOGO' ? (
+                          <CurrencyField
+                            fullWidth
+                            label="Valor unit."
+                            value={
+                              item.brinde
+                                ? 0
+                                : getCatalogProductValue(item, produtos) / 100
+                            }
+                            onValueChange={() => undefined}
+                            name={`valorCatalogo-${index}`}
+                            disabled
+                          />
+                        ) : (
+                          <CurrencyField
+                            fullWidth
+                            label="Valor unit."
+                            value={item.brinde ? 0 : item.valorUnitario}
+                            onValueChange={(valorUnitario) => {
+                              updateItem(index, { valorUnitario });
+                            }}
+                            name={`valorUnitario-${index}`}
+                            disabled={item.brinde}
+                            error={Boolean(
+                              itemErrors[index]?.valorUnitario ||
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].valorUnitario`,
+                                ),
+                            )}
+                            helperText={
+                              itemErrors[index]?.valorUnitario ??
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].valorUnitario`,
+                              )
+                            }
+                          />
+                        )}
+                      </TableCell>
 
-                <Grid size={{ xs: 4, sm: 2 }}>
-                  <CurrencyField
-                    fullWidth
-                    label="Desconto"
-                    value={item.desconto}
-                    onValueChange={(desconto) => {
-                      updateItem(index, { desconto });
-                    }}
-                    name={`descontoItem-${index}`}
-                    error={Boolean(
-                      itemErrors[index]?.desconto ||
-                        getFieldMessage(problem, `itens[${index}].desconto`),
-                    )}
-                    helperText={
-                      itemErrors[index]?.desconto ??
-                      getFieldMessage(problem, `itens[${index}].desconto`)
-                    }
-                  />
-                </Grid>
+                      <TableCell sx={{ verticalAlign: 'top', minWidth: 100 }}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Qtd"
+                          type="number"
+                          value={item.quantidade}
+                          onChange={(event) => {
+                            updateItem(index, {
+                              quantidade: Number(event.target.value),
+                            });
+                          }}
+                          error={Boolean(
+                            itemErrors[index]?.quantidade ||
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].quantidade`,
+                              ),
+                          )}
+                          helperText={
+                            itemErrors[index]?.quantidade ??
+                            getFieldMessage(problem, `itens[${index}].quantidade`)
+                          }
+                        />
+                      </TableCell>
 
-                <Grid
-                  size={{ xs: 2, sm: 1 }}
-                  sx={{
-                    display: 'flex',
-                    justifyContent: { xs: 'flex-start', sm: 'center' },
-                    alignItems: 'center',
-                    minHeight: 56,
+                      <TableCell sx={{ verticalAlign: 'top', minWidth: 100 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1.25 }}>
+                          <Checkbox
+                            checked={item.brinde}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              updateItem(index, {
+                                brinde: checked,
+                                valorUnitario:
+                                  checked && item.tipoItem === 'AVULSO'
+                                    ? 0
+                                    : item.valorUnitario,
+                              });
+                            }}
+                            inputProps={{
+                              'aria-label': `Brinde do item ${itemLabel}`,
+                            }}
+                          />
+                        </Box>
+                      </TableCell>
+
+                      <TableCell sx={{ verticalAlign: 'top' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.75 }}>
+                          <IconButton
+                            onClick={() => handleRemoveItem(index)}
+                            color="error"
+                            disabled={form.itens.length === 1 || isSubmitting}
+                            aria-label={`Remover item ${itemLabel}`}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <Button startIcon={<Add />} onClick={handleAddItem} variant="text">
+                      Adicionar item
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+
+        <Box>
+          <SectionLabel>Desconto</SectionLabel>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 1.5,
+              alignItems: { xs: 'stretch', md: 'flex-start' },
+            }}
+          >
+            <ToggleButtonGroup
+              exclusive
+              value={form.descontoModo}
+              size="small"
+              onChange={(_event, newValue: DiscountMode | null) => {
+                if (!newValue) {
+                  return;
+                }
+                setForm((current) => ({
+                  ...current,
+                  descontoModo: newValue,
+                  desconto: current.descontoModo === newValue ? current.desconto : 0,
+                }));
+              }}
+              sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}
+            >
+              <ToggleButton value="VALOR">R$</ToggleButton>
+              <ToggleButton value="PERCENTUAL">%</ToggleButton>
+            </ToggleButtonGroup>
+
+            <Box sx={{ width: { xs: '100%', md: 220 } }}>
+              {form.descontoModo === 'VALOR' ? (
+                <CurrencyField
+                  fullWidth
+                  label="Desconto"
+                  value={form.desconto}
+                  onValueChange={(desconto) => {
+                    setForm((current) => ({
+                      ...current,
+                      desconto: Math.min(desconto, 999.99),
+                    }));
                   }}
-                >
-                  <IconButton
-                    onClick={() => handleRemoveItem(index)}
-                    color="error"
-                    disabled={form.itens.length === 1 || isSubmitting}
-                    aria-label={`Remover item ${itemLabel}`}
-                  >
-                    <Delete />
-                  </IconButton>
-                </Grid>
-              </Grid>
+                  name="desconto"
+                  error={Boolean(
+                    localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                  )}
+                  helperText={discountHelperText}
+                />
+              ) : (
+                <TextField
+                  fullWidth
+                  label="Desconto"
+                  type="number"
+                  value={form.desconto}
+                  onChange={(event) => {
+                    const desconto = Number(event.target.value);
+                    setForm((current) => ({
+                      ...current,
+                      desconto: Number.isNaN(desconto)
+                        ? 0
+                        : Math.min(desconto, 99),
+                    }));
+                  }}
+                  inputProps={{ min: 0, max: 99, step: 1 }}
+                  error={Boolean(
+                    localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                  )}
+                  helperText={discountHelperText}
+                />
+              )}
             </Box>
-          );
-        })}
 
-        <Button startIcon={<Add />} onClick={handleAddItem} variant="text" sx={{ mt: 1 }}>
-          Adicionar outro item
-        </Button>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ pt: { xs: 0, md: 1.75 } }}
+            >
+              {totals.saleDiscount > 0
+                ? `Desconto aplicado: ${formatCurrency(totals.saleDiscount)}`
+                : 'Sem desconto aplicado'}
+            </Typography>
+          </Box>
+        </Box>
       </DialogContent>
 
-      <DialogActions sx={{ display: 'block', p: 0 }}>
-        <Box sx={{ px: 3, pt: 2, pb: 1 }}>
-          <Grid container spacing={1}>
-            <Grid size={{ xs: 12, sm: 6 }} sx={{ ml: 'auto' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Subtotal ({form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'})
-                </Typography>
-                <Typography variant="body2">{formatCurrency(totals.subtotal)}</Typography>
-              </Box>
-
-              {totals.itemDiscounts > 0 ? (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Descontos nos itens
-                  </Typography>
-                  <Typography variant="body2" color="error.main">
-                    - {formatCurrency(totals.itemDiscounts)}
-                  </Typography>
-                </Box>
-              ) : null}
-
-              {totals.saleDiscount > 0 ? (
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Desconto na venda
-                  </Typography>
-                  <Typography variant="body2" color="error.main">
-                    - {formatCurrency(totals.saleDiscount)}
-                  </Typography>
-                </Box>
-              ) : null}
-
-              <Divider sx={{ my: 1 }} />
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Total
-                </Typography>
-                <Typography variant="h6" fontWeight={700} color="success.main">
-                  {formatCurrency(totals.total)}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+          bgcolor: 'background.default',
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            Subtotal ({form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'})
+          </Typography>
+          <Typography variant="h5" fontWeight={800} color="success.main">
+            {formatCurrency(totals.total)}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {totals.saleDiscount > 0
+              ? `${formatCurrency(totals.saleDiscount)} de desconto`
+              : 'Sem desconto'}
+          </Typography>
         </Box>
 
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            justifyContent: { xs: 'stretch', md: 'flex-end' },
+            flexDirection: { xs: 'column', sm: 'row' },
             gap: 1,
-            px: 3,
-            py: 2,
           }}
         >
           <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
@@ -720,14 +1106,14 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
             {isSubmitting
               ? 'Salvando...'
               : isOnline
-                ? 'Finalizar e Salvar'
+                ? 'Finalizar e salvar'
                 : 'Salvar offline'}
           </Button>
         </Box>
-      </DialogActions>
+      </Box>
 
       {isFetching ? (
-        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <Box sx={{ position: 'absolute', top: 18, right: 64 }}>
           <CircularProgress size={20} />
         </Box>
       ) : null}
