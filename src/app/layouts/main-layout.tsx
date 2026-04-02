@@ -53,6 +53,7 @@ import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 
 const DRAWER_WIDTH = 256;
+const MOBILE_APPBAR_MIN_HEIGHT = 96;
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -124,7 +125,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
       <Toolbar>
         <Box>
-          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 900 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: 'primary.main', fontWeight: 900 }}
+          >
             AKKAI 3D
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -369,42 +373,128 @@ export default function MainLayout({ children }: MainLayoutProps) {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <Toolbar
+        <Box
           sx={{
-            gap: 1.5,
-            py: { xs: 1, md: 0 },
-            minHeight: { xs: 72, md: 64 },
-            alignItems: { xs: 'flex-start', md: 'center' },
-            flexWrap: { xs: 'wrap', md: 'nowrap' },
+            display: { xs: 'block', md: 'none' },
+            px: 2,
+            py: 1,
           }}
         >
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={() => setMobileOpen((current) => !current)}
-            sx={{ display: { md: 'none' } }}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.5}
+            sx={{ minWidth: 0, flexWrap: 'nowrap' }}
           >
-            <MenuIcon />
-          </IconButton>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={() => setMobileOpen((current) => !current)}
+              sx={{ ml: -1, flexShrink: 0 }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          <Stack spacing={0.25} sx={{ minWidth: 0, flexGrow: 1, pr: { xs: 1, md: 0 } }}>
-            <Typography variant="h6" fontWeight={800} noWrap={false}>
+            <Typography
+              variant="subtitle1"
+              noWrap
+              sx={{ flexGrow: 1, minWidth: 0, fontWeight: 800 }}
+            >
               Painel Operacional
             </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ display: { xs: 'none', sm: 'block' } }}
+
+            <Chip
+              icon={isOnline ? <CloudQueue /> : <CloudOff />}
+              label=""
+              color={isOnline ? 'success' : 'warning'}
+              variant="outlined"
+              size="small"
+              sx={{
+                flexShrink: 0,
+                '& .MuiChip-label': { display: 'none' },
+                '& .MuiChip-icon': { mr: 0 },
+                width: 34,
+              }}
+            />
+
+            {pendingSalesCount > 0 ? (
+              <IconButton
+                color="inherit"
+                onClick={() => {
+                  void handleSyncPendingSales();
+                }}
+                disabled={!isOnline || isSyncingPendingSales}
+                size="small"
+                aria-label={
+                  isSyncingPendingSales
+                    ? 'Sincronizando vendas'
+                    : `Sincronizar ${pendingSalesCount} vendas`
+                }
+                sx={{ flexShrink: 0 }}
+              >
+                <Sync />
+              </IconButton>
+            ) : null}
+
+            <IconButton
+              color="inherit"
+              onClick={toggleColorMode}
+              aria-label={
+                mode === 'light'
+                  ? 'Ativar modo escuro'
+                  : 'Ativar modo claro'
+              }
+              sx={{ flexShrink: 0 }}
             >
-              Cadastre produtos e registre vendas com rapidez durante a operação.
+              {mode === 'light' ? <DarkMode /> : <LightMode />}
+            </IconButton>
+
+            <IconButton
+              onClick={() => openDialog(() => setSaleDialogOpen(true))}
+              aria-label="Nova venda"
+              sx={{
+                flexShrink: 0,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.dark' },
+              }}
+            >
+              <AddShoppingCart />
+            </IconButton>
+
+            <IconButton
+              color="inherit"
+              onClick={() => {
+                void logout();
+              }}
+              aria-label="Sair"
+              sx={{ flexShrink: 0 }}
+            >
+              <LogoutIcon />
+            </IconButton>
+          </Stack>
+        </Box>
+
+        <Toolbar
+          sx={{
+            display: { xs: 'none', md: 'flex' },
+            gap: 1.5,
+            py: 0,
+            minHeight: 64,
+            alignItems: 'center',
+          }}
+        >
+          <Stack spacing={0.25} sx={{ minWidth: 0, flexGrow: 1 }}>
+            <Typography variant="h6" fontWeight={800}>
+              Painel Operacional
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Cadastre produtos e registre vendas com rapidez durante a
+              operação.
             </Typography>
           </Stack>
 
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}
-          >
+          <Stack direction="row" spacing={1} alignItems="center" useFlexGap>
             <Chip
               icon={isOnline ? <CloudQueue /> : <CloudOff />}
               label={isOnline ? 'Online' : 'Offline'}
@@ -430,66 +520,49 @@ export default function MainLayout({ children }: MainLayoutProps) {
             ) : null}
           </Stack>
 
-          <Stack
-            spacing={0}
-            sx={{
-              display: { xs: 'none', lg: 'flex' },
-              minWidth: 0,
-              ml: 'auto',
-            }}
-          >
+          <Stack spacing={0} sx={{ minWidth: 0 }}>
             <Typography variant="body2" fontWeight={700} noWrap>
               {user?.name ?? 'Usuário'}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              {user?.email ?? ''}
+              {user?.email ?? 'sem e-mail'}
             </Typography>
           </Stack>
 
           <IconButton
             color="inherit"
             onClick={toggleColorMode}
-            aria-label={mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            aria-label={
+              mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'
+            }
           >
             {mode === 'light' ? <DarkMode /> : <LightMode />}
           </IconButton>
 
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              justifyContent: { xs: 'space-between', sm: 'flex-end' },
-              alignItems: 'center',
+          <Button
+            variant="contained"
+            startIcon={<AddShoppingCart />}
+            onClick={() => openDialog(() => setSaleDialogOpen(true))}
+          >
+            Nova venda
+          </Button>
+          <Button
+            variant="text"
+            color="inherit"
+            startIcon={<LogoutIcon />}
+            onClick={() => {
+              void logout();
             }}
           >
-            <Button
-              variant="contained"
-              startIcon={<AddShoppingCart />}
-              size="small"
-              onClick={() => openDialog(() => setSaleDialogOpen(true))}
-              sx={{ flexShrink: 0 }}
-            >
-              Nova venda
-            </Button>
-
-            <Button
-              variant="text"
-              color="inherit"
-              startIcon={<LogoutIcon />}
-              size="small"
-              onClick={() => {
-                void logout();
-              }}
-              sx={{ flexShrink: 0 }}
-            >
-              Sair
-            </Button>
-          </Stack>
+            Sair
+          </Button>
         </Toolbar>
       </AppBar>
 
-      <Box component="nav" sx={{ width: { xs: 0, md: DRAWER_WIDTH }, flexShrink: 0 }}>
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+      >
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -514,8 +587,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
-              borderRight: '1px solid',
-              borderColor: 'divider',
             },
           }}
         >
@@ -527,30 +598,32 @@ export default function MainLayout({ children }: MainLayoutProps) {
         component="main"
         sx={{
           flexGrow: 1,
-          minWidth: 0,
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          overflowX: 'hidden',
-          px: { xs: 1.5, sm: 2, md: 4 },
-          py: { xs: 2, md: 3 },
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 120, sm: 124, md: 80 } }} />
-        {children}
+        <Box sx={{ height: { xs: `${MOBILE_APPBAR_MIN_HEIGHT}px`, md: 64 } }} />
+        <Box sx={{ p: { xs: 2, md: 4 } }}>{children}</Box>
       </Box>
 
-      <NewSaleDialog open={saleDialogOpen} onClose={() => setSaleDialogOpen(false)} />
       <NewProductDialog
         open={productDialogOpen}
         onClose={() => setProductDialogOpen(false)}
       />
-      <NewWalletDialog open={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} />
+      <NewCategoryDialog
+        open={categoryDialogOpen}
+        onClose={() => setCategoryDialogOpen(false)}
+      />
       <NewExpenseDialog
         open={expenseDialogOpen}
         onClose={() => setExpenseDialogOpen(false)}
       />
-      <NewCategoryDialog
-        open={categoryDialogOpen}
-        onClose={() => setCategoryDialogOpen(false)}
+      <NewSaleDialog
+        open={saleDialogOpen}
+        onClose={() => setSaleDialogOpen(false)}
+      />
+      <NewWalletDialog
+        open={walletDialogOpen}
+        onClose={() => setWalletDialogOpen(false)}
       />
       <GlobalFeedbackSnackbar />
     </Box>
