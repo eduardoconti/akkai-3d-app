@@ -19,8 +19,34 @@ import {
   type LoginInput,
 } from '@/features/auth/api/auth-api';
 
+const AUTH_SNAPSHOT_KEY = 'akkai-auth-snapshot';
+
 interface AuthProviderProps {
   children: ReactNode;
+}
+
+function readUserSnapshot(): AuthUser | null {
+  const snapshot = window.localStorage.getItem(AUTH_SNAPSHOT_KEY);
+
+  if (!snapshot) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(snapshot) as AuthUser;
+  } catch {
+    window.localStorage.removeItem(AUTH_SNAPSHOT_KEY);
+    return null;
+  }
+}
+
+function persistUserSnapshot(user: AuthUser | null) {
+  if (!user) {
+    window.localStorage.removeItem(AUTH_SNAPSHOT_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(AUTH_SNAPSHOT_KEY, JSON.stringify(user));
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -31,13 +57,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const authenticatedUser = await me();
       setUser(authenticatedUser);
+      persistUserSnapshot(authenticatedUser);
       return authenticatedUser;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
 
       if (problem.status === 401) {
         setUser(null);
+        persistUserSnapshot(null);
         return null;
+      }
+
+      if (problem.status === 0) {
+        const snapshot = readUserSnapshot();
+
+        if (snapshot) {
+          setUser(snapshot);
+          return snapshot;
+        }
       }
 
       throw error;
@@ -56,24 +93,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
     void bootstrapAuth();
   }, [loadCurrentUser]);
 
-  const login = useCallback(
-    async (input: LoginInput) => {
-      await loginRequest(input);
-      const authenticatedUser = await me();
-      setUser(authenticatedUser);
-      return authenticatedUser;
-    },
-    [],
-  );
+  const login = useCallback(async (input: LoginInput) => {
+    await loginRequest(input);
+    const authenticatedUser = await me();
+    setUser(authenticatedUser);
+    persistUserSnapshot(authenticatedUser);
+    return authenticatedUser;
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
       await refreshRequest();
       const authenticatedUser = await me();
       setUser(authenticatedUser);
+      persistUserSnapshot(authenticatedUser);
       return authenticatedUser;
-    } catch {
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const snapshot = readUserSnapshot();
+
+        if (snapshot) {
+          setUser(snapshot);
+          return snapshot;
+        }
+      }
+
       setUser(null);
+      persistUserSnapshot(null);
       return null;
     }
   }, []);
@@ -83,6 +131,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await logoutRequest();
     } finally {
       setUser(null);
+      persistUserSnapshot(null);
     }
   }, []);
 

@@ -8,6 +8,7 @@ export {
   ApiProblemError,
   getProblemDetailsFromError,
 } from './lib/api/http-client';
+export { useOnlineStatus } from './lib/offline/use-online-status';
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
 export type { ActionResult } from './lib/types/action-result';
 export type {

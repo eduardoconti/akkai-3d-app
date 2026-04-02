@@ -34,6 +34,7 @@ import {
   formatCurrency,
   getFieldMessage,
   useFeedbackStore,
+  useOnlineStatus,
   type MeioPagamento,
   type ProblemDetails,
   type TipoVenda,
@@ -53,6 +54,7 @@ function getCatalogProductValue(
 }
 
 export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
+  const isOnline = useOnlineStatus();
   const {
     fetchErrorMessage: productFetchErrorMessage,
     fetchProdutos,
@@ -104,6 +106,10 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       }));
     }
   }, [open, carteiras, form.idCarteira]);
+
+  useEffect(() => {
+    window.__AKKAI_PRODUCTS__ = produtos;
+  }, [produtos]);
 
   const totals = useMemo(() => {
     let subtotal = 0;
@@ -265,6 +271,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       return;
     }
 
+    if (result.data.id < 0) {
+      showSuccess('Venda salva offline. Sincronize quando a internet voltar.');
+      handleClose();
+      return;
+    }
+
     await fetchVendas();
     showSuccess('Venda cadastrada com sucesso.');
     handleClose();
@@ -283,6 +295,13 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
 
       <DialogContent dividers>
         <FormFeedbackAlert message={globalMessage} />
+
+        {!isOnline ? (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Você está offline. As vendas serão salvas localmente e poderão ser
+            sincronizadas depois.
+          </Alert>
+        ) : null}
 
         {form.tipo === 'FEIRA' && feiras.length === 0 ? (
           <Alert severity="info" sx={{ mb: 3 }}>
@@ -432,8 +451,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
         ) : null}
 
         {form.itens.map((item, index) => {
-          const itemLabel =
-            item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
+          const itemLabel = item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
 
           return (
             <Box
@@ -468,13 +486,10 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                     <Grid size={{ xs: 12, sm: 4 }}>
                       <Autocomplete
                         options={produtos}
-                        getOptionLabel={(option) =>
-                          `${option.nome} (${option.codigo})`
-                        }
+                        getOptionLabel={(option) => `${option.nome} (${option.codigo})`}
                         value={
-                          produtos.find(
-                            (produto) => produto.id === item.idProduto,
-                          ) ?? null
+                          produtos.find((produto) => produto.id === item.idProduto) ??
+                          null
                         }
                         loading={isFetching}
                         onChange={(_event, newValue) => {
@@ -490,17 +505,14 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                             label="Produto"
                             error={Boolean(
                               itemErrors[index]?.idProduto ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              ),
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].idProduto`,
+                                ),
                             )}
                             helperText={
                               itemErrors[index]?.idProduto ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              )
+                              getFieldMessage(problem, `itens[${index}].idProduto`)
                             }
                           />
                         )}
@@ -532,17 +544,11 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                         }}
                         error={Boolean(
                           itemErrors[index]?.nomeProduto ||
-                          getFieldMessage(
-                            problem,
-                            `itens[${index}].nomeProduto`,
-                          ),
+                            getFieldMessage(problem, `itens[${index}].nomeProduto`),
                         )}
                         helperText={
                           itemErrors[index]?.nomeProduto ??
-                          getFieldMessage(
-                            problem,
-                            `itens[${index}].nomeProduto`,
-                          )
+                          getFieldMessage(problem, `itens[${index}].nomeProduto`)
                         }
                       />
                     </Grid>
@@ -558,17 +564,11 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                         name={`valorUnitario-${index}`}
                         error={Boolean(
                           itemErrors[index]?.valorUnitario ||
-                          getFieldMessage(
-                            problem,
-                            `itens[${index}].valorUnitario`,
-                          ),
+                            getFieldMessage(problem, `itens[${index}].valorUnitario`),
                         )}
                         helperText={
                           itemErrors[index]?.valorUnitario ??
-                          getFieldMessage(
-                            problem,
-                            `itens[${index}].valorUnitario`,
-                          )
+                          getFieldMessage(problem, `itens[${index}].valorUnitario`)
                         }
                       />
                     </Grid>
@@ -588,7 +588,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                     }}
                     error={Boolean(
                       itemErrors[index]?.quantidade ||
-                      getFieldMessage(problem, `itens[${index}].quantidade`),
+                        getFieldMessage(problem, `itens[${index}].quantidade`),
                     )}
                     helperText={
                       itemErrors[index]?.quantidade ??
@@ -608,7 +608,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                     name={`descontoItem-${index}`}
                     error={Boolean(
                       itemErrors[index]?.desconto ||
-                      getFieldMessage(problem, `itens[${index}].desconto`),
+                        getFieldMessage(problem, `itens[${index}].desconto`),
                     )}
                     helperText={
                       itemErrors[index]?.desconto ??
@@ -640,12 +640,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
           );
         })}
 
-        <Button
-          startIcon={<Add />}
-          onClick={handleAddItem}
-          variant="text"
-          sx={{ mt: 1 }}
-        >
+        <Button startIcon={<Add />} onClick={handleAddItem} variant="text" sx={{ mt: 1 }}>
           Adicionar outro item
         </Button>
       </DialogContent>
@@ -654,30 +649,15 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
         <Box sx={{ px: 3, pt: 2, pb: 1 }}>
           <Grid container spacing={1}>
             <Grid size={{ xs: 12, sm: 6 }} sx={{ ml: 'auto' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  mb: 0.5,
-                }}
-              >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="body2" color="text.secondary">
-                  Subtotal ({form.itens.length}{' '}
-                  {form.itens.length === 1 ? 'item' : 'itens'})
+                  Subtotal ({form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'})
                 </Typography>
-                <Typography variant="body2">
-                  {formatCurrency(totals.subtotal)}
-                </Typography>
+                <Typography variant="body2">{formatCurrency(totals.subtotal)}</Typography>
               </Box>
 
               {totals.itemDiscounts > 0 ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    mb: 0.5,
-                  }}
-                >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography variant="body2" color="text.secondary">
                     Descontos nos itens
                   </Typography>
@@ -688,13 +668,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
               ) : null}
 
               {totals.saleDiscount > 0 ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    mb: 0.5,
-                  }}
-                >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                   <Typography variant="body2" color="text.secondary">
                     Desconto na venda
                   </Typography>
@@ -743,7 +717,11 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
             startIcon={<ShoppingCartCheckout />}
             disabled={isSubmitting || isFetching}
           >
-            {isSubmitting ? 'Salvando...' : 'Finalizar e Salvar'}
+            {isSubmitting
+              ? 'Salvando...'
+              : isOnline
+                ? 'Finalizar e Salvar'
+                : 'Salvar offline'}
           </Button>
         </Box>
       </DialogActions>
