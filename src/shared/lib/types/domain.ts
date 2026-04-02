@@ -51,6 +51,8 @@ export type CategoriaDespesa =
   | 'EVENTO'
   | 'TRANSPORTE'
   | 'OUTROS';
+export type OrdenacaoProduto = 'nome' | 'codigo';
+export type DirecaoOrdenacao = 'asc' | 'desc';
 
 export interface Carteira {
   id: number;
@@ -131,6 +133,8 @@ export interface PesquisaPaginada {
   pagina: number;
   tamanhoPagina: number;
   termo?: string;
+  ordenarPor?: OrdenacaoProduto;
+  direcao?: DirecaoOrdenacao;
 }
 
 export interface PesquisaPaginadaVendas extends PesquisaPaginada {

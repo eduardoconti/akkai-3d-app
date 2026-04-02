@@ -5,6 +5,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -21,7 +22,12 @@ import {
 import { useTheme, type Theme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import { useProductStore } from '../store/use-product-store';
-import { formatCurrency, type Produto } from '@/shared';
+import {
+  formatCurrency,
+  type DirecaoOrdenacao,
+  type OrdenacaoProduto,
+  type Produto,
+} from '@/shared';
 
 type StockState = {
   label: string;
@@ -110,13 +116,47 @@ export default function ProductsPage() {
           </Typography>
         </Box>
 
-        <TextField
-          label="Pesquisar produto"
-          placeholder="Nome, código ou categoria"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          sx={{ minWidth: { xs: '100%', md: 320 } }}
-        />
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <TextField
+            select
+            label="Ordenar por"
+            value={paginacao.ordenarPor ?? 'codigo'}
+            onChange={(event) => {
+              void fetchProdutos({
+                pagina: 1,
+                ordenarPor: event.target.value as OrdenacaoProduto,
+              });
+            }}
+            sx={{ minWidth: { xs: '100%', md: 180 } }}
+          >
+            <MenuItem value="codigo">Código</MenuItem>
+            <MenuItem value="nome">Nome</MenuItem>
+          </TextField>
+
+          <TextField
+            select
+            label="Direção"
+            value={paginacao.direcao ?? 'asc'}
+            onChange={(event) => {
+              void fetchProdutos({
+                pagina: 1,
+                direcao: event.target.value as DirecaoOrdenacao,
+              });
+            }}
+            sx={{ minWidth: { xs: '100%', md: 160 } }}
+          >
+            <MenuItem value="asc">Crescente</MenuItem>
+            <MenuItem value="desc">Decrescente</MenuItem>
+          </TextField>
+
+          <TextField
+            label="Pesquisar produto"
+            placeholder="Nome, código ou categoria"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            sx={{ minWidth: { xs: '100%', md: 320 } }}
+          />
+        </Stack>
       </Stack>
 
       {fetchErrorMessage ? (
