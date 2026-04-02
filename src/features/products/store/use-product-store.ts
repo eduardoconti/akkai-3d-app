@@ -10,6 +10,7 @@ import {
   createCategory,
   createProduct,
   getCategoryById,
+  listAllCategories,
   listCategories,
   listProducts,
   updateCategory,
@@ -32,14 +33,51 @@ const paginacaoInicial: PesquisaPaginada = {
   direcao: 'asc',
 };
 
+const paginacaoCategoriasInicial: PesquisaPaginada = {
+  pagina: 1,
+  tamanhoPagina: 10,
+  termo: '',
+};
+
+function paginarCategoriasEmMemoria(
+  categorias: Categoria[],
+  paginacao: PesquisaPaginada,
+): ResultadoPaginado<Categoria> {
+  const termo = paginacao.termo?.trim().toLowerCase();
+  const categoriasFiltradas = termo
+    ? categorias.filter((categoria) =>
+        categoria.nome.toLowerCase().includes(termo),
+      )
+    : categorias;
+
+  const categoriasOrdenadas = [...categoriasFiltradas].sort((a, b) =>
+    a.nome.localeCompare(b.nome),
+  );
+  const totalItens = categoriasOrdenadas.length;
+  const offset = (paginacao.pagina - 1) * paginacao.tamanhoPagina;
+
+  return {
+    itens: categoriasOrdenadas.slice(offset, offset + paginacao.tamanhoPagina),
+    pagina: paginacao.pagina,
+    tamanhoPagina: paginacao.tamanhoPagina,
+    totalItens,
+    totalPaginas: Math.max(1, Math.ceil(totalItens / paginacao.tamanhoPagina)),
+  };
+}
+
 interface ProductStoreState {
   produtos: Produto[];
   categorias: Categoria[];
+  categoriasPaginadas: Categoria[];
   paginacao: PesquisaPaginada;
+  paginacaoCategorias: PesquisaPaginada;
   totalItens: number;
   totalPaginas: number;
+  totalCategorias: number;
+  totalPaginasCategorias: number;
   isFetchingProducts: boolean;
   isFetchingCategories: boolean;
+  isFetchingCategoriesPage: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
@@ -47,6 +85,9 @@ interface ProductStoreState {
     query?: Partial<PesquisaPaginada>,
   ) => Promise<ResultadoPaginado<Produto> | void>;
   fetchCategorias: () => Promise<void>;
+  fetchCategoriasPaginadas: (
+    query?: Partial<PesquisaPaginada>,
+  ) => Promise<ResultadoPaginado<Categoria> | void>;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
   criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
   obterCategoriaPorId: (id: number) => Promise<Categoria>;
@@ -60,11 +101,16 @@ interface ProductStoreState {
 export const useProductStore = create<ProductStoreState>((set, get) => ({
   produtos: [],
   categorias: [],
+  categoriasPaginadas: [],
   paginacao: paginacaoInicial,
+  paginacaoCategorias: paginacaoCategoriasInicial,
   totalItens: 0,
   totalPaginas: 1,
+  totalCategorias: 0,
+  totalPaginasCategorias: 1,
   isFetchingProducts: false,
   isFetchingCategories: false,
+  isFetchingCategoriesPage: false,
   isSubmitting: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
@@ -127,7 +173,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   fetchCategorias: async () => {
     set({ isFetchingCategories: true, fetchErrorMessage: null });
     try {
-      const categorias = await listCategories();
+      const categorias = await listAllCategories();
       set({ categorias });
       await saveCachedCategories(categorias);
     } catch (error) {
@@ -145,6 +191,59 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetchingCategories: false });
+    }
+  },
+  fetchCategoriasPaginadas: async (query) => {
+    const currentPagination = get().paginacaoCategorias;
+    const nextPagination: PesquisaPaginada = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      termo: query?.termo ?? currentPagination.termo ?? '',
+    };
+
+    set({ isFetchingCategoriesPage: true, fetchErrorMessage: null });
+    try {
+      const response = await listCategories(nextPagination);
+      set({
+        categoriasPaginadas: response.itens,
+        paginacaoCategorias: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo ?? '',
+        },
+        totalCategorias: response.totalItens,
+        totalPaginasCategorias: response.totalPaginas,
+      });
+      return response;
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const categorias = get().categorias.length
+          ? get().categorias
+          : ((await getCachedCategories()) ?? []);
+
+        if (categorias.length > 0) {
+          const response = paginarCategoriasEmMemoria(categorias, nextPagination);
+          set({
+            categorias,
+            categoriasPaginadas: response.itens,
+            paginacaoCategorias: {
+              pagina: response.pagina,
+              tamanhoPagina: response.tamanhoPagina,
+              termo: nextPagination.termo ?? '',
+            },
+            totalCategorias: response.totalItens,
+            totalPaginasCategorias: response.totalPaginas,
+            fetchErrorMessage: null,
+          });
+          return response;
+        }
+      }
+
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetchingCategoriesPage: false });
     }
   },
   criarProduto: async (novoProduto) => {

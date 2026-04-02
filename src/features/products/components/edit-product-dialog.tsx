@@ -21,7 +21,7 @@ import {
   addProductStockEntry,
   addProductStockExit,
   getProductById,
-  listCategories,
+  listAllCategories,
   updateProduct,
 } from '../api/products-api';
 import { formatCategoryOptions } from '../utils/format-category-options';
@@ -186,7 +186,7 @@ export default function EditProductDialog({
       try {
         const [product, categories] = await Promise.all([
           getProductById(productId),
-          listCategories(),
+          listAllCategories(),
         ]);
 
         if (!active) {

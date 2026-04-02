@@ -22,8 +22,25 @@ export function listProducts(
   return httpClient.get<ResultadoPaginado<Produto>>('/produto', query);
 }
 
-export function listCategories(): Promise<Categoria[]> {
-  return httpClient.get<Categoria[]>('/produto/categorias');
+export function listCategories(
+  query: PesquisaPaginada,
+): Promise<ResultadoPaginado<Categoria>> {
+  return httpClient.get<ResultadoPaginado<Categoria>>('/produto/categorias', query);
+}
+
+export async function listAllCategories(): Promise<Categoria[]> {
+  const categorias: Categoria[] = [];
+  let pagina = 1;
+  let totalPaginas = 1;
+
+  do {
+    const resposta = await listCategories({ pagina, tamanhoPagina: 50 });
+    categorias.push(...resposta.itens);
+    totalPaginas = resposta.totalPaginas;
+    pagina += 1;
+  } while (pagina <= totalPaginas);
+
+  return categorias;
 }
 
 export function getCategoryById(id: number): Promise<Categoria> {

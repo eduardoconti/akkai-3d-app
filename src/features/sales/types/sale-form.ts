@@ -1,6 +1,7 @@
 import type { MeioPagamento, TipoVenda } from '@/shared/lib/types/domain';
 
 export type SaleItemType = 'CATALOGO' | 'AVULSO';
+export type DiscountMode = 'VALOR' | 'PERCENTUAL';
 
 export type SaleFormItem = {
   tipoItem: SaleItemType;
@@ -8,7 +9,7 @@ export type SaleFormItem = {
   nomeProduto: string;
   valorUnitario: number;
   quantidade: number;
-  desconto: number;
+  brinde: boolean;
 };
 
 export type SaleFormState = {
@@ -17,12 +18,14 @@ export type SaleFormState = {
   idFeira: number | '';
   idCarteira: number | '';
   desconto: number;
+  descontoModo: DiscountMode;
   itens: SaleFormItem[];
 };
 
 export type SaleFormErrors = {
   idFeira?: string;
   idCarteira?: string;
+  desconto?: string;
   itens?: string;
 };
 
@@ -31,7 +34,6 @@ export type SaleItemErrors = Array<{
   nomeProduto?: string;
   valorUnitario?: string;
   quantidade?: string;
-  desconto?: string;
 }>;
 
 export const emptySaleItem: SaleFormItem = {
@@ -40,7 +42,7 @@ export const emptySaleItem: SaleFormItem = {
   nomeProduto: '',
   valorUnitario: 0,
   quantidade: 1,
-  desconto: 0,
+  brinde: false,
 };
 
 export const initialSaleFormState: SaleFormState = {
@@ -49,5 +51,6 @@ export const initialSaleFormState: SaleFormState = {
   idFeira: '',
   idCarteira: '',
   desconto: 0,
+  descontoModo: 'VALOR',
   itens: [{ ...emptySaleItem }],
 };

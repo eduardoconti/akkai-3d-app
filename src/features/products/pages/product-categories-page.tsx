@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -12,7 +12,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
+  TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
@@ -34,19 +36,33 @@ function getParentCategoryName(category: Categoria, categories: Categoria[]) {
 export default function ProductCategoriesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { categorias, fetchCategorias, fetchErrorMessage, isFetchingCategories } =
-    useProductStore();
+  const {
+    categorias,
+    categoriasPaginadas,
+    fetchCategorias,
+    fetchCategoriasPaginadas,
+    fetchErrorMessage,
+    isFetchingCategoriesPage,
+    paginacaoCategorias,
+    totalCategorias,
+  } = useProductStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [searchInput, setSearchInput] = useState('');
 
   useEffect(() => {
     void fetchCategorias();
   }, [fetchCategorias]);
 
-  const categories = useMemo(
-    () => [...categorias].sort((a, b) => a.nome.localeCompare(b.nome)),
-    [categorias],
-  );
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [fetchCategoriasPaginadas, searchInput]);
 
   return (
     <Stack spacing={3}>
@@ -64,13 +80,23 @@ export default function ProductCategoriesPage() {
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova categoria
-        </Button>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <TextField
+            label="Pesquisar categoria"
+            placeholder="Nome da categoria"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            sx={{ minWidth: { xs: '100%', md: 320 } }}
+          />
+
+          <Button
+            variant="contained"
+            startIcon={<AddCircleOutline />}
+            onClick={() => setDialogOpen(true)}
+          >
+            Nova categoria
+          </Button>
+        </Stack>
       </Stack>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
@@ -78,12 +104,12 @@ export default function ProductCategoriesPage() {
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de categorias">
-            {isFetchingCategories ? (
+            {isFetchingCategoriesPage ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress />
               </Box>
-            ) : categories.length > 0 ? (
-              categories.map((category) => (
+            ) : categoriasPaginadas.length > 0 ? (
+              categoriasPaginadas.map((category) => (
                 <Box
                   key={category.id}
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
@@ -94,14 +120,14 @@ export default function ProductCategoriesPage() {
                       {category.nome}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Categoria superior: {getParentCategoryName(category, categories)}
+                      Categoria superior: {getParentCategoryName(category, categorias)}
                     </Typography>
                   </Stack>
                 </Box>
               ))
             ) : (
               <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma categoria cadastrada até o momento.
+                Nenhuma categoria encontrada para a pesquisa informada.
               </Box>
             )}
           </Stack>
@@ -119,14 +145,14 @@ export default function ProductCategoriesPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {isFetchingCategories ? (
+                {isFetchingCategoriesPage ? (
                   <TableRow>
                     <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ) : categories.length > 0 ? (
-                  categories.map((category) => (
+                ) : categoriasPaginadas.length > 0 ? (
+                  categoriasPaginadas.map((category) => (
                     <TableRow
                       key={category.id}
                       hover
@@ -135,14 +161,14 @@ export default function ProductCategoriesPage() {
                     >
                       <TableCell>{category.nome}</TableCell>
                       <TableCell>
-                        {getParentCategoryName(category, categories)}
+                        {getParentCategoryName(category, categorias)}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
-                      Nenhuma categoria cadastrada até o momento.
+                      Nenhuma categoria encontrada para a pesquisa informada.
                     </TableCell>
                   </TableRow>
                 )}
@@ -150,6 +176,35 @@ export default function ProductCategoriesPage() {
             </Table>
           </TableContainer>
         )}
+
+        <TablePagination
+          component="div"
+          count={totalCategorias}
+          page={Math.max(0, paginacaoCategorias.pagina - 1)}
+          onPageChange={(_event, newPage) => {
+            void fetchCategoriasPaginadas({ pagina: newPage + 1 });
+          }}
+          rowsPerPage={paginacaoCategorias.tamanhoPagina}
+          onRowsPerPageChange={(event) => {
+            void fetchCategoriasPaginadas({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="Itens por página"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+          }
+          sx={{
+            '.MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
+              gap: 1,
+              px: { xs: 1, sm: 2 },
+            },
+          }}
+        />
       </Paper>
 
       <NewCategoryDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
@@ -157,7 +212,10 @@ export default function ProductCategoriesPage() {
         open={editingCategoryId !== null}
         categoryId={editingCategoryId}
         onClose={() => setEditingCategoryId(null)}
-        onUpdated={fetchCategorias}
+        onUpdated={async () => {
+          await fetchCategorias();
+          await fetchCategoriasPaginadas();
+        }}
       />
     </Stack>
   );

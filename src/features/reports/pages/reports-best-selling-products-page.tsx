@@ -29,7 +29,7 @@ import {
   type BestSellingProductItem,
   type BestSellingProductsResponse,
 } from '@/features/reports/api/reports-api';
-import { listCategories } from '@/features/products/api/products-api';
+import { listAllCategories } from '@/features/products/api/products-api';
 import { listFairs } from '@/features/sales/api/sales-api';
 import {
   DatePickerField,
@@ -104,7 +104,7 @@ export default function ReportsBestSellingProductsPage() {
 
       try {
         const [categoriasResponse, feirasResponse] = await Promise.all([
-          listCategories(),
+          listAllCategories(),
           listFairs(),
         ]);
 
