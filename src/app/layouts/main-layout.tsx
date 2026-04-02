@@ -121,7 +121,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   };
 
   const drawerContent = (
-    <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.paper',
+      }}>
       <Toolbar>
         <Box>
           <Typography
@@ -136,7 +143,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </Box>
       </Toolbar>
       <Divider />
-      <List sx={{ px: 1.5, py: 2 }}>
+      <List sx={{ px: 1.5, py: 2, flexGrow: 1, overflowY: 'auto' }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             component={NavLink}
@@ -590,6 +597,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
+              bgcolor: 'background.paper',
+              height: '100%',
             },
           }}
         >
@@ -604,6 +613,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: DRAWER_WIDTH,
+              bgcolor: 'background.paper',
+              height: '100%',
             },
           }}
         >

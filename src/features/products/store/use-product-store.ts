@@ -28,6 +28,8 @@ const paginacaoInicial: PesquisaPaginada = {
   pagina: 1,
   tamanhoPagina: 10,
   termo: '',
+  ordenarPor: 'nome',
+  direcao: 'asc',
 };
 
 interface ProductStoreState {
@@ -72,6 +74,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       pagina: query?.pagina ?? currentPagination.pagina,
       tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
       termo: query?.termo ?? currentPagination.termo ?? '',
+      ordenarPor: query?.ordenarPor ?? currentPagination.ordenarPor ?? 'nome',
+      direcao: query?.direcao ?? currentPagination.direcao ?? 'asc',
     };
 
     set({ isFetchingProducts: true, fetchErrorMessage: null });
@@ -83,6 +87,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
           pagina: response.pagina,
           tamanhoPagina: response.tamanhoPagina,
           termo: nextPagination.termo ?? '',
+          ordenarPor: nextPagination.ordenarPor,
+          direcao: nextPagination.direcao,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
@@ -102,6 +108,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
               pagina: cachedResponse.pagina,
               tamanhoPagina: cachedResponse.tamanhoPagina,
               termo: nextPagination.termo ?? '',
+              ordenarPor: nextPagination.ordenarPor,
+              direcao: nextPagination.direcao,
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,
