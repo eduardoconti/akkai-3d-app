@@ -1,8 +1,9 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   AppBar,
   Box,
   Button,
+  Chip,
   Collapse,
   Divider,
   Drawer,
@@ -23,6 +24,8 @@ import {
   AttachMoney,
   Balance,
   Category as CategoryIcon,
+  CloudOff,
+  CloudQueue,
   DarkMode,
   ExpandLess,
   ExpandMore,
@@ -34,17 +37,19 @@ import {
   Menu as MenuIcon,
   PostAdd,
   ShoppingCart as SaleIcon,
+  Sync,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
-import { NewSaleDialog } from '@/features/sales';
-import { GlobalFeedbackSnackbar } from '@/shared';
+import { NewSaleDialog, useSaleStore } from '@/features/sales';
 import {
-  getActiveMenuStyles,
-  getActiveSubmenuStyles,
-} from '@/theme/theme';
+  GlobalFeedbackSnackbar,
+  useFeedbackStore,
+  useOnlineStatus,
+} from '@/shared';
+import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 
 const DRAWER_WIDTH = 256;
@@ -57,6 +62,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
   const { mode, toggleColorMode } = useThemeMode();
+  const isOnline = useOnlineStatus();
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const {
+    hydrateOfflineState,
+    isSyncingPendingSales,
+    pendingSalesCount,
+    sincronizarVendasPendentes,
+  } = useSaleStore();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -66,6 +79,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
+
+  useEffect(() => {
+    void hydrateOfflineState();
+  }, [hydrateOfflineState]);
 
   const productsSectionActive = useMemo(
     () => location.pathname.startsWith('/produtos'),
@@ -93,14 +110,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
     open();
   };
 
+  const handleSyncPendingSales = async () => {
+    const syncedCount = await sincronizarVendasPendentes();
+
+    if (syncedCount > 0) {
+      showSuccess(
+        `${syncedCount} ${syncedCount === 1 ? 'venda sincronizada' : 'vendas sincronizadas'} com sucesso.`,
+      );
+    }
+  };
+
   const drawerContent = (
     <Box sx={{ height: '100%', bgcolor: 'background.paper' }}>
       <Toolbar>
         <Box>
-          <Typography
-            variant="h6"
-            sx={{ color: 'primary.main', fontWeight: 900 }}
-          >
+          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 900 }}>
             AKKAI 3D
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -363,10 +387,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <MenuIcon />
           </IconButton>
 
-          <Stack
-            spacing={0.25}
-            sx={{ minWidth: 0, flexGrow: 1, pr: { xs: 1, md: 0 } }}
-          >
+          <Stack spacing={0.25} sx={{ minWidth: 0, flexGrow: 1, pr: { xs: 1, md: 0 } }}>
             <Typography variant="h6" fontWeight={800} noWrap={false}>
               Painel Operacional
             </Typography>
@@ -375,9 +396,38 @@ export default function MainLayout({ children }: MainLayoutProps) {
               color="text.secondary"
               sx={{ display: { xs: 'none', sm: 'block' } }}
             >
-              Cadastre produtos e registre vendas com rapidez durante a
-              operação.
+              Cadastre produtos e registre vendas com rapidez durante a operação.
             </Typography>
+          </Stack>
+
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}
+          >
+            <Chip
+              icon={isOnline ? <CloudQueue /> : <CloudOff />}
+              label={isOnline ? 'Online' : 'Offline'}
+              color={isOnline ? 'success' : 'warning'}
+              variant="outlined"
+            />
+
+            {pendingSalesCount > 0 ? (
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="small"
+                startIcon={<Sync />}
+                onClick={() => {
+                  void handleSyncPendingSales();
+                }}
+                disabled={!isOnline || isSyncingPendingSales}
+              >
+                {isSyncingPendingSales
+                  ? 'Sincronizando...'
+                  : `Sincronizar ${pendingSalesCount}`}
+              </Button>
+            ) : null}
           </Stack>
 
           <Stack
@@ -399,11 +449,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <IconButton
             color="inherit"
             onClick={toggleColorMode}
-            aria-label={
-              mode === 'light'
-                ? 'Ativar modo escuro'
-                : 'Ativar modo claro'
-            }
+            aria-label={mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
           >
             {mode === 'light' ? <DarkMode /> : <LightMode />}
           </IconButton>
@@ -443,10 +489,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </Toolbar>
       </AppBar>
 
-      <Box
-        component="nav"
-        sx={{ width: { xs: 0, md: DRAWER_WIDTH }, flexShrink: 0 }}
-      >
+      <Box component="nav" sx={{ width: { xs: 0, md: DRAWER_WIDTH }, flexShrink: 0 }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -491,22 +534,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
           py: { xs: 2, md: 3 },
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 88, sm: 96, md: 64 } }} />
+        <Toolbar sx={{ minHeight: { xs: 120, sm: 124, md: 80 } }} />
         {children}
       </Box>
 
-      <NewSaleDialog
-        open={saleDialogOpen}
-        onClose={() => setSaleDialogOpen(false)}
-      />
+      <NewSaleDialog open={saleDialogOpen} onClose={() => setSaleDialogOpen(false)} />
       <NewProductDialog
         open={productDialogOpen}
         onClose={() => setProductDialogOpen(false)}
       />
-      <NewWalletDialog
-        open={walletDialogOpen}
-        onClose={() => setWalletDialogOpen(false)}
-      />
+      <NewWalletDialog open={walletDialogOpen} onClose={() => setWalletDialogOpen(false)} />
       <NewExpenseDialog
         open={expenseDialogOpen}
         onClose={() => setExpenseDialogOpen(false)}

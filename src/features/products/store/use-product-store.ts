@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
+  getCachedCategories,
+  getCachedProducts,
+  saveCachedCategories,
+  saveCachedProducts,
+} from '@/shared/lib/offline/indexed-db';
+import {
   createCategory,
   createProduct,
   listCategories,
@@ -74,9 +80,30 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
       });
+      await saveCachedProducts(response);
       return response;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const cachedResponse = await getCachedProducts();
+
+        if (cachedResponse) {
+          set({
+            produtos: cachedResponse.itens,
+            paginacao: {
+              pagina: cachedResponse.pagina,
+              tamanhoPagina: cachedResponse.tamanhoPagina,
+              termo: nextPagination.termo ?? '',
+            },
+            totalItens: cachedResponse.totalItens,
+            totalPaginas: cachedResponse.totalPaginas,
+            fetchErrorMessage: null,
+          });
+          return cachedResponse;
+        }
+      }
+
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetchingProducts: false });
@@ -87,8 +114,19 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
     try {
       const categorias = await listCategories();
       set({ categorias });
+      await saveCachedCategories(categorias);
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const categorias = await getCachedCategories();
+
+        if (categorias) {
+          set({ categorias, fetchErrorMessage: null });
+          return;
+        }
+      }
+
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetchingCategories: false });

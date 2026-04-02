@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
+  addPendingSale,
+  getCachedFairs,
+  getCachedSales,
+  getCachedWallets,
+  listPendingSales,
+  removePendingSale,
+  saveCachedFairs,
+  saveCachedSales,
+  saveCachedWallets,
+} from '@/shared/lib/offline/indexed-db';
+import {
   createSale,
   listFairs,
   listSales,
@@ -12,6 +23,7 @@ import type {
   Feira,
   InserirVendaInput,
   PesquisaPaginadaVendas,
+  Produto,
   ResultadoPaginado,
   Venda,
 } from '@/shared/lib/types/domain';
@@ -22,6 +34,62 @@ const paginacaoInicial: PesquisaPaginadaVendas = {
   termo: '',
 };
 
+function getCatalogProductValue(
+  item: InserirVendaInput['itens'][number],
+  produtos: Produto[],
+) {
+  const product = produtos.find((current) => current.id === item.idProduto);
+  return product?.valor ?? 0;
+}
+
+function buildOfflineSale(
+  dados: InserirVendaInput,
+  produtos: Produto[],
+  feiras: Feira[],
+  carteiras: Carteira[],
+): Venda {
+  const saleId = -Date.now();
+  const createdAt = new Date().toISOString();
+  const feira = feiras.find((current) => current.id === dados.idFeira) ?? null;
+  const carteira =
+    carteiras.find((current) => current.id === dados.idCarteira) ?? null;
+
+  const itens = dados.itens.map((item, index) => {
+    const produto = produtos.find((current) => current.id === item.idProduto) ?? null;
+    const valorUnitario = item.idProduto
+      ? getCatalogProductValue(item, produtos)
+      : item.valorUnitario ?? 0;
+    const desconto = item.desconto ?? 0;
+
+    return {
+      id: saleId - index - 1,
+      idProduto: item.idProduto,
+      nomeProduto: item.nomeProduto?.trim() || produto?.nome || 'Item avulso',
+      quantidade: item.quantidade,
+      valorUnitario,
+      desconto,
+      valorTotal: Math.max(0, valorUnitario * item.quantidade - desconto),
+      produto,
+    };
+  });
+
+  const totalItens = itens.reduce((accumulator, item) => accumulator + item.valorTotal, 0);
+
+  return {
+    id: saleId,
+    dataInclusao: createdAt,
+    valorTotal: Math.max(0, totalItens - (dados.desconto ?? 0)),
+    tipo: dados.tipo,
+    meioPagamento: dados.meioPagamento,
+    desconto: dados.desconto ?? 0,
+    idFeira: dados.idFeira,
+    idCarteira: dados.idCarteira,
+    feira,
+    carteira,
+    itens,
+  };
+}
+
 interface SaleStoreState {
   vendas: Venda[];
   feiras: Feira[];
@@ -29,8 +97,10 @@ interface SaleStoreState {
   paginacao: PesquisaPaginadaVendas;
   totalItens: number;
   totalPaginas: number;
+  pendingSalesCount: number;
   isFetching: boolean;
   isSubmitting: boolean;
+  isSyncingPendingSales: boolean;
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
   fetchVendas: (
@@ -39,6 +109,8 @@ interface SaleStoreState {
   fetchFeiras: () => Promise<void>;
   fetchCarteiras: () => Promise<void>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
+  hydrateOfflineState: () => Promise<void>;
+  sincronizarVendasPendentes: () => Promise<number>;
   clearSubmitError: () => void;
 }
 
@@ -49,8 +121,10 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
+  pendingSalesCount: 0,
   isFetching: false,
   isSubmitting: false,
+  isSyncingPendingSales: false,
   fetchErrorMessage: null,
   submitErrorMessage: null,
   fetchVendas: async (query) => {
@@ -76,9 +150,31 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
       });
+      await saveCachedSales(response);
       return response;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const cachedResponse = await getCachedSales();
+
+        if (cachedResponse) {
+          set({
+            vendas: cachedResponse.itens,
+            paginacao: {
+              pagina: cachedResponse.pagina,
+              tamanhoPagina: cachedResponse.tamanhoPagina,
+              termo: nextPagination.termo ?? '',
+              tipo: nextPagination.tipo,
+            },
+            totalItens: cachedResponse.totalItens,
+            totalPaginas: cachedResponse.totalPaginas,
+            fetchErrorMessage: null,
+          });
+          return cachedResponse;
+        }
+      }
+
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetching: false });
@@ -89,8 +185,19 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     try {
       const feiras = await listFairs();
       set({ feiras });
+      await saveCachedFairs(feiras);
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const feiras = await getCachedFairs();
+
+        if (feiras) {
+          set({ feiras, fetchErrorMessage: null });
+          return;
+        }
+      }
+
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetching: false });
@@ -101,8 +208,19 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     try {
       const carteiras = await listWallets();
       set({ carteiras });
+      await saveCachedWallets(carteiras);
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const carteiras = await getCachedWallets();
+
+        if (carteiras) {
+          set({ carteiras, fetchErrorMessage: null });
+          return;
+        }
+      }
+
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetching: false });
@@ -115,10 +233,68 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       return { success: true, data: venda };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
+
+      if (problem.status === 0) {
+        const localSale = buildOfflineSale(
+          dados,
+          (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] }).__AKKAI_PRODUCTS__ ?? [],
+          get().feiras,
+          get().carteiras,
+        );
+
+        await addPendingSale({
+          id: window.crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          payload: dados,
+        });
+
+        set((current) => ({
+          pendingSalesCount: current.pendingSalesCount + 1,
+          submitErrorMessage: null,
+        }));
+
+        return { success: true, data: localSale };
+      }
+
       set({ submitErrorMessage: problem.detail });
       return { success: false, problem };
     } finally {
       set({ isSubmitting: false });
+    }
+  },
+  hydrateOfflineState: async () => {
+    const pendingSales = await listPendingSales();
+    set({ pendingSalesCount: pendingSales.length });
+  },
+  sincronizarVendasPendentes: async () => {
+    set({ isSyncingPendingSales: true, fetchErrorMessage: null });
+
+    try {
+      const pendingSales = await listPendingSales();
+      let syncedCount = 0;
+
+      for (const pendingSale of pendingSales) {
+        try {
+          await createSale(pendingSale.payload);
+          await removePendingSale(pendingSale.id);
+          syncedCount += 1;
+        } catch (error) {
+          const problem = getProblemDetailsFromError(error);
+          set({ fetchErrorMessage: problem.detail });
+          break;
+        }
+      }
+
+      const remainingSales = await listPendingSales();
+      set({ pendingSalesCount: remainingSales.length });
+
+      if (syncedCount > 0) {
+        await get().fetchVendas({ pagina: 1 });
+      }
+
+      return syncedCount;
+    } finally {
+      set({ isSyncingPendingSales: false });
     }
   },
   clearSubmitError: () => {
