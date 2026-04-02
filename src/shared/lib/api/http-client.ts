@@ -78,12 +78,12 @@ function buildProblemFromResponse(
 
 export async function checkApiConnectivity(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       credentials: 'include',
     });
 
-    return response.status < 500;
+    return response.ok;
   } catch {
     return false;
   }

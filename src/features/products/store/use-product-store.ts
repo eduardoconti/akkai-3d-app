@@ -9,8 +9,10 @@ import {
 import {
   createCategory,
   createProduct,
+  getCategoryById,
   listCategories,
   listProducts,
+  updateCategory,
   type CategoriaInput,
 } from '@/features/products/api/products-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
@@ -45,6 +47,11 @@ interface ProductStoreState {
   fetchCategorias: () => Promise<void>;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
   criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
+  obterCategoriaPorId: (id: number) => Promise<Categoria>;
+  atualizarCategoria: (
+    id: number,
+    categoria: CategoriaInput,
+  ) => Promise<ActionResult<Categoria>>;
   clearSubmitError: () => void;
 }
 
@@ -150,6 +157,20 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
     try {
       const categoria = await createCategory(novaCategoria);
       return { success: true, data: categoria };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  obterCategoriaPorId: async (id) => getCategoryById(id),
+  atualizarCategoria: async (id, categoria) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const categoriaAtualizada = await updateCategory(id, categoria);
+      return { success: true, data: categoriaAtualizada };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });

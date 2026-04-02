@@ -26,6 +26,10 @@ export function listCategories(): Promise<Categoria[]> {
   return httpClient.get<Categoria[]>('/produto/categorias');
 }
 
+export function getCategoryById(id: number): Promise<Categoria> {
+  return httpClient.get<Categoria>(`/produto/categorias/${id}`);
+}
+
 export function getProductById(id: number): Promise<DetalheProduto> {
   return httpClient.get<DetalheProduto>(`/produto/${id}`);
 }
@@ -54,4 +58,11 @@ export function addProductStockExit(
 
 export function createCategory(input: CategoriaInput): Promise<Categoria> {
   return httpClient.post<Categoria>('/produto/categorias', input);
+}
+
+export function updateCategory(
+  id: number,
+  input: CategoriaInput,
+): Promise<Categoria> {
+  return httpClient.put<Categoria>(`/produto/categorias/${id}`, input);
 }
