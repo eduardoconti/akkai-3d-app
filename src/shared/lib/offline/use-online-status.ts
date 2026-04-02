@@ -1,58 +1,114 @@
-import { useEffect, useRef, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { checkApiConnectivity } from '@/shared/lib/api/http-client';
 
 function getNavigatorOnlineState() {
   return typeof window === 'undefined' ? true : window.navigator.onLine;
 }
 
-export function useOnlineStatus() {
-  const [isOnline, setIsOnline] = useState(false);
-  const isMountedRef = useRef(true);
+type Listener = () => void;
 
-  useEffect(() => {
-    isMountedRef.current = true;
+let currentStatus = false;
+let pollingIntervalId: number | null = null;
+const listeners = new Set<Listener>();
+let initialized = false;
+let handleOnlineRef: (() => void) | null = null;
+let handleOfflineRef: (() => void) | null = null;
 
-    const updateApiStatus = async () => {
-      if (!getNavigatorOnlineState()) {
-        if (isMountedRef.current) {
-          setIsOnline(false);
-        }
-        return;
-      }
+function notifyListeners() {
+  listeners.forEach((listener) => listener());
+}
 
-      const apiReachable = await checkApiConnectivity();
+async function updateApiStatus() {
+  if (!getNavigatorOnlineState()) {
+    if (currentStatus !== false) {
+      currentStatus = false;
+      notifyListeners();
+    }
+    return;
+  }
 
-      if (isMountedRef.current) {
-        setIsOnline(apiReachable);
-      }
-    };
+  const apiReachable = await checkApiConnectivity();
 
-    const handleOnline = () => {
-      void updateApiStatus();
-    };
+  if (currentStatus !== apiReachable) {
+    currentStatus = apiReachable;
+    notifyListeners();
+  }
+}
 
-    const handleOffline = () => {
-      setIsOnline(false);
-    };
+function startMonitoring() {
+  if (initialized || typeof window === 'undefined') {
+    return;
+  }
 
+  initialized = true;
+
+  handleOnlineRef = () => {
     void updateApiStatus();
+  };
 
-    const intervalId = window.setInterval(() => {
-      void updateApiStatus();
-    }, 3000);
+  handleOfflineRef = () => {
+    if (currentStatus !== false) {
+      currentStatus = false;
+      notifyListeners();
+    }
+  };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('focus', handleOnline);
+  void updateApiStatus();
 
-    return () => {
-      isMountedRef.current = false;
-      window.clearInterval(intervalId);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('focus', handleOnline);
-    };
-  }, []);
+  pollingIntervalId = window.setInterval(() => {
+    void updateApiStatus();
+  }, 3000);
 
-  return isOnline;
+  window.addEventListener('online', handleOnlineRef);
+  window.addEventListener('offline', handleOfflineRef);
+  window.addEventListener('focus', handleOnlineRef);
+}
+
+function stopMonitoring() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  if (pollingIntervalId !== null) {
+    window.clearInterval(pollingIntervalId);
+    pollingIntervalId = null;
+  }
+
+  if (handleOnlineRef) {
+    window.removeEventListener('online', handleOnlineRef);
+    window.removeEventListener('focus', handleOnlineRef);
+  }
+
+  if (handleOfflineRef) {
+    window.removeEventListener('offline', handleOfflineRef);
+  }
+
+  handleOnlineRef = null;
+  handleOfflineRef = null;
+  initialized = false;
+}
+
+function subscribe(listener: Listener) {
+  startMonitoring();
+  listeners.add(listener);
+
+  return () => {
+    listeners.delete(listener);
+
+    if (listeners.size === 0) {
+      stopMonitoring();
+    }
+  };
+}
+
+function getSnapshot() {
+  return currentStatus;
+}
+
+function getServerSnapshot() {
+  return true;
+}
+
+export function useOnlineStatus() {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

@@ -8,7 +8,7 @@ import {
 import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
 import { FinanceExpensesPage, FinanceWalletsPage } from '@/features/finance';
-import { ProductsPage } from '@/features/products';
+import { ProductCategoriesPage, ProductsPage } from '@/features/products';
 import {
   ReportsBestSellingProductsPage,
   ReportsSummaryPage,
@@ -35,6 +35,7 @@ function App() {
             <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
             <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
+            <Route path="/produtos/categorias" element={<ProductCategoriesPage />} />
             <Route
               path="/relatorios/produtos-mais-vendidos"
               element={<ReportsBestSellingProductsPage />}

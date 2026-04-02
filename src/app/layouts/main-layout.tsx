@@ -32,7 +32,6 @@ import {
   FormatListBulleted,
   Inventory as ProductIcon,
   LightMode,
-  LocalFireDepartment,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   PostAdd,
@@ -176,17 +175,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/produtos"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  '&.active': getActiveSubmenuStyles(theme),
+                  "&.active": getActiveSubmenuStyles(theme),
                 })}
               >
                 <ListItemIcon>
                   <FormatListBulleted fontSize="small" />
                 </ListItemIcon>
-                <ListItemText primary="Listar" />
+                <ListItemText primary="Produtos" />
               </ListItemButton>
             </ListItem>
 
@@ -201,6 +201,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <PostAdd fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Novo produto" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/produtos/categorias"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  "&.active": getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemIcon>
+                  <FormatListBulleted fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Categorias" />
               </ListItemButton>
             </ListItem>
 
@@ -249,7 +266,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 })}
               >
                 <ListItemIcon>
-                  <Balance fontSize="small" />
+                  <FormatListBulleted fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Carteiras" />
               </ListItemButton>
@@ -280,7 +297,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 })}
               >
                 <ListItemIcon>
-                  <AttachMoney fontSize="small" />
+                  <FormatListBulleted fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Despesas" />
               </ListItemButton>
@@ -331,7 +348,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 })}
               >
                 <ListItemIcon>
-                  <LocalFireDepartment fontSize="small" />
+                  <FormatListBulleted fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Mais vendidos" />
               </ListItemButton>
