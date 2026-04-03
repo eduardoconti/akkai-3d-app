@@ -54,8 +54,11 @@ function getPaymentMethodLabel(meioPagamento: string): string {
       return 'Cartão débito';
     case 'CRE':
       return 'Cartão crédito';
-    default:
+
+    case 'PIX':
       return 'Pix';
+    default:
+      return 'Cartão débito';
   }
 }
 
@@ -150,7 +153,9 @@ export default function FinanceExpensesPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -243,8 +248,12 @@ export default function FinanceExpensesPage() {
                         {formatApiDateToDisplay(despesa.dataLancamento)}
                       </TableCell>
                       <TableCell>{despesa.descricao}</TableCell>
-                      <TableCell>{getExpenseCategoryLabel(despesa.categoria)}</TableCell>
-                      <TableCell>{getPaymentMethodLabel(despesa.meioPagamento)}</TableCell>
+                      <TableCell>
+                        {getExpenseCategoryLabel(despesa.categoria)}
+                      </TableCell>
+                      <TableCell>
+                        {getPaymentMethodLabel(despesa.meioPagamento)}
+                      </TableCell>
                       <TableCell>{despesa.carteira?.nome ?? '-'}</TableCell>
                       <TableCell
                         align="right"
@@ -296,7 +305,10 @@ export default function FinanceExpensesPage() {
         />
       </Paper>
 
-      <NewExpenseDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <NewExpenseDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
     </Stack>
   );
 }
