@@ -272,22 +272,25 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
 
     try {
       const pendingSales = await listPendingSales();
-      let syncedCount = 0;
 
-      for (const pendingSale of pendingSales) {
-        try {
+      const results = await Promise.allSettled(
+        pendingSales.map(async (pendingSale) => {
           await createSale(pendingSale.payload);
           await removePendingSale(pendingSale.id);
-          syncedCount += 1;
-        } catch (error) {
-          const problem = getProblemDetailsFromError(error);
-          set({ fetchErrorMessage: problem.detail });
-          break;
-        }
-      }
+        }),
+      );
+
+      const syncedCount = results.filter((r) => r.status === 'fulfilled').length;
+      const failedCount = results.filter((r) => r.status === 'rejected').length;
 
       const remainingSales = await listPendingSales();
-      set({ pendingSalesCount: remainingSales.length });
+      set({
+        pendingSalesCount: remainingSales.length,
+        fetchErrorMessage:
+          failedCount > 0
+            ? `${failedCount} ${failedCount === 1 ? 'venda não pôde ser sincronizada' : 'vendas não puderam ser sincronizadas'}.`
+            : null,
+      });
 
       if (syncedCount > 0) {
         await get().fetchVendas({ pagina: 1 });
