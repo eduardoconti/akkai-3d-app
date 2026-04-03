@@ -55,9 +55,10 @@ function startMonitoring() {
 
   void updateApiStatus();
 
+  const THREE_MIN_MS = 3 * 60 * 1000;
   pollingIntervalId = window.setInterval(() => {
     void updateApiStatus();
-  }, 3000);
+  }, THREE_MIN_MS);
 
   window.addEventListener('online', handleOnlineRef);
   window.addEventListener('offline', handleOfflineRef);
