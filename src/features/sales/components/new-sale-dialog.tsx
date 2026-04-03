@@ -975,86 +975,112 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
 
         <Box>
           <SectionLabel>Desconto</SectionLabel>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 1.5,
-              alignItems: { xs: 'stretch', md: 'flex-start' },
-            }}
-          >
-            <ToggleButtonGroup
-              exclusive
-              value={form.descontoModo}
-              size="small"
-              onChange={(_event, newValue: DiscountMode | null) => {
-                if (!newValue) {
-                  return;
-                }
-                setForm((current) => ({
-                  ...current,
-                  descontoModo: newValue,
-                  desconto: current.descontoModo === newValue ? current.desconto : 0,
-                }));
-              }}
-              sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}
+          <Stack spacing={0.75} sx={{ maxWidth: { xs: '100%', md: 440 } }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontWeight: 600, pl: 0.5 }}
             >
-              <ToggleButton value="VALOR">R$</ToggleButton>
-              <ToggleButton value="PERCENTUAL">%</ToggleButton>
-            </ToggleButtonGroup>
+              Desconto
+            </Typography>
 
-            <Box sx={{ width: { xs: '100%', md: 220 } }}>
-              {form.descontoModo === 'VALOR' ? (
-                <CurrencyField
-                  fullWidth
-                  label="Desconto"
-                  value={form.desconto}
-                  onValueChange={(desconto) => {
-                    setForm((current) => ({
-                      ...current,
-                      desconto: Math.min(desconto, 999.99),
-                    }));
-                  }}
-                  name="desconto"
-                  error={Boolean(
-                    localErrors.desconto || getFieldMessage(problem, 'desconto'),
-                  )}
-                  helperText={discountHelperText}
-                />
-              ) : (
-                <TextField
-                  fullWidth
-                  label="Desconto"
-                  type="number"
-                  value={form.desconto}
-                  onChange={(event) => {
-                    const desconto = Number(event.target.value);
-                    setForm((current) => ({
-                      ...current,
-                      desconto: Number.isNaN(desconto)
-                        ? 0
-                        : Math.min(desconto, 99),
-                    }));
-                  }}
-                  inputProps={{ min: 0, max: 99, step: 1 }}
-                  error={Boolean(
-                    localErrors.desconto || getFieldMessage(problem, 'desconto'),
-                  )}
-                  helperText={discountHelperText}
-                />
-              )}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1,
+              }}
+            >
+              <ToggleButtonGroup
+                exclusive
+                value={form.descontoModo}
+                size="small"
+                onChange={(_event, newValue: DiscountMode | null) => {
+                  if (!newValue) {
+                    return;
+                  }
+                  setForm((current) => ({
+                    ...current,
+                    descontoModo: newValue,
+                    desconto: current.descontoModo === newValue ? current.desconto : 0,
+                  }));
+                }}
+                sx={{
+                  flexShrink: 0,
+                  '& .MuiToggleButton-root': {
+                    minWidth: { xs: 28, sm: 36 },
+                    px: { xs: 1, sm: 1.25 },
+                    height: 40,
+                  },
+                }}
+              >
+                <ToggleButton value="VALOR">R$</ToggleButton>
+                <ToggleButton value="PERCENTUAL">%</ToggleButton>
+              </ToggleButtonGroup>
+
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {form.descontoModo === 'VALOR' ? (
+                  <CurrencyField
+                    fullWidth
+                    size="small"
+                    placeholder="0,00"
+                    value={form.desconto}
+                    onValueChange={(desconto) => {
+                      setForm((current) => ({
+                        ...current,
+                        desconto: Math.min(desconto, 999.99),
+                      }));
+                    }}
+                    name="desconto"
+                    error={Boolean(
+                      localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                    )}
+                    inputProps={{
+                      'aria-label': 'Desconto em reais',
+                    }}
+                  />
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    placeholder="0"
+                    value={form.desconto}
+                    onChange={(event) => {
+                      const desconto = Number(event.target.value);
+                      setForm((current) => ({
+                        ...current,
+                        desconto: Number.isNaN(desconto)
+                          ? 0
+                          : Math.min(desconto, 99),
+                      }));
+                    }}
+                    inputProps={{
+                      min: 0,
+                      max: 99,
+                      step: 1,
+                      'aria-label': 'Desconto em percentual',
+                    }}
+                    error={Boolean(
+                      localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                    )}
+                  />
+                )}
+              </Box>
             </Box>
 
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ pt: { xs: 0, md: 1.75 } }}
-            >
+            {discountHelperText ? (
+              <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5 }}>
+                {discountHelperText}
+              </Typography>
+            ) : null}
+
+            <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
               {totals.saleDiscount > 0
                 ? `Desconto aplicado: ${formatCurrency(totals.saleDiscount)}`
                 : 'Sem desconto aplicado'}
             </Typography>
-          </Box>
+          </Stack>
         </Box>
       </DialogContent>
 
