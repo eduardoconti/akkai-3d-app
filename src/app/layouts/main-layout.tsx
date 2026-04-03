@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  Alert,
   AppBar,
   Box,
   Button,
@@ -13,6 +14,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Snackbar,
   Stack,
   Toolbar,
   Typography,
@@ -47,6 +49,7 @@ import {
   GlobalFeedbackSnackbar,
   useFeedbackStore,
   useOnlineStatus,
+  useSwUpdate,
 } from '@/shared';
 import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
@@ -63,6 +66,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { logout, user } = useAuth();
   const { mode, toggleColorMode } = useThemeMode();
   const isOnline = useOnlineStatus();
+  const { needsUpdate, update } = useSwUpdate();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const {
     hydrateOfflineState,
@@ -653,6 +657,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
         open={walletDialogOpen}
         onClose={() => setWalletDialogOpen(false)}
       />
+      <Snackbar open={needsUpdate} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert
+          severity="info"
+          action={
+            <Button color="inherit" size="small" onClick={update}>
+              Atualizar
+            </Button>
+          }
+        >
+          Nova versão disponível.
+        </Alert>
+      </Snackbar>
       <GlobalFeedbackSnackbar />
     </Box>
   );

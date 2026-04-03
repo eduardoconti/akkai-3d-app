@@ -9,6 +9,7 @@ export {
   getProblemDetailsFromError,
 } from './lib/api/http-client';
 export { useOnlineStatus } from './lib/offline/use-online-status';
+export { useSwUpdate } from './lib/offline/use-sw-update';
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
 export type { ActionResult } from './lib/types/action-result';
 export type {
