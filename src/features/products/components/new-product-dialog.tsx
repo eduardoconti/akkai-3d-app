@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Dialog,
@@ -47,6 +47,8 @@ export default function NewProductDialog({
 
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [form, setForm] = useState<ProductFormState>(initialProductFormState);
+  const [isSaving, setIsSaving] = useState(false);
+  const isSubmittingRef = useRef(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<ProductFormErrors>({});
 
@@ -57,6 +59,8 @@ export default function NewProductDialog({
     }
 
     setForm(initialProductFormState);
+    setIsSaving(false);
+    isSubmittingRef.current = false;
     setProblem(null);
     setLocalErrors({});
     clearSubmitError();
@@ -91,6 +95,8 @@ export default function NewProductDialog({
 
   const handleClose = () => {
     setForm(initialProductFormState);
+    setIsSaving(false);
+    isSubmittingRef.current = false;
     setProblem(null);
     setLocalErrors({});
     clearSubmitError();
@@ -98,6 +104,10 @@ export default function NewProductDialog({
   };
 
   const handleSubmit = async () => {
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     const validationErrors = validateForm();
     setLocalErrors(validationErrors);
     setProblem(null);
@@ -106,22 +116,32 @@ export default function NewProductDialog({
       return;
     }
 
-    const result = await criarProduto({
-      nome: form.nome.trim().toUpperCase(),
-      codigo: form.codigo.trim().toUpperCase(),
-      descricao: form.descricao.trim() || undefined,
-      idCategoria: form.idCategoria,
-      valor: Math.round(form.valor * 100),
-    });
+    isSubmittingRef.current = true;
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await criarProduto({
+        nome: form.nome.trim().toUpperCase(),
+        codigo: form.codigo.trim().toUpperCase(),
+        descricao: form.descricao.trim() || undefined,
+        estoqueMinimo:
+          form.estoqueMinimo === '' ? undefined : Number(form.estoqueMinimo),
+        idCategoria: form.idCategoria,
+        valor: Math.round(form.valor * 100),
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchProdutos();
+      showSuccess('Produto cadastrado com sucesso.');
+      handleClose();
+    } finally {
+      isSubmittingRef.current = false;
+      setIsSaving(false);
     }
-
-    await fetchProdutos();
-    showSuccess('Produto cadastrado com sucesso.');
-    handleClose();
   };
 
   const getErrorMessage = (field: keyof ProductFormErrors | 'descricao') =>
@@ -233,11 +253,30 @@ export default function NewProductDialog({
               helperText={getErrorMessage('valor')}
             />
           </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Estoque Minimo"
+              value={form.estoqueMinimo}
+              onChange={(event) => {
+                setForm((current) => ({
+                  ...current,
+                  estoqueMinimo:
+                    event.target.value === '' ? '' : Number(event.target.value),
+                }));
+              }}
+              error={Boolean(getErrorMessage('estoqueMinimo'))}
+              helperText={getErrorMessage('estoqueMinimo')}
+              inputProps={{ min: 0 }}
+            />
+          </Grid>
         </Grid>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleClose} color="inherit" disabled={isSubmitting || isSaving}>
           Cancelar
         </Button>
         <Button
@@ -245,9 +284,9 @@ export default function NewProductDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isSubmitting || isSaving}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar Produto'}
+          {isSubmitting || isSaving ? 'Salvando...' : 'Salvar Produto'}
         </Button>
       </DialogActions>
     </Dialog>
