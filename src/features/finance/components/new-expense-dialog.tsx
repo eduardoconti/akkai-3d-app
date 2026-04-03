@@ -173,7 +173,7 @@ export default function NewExpenseDialog({
                 textField: {
                   error: Boolean(
                     localErrors.dataLancamento ||
-                      getFieldMessage(problem, 'dataLancamento'),
+                    getFieldMessage(problem, 'dataLancamento'),
                   ),
                   helperText:
                     localErrors.dataLancamento ??
@@ -197,7 +197,8 @@ export default function NewExpenseDialog({
                 }))
               }
               error={Boolean(
-                localErrors.idCarteira || getFieldMessage(problem, 'idCarteira'),
+                localErrors.idCarteira ||
+                getFieldMessage(problem, 'idCarteira'),
               )}
               helperText={
                 localErrors.idCarteira ?? getFieldMessage(problem, 'idCarteira')
@@ -220,8 +221,12 @@ export default function NewExpenseDialog({
               onValueChange={(valor) =>
                 setForm((current) => ({ ...current, valor }))
               }
-              error={Boolean(localErrors.valor || getFieldMessage(problem, 'valor'))}
-              helperText={localErrors.valor ?? getFieldMessage(problem, 'valor')}
+              error={Boolean(
+                localErrors.valor || getFieldMessage(problem, 'valor'),
+              )}
+              helperText={
+                localErrors.valor ?? getFieldMessage(problem, 'valor')
+              }
             />
           </Grid>
 
@@ -280,10 +285,10 @@ export default function NewExpenseDialog({
                 }))
               }
             >
-              <MenuItem value="PIX">Pix</MenuItem>
-              <MenuItem value="DIN">Dinheiro</MenuItem>
-              <MenuItem value="DEB">Cartão débito</MenuItem>
               <MenuItem value="CRE">Cartão crédito</MenuItem>
+              <MenuItem value="DEB">Cartão débito</MenuItem>
+              <MenuItem value="DIN">Dinheiro</MenuItem>
+              <MenuItem value="PIX">Pix</MenuItem>
             </TextField>
           </Grid>
 
@@ -301,7 +306,8 @@ export default function NewExpenseDialog({
                 }))
               }
               error={Boolean(
-                localErrors.observacao || getFieldMessage(problem, 'observacao'),
+                localErrors.observacao ||
+                getFieldMessage(problem, 'observacao'),
               )}
               helperText={
                 localErrors.observacao ?? getFieldMessage(problem, 'observacao')

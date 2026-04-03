@@ -13,7 +13,13 @@ const DATABASE_VERSION = 1;
 const CACHE_STORE = 'cache';
 const PENDING_SALES_STORE = 'pending-sales';
 
-type CacheKey = 'products' | 'categories' | 'fairs' | 'wallets' | 'sales';
+type CacheKey =
+  | 'products'
+  | 'products-catalog'
+  | 'categories'
+  | 'fairs'
+  | 'wallets'
+  | 'sales';
 
 interface CacheRecord<TValue> {
   key: CacheKey;
@@ -106,6 +112,14 @@ export async function saveCachedProducts(
 
 export async function getCachedProducts(): Promise<ResultadoPaginado<Produto> | null> {
   return getCachedValue<ResultadoPaginado<Produto>>('products');
+}
+
+export async function saveCachedProductCatalog(produtos: Produto[]): Promise<void> {
+  await saveCachedValue('products-catalog', produtos);
+}
+
+export async function getCachedProductCatalog(): Promise<Produto[] | null> {
+  return getCachedValue<Produto[]>('products-catalog');
 }
 
 export async function saveCachedCategories(categorias: Categoria[]): Promise<void> {

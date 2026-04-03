@@ -22,6 +22,27 @@ export function listProducts(
   return httpClient.get<ResultadoPaginado<Produto>>('/produto', query);
 }
 
+export async function listAllProducts(): Promise<Produto[]> {
+  const produtos: Produto[] = [];
+  let pagina = 1;
+  let totalPaginas = 1;
+
+  do {
+    const resposta = await listProducts({
+      pagina,
+      tamanhoPagina: 50,
+      termo: '',
+      ordenarPor: 'nome',
+      direcao: 'asc',
+    });
+    produtos.push(...resposta.itens);
+    totalPaginas = resposta.totalPaginas;
+    pagina += 1;
+  } while (pagina <= totalPaginas);
+
+  return produtos;
+}
+
 export function listCategories(
   query: PesquisaPaginada,
 ): Promise<ResultadoPaginado<Categoria>> {

@@ -25,7 +25,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add, Close, Delete, ShoppingCartCheckout } from '@mui/icons-material';
-import { useProductStore } from '@/features/products/store/use-product-store';
+import { listAllProducts } from '@/features/products/api/products-api';
 import { useSaleStore } from '@/features/sales/store/use-sale-store';
 import {
   emptySaleItem,
@@ -38,6 +38,10 @@ import {
   type SaleItemType,
 } from '@/features/sales/types/sale-form';
 import {
+  getCachedProductCatalog,
+  saveCachedProductCatalog,
+} from '@/shared/lib/offline/indexed-db';
+import {
   CurrencyField,
   FormFeedbackAlert,
   formatCurrency,
@@ -46,6 +50,7 @@ import {
   useOnlineStatus,
   type MeioPagamento,
   type ProblemDetails,
+  type Produto,
   type TipoVenda,
 } from '@/shared';
 
@@ -92,14 +97,18 @@ function SectionLabel({ children }: { children: string }) {
   );
 }
 
+type PersistedSaleConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
+
+function getResetFormState(config: PersistedSaleConfig): SaleFormState {
+  return {
+    ...initialSaleFormState,
+    tipo: config.tipo,
+    idFeira: config.tipo === 'FEIRA' ? config.idFeira : '',
+  };
+}
+
 export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   const isOnline = useOnlineStatus();
-  const {
-    fetchErrorMessage: productFetchErrorMessage,
-    fetchProdutos,
-    isFetchingProducts,
-    produtos,
-  } = useProductStore();
   const {
     criarVenda,
     carteiras,
@@ -115,25 +124,57 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   } = useSaleStore();
 
   const [form, setForm] = useState<SaleFormState>(initialSaleFormState);
+  const [persistedConfig, setPersistedConfig] = useState<PersistedSaleConfig>({
+    tipo: initialSaleFormState.tipo,
+    idFeira: initialSaleFormState.idFeira,
+  });
+  const [catalogProducts, setCatalogProducts] = useState<Produto[]>([]);
+  const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(null);
+  const [isLoadingCatalogProducts, setIsLoadingCatalogProducts] = useState(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
+    async function loadCatalogProducts() {
+      setIsLoadingCatalogProducts(true);
+      setCatalogErrorMessage(null);
+
+      try {
+        const nextProducts = await listAllProducts();
+        setCatalogProducts(nextProducts);
+        await saveCachedProductCatalog(nextProducts);
+      } catch {
+        const cachedProducts = await getCachedProductCatalog();
+
+        if (cachedProducts) {
+          setCatalogProducts(cachedProducts);
+          setCatalogErrorMessage(null);
+        } else {
+          setCatalogErrorMessage('Nao foi possivel carregar o catalogo de produtos.');
+        }
+      } finally {
+        setIsLoadingCatalogProducts(false);
+      }
+    }
+
     if (open) {
-      void fetchProdutos();
+      setForm(getResetFormState(persistedConfig));
+      void loadCatalogProducts();
       void fetchFeiras();
       void fetchCarteiras();
       return;
     }
 
-    setForm(initialSaleFormState);
+    setForm(getResetFormState(persistedConfig));
+    setCatalogProducts([]);
+    setCatalogErrorMessage(null);
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
     clearSubmitError();
-  }, [open, fetchCarteiras, fetchFeiras, fetchProdutos, clearSubmitError]);
+  }, [open, fetchCarteiras, fetchFeiras, clearSubmitError]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -147,8 +188,8 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   }, [open, carteiras, form.idCarteira]);
 
   useEffect(() => {
-    window.__AKKAI_PRODUCTS__ = produtos;
-  }, [produtos]);
+    window.__AKKAI_PRODUCTS__ = catalogProducts;
+  }, [catalogProducts]);
 
   const totals = useMemo(() => {
     let subtotal = 0;
@@ -156,7 +197,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       const unitValue = item.brinde
         ? 0
         : item.tipoItem === 'CATALOGO'
-          ? getCatalogProductValue(item, produtos)
+          ? getCatalogProductValue(item, catalogProducts)
           : Math.round(item.valorUnitario * 100);
 
       subtotal += unitValue * item.quantidade;
@@ -173,10 +214,10 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       saleDiscount,
       total: Math.max(0, subtotal - saleDiscount),
     };
-  }, [form, produtos]);
+  }, [form, catalogProducts]);
 
   const handleClose = () => {
-    setForm(initialSaleFormState);
+    setForm(getResetFormState(persistedConfig));
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
@@ -330,12 +371,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     handleClose();
   };
 
-  const isFetching = isFetchingProducts || isFetchingSales;
+  const isFetching = isLoadingCatalogProducts || isFetchingSales;
   const globalMessage =
     problem?.detail ??
     submitErrorMessage ??
     saleFetchErrorMessage ??
-    productFetchErrorMessage;
+    catalogErrorMessage;
 
   const discountHelperText =
     localErrors.desconto ??
@@ -407,10 +448,14 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                 value={form.tipo}
                 onChange={(event) => {
                   const type = event.target.value as TipoVenda;
+                  setPersistedConfig((current) => ({
+                    tipo: type,
+                    idFeira: current.idFeira,
+                  }));
                   setForm((current) => ({
                     ...current,
                     tipo: type,
-                    idFeira: type === 'FEIRA' ? current.idFeira : '',
+                    idFeira: current.idFeira,
                   }));
                 }}
               >
@@ -428,12 +473,15 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                   label="Feira"
                   value={form.idFeira}
                   onChange={(event) => {
+                    const nextFairId =
+                      event.target.value === '' ? '' : Number(event.target.value);
+                    setPersistedConfig((current) => ({
+                      ...current,
+                      idFeira: nextFairId,
+                    }));
                     setForm((current) => ({
                       ...current,
-                      idFeira:
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
+                      idFeira: nextFairId,
                     }));
                   }}
                   error={Boolean(
@@ -555,12 +603,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                       <Grid size={{ xs: 12 }}>
                         {item.tipoItem === 'CATALOGO' ? (
                           <Autocomplete
-                            options={produtos}
+                            options={catalogProducts}
                             getOptionLabel={(option) =>
                               `${option.nome} (${option.codigo})`
                             }
                             value={
-                              produtos.find(
+                              catalogProducts.find(
                                 (produto) => produto.id === item.idProduto,
                               ) ?? null
                             }
@@ -631,7 +679,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                             value={
                               item.brinde
                                 ? 0
-                                : getCatalogProductValue(item, produtos) / 100
+                                : getCatalogProductValue(item, catalogProducts) / 100
                             }
                             onValueChange={() => undefined}
                             name={`valorCatalogo-${index}`}
@@ -788,12 +836,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                       <TableCell sx={{ verticalAlign: 'top', minWidth: 300 }}>
                         {item.tipoItem === 'CATALOGO' ? (
                           <Autocomplete
-                            options={produtos}
+                            options={catalogProducts}
                             getOptionLabel={(option) =>
                               `${option.nome} (${option.codigo})`
                             }
                             value={
-                              produtos.find(
+                              catalogProducts.find(
                                 (produto) => produto.id === item.idProduto,
                               ) ?? null
                             }
@@ -864,7 +912,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
                             value={
                               item.brinde
                                 ? 0
-                                : getCatalogProductValue(item, produtos) / 100
+                                : getCatalogProductValue(item, catalogProducts) / 100
                             }
                             onValueChange={() => undefined}
                             name={`valorCatalogo-${index}`}

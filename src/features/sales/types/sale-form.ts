@@ -46,7 +46,7 @@ export const emptySaleItem: SaleFormItem = {
 };
 
 export const initialSaleFormState: SaleFormState = {
-  meioPagamento: 'PIX',
+  meioPagamento: 'CRE',
   tipo: 'FEIRA',
   idFeira: '',
   idCarteira: '',
