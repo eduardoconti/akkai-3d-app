@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Alert,
   AppBar,
@@ -114,7 +114,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     open();
   };
 
-  const handleSyncPendingSales = async () => {
+  const handleSyncPendingSales = useCallback(async () => {
     const syncedCount = await sincronizarVendasPendentes();
 
     if (syncedCount > 0) {
@@ -122,7 +122,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
         `${syncedCount} ${syncedCount === 1 ? 'venda sincronizada' : 'vendas sincronizadas'} com sucesso.`,
       );
     }
-  };
+  }, [sincronizarVendasPendentes, showSuccess]);
+
+  const prevIsOnlineRef = useRef(isOnline);
+  const pendingSalesCountRef = useRef(pendingSalesCount);
+
+  useEffect(() => {
+    pendingSalesCountRef.current = pendingSalesCount;
+  }, [pendingSalesCount]);
+
+  useEffect(() => {
+    const wasOnline = prevIsOnlineRef.current;
+    prevIsOnlineRef.current = isOnline;
+
+    if (isOnline && !wasOnline && pendingSalesCountRef.current > 0) {
+      void handleSyncPendingSales();
+    }
+  }, [isOnline, handleSyncPendingSales]);
 
   const drawerContent = (
     <Box
