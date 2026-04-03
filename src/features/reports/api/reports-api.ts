@@ -32,8 +32,6 @@ export interface BestSellingProductItem {
     nome: string;
   } | null;
   quantidadeVendida: number;
-  descontoTotal: number;
-  valorTotal: number;
 }
 
 export interface BestSellingProductsResponse {

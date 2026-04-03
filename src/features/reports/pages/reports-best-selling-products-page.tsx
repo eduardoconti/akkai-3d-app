@@ -34,7 +34,6 @@ import { listFairs } from '@/features/sales/api/sales-api';
 import {
   DatePickerField,
   FormFeedbackAlert,
-  formatCurrency,
   getProblemDetailsFromError,
   type Categoria,
   type Feira,
@@ -213,12 +212,6 @@ export default function ReportsBestSellingProductsPage() {
           />
         </Stack>
 
-        <Typography variant="body2" color="text.secondary">
-          Desconto total: {formatCurrency(item.descontoTotal)}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Valor total: {formatCurrency(item.valorTotal)}
-        </Typography>
       </Stack>
     </Box>
   );
@@ -386,12 +379,6 @@ export default function ReportsBestSellingProductsPage() {
                           <TableCell align="right">
                             <strong>Quantidade vendida</strong>
                           </TableCell>
-                          <TableCell align="right">
-                            <strong>Desconto total</strong>
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>Valor total</strong>
-                          </TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -405,17 +392,11 @@ export default function ReportsBestSellingProductsPage() {
                               <TableCell align="right">
                                 {item.quantidadeVendida}
                               </TableCell>
-                              <TableCell align="right">
-                                {formatCurrency(item.descontoTotal)}
-                              </TableCell>
-                              <TableCell align="right" sx={{ fontWeight: 700 }}>
-                                {formatCurrency(item.valorTotal)}
-                              </TableCell>
                             </TableRow>
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                            <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
                               Nenhum produto encontrado para os filtros informados.
                             </TableCell>
                           </TableRow>
