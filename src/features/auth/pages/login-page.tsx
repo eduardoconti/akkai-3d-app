@@ -4,12 +4,18 @@ import {
   Box,
   Button,
   CircularProgress,
+  IconButton,
+  InputAdornment,
   Paper,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { Login as LoginIcon } from '@mui/icons-material';
+import {
+  Login as LoginIcon,
+  Visibility,
+  VisibilityOff,
+} from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
@@ -26,6 +32,7 @@ export default function LoginPage() {
   const { login, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,10 +102,26 @@ export default function LoginPage() {
           <TextField
             fullWidth
             label="Senha"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             autoComplete="current-password"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      onClick={() => setShowPassword((current) => !current)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
           />
 
           <Button
