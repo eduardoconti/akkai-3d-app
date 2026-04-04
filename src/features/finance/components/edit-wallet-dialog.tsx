@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   Switch,
   TextField,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AccountBalanceWallet, Save } from '@mui/icons-material';
+import { AccountBalanceWallet, Close, Save } from '@mui/icons-material';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
@@ -141,10 +144,31 @@ export default function EditWalletDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}
-      >
-        <AccountBalanceWallet color="primary" /> Alterar carteira
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <AccountBalanceWallet color="primary" />
+              <Typography variant="h5" fontWeight={700}>
+                Alterar carteira
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Atualize os dados da carteira selecionada.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={handleClose} aria-label="Fechar modal de carteira">
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>

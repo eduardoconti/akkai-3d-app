@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   MenuItem,
   TextField,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { ReceiptLong, Save } from '@mui/icons-material';
+import { Close, ReceiptLong, Save } from '@mui/icons-material';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
   convertDateToApiFormat,
@@ -142,10 +145,31 @@ export default function NewExpenseDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-      <DialogTitle
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}
-      >
-        <ReceiptLong color="primary" /> Nova Despesa
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <ReceiptLong color="primary" />
+              <Typography variant="h5" fontWeight={700}>
+                Nova despesa
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Preencha os dados para registrar uma despesa.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={handleClose} aria-label="Fechar modal de despesa">
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>

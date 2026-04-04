@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   MenuItem,
   Stack,
   Tab,
@@ -16,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Edit, Inventory2, Save, SwapHoriz } from '@mui/icons-material';
+import { Close, Edit, Inventory2, Save, SwapHoriz } from '@mui/icons-material';
 import {
   addProductStockEntry,
   addProductStockExit,
@@ -356,10 +357,31 @@ export default function EditProductDialog({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}
-      >
-        <Edit color="primary" /> Alterar produto
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Edit color="primary" />
+              <Typography variant="h5" fontWeight={700}>
+                Alterar produto
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Atualize o cadastro ou registre movimentações de estoque.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={onClose} aria-label="Fechar modal de produto">
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>

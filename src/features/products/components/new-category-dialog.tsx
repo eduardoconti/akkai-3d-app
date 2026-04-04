@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   MenuItem,
   TextField,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Category, Save } from '@mui/icons-material';
+import { Category, Close, Save } from '@mui/icons-material';
 import { formatCategoryOptions } from '../utils/format-category-options';
 import { useProductStore } from '../store/use-product-store';
 import {
@@ -113,15 +116,31 @@ export default function NewCategoryDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          fontWeight: 700,
-        }}
-      >
-        <Category color="primary" /> Nova Categoria
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Category color="primary" />
+              <Typography variant="h5" fontWeight={700}>
+                Nova categoria
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Preencha os dados para cadastrar uma categoria.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={handleClose} aria-label="Fechar modal de categoria">
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>

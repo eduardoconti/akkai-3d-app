@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   Switch,
   TextField,
+  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AccountBalanceWallet, Save } from '@mui/icons-material';
+import { AccountBalanceWallet, Close, Save } from '@mui/icons-material';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
   initialWalletFormState,
@@ -93,10 +96,31 @@ export default function NewWalletDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle
-        sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}
-      >
-        <AccountBalanceWallet color="primary" /> Nova Carteira
+      <DialogTitle sx={{ px: 3, py: 2.5 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <AccountBalanceWallet color="primary" />
+              <Typography variant="h5" fontWeight={700}>
+                Nova carteira
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Preencha os dados para cadastrar uma carteira.
+            </Typography>
+          </Box>
+
+          <IconButton onClick={handleClose} aria-label="Fechar modal de carteira">
+            <Close />
+          </IconButton>
+        </Box>
       </DialogTitle>
 
       <DialogContent dividers>
