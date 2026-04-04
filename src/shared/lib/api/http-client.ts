@@ -209,4 +209,8 @@ export const httpClient = {
       method: 'PUT',
       body: JSON.stringify(body),
     }),
+  delete: <T>(path: string) =>
+    request<T>(path, {
+      method: 'DELETE',
+    }),
 };

@@ -25,3 +25,11 @@ export function listWallets(): Promise<Carteira[]> {
 export function createSale(input: InserirVendaInput): Promise<Venda> {
   return httpClient.post<Venda>('/venda', input);
 }
+
+export function updateSale(id: number, input: InserirVendaInput): Promise<Venda> {
+  return httpClient.put<Venda>(`/venda/${id}`, input);
+}
+
+export function deleteSale(id: number): Promise<void> {
+  return httpClient.delete<void>(`/venda/${id}`);
+}
