@@ -4,6 +4,8 @@ import type { TipoVenda } from '@/shared/lib/types/domain';
 export interface SalesSummaryPeriodFilter {
   dataInicio: string;
   dataFim?: string;
+  tipoVenda?: TipoVenda;
+  idFeira?: number;
 }
 
 export interface SalesSummary {

@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  MenuItem,
   Paper,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -14,12 +16,15 @@ import {
   getSalesSummary,
   type SalesSummary,
 } from '@/features/reports/api/reports-api';
+import { listFairs } from '@/features/sales/api/sales-api';
 import {
   DatePickerField,
   FormFeedbackAlert,
   formatCurrency,
   getProblemDetailsFromError,
+  type Feira,
   type ProblemDetails,
+  type TipoVenda,
 } from '@/shared';
 
 function getCurrentDateInput(): string {
@@ -43,25 +48,98 @@ function formatApiDateToDisplay(value: string): string {
 
 const initialDate = getCurrentDateInput();
 
+function getSaleTypeLabel(tipoVenda: 'TODOS' | TipoVenda): string {
+  switch (tipoVenda) {
+    case 'FEIRA':
+      return 'Feira';
+    case 'LOJA':
+      return 'Loja';
+    case 'ONLINE':
+      return 'Online';
+    default:
+      return 'Todos';
+  }
+}
+
 export default function ReportsSummaryPage() {
   const [dataInicio, setDataInicio] = useState(initialDate);
   const [dataFim, setDataFim] = useState(initialDate);
+  const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
+  const [idFeira, setIdFeira] = useState<number | ''>('');
+  const [feiras, setFeiras] = useState<Feira[]>([]);
   const [summary, setSummary] = useState<SalesSummary | null>(null);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadFilters = async () => {
+      setIsLoadingFilters(true);
+
+      try {
+        const feirasResponse = await listFairs();
+
+        if (!active) {
+          return;
+        }
+
+        setFeiras(feirasResponse);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setProblem(getProblemDetailsFromError(error));
+      } finally {
+        if (active) {
+          setIsLoadingFilters(false);
+        }
+      }
+    };
+
+    void loadFilters();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (tipoVenda !== 'FEIRA') {
+      setIdFeira('');
+    }
+  }, [tipoVenda]);
 
   const periodoLabel = useMemo(() => {
     if (!summary) {
       return null;
     }
 
-    if (summary.dataInicio === summary.dataFim) {
-      return `Período consultado: ${formatApiDateToDisplay(summary.dataInicio)}`;
+    const filtros: string[] = [];
+
+    if (tipoVenda !== 'TODOS') {
+      filtros.push(`Tipo: ${getSaleTypeLabel(tipoVenda)}`);
     }
 
-    return `Período consultado: ${formatApiDateToDisplay(summary.dataInicio)} até ${formatApiDateToDisplay(summary.dataFim)}`;
-  }, [summary]);
+    if (tipoVenda === 'FEIRA' && idFeira !== '') {
+      const feiraSelecionada = feiras.find((feira) => feira.id === idFeira);
+
+      if (feiraSelecionada) {
+        filtros.push(`Feira: ${feiraSelecionada.nome}`);
+      }
+    }
+
+    if (summary.dataInicio === summary.dataFim) {
+      const base = `Período consultado: ${formatApiDateToDisplay(summary.dataInicio)}`;
+      return filtros.length > 0 ? `${base} | ${filtros.join(' | ')}` : base;
+    }
+
+    const base = `Período consultado: ${formatApiDateToDisplay(summary.dataInicio)} até ${formatApiDateToDisplay(summary.dataFim)}`;
+    return filtros.length > 0 ? `${base} | ${filtros.join(' | ')}` : base;
+  }, [summary, tipoVenda, idFeira, feiras]);
 
   const handleSubmit = async () => {
     setProblem(null);
@@ -79,6 +157,8 @@ export default function ReportsSummaryPage() {
       const result = await getSalesSummary({
         dataInicio,
         dataFim,
+        tipoVenda: tipoVenda === 'TODOS' ? undefined : tipoVenda,
+        idFeira: tipoVenda === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
       });
       setSummary(result);
     } catch (error) {
@@ -104,7 +184,7 @@ export default function ReportsSummaryPage() {
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Stack spacing={2.5}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 3 }}>
               <DatePickerField
                 label="Data inicial"
                 value={dataInicio}
@@ -112,7 +192,7 @@ export default function ReportsSummaryPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <Grid size={{ xs: 12, sm: 3 }}>
               <DatePickerField
                 label="Data final"
                 value={dataFim}
@@ -120,8 +200,54 @@ export default function ReportsSummaryPage() {
               />
             </Grid>
 
+            <Grid size={{ xs: 12, sm: 3 }}>
+              <TextField
+                select
+                fullWidth
+                label="Tipo de venda"
+                value={tipoVenda}
+                onChange={(event) =>
+                  setTipoVenda(event.target.value as 'TODOS' | TipoVenda)
+                }
+              >
+                <MenuItem value="TODOS">Todos</MenuItem>
+                <MenuItem value="FEIRA">Feira</MenuItem>
+                <MenuItem value="LOJA">Loja</MenuItem>
+                <MenuItem value="ONLINE">Online</MenuItem>
+              </TextField>
+            </Grid>
+
+            {tipoVenda === 'FEIRA' ? (
+              <Grid size={{ xs: 12, sm: 3 }}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Feira"
+                  value={idFeira}
+                  onChange={(event) =>
+                    setIdFeira(
+                      event.target.value === '' ? '' : Number(event.target.value),
+                    )
+                  }
+                  disabled={isLoadingFilters}
+                  helperText={
+                    feiras.length === 0 && !isLoadingFilters
+                      ? 'Nenhuma feira cadastrada.'
+                      : 'Disponível apenas para vendas do tipo feira.'
+                  }
+                >
+                  <MenuItem value="">Todas as feiras</MenuItem>
+                  {feiras.map((feira) => (
+                    <MenuItem key={feira.id} value={feira.id}>
+                      {feira.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : null}
+
             <Grid
-              size={{ xs: 12, sm: 4 }}
+              size={{ xs: 12, sm: tipoVenda === 'FEIRA' ? 12 : 3 }}
               sx={{ display: 'flex', alignItems: 'stretch' }}
             >
               <Button
