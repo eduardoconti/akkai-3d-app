@@ -143,11 +143,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const drawerContent = (
     <Box
       sx={{
-        minHeight: '100vh',
         height: '100%',
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         bgcolor: 'background.paper',
+        overflow: 'hidden',
       }}>
       <Toolbar>
         <Box>
@@ -163,7 +164,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </Box>
       </Toolbar>
       <Divider />
-      <List sx={{ px: 1.5, py: 2, flexGrow: 1, overflowY: 'auto' }}>
+      <List sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             component={NavLink}
@@ -619,6 +620,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               width: DRAWER_WIDTH,
               bgcolor: 'background.paper',
               height: '100%',
+              overflow: 'hidden',
             },
           }}
         >
@@ -635,6 +637,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               width: DRAWER_WIDTH,
               bgcolor: 'background.paper',
               height: '100%',
+              overflow: 'hidden',
             },
           }}
         >
