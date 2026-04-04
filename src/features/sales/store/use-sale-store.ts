@@ -33,7 +33,6 @@ import type {
 const paginacaoInicial: PesquisaPaginadaVendas = {
   pagina: 1,
   tamanhoPagina: 10,
-  termo: '',
 };
 
 function getCatalogProductValue(
@@ -137,11 +136,22 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   submitErrorMessage: null,
   fetchVendas: async (query) => {
     const currentPagination = get().paginacao;
+    const hasQueryValue = <TKey extends keyof PesquisaPaginadaVendas>(key: TKey) =>
+      query ? Object.prototype.hasOwnProperty.call(query, key) : false;
+
     const nextPagination: PesquisaPaginadaVendas = {
-      pagina: query?.pagina ?? currentPagination.pagina,
-      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
-      termo: query?.termo ?? currentPagination.termo ?? '',
-      tipo: query?.tipo ?? currentPagination.tipo,
+      pagina: hasQueryValue('pagina')
+        ? (query?.pagina ?? paginacaoInicial.pagina)
+        : currentPagination.pagina,
+      tamanhoPagina: hasQueryValue('tamanhoPagina')
+        ? (query?.tamanhoPagina ?? paginacaoInicial.tamanhoPagina)
+        : currentPagination.tamanhoPagina,
+      tipo: hasQueryValue('tipo') ? query?.tipo : currentPagination.tipo,
+      idFeira: hasQueryValue('idFeira') ? query?.idFeira : currentPagination.idFeira,
+      dataInicio: hasQueryValue('dataInicio')
+        ? query?.dataInicio
+        : currentPagination.dataInicio,
+      dataFim: hasQueryValue('dataFim') ? query?.dataFim : currentPagination.dataFim,
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -152,8 +162,10 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         paginacao: {
           pagina: response.pagina,
           tamanhoPagina: response.tamanhoPagina,
-          termo: nextPagination.termo ?? '',
           tipo: nextPagination.tipo,
+          idFeira: nextPagination.idFeira,
+          dataInicio: nextPagination.dataInicio,
+          dataFim: nextPagination.dataFim,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
@@ -172,8 +184,10 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
             paginacao: {
               pagina: cachedResponse.pagina,
               tamanhoPagina: cachedResponse.tamanhoPagina,
-              termo: nextPagination.termo ?? '',
               tipo: nextPagination.tipo,
+              idFeira: nextPagination.idFeira,
+              dataInicio: nextPagination.dataInicio,
+              dataFim: nextPagination.dataFim,
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,

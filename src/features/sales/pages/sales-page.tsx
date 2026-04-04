@@ -27,6 +27,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   KeyboardArrowDown,
   KeyboardArrowUp,
@@ -40,12 +41,22 @@ import {
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
 import {
+  DatePickerField,
   formatCurrency,
   useFeedbackStore,
   useOnlineStatus,
+  type Feira,
   type TipoVenda,
   type Venda,
 } from '@/shared';
+
+function getCurrentDateInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 function getSaleItemName(vendaItem: Venda['itens'][number]): string {
   return vendaItem.nomeProduto || vendaItem.produto?.nome || 'Item sem nome';
@@ -168,7 +179,9 @@ export default function SalesPage() {
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const {
     excluirVenda,
+    feiras,
     fetchErrorMessage,
+    fetchFeiras,
     fetchVendas,
     isFetching,
     isSubmitting,
@@ -177,26 +190,41 @@ export default function SalesPage() {
     totalItens,
     vendas,
   } = useSaleStore();
-  const [searchInput, setSearchInput] = useState('');
+  const initialDate = getCurrentDateInput();
+  const [dataInicio, setDataInicio] = useState(initialDate);
+  const [dataFim, setDataFim] = useState(initialDate);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
+  const [idFeira, setIdFeira] = useState<number | ''>('');
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
   const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
+    void fetchFeiras();
+  }, [fetchFeiras]);
+
+  useEffect(() => {
+    if (type !== 'FEIRA') {
+      setIdFeira('');
+    }
+  }, [type]);
+
+  useEffect(() => {
     const timeout = window.setTimeout(() => {
       void fetchVendas({
         pagina: 1,
-        termo: searchInput.trim(),
+        dataInicio,
+        dataFim,
         tipo: type === 'TODOS' ? undefined : type,
+        idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
       });
     }, 300);
 
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [fetchVendas, searchInput, type]);
+  }, [dataFim, dataInicio, fetchVendas, idFeira, type]);
 
   const handleOpenActions = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -262,28 +290,68 @@ export default function SalesPage() {
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField
-            label="Pesquisar venda"
-            placeholder="ID, feira, pagamento ou produto"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            sx={{ minWidth: { xs: '100%', md: 320 } }}
-          />
+        <Box sx={{ width: { xs: '100%', lg: 'auto' } }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+              <DatePickerField
+                label="Data inicial"
+                value={dataInicio}
+                onValueChange={setDataInicio}
+              />
+            </Grid>
 
-          <TextField
-            select
-            label="Tipo"
-            value={type}
-            onChange={(event) => setType(event.target.value as 'TODOS' | TipoVenda)}
-            sx={{ minWidth: 180 }}
-          >
-            <MenuItem value="TODOS">Todos</MenuItem>
-            <MenuItem value="FEIRA">Feira</MenuItem>
-            <MenuItem value="LOJA">Loja</MenuItem>
-            <MenuItem value="ONLINE">Online</MenuItem>
-          </TextField>
-        </Stack>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+              <DatePickerField
+                label="Data final"
+                value={dataFim}
+                onValueChange={setDataFim}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+              <TextField
+                select
+                fullWidth
+                label="Tipo"
+                value={type}
+                onChange={(event) =>
+                  setType(event.target.value as 'TODOS' | TipoVenda)
+                }
+              >
+                <MenuItem value="TODOS">Todos</MenuItem>
+                <MenuItem value="FEIRA">Feira</MenuItem>
+                <MenuItem value="LOJA">Loja</MenuItem>
+                <MenuItem value="ONLINE">Online</MenuItem>
+              </TextField>
+            </Grid>
+
+            {type === 'FEIRA' ? (
+              <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Feira"
+                  value={idFeira}
+                  onChange={(event) =>
+                    setIdFeira(
+                      event.target.value === '' ? '' : Number(event.target.value),
+                    )
+                  }
+                  helperText={
+                    feiras.length === 0 ? 'Nenhuma feira cadastrada.' : 'Opcional'
+                  }
+                >
+                  <MenuItem value="">Todas</MenuItem>
+                  {feiras.map((feira: Feira) => (
+                    <MenuItem key={feira.id} value={feira.id}>
+                      {feira.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : null}
+          </Grid>
+        </Box>
       </Stack>
 
       {fetchErrorMessage ? (

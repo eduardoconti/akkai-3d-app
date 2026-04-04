@@ -139,6 +139,9 @@ export interface PesquisaPaginada {
 
 export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   tipo?: TipoVenda;
+  idFeira?: number;
+  dataInicio?: string;
+  dataFim?: string;
 }
 
 export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
