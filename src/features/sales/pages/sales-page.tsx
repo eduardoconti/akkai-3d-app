@@ -2,11 +2,17 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
+  Menu,
   MenuItem,
   Paper,
   Stack,
@@ -21,20 +27,39 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  MoreVert,
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import NewSaleDialog from '../components/new-sale-dialog';
 import { useSaleStore } from '../store/use-sale-store';
 import {
   getPaymentMethodLabel,
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
-import { formatCurrency, type TipoVenda, type Venda } from '@/shared';
+import {
+  formatCurrency,
+  useFeedbackStore,
+  useOnlineStatus,
+  type TipoVenda,
+  type Venda,
+} from '@/shared';
 
 function getSaleItemName(vendaItem: Venda['itens'][number]): string {
   return vendaItem.nomeProduto || vendaItem.produto?.nome || 'Item sem nome';
 }
 
-function SaleRow({ venda }: { venda: Venda }) {
+interface SaleRowProps {
+  venda: Venda;
+  onOpenActions: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    venda: Venda,
+  ) => void;
+}
+
+function SaleRow({ venda, onOpenActions }: SaleRowProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -71,10 +96,22 @@ function SaleRow({ venda }: { venda: Venda }) {
         <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatCurrency(venda.valorTotal)}
         </TableCell>
+        <TableCell align="center">
+          <IconButton
+            size="small"
+            aria-label={`Ações da venda ${venda.id}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenActions(event, venda);
+            }}
+          >
+            <MoreVert fontSize="small" />
+          </IconButton>
+        </TableCell>
       </TableRow>
 
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={9}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box
               sx={{
@@ -127,16 +164,25 @@ function SaleRow({ venda }: { venda: Venda }) {
 export default function SalesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isOnline = useOnlineStatus();
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const {
+    excluirVenda,
     fetchErrorMessage,
     fetchVendas,
     isFetching,
+    isSubmitting,
     paginacao,
+    submitErrorMessage,
     totalItens,
     vendas,
   } = useSaleStore();
   const [searchInput, setSearchInput] = useState('');
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
+  const [editingSale, setEditingSale] = useState<Venda | null>(null);
+  const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
+  const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
+  const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -151,6 +197,54 @@ export default function SalesPage() {
       window.clearTimeout(timeout);
     };
   }, [fetchVendas, searchInput, type]);
+
+  const handleOpenActions = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    venda: Venda,
+  ) => {
+    event.stopPropagation();
+    setSelectedSale(venda);
+    setActionsAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseActions = () => {
+    setActionsAnchorEl(null);
+    setSelectedSale(null);
+  };
+
+  const handleStartEdit = () => {
+    if (!selectedSale) {
+      return;
+    }
+
+    setEditingSale(selectedSale);
+    handleCloseActions();
+  };
+
+  const handleAskDelete = () => {
+    if (!selectedSale) {
+      return;
+    }
+
+    setSaleToDelete(selectedSale);
+    handleCloseActions();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!saleToDelete) {
+      return;
+    }
+
+    const result = await excluirVenda(saleToDelete.id);
+
+    if (!result.success) {
+      return;
+    }
+
+    await fetchVendas();
+    showSuccess('Venda excluída com sucesso.');
+    setSaleToDelete(null);
+  };
 
   return (
     <Stack spacing={3}>
@@ -196,6 +290,10 @@ export default function SalesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
+      {submitErrorMessage ? (
+        <Alert severity="error">{submitErrorMessage}</Alert>
+      ) : null}
+
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de vendas">
@@ -221,9 +319,18 @@ export default function SalesPage() {
                           {new Date(venda.dataInclusao).toLocaleString('pt-BR')}
                         </Typography>
                       </Box>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        {formatCurrency(venda.valorTotal)}
-                      </Typography>
+                      <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Typography variant="subtitle1" fontWeight={700}>
+                          {formatCurrency(venda.valorTotal)}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          aria-label={`Ações da venda ${venda.id}`}
+                          onClick={(event) => handleOpenActions(event, venda)}
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
+                      </Stack>
                     </Stack>
 
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -291,20 +398,29 @@ export default function SalesPage() {
                   <TableCell align="right">
                     <strong>Total</strong>
                   </TableCell>
+                  <TableCell align="center" width={80}>
+                    <strong>Ações</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
                 ) : vendas.length > 0 ? (
-                  vendas.map((venda) => <SaleRow key={venda.id} venda={venda} />)
+                  vendas.map((venda) => (
+                    <SaleRow
+                      key={venda.id}
+                      venda={venda}
+                      onOpenActions={handleOpenActions}
+                    />
+                  ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
                       Nenhuma venda encontrada para os filtros informados.
                     </TableCell>
                   </TableRow>
@@ -343,6 +459,50 @@ export default function SalesPage() {
           }}
         />
       </Paper>
+
+      <Menu
+        anchorEl={actionsAnchorEl}
+        open={Boolean(actionsAnchorEl)}
+        onClose={handleCloseActions}
+      >
+        <MenuItem onClick={handleStartEdit} disabled={!isOnline || isSubmitting}>
+          Alterar
+        </MenuItem>
+        <MenuItem onClick={handleAskDelete} disabled={!isOnline || isSubmitting}>
+          Excluir
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={Boolean(saleToDelete)} onClose={() => setSaleToDelete(null)}>
+        <DialogTitle>Excluir venda</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Tem certeza que deseja excluir a venda #{saleToDelete?.id}? Essa ação
+            não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSaleToDelete(null)} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleConfirmDelete();
+            }}
+            disabled={isSubmitting}
+          >
+            Confirmar exclusão
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <NewSaleDialog
+        open={Boolean(editingSale)}
+        onClose={() => setEditingSale(null)}
+        sale={editingSale}
+      />
     </Stack>
   );
 }

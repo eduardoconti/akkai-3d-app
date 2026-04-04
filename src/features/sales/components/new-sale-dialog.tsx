@@ -52,11 +52,13 @@ import {
   type ProblemDetails,
   type Produto,
   type TipoVenda,
+  type Venda,
 } from '@/shared';
 
 interface NewSaleDialogProps {
   open: boolean;
   onClose: () => void;
+  sale?: Venda | null;
 }
 
 function getCatalogProductValue(
@@ -64,7 +66,7 @@ function getCatalogProductValue(
   produtos: Array<{ id: number; valor: number }>,
 ) {
   const product = produtos.find((current) => current.id === item.idProduto);
-  return product?.valor ?? 0;
+  return product?.valor ?? Math.round(item.valorUnitario * 100);
 }
 
 function calculateSaleDiscount(
@@ -107,9 +109,33 @@ function getResetFormState(config: PersistedSaleConfig): SaleFormState {
   };
 }
 
-export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
+function mapSaleToForm(sale: Venda): SaleFormState {
+  return {
+    meioPagamento: sale.meioPagamento,
+    tipo: sale.tipo,
+    idFeira: sale.idFeira ?? '',
+    idCarteira: sale.idCarteira,
+    desconto: sale.desconto / 100,
+    descontoModo: 'VALOR',
+    itens: sale.itens.map((item) => ({
+      tipoItem: item.idProduto ? 'CATALOGO' : 'AVULSO',
+      idProduto: item.idProduto ?? null,
+      nomeProduto: item.nomeProduto,
+      valorUnitario: item.valorUnitario / 100,
+      quantidade: item.quantidade,
+      brinde: item.brinde,
+    })),
+  };
+}
+
+export default function NewSaleDialog({
+  open,
+  onClose,
+  sale = null,
+}: NewSaleDialogProps) {
   const isOnline = useOnlineStatus();
   const {
+    alterarVenda,
     criarVenda,
     carteiras,
     fetchErrorMessage: saleFetchErrorMessage,
@@ -135,6 +161,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const isEditMode = sale !== null;
 
   useEffect(() => {
     async function loadCatalogProducts() {
@@ -160,21 +187,29 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     }
 
     if (open) {
-      setForm(getResetFormState(persistedConfig));
+      setForm(
+        isEditMode && sale
+          ? mapSaleToForm(sale)
+          : getResetFormState(persistedConfig),
+      );
       void loadCatalogProducts();
       void fetchFeiras();
       void fetchCarteiras();
       return;
     }
 
-    setForm(getResetFormState(persistedConfig));
+    setForm(
+      isEditMode && sale
+        ? mapSaleToForm(sale)
+        : getResetFormState(persistedConfig),
+    );
     setCatalogProducts([]);
     setCatalogErrorMessage(null);
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
     clearSubmitError();
-  }, [open, fetchCarteiras, fetchFeiras, clearSubmitError]);
+  }, [open, sale, isEditMode, fetchCarteiras, fetchFeiras, clearSubmitError]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -217,7 +252,11 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
   }, [form, catalogProducts]);
 
   const handleClose = () => {
-    setForm(getResetFormState(persistedConfig));
+    setForm(
+      isEditMode && sale
+        ? mapSaleToForm(sale)
+        : getResetFormState(persistedConfig),
+    );
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
@@ -331,7 +370,7 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       return;
     }
 
-    const result = await criarVenda({
+    const payload = {
       meioPagamento: form.meioPagamento,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
@@ -353,7 +392,16 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
           brinde: item.brinde,
         };
       }),
-    });
+    };
+
+    if (isEditMode && !isOnline) {
+      return;
+    }
+
+    const result =
+      isEditMode && sale
+        ? await alterarVenda(sale.id, payload)
+        : await criarVenda(payload);
 
     if (!result.success) {
       setProblem(result.problem);
@@ -367,7 +415,9 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
     }
 
     await fetchVendas();
-    showSuccess('Venda cadastrada com sucesso.');
+    showSuccess(
+      isEditMode ? 'Venda alterada com sucesso.' : 'Venda cadastrada com sucesso.',
+    );
     handleClose();
   };
 
@@ -400,10 +450,12 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
         >
           <Box>
             <Typography variant="h5" fontWeight={700}>
-              Nova venda rápida
+              {isEditMode ? `Alterar venda #${sale?.id}` : 'Nova venda rápida'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Preencha os dados para registrar a venda.
+              {isEditMode
+                ? 'Atualize os dados da venda e dos itens.'
+                : 'Preencha os dados para registrar a venda.'}
             </Typography>
           </Box>
 
@@ -416,10 +468,17 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
       <DialogContent dividers sx={{ px: 3, py: 3 }}>
         <FormFeedbackAlert message={globalMessage} />
 
-        {!isOnline ? (
+        {!isOnline && !isEditMode ? (
           <Alert severity="info" sx={{ mb: 3 }}>
             Você está offline. As vendas serão salvas localmente e poderão ser
             sincronizadas depois.
+          </Alert>
+        ) : null}
+
+        {!isOnline && isEditMode ? (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            A edição de vendas está disponível apenas quando houver conexão com
+            a internet.
           </Alert>
         ) : null}
 
@@ -1175,11 +1234,13 @@ export default function NewSaleDialog({ open, onClose }: NewSaleDialogProps) {
             variant="contained"
             size="large"
             startIcon={<ShoppingCartCheckout />}
-            disabled={isSubmitting || isFetching}
+            disabled={isSubmitting || isFetching || (isEditMode && !isOnline)}
           >
             {isSubmitting
               ? 'Salvando...'
-              : isOnline
+              : isEditMode
+                ? 'Salvar alterações'
+                : isOnline
                 ? 'Finalizar e salvar'
                 : 'Salvar offline'}
           </Button>

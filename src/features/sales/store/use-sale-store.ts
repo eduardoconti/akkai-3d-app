@@ -13,9 +13,11 @@ import {
 } from '@/shared/lib/offline/indexed-db';
 import {
   createSale,
+  deleteSale,
   listFairs,
   listSales,
   listWallets,
+  updateSale,
 } from '@/features/sales/api/sales-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
@@ -110,6 +112,11 @@ interface SaleStoreState {
   fetchFeiras: () => Promise<void>;
   fetchCarteiras: () => Promise<void>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
+  alterarVenda: (
+    id: number,
+    dados: InserirVendaInput,
+  ) => Promise<ActionResult<Venda>>;
+  excluirVenda: (id: number) => Promise<ActionResult<void>>;
   hydrateOfflineState: () => Promise<void>;
   sincronizarVendasPendentes: () => Promise<number>;
   clearSubmitError: () => void;
@@ -257,6 +264,32 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         return { success: true, data: localSale };
       }
 
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  alterarVenda: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const venda = await updateSale(id, dados);
+      return { success: true, data: venda };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  excluirVenda: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteSale(id);
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });
       return { success: false, problem };
     } finally {
