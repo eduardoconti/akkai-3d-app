@@ -37,11 +37,13 @@ import {
   Logout as LogoutIcon,
   Menu as MenuIcon,
   PostAdd,
+  RequestQuote,
   ShoppingCart as SaleIcon,
   Sync,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/features/auth';
+import { NewBudgetDialog } from '@/features/budgets';
 import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { NewSaleDialog, useSaleStore } from '@/features/sales';
@@ -77,9 +79,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [budgetsMenuOpen, setBudgetsMenuOpen] = useState(true);
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
@@ -94,6 +98,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
   const reportsSectionActive = useMemo(
     () => location.pathname.startsWith('/relatorios'),
+    [location.pathname],
+  );
+  const budgetsSectionActive = useMemo(
+    () => location.pathname.startsWith('/orcamentos'),
     [location.pathname],
   );
   const financeSectionActive = useMemo(
@@ -260,6 +268,57 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   <CategoryIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText primary="Nova categoria" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
+        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+          <ListItemButton
+            onClick={() => setBudgetsMenuOpen((current) => !current)}
+            sx={(theme: Theme) => ({
+              borderRadius: 2,
+              ...(budgetsSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
+          >
+            <ListItemIcon>
+              <RequestQuote />
+            </ListItemIcon>
+            <ListItemText primary="Orçamentos" />
+            {budgetsMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={budgetsMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/orcamentos"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemIcon>
+                  <FormatListBulleted fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Orçamentos" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                onClick={() => {
+                  openDialog(() => setBudgetDialogOpen(true));
+                }}
+                sx={{ borderRadius: 2 }}
+              >
+                <ListItemIcon>
+                  <RequestQuote fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Novo orçamento" />
               </ListItemButton>
             </ListItem>
           </List>
@@ -667,6 +726,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewExpenseDialog
         open={expenseDialogOpen}
         onClose={() => setExpenseDialogOpen(false)}
+      />
+      <NewBudgetDialog
+        open={budgetDialogOpen}
+        onClose={() => setBudgetDialogOpen(false)}
       />
       <NewSaleDialog
         open={saleDialogOpen}
