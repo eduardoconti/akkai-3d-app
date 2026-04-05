@@ -1227,18 +1227,30 @@ export default function NewSaleDialog({
         >
         <Box>
           <Typography variant="body2" color="text.secondary">
-            Subtotal ({totals.totalQuantidadeItens}{' '}
+            Total ({totals.totalQuantidadeItens}{' '}
             {totals.totalQuantidadeItens === 1 ? 'unidade' : 'unidades'})
           </Typography>
-          <Typography variant="h5" fontWeight={800} color="success.main">
-            {formatCurrency(totals.subtotal)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {formatCurrency(totals.total)}
-            {totals.saleDiscount > 0
-              ? ` final, com ${formatCurrency(totals.saleDiscount)} de desconto`
-              : ' final, sem desconto'}
-          </Typography>
+          {totals.saleDiscount > 0 ? (
+            <>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textDecoration: 'line-through' }}
+              >
+                {formatCurrency(totals.subtotal)}
+              </Typography>
+              <Typography variant="h4" fontWeight={800} color="success.main">
+                {formatCurrency(totals.total)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formatCurrency(totals.saleDiscount)} de desconto
+              </Typography>
+            </>
+          ) : (
+            <Typography variant="h4" fontWeight={800} color="success.main">
+              {formatCurrency(totals.total)}
+            </Typography>
+          )}
         </Box>
 
         <Box
