@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import {
   Alert,
   Box,
@@ -93,6 +93,24 @@ export default function NewExpenseDialog({
     () => carteiras.filter((carteira) => carteira.ativa),
     [carteiras],
   );
+
+  const availableMeiosPagamento = useMemo(() => {
+    const carteira = carteiras.find((c) => c.id === form.idCarteira);
+    if (!carteira?.meiosPagamento?.length) return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
+    return carteira.meiosPagamento;
+  }, [carteiras, form.idCarteira]);
+
+  const prevCarteira = useRef(form.idCarteira);
+  useEffect(() => {
+    if (prevCarteira.current === form.idCarteira) return;
+    prevCarteira.current = form.idCarteira;
+    if (!availableMeiosPagamento.includes(form.meioPagamento)) {
+      setForm((current) => ({
+        ...current,
+        meioPagamento: availableMeiosPagamento[0]!,
+      }));
+    }
+  }, [form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
 
   const handleClose = () => {
     setForm(initialExpenseFormState);
@@ -333,10 +351,10 @@ export default function NewExpenseDialog({
                 }))
               }
             >
-              <MenuItem value="CRE">Cartão crédito</MenuItem>
-              <MenuItem value="DEB">Cartão débito</MenuItem>
-              <MenuItem value="DIN">Dinheiro</MenuItem>
-              <MenuItem value="PIX">Pix</MenuItem>
+              {availableMeiosPagamento.includes('CRE') && <MenuItem value="CRE">Cartão crédito</MenuItem>}
+              {availableMeiosPagamento.includes('DEB') && <MenuItem value="DEB">Cartão débito</MenuItem>}
+              {availableMeiosPagamento.includes('DIN') && <MenuItem value="DIN">Dinheiro</MenuItem>}
+              {availableMeiosPagamento.includes('PIX') && <MenuItem value="PIX">Pix</MenuItem>}
             </TextField>
           </Grid>
 

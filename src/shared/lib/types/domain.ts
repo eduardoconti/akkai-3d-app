@@ -56,6 +56,7 @@ export interface Carteira {
   nome: string;
   ativa: boolean;
   saldoAtual: number;
+  meiosPagamento: MeioPagamento[];
 }
 
 export interface Despesa {
@@ -161,6 +162,7 @@ export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {}
 export interface CarteiraInput {
   nome: string;
   ativa?: boolean;
+  meiosPagamento?: MeioPagamento[];
 }
 
 export interface CategoriaDespesaInput {

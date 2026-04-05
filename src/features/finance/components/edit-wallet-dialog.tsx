@@ -7,9 +7,12 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  FormHelperText,
   IconButton,
   Switch,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
@@ -17,10 +20,13 @@ import { AccountBalanceWallet, Close, Save } from '@mui/icons-material';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
+  ALL_MEIOS_PAGAMENTO,
+  MEIO_PAGAMENTO_LABEL,
   initialWalletFormState,
   type WalletFormErrors,
   type WalletFormState,
 } from '@/features/finance/types/finance-form';
+import type { MeioPagamento } from '@/shared';
 import {
   FormFeedbackAlert,
   getFieldMessage,
@@ -80,6 +86,7 @@ export default function EditWalletDialog({
         setForm({
           nome: carteira.nome,
           ativa: carteira.ativa,
+          meiosPagamento: carteira.meiosPagamento ?? [],
         });
       } catch (error) {
         if (!active) {
@@ -130,6 +137,7 @@ export default function EditWalletDialog({
     const result = await atualizarCarteira(walletId, {
       nome: form.nome.trim(),
       ativa: form.ativa,
+      meiosPagamento: form.meiosPagamento,
     });
 
     if (!result.success) {
@@ -188,6 +196,32 @@ export default function EditWalletDialog({
               error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
               helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
             />
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              Meios de pagamento aceitos{' '}
+              <Typography component="span" variant="caption" color="text.disabled">
+                (vazio = aceita todos)
+              </Typography>
+            </Typography>
+            <ToggleButtonGroup
+              value={form.meiosPagamento}
+              onChange={(_event, value: MeioPagamento[]) =>
+                setForm((current) => ({ ...current, meiosPagamento: value }))
+              }
+              size="small"
+              disabled={isLoading}
+            >
+              {ALL_MEIOS_PAGAMENTO.map((meio) => (
+                <ToggleButton key={meio} value={meio}>
+                  {MEIO_PAGAMENTO_LABEL[meio]}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <FormHelperText>
+              Selecione quais meios serão aceitos nesta carteira.
+            </FormHelperText>
           </Grid>
 
           <Grid size={{ xs: 12 }}>
