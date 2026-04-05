@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -226,8 +226,27 @@ export default function NewSaleDialog({
     window.__AKKAI_PRODUCTS__ = catalogProducts;
   }, [catalogProducts]);
 
+  const availableMeiosPagamento = useMemo(() => {
+    const carteira = carteiras.find((c) => c.id === form.idCarteira);
+    if (!carteira?.meiosPagamento?.length) return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
+    return carteira.meiosPagamento;
+  }, [carteiras, form.idCarteira]);
+
+  const prevCarteira = useRef(form.idCarteira);
+  useEffect(() => {
+    if (prevCarteira.current === form.idCarteira) return;
+    prevCarteira.current = form.idCarteira;
+    if (!availableMeiosPagamento.includes(form.meioPagamento)) {
+      setForm((current) => ({
+        ...current,
+        meioPagamento: availableMeiosPagamento[0]!,
+      }));
+    }
+  }, [form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
+
   const totals = useMemo(() => {
     let subtotal = 0;
+    let totalQuantidadeItens = 0;
     form.itens.forEach((item) => {
       const unitValue = item.brinde
         ? 0
@@ -236,6 +255,7 @@ export default function NewSaleDialog({
           : Math.round(item.valorUnitario * 100);
 
       subtotal += unitValue * item.quantidade;
+      totalQuantidadeItens += item.quantidade;
     });
 
     const saleDiscount = calculateSaleDiscount(
@@ -248,6 +268,7 @@ export default function NewSaleDialog({
       subtotal,
       saleDiscount,
       total: Math.max(0, subtotal - saleDiscount),
+      totalQuantidadeItens,
     };
   }, [form, catalogProducts]);
 
@@ -606,10 +627,10 @@ export default function NewSaleDialog({
                   }));
                 }}
               >
-                <MenuItem value="DEB">Cartão débito</MenuItem>
-                <MenuItem value="CRE">Cartão crédito</MenuItem>
-                <MenuItem value="DIN">Dinheiro</MenuItem>
-                <MenuItem value="PIX">Pix</MenuItem>
+                {availableMeiosPagamento.includes('DEB') && <MenuItem value="DEB">Cartão débito</MenuItem>}
+                {availableMeiosPagamento.includes('CRE') && <MenuItem value="CRE">Cartão crédito</MenuItem>}
+                {availableMeiosPagamento.includes('DIN') && <MenuItem value="DIN">Dinheiro</MenuItem>}
+                {availableMeiosPagamento.includes('PIX') && <MenuItem value="PIX">Pix</MenuItem>}
               </TextField>
             </Grid>
           </Grid>
@@ -1203,18 +1224,20 @@ export default function NewSaleDialog({
           alignItems: { xs: 'stretch', md: 'center' },
           gap: 2,
         }}
-      >
+        >
         <Box>
           <Typography variant="body2" color="text.secondary">
-            Subtotal ({form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'})
+            Subtotal ({totals.totalQuantidadeItens}{' '}
+            {totals.totalQuantidadeItens === 1 ? 'unidade' : 'unidades'})
           </Typography>
           <Typography variant="h5" fontWeight={800} color="success.main">
-            {formatCurrency(totals.total)}
+            {formatCurrency(totals.subtotal)}
           </Typography>
           <Typography variant="body2" color="text.secondary">
+            {formatCurrency(totals.total)}
             {totals.saleDiscount > 0
-              ? `${formatCurrency(totals.saleDiscount)} de desconto`
-              : 'Sem desconto'}
+              ? ` final, com ${formatCurrency(totals.saleDiscount)} de desconto`
+              : ' final, sem desconto'}
           </Typography>
         </Box>
 

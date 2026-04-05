@@ -3,6 +3,7 @@ import type { MeioPagamento } from '@/shared/lib/types/domain';
 export type WalletFormState = {
   nome: string;
   ativa: boolean;
+  meiosPagamento: MeioPagamento[];
 };
 
 export type WalletFormErrors = {
@@ -12,6 +13,16 @@ export type WalletFormErrors = {
 export const initialWalletFormState: WalletFormState = {
   nome: '',
   ativa: true,
+  meiosPagamento: [],
+};
+
+export const ALL_MEIOS_PAGAMENTO: MeioPagamento[] = ['DIN', 'DEB', 'CRE', 'PIX'];
+
+export const MEIO_PAGAMENTO_LABEL: Record<MeioPagamento, string> = {
+  DIN: 'Dinheiro',
+  DEB: 'Débito',
+  CRE: 'Crédito',
+  PIX: 'PIX',
 };
 
 export type ExpenseFormState = {
