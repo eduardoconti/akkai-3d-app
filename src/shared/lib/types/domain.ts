@@ -96,6 +96,15 @@ export interface Venda {
   itens: VendaItem[];
 }
 
+export interface Orcamento {
+  id: number;
+  nomeCliente: string;
+  telefoneCliente: string;
+  descricao?: string;
+  linkSTL?: string;
+  dataInclusao: string;
+}
+
 export interface ProdutoInput {
   nome: string;
   codigo: string;
@@ -147,6 +156,8 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataFim?: string;
 }
 
+export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {}
+
 export interface CarteiraInput {
   nome: string;
   ativa?: boolean;
@@ -164,6 +175,13 @@ export interface DespesaInput {
   meioPagamento: MeioPagamento;
   idCarteira: number;
   observacao?: string;
+}
+
+export interface OrcamentoInput {
+  nomeCliente: string;
+  telefoneCliente: string;
+  descricao?: string;
+  linkSTL?: string;
 }
 
 export interface ResultadoPaginado<T> {

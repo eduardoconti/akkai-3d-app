@@ -7,6 +7,7 @@ import {
 } from 'react-router-dom';
 import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
+import { BudgetsPage } from '@/features/budgets';
 import { FinanceExpensesPage, FinanceWalletsPage } from '@/features/finance';
 import { ProductCategoriesPage, ProductsPage } from '@/features/products';
 import {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/" element={<Navigate to="/vendas" replace />} />
             <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
             <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
+            <Route path="/orcamentos" element={<BudgetsPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
             <Route path="/produtos/categorias" element={<ProductCategoriesPage />} />
             <Route
