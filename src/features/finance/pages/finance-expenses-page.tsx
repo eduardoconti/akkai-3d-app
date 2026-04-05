@@ -29,23 +29,6 @@ import {
 } from '@/features/finance/types/finance-form';
 import { DatePickerField, formatCurrency } from '@/shared';
 
-function getExpenseCategoryLabel(categoria: string): string {
-  switch (categoria) {
-    case 'DESPESA_FIXA':
-      return 'Despesa fixa';
-    case 'MATERIA_PRIMA':
-      return 'Matéria-prima';
-    case 'EMBALAGEM':
-      return 'Embalagem';
-    case 'EVENTO':
-      return 'Evento';
-    case 'TRANSPORTE':
-      return 'Transporte';
-    default:
-      return 'Outros';
-  }
-}
-
 function getPaymentMethodLabel(meioPagamento: string): string {
   switch (meioPagamento) {
     case 'DIN':
@@ -192,7 +175,7 @@ export default function FinanceExpensesPage() {
                     </Stack>
 
                     <Typography variant="body2" color="text.secondary">
-                      Categoria: {getExpenseCategoryLabel(despesa.categoria)}
+                      Categoria: {despesa.categoria?.nome ?? '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Pagamento: {getPaymentMethodLabel(despesa.meioPagamento)}
@@ -249,7 +232,7 @@ export default function FinanceExpensesPage() {
                       </TableCell>
                       <TableCell>{despesa.descricao}</TableCell>
                       <TableCell>
-                        {getExpenseCategoryLabel(despesa.categoria)}
+                        {despesa.categoria?.nome ?? '-'}
                       </TableCell>
                       <TableCell>
                         {getPaymentMethodLabel(despesa.meioPagamento)}

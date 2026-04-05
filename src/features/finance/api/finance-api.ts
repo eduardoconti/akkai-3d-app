@@ -2,6 +2,8 @@ import { httpClient } from '@/shared/lib/api/http-client';
 import type {
   Carteira,
   CarteiraInput,
+  CategoriaDespesa,
+  CategoriaDespesaInput,
   Despesa,
   DespesaInput,
   PesquisaPaginadaDespesas,
@@ -25,6 +27,29 @@ export function updateWallet(
   input: CarteiraInput,
 ): Promise<Carteira> {
   return httpClient.put<Carteira>(`/financeiro/carteiras/${id}`, input);
+}
+
+export function listExpenseCategories(): Promise<CategoriaDespesa[]> {
+  return httpClient.get<CategoriaDespesa[]>('/financeiro/categorias-despesa');
+}
+
+export function createExpenseCategory(
+  input: CategoriaDespesaInput,
+): Promise<CategoriaDespesa> {
+  return httpClient.post<CategoriaDespesa>(
+    '/financeiro/categorias-despesa',
+    input,
+  );
+}
+
+export function updateExpenseCategory(
+  id: number,
+  input: CategoriaDespesaInput,
+): Promise<CategoriaDespesa> {
+  return httpClient.put<CategoriaDespesa>(
+    `/financeiro/categorias-despesa/${id}`,
+    input,
+  );
 }
 
 export function listExpenses(
