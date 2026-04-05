@@ -27,7 +27,6 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type CategoriaDespesa,
   type MeioPagamento,
   type ProblemDetails,
 } from '@/shared';
@@ -43,9 +42,11 @@ export default function NewExpenseDialog({
 }: NewExpenseDialogProps) {
   const {
     carteiras,
+    categoriasDespesa,
     clearSubmitError,
     criarDespesa,
     fetchCarteiras,
+    fetchCategoriasDespesa,
     fetchDespesas,
     isSubmitting,
     submitErrorMessage,
@@ -58,6 +59,7 @@ export default function NewExpenseDialog({
   useEffect(() => {
     if (open) {
       void fetchCarteiras();
+      void fetchCategoriasDespesa();
       return;
     }
 
@@ -65,7 +67,7 @@ export default function NewExpenseDialog({
     setProblem(null);
     setLocalErrors({});
     clearSubmitError();
-  }, [open, fetchCarteiras, clearSubmitError]);
+  }, [open, fetchCarteiras, fetchCategoriasDespesa, clearSubmitError]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -77,6 +79,15 @@ export default function NewExpenseDialog({
       }));
     }
   }, [open, carteiras, form.idCarteira]);
+
+  useEffect(() => {
+    if (open && form.idCategoria === '' && categoriasDespesa.length > 0) {
+      setForm((current) => ({
+        ...current,
+        idCategoria: categoriasDespesa[0]!.id,
+      }));
+    }
+  }, [open, categoriasDespesa, form.idCategoria]);
 
   const activeWallets = useMemo(
     () => carteiras.filter((carteira) => carteira.ativa),
@@ -107,6 +118,10 @@ export default function NewExpenseDialog({
       errors.valor = 'Informe um valor maior que zero.';
     }
 
+    if (form.idCategoria === '') {
+      errors.idCategoria = 'Selecione a categoria da despesa.';
+    }
+
     if (form.idCarteira === '') {
       errors.idCarteira = 'Selecione a carteira da despesa.';
     }
@@ -117,7 +132,8 @@ export default function NewExpenseDialog({
     if (
       Object.keys(errors).length > 0 ||
       !dataLancamento ||
-      form.idCarteira === ''
+      form.idCarteira === '' ||
+      form.idCategoria === ''
     ) {
       return;
     }
@@ -126,7 +142,7 @@ export default function NewExpenseDialog({
       dataLancamento,
       descricao: form.descricao.trim(),
       valor: Math.round(form.valor * 100),
-      categoria: form.categoria,
+      idCategoria: form.idCategoria,
       meioPagamento: form.meioPagamento,
       idCarteira: form.idCarteira,
       observacao: form.observacao.trim() || undefined,
@@ -279,20 +295,28 @@ export default function NewExpenseDialog({
               select
               fullWidth
               label="Categoria"
-              value={form.categoria}
+              value={form.idCategoria}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
-                  categoria: event.target.value as CategoriaDespesa,
+                  idCategoria: Number(event.target.value),
                 }))
               }
+              error={Boolean(
+                localErrors.idCategoria ||
+                getFieldMessage(problem, 'idCategoria'),
+              )}
+              helperText={
+                localErrors.idCategoria ??
+                getFieldMessage(problem, 'idCategoria')
+              }
             >
-              <MenuItem value="DESPESA_FIXA">Despesa fixa</MenuItem>
-              <MenuItem value="MATERIA_PRIMA">Matéria-prima</MenuItem>
-              <MenuItem value="EMBALAGEM">Embalagem</MenuItem>
-              <MenuItem value="EVENTO">Evento</MenuItem>
-              <MenuItem value="TRANSPORTE">Transporte</MenuItem>
-              <MenuItem value="OUTROS">Outros</MenuItem>
+              <MenuItem value="">Selecione a categoria</MenuItem>
+              {categoriasDespesa.map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.nome}
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
 

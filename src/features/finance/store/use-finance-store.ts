@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import {
   createExpense,
+  createExpenseCategory,
   createWallet,
   getWalletById,
+  listExpenseCategories,
   listExpenses,
   listWallets,
+  updateExpenseCategory,
   updateWallet,
 } from '@/features/finance/api/finance-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
@@ -12,6 +15,8 @@ import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Carteira,
   CarteiraInput,
+  CategoriaDespesa,
+  CategoriaDespesaInput,
   Despesa,
   DespesaInput,
   PesquisaPaginadaDespesas,
@@ -29,6 +34,7 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
 interface FinanceStoreState {
   carteiras: Carteira[];
   despesas: Despesa[];
+  categoriasDespesa: CategoriaDespesa[];
   paginacao: PesquisaPaginadaDespesas;
   totalItens: number;
   totalPaginas: number;
@@ -41,18 +47,27 @@ interface FinanceStoreState {
   fetchDespesas: (
     query?: Partial<PesquisaPaginadaDespesas>,
   ) => Promise<ResultadoPaginado<Despesa> | void>;
+  fetchCategoriasDespesa: () => Promise<void>;
   criarCarteira: (dados: CarteiraInput) => Promise<ActionResult<Carteira>>;
   atualizarCarteira: (
     id: number,
     dados: CarteiraInput,
   ) => Promise<ActionResult<Carteira>>;
   criarDespesa: (dados: DespesaInput) => Promise<ActionResult<Despesa>>;
+  criarCategoriaDespesa: (
+    dados: CategoriaDespesaInput,
+  ) => Promise<ActionResult<CategoriaDespesa>>;
+  atualizarCategoriaDespesa: (
+    id: number,
+    dados: CategoriaDespesaInput,
+  ) => Promise<ActionResult<CategoriaDespesa>>;
   clearSubmitError: () => void;
 }
 
 export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   carteiras: [],
   despesas: [],
+  categoriasDespesa: [],
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
@@ -108,6 +123,14 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       set({ isFetching: false });
     }
   },
+  fetchCategoriasDespesa: async () => {
+    try {
+      const categoriasDespesa = await listExpenseCategories();
+      set({ categoriasDespesa });
+    } catch {
+      // silently ignore — não bloqueia a UI se falhar
+    }
+  },
   criarCarteira: async (dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
@@ -139,6 +162,32 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     try {
       const despesa = await createExpense(dados);
       return { success: true, data: despesa };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  criarCategoriaDespesa: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const categoria = await createExpenseCategory(dados);
+      return { success: true, data: categoria };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarCategoriaDespesa: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const categoria = await updateExpenseCategory(id, dados);
+      return { success: true, data: categoria };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });

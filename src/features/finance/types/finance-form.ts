@@ -1,7 +1,4 @@
-import type {
-  CategoriaDespesa,
-  MeioPagamento,
-} from '@/shared/lib/types/domain';
+import type { MeioPagamento } from '@/shared/lib/types/domain';
 
 export type WalletFormState = {
   nome: string;
@@ -21,7 +18,7 @@ export type ExpenseFormState = {
   dataLancamento: string;
   descricao: string;
   valor: number;
-  categoria: CategoriaDespesa;
+  idCategoria: number | '';
   meioPagamento: MeioPagamento;
   idCarteira: number | '';
   observacao: string;
@@ -31,6 +28,7 @@ export type ExpenseFormErrors = {
   dataLancamento?: string;
   descricao?: string;
   valor?: string;
+  idCategoria?: string;
   idCarteira?: string;
   observacao?: string;
 };
@@ -47,7 +45,7 @@ export const initialExpenseFormState: ExpenseFormState = {
   dataLancamento: getCurrentDateInput(),
   descricao: '',
   valor: 0,
-  categoria: 'DESPESA_FIXA',
+  idCategoria: '',
   meioPagamento: 'PIX',
   idCarteira: '',
   observacao: '',

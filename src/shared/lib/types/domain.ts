@@ -44,13 +44,10 @@ export interface Feira {
 
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
-export type CategoriaDespesa =
-  | 'DESPESA_FIXA'
-  | 'MATERIA_PRIMA'
-  | 'EMBALAGEM'
-  | 'EVENTO'
-  | 'TRANSPORTE'
-  | 'OUTROS';
+export interface CategoriaDespesa {
+  id: number;
+  nome: string;
+}
 export type OrdenacaoProduto = 'nome' | 'codigo';
 export type DirecaoOrdenacao = 'asc' | 'desc';
 
@@ -66,6 +63,7 @@ export interface Despesa {
   dataLancamento: string;
   descricao: string;
   valor: number;
+  idCategoria: number;
   categoria: CategoriaDespesa;
   meioPagamento: MeioPagamento;
   idCarteira: number;
@@ -154,11 +152,15 @@ export interface CarteiraInput {
   ativa?: boolean;
 }
 
+export interface CategoriaDespesaInput {
+  nome: string;
+}
+
 export interface DespesaInput {
   dataLancamento: string;
   descricao: string;
   valor: number;
-  categoria: CategoriaDespesa;
+  idCategoria: number;
   meioPagamento: MeioPagamento;
   idCarteira: number;
   observacao?: string;
