@@ -135,12 +135,14 @@ export default function ProductsPage() {
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
+            <MenuItem value="quantidade">Quantidade</MenuItem>
+            <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
           </TextField>
 
           <TextField
             select
             label="Direção"
-            value={paginacao.direcao ?? 'asc'}
+            value={paginacao.direcao ?? 'desc'}
             onChange={(event) => {
               void fetchProdutos({
                 pagina: 1,

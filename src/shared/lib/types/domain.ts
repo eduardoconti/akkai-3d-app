@@ -48,7 +48,7 @@ export interface CategoriaDespesa {
   id: number;
   nome: string;
 }
-export type OrdenacaoProduto = 'nome' | 'codigo';
+export type OrdenacaoProduto = 'nome' | 'codigo' | 'quantidade' | 'nivelEstoque';
 export type DirecaoOrdenacao = 'asc' | 'desc';
 
 export interface Carteira {

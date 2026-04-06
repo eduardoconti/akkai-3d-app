@@ -94,6 +94,8 @@ export default function ReportsBestSellingProductsPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+  const [isLoadingFeiras, setIsLoadingFeiras] = useState(false);
+  const [hasLoadedFeiras, setHasLoadedFeiras] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -102,17 +104,13 @@ export default function ReportsBestSellingProductsPage() {
       setIsLoadingFilters(true);
 
       try {
-        const [categoriasResponse, feirasResponse] = await Promise.all([
-          listAllCategories(),
-          listFairs(),
-        ]);
+        const categoriasResponse = await listAllCategories();
 
         if (!active) {
           return;
         }
 
         setCategorias(categoriasResponse);
-        setFeiras(feirasResponse);
       } catch (error) {
         if (!active) {
           return;
@@ -138,6 +136,45 @@ export default function ReportsBestSellingProductsPage() {
       setIdFeira('');
     }
   }, [tipoVenda]);
+
+  useEffect(() => {
+    if (tipoVenda !== 'FEIRA' || hasLoadedFeiras) {
+      return;
+    }
+
+    let active = true;
+
+    const loadFeiras = async () => {
+      setIsLoadingFeiras(true);
+
+      try {
+        const feirasResponse = await listFairs();
+
+        if (!active) {
+          return;
+        }
+
+        setFeiras(feirasResponse);
+        setHasLoadedFeiras(true);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setProblem(getProblemDetailsFromError(error));
+      } finally {
+        if (active) {
+          setIsLoadingFeiras(false);
+        }
+      }
+    };
+
+    void loadFeiras();
+
+    return () => {
+      active = false;
+    };
+  }, [hasLoadedFeiras, tipoVenda]);
 
   const periodoLabel = useMemo(() => {
     if (!result) {
@@ -268,7 +305,7 @@ export default function ReportsBestSellingProductsPage() {
               <TextField
                 select
                 fullWidth
-                disabled={tipoVenda !== 'FEIRA' || isLoadingFilters}
+                disabled={tipoVenda !== 'FEIRA' || isLoadingFeiras}
                 label="Feira"
                 value={idFeira}
                 onChange={(event) =>
@@ -278,7 +315,9 @@ export default function ReportsBestSellingProductsPage() {
                 }
                 helperText={
                   tipoVenda === 'FEIRA'
-                    ? 'Opcional. Filtre uma feira específica.'
+                    ? feiras.length === 0 && !isLoadingFeiras
+                      ? 'Nenhuma feira cadastrada.'
+                      : 'Opcional. Filtre uma feira específica.'
                     : 'Disponível apenas para vendas do tipo feira.'
                 }
               >
