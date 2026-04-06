@@ -49,6 +49,7 @@ export default function NewCategoryDialog({
   const [form, setForm] = useState<CategoryFormState>(initialCategoryFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<CategoryFormErrors>({});
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -86,6 +87,16 @@ export default function NewCategoryDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     const validationErrors = validateForm();
     setLocalErrors(validationErrors);
@@ -95,19 +106,25 @@ export default function NewCategoryDialog({
       return;
     }
 
-    const result = await criarCategoria({
-      nome: form.nome.trim().toUpperCase(),
-      idAscendente: form.idAscendente === '' ? undefined : form.idAscendente,
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await criarCategoria({
+        nome: form.nome.trim().toUpperCase(),
+        idAscendente: form.idAscendente === '' ? undefined : form.idAscendente,
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchCategorias();
+      showSuccess('Categoria cadastrada com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchCategorias();
-    showSuccess('Categoria cadastrada com sucesso.');
-    handleClose();
   };
 
   const globalMessage = problem?.detail ?? submitErrorMessage;
@@ -115,7 +132,7 @@ export default function NewCategoryDialog({
     localErrors[field] ?? getFieldMessage(problem, field) ?? undefined;
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -137,7 +154,11 @@ export default function NewCategoryDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de categoria">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de categoria"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -189,7 +210,7 @@ export default function NewCategoryDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -197,9 +218,9 @@ export default function NewCategoryDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar Categoria'}
+          {isBusy ? 'Salvando...' : 'Salvar Categoria'}
         </Button>
       </DialogActions>
     </Dialog>

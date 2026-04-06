@@ -59,6 +59,7 @@ export default function EditWalletDialog({
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!open || walletId === null) {
@@ -116,6 +117,16 @@ export default function EditWalletDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isLoading || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     if (walletId === null) {
       return;
@@ -134,24 +145,30 @@ export default function EditWalletDialog({
       return;
     }
 
-    const result = await atualizarCarteira(walletId, {
-      nome: form.nome.trim(),
-      ativa: form.ativa,
-      meiosPagamento: form.meiosPagamento,
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await atualizarCarteira(walletId, {
+        nome: form.nome.trim(),
+        ativa: form.ativa,
+        meiosPagamento: form.meiosPagamento,
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await onUpdated();
+      showSuccess('Carteira alterada com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await onUpdated();
-    showSuccess('Carteira alterada com sucesso.');
-    handleClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -173,7 +190,11 @@ export default function EditWalletDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de carteira">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de carteira"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -242,7 +263,7 @@ export default function EditWalletDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -250,9 +271,9 @@ export default function EditWalletDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting || isLoading}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar carteira'}
+          {isBusy ? 'Salvando...' : 'Salvar carteira'}
         </Button>
       </DialogActions>
     </Dialog>

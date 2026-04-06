@@ -106,6 +106,16 @@ export default function NewProductDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     if (isSubmittingRef.current) {
       return;
@@ -155,7 +165,7 @@ export default function NewProductDialog({
   const globalMessage = problem?.detail ?? submitErrorMessage;
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -177,7 +187,11 @@ export default function NewProductDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de produto">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de produto"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -295,7 +309,7 @@ export default function NewProductDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting || isSaving}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -303,9 +317,9 @@ export default function NewProductDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting || isSaving}
+          disabled={isBusy}
         >
-          {isSubmitting || isSaving ? 'Salvando...' : 'Salvar Produto'}
+          {isBusy ? 'Salvando...' : 'Salvar Produto'}
         </Button>
       </DialogActions>
     </Dialog>

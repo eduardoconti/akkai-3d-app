@@ -41,6 +41,7 @@ export default function EditExpenseCategoryDialog({
   const [form, setForm] = useState<FormState>({ nome: '' });
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors>({});
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -66,6 +67,16 @@ export default function EditExpenseCategoryDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     if (categoryId === null) return;
 
@@ -82,22 +93,28 @@ export default function EditExpenseCategoryDialog({
       return;
     }
 
-    const result = await atualizarCategoriaDespesa(categoryId, {
-      nome: form.nome.trim(),
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await atualizarCategoriaDespesa(categoryId, {
+        nome: form.nome.trim(),
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await onUpdated();
+      showSuccess('Categoria alterada com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await onUpdated();
-    showSuccess('Categoria alterada com sucesso.');
-    handleClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -119,7 +136,11 @@ export default function EditExpenseCategoryDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de categoria">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de categoria"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -145,7 +166,7 @@ export default function EditExpenseCategoryDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -153,9 +174,9 @@ export default function EditExpenseCategoryDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar'}
+          {isBusy ? 'Salvando...' : 'Salvar'}
         </Button>
       </DialogActions>
     </Dialog>

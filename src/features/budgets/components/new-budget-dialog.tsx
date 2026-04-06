@@ -38,6 +38,7 @@ export default function NewBudgetDialog({
   const [form, setForm] = useState(initialBudgetFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<BudgetFormErrors>({});
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -55,6 +56,16 @@ export default function NewBudgetDialog({
     setLocalErrors({});
     clearSubmitError();
     onClose();
+  };
+
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
   };
 
   const validateForm = (): BudgetFormErrors => {
@@ -93,27 +104,33 @@ export default function NewBudgetDialog({
       return;
     }
 
-    const result = await criarOrcamento({
-      nomeCliente: form.nomeCliente.trim(),
-      telefoneCliente: form.telefoneCliente.trim(),
-      descricao: form.descricao.trim() || undefined,
-      linkSTL: form.linkSTL.trim() || undefined,
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await criarOrcamento({
+        nomeCliente: form.nomeCliente.trim(),
+        telefoneCliente: form.telefoneCliente.trim(),
+        descricao: form.descricao.trim() || undefined,
+        linkSTL: form.linkSTL.trim() || undefined,
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchOrcamentos({ pagina: 1 });
+      showSuccess('Orçamento cadastrado com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchOrcamentos({ pagina: 1 });
-    showSuccess('Orçamento cadastrado com sucesso.');
-    handleClose();
   };
 
   const globalMessage = problem?.detail ?? submitErrorMessage;
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -135,7 +152,11 @@ export default function NewBudgetDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de orçamento">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de orçamento"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -225,7 +246,7 @@ export default function NewBudgetDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -235,9 +256,9 @@ export default function NewBudgetDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar orçamento'}
+          {isBusy ? 'Salvando...' : 'Salvar orçamento'}
         </Button>
       </DialogActions>
     </Dialog>
