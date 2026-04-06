@@ -9,4 +9,37 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+
+          if (id.includes('@mui') || id.includes('@emotion')) {
+            return 'mui';
+          }
+
+          if (id.includes('@mui/x-date-pickers') || id.includes('dayjs')) {
+            return 'date';
+          }
+
+          if (id.includes('react-router')) {
+            return 'router';
+          }
+
+          if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
+            return 'state';
+          }
+
+          if (id.includes('axios')) {
+            return 'network';
+          }
+
+          return 'vendor';
+        },
+      },
+    },
+  },
 });
