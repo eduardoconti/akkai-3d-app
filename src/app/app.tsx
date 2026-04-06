@@ -1,3 +1,5 @@
+import { Suspense, lazy } from 'react';
+import { Box, CircularProgress } from '@mui/material';
 import {
   BrowserRouter,
   Navigate,
@@ -5,25 +7,55 @@ import {
   Route,
   Routes,
 } from 'react-router-dom';
+import RouteErrorBoundary from './components/route-error-boundary';
 import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
-import { BudgetsPage } from '@/features/budgets';
-import {
-  FinanceExpenseCategoriesPage,
-  FinanceExpensesPage,
-  FinanceWalletsPage,
-} from '@/features/finance';
-import { ProductCategoriesPage, ProductsPage } from '@/features/products';
-import {
-  ReportsBestSellingProductsPage,
-  ReportsSummaryPage,
-} from '@/features/reports';
-import { SalesPage } from '@/features/sales';
+
+const SalesPage = lazy(() => import('@/features/sales/pages/sales-page'));
+const FinanceWalletsPage = lazy(
+  () => import('@/features/finance/pages/finance-wallets-page'),
+);
+const FinanceExpenseCategoriesPage = lazy(
+  () => import('@/features/finance/pages/finance-expense-categories-page'),
+);
+const FinanceExpensesPage = lazy(
+  () => import('@/features/finance/pages/finance-expenses-page'),
+);
+const BudgetsPage = lazy(() => import('@/features/budgets/pages/budgets-page'));
+const ProductsPage = lazy(() => import('@/features/products/pages/products-page'));
+const ProductCategoriesPage = lazy(
+  () => import('@/features/products/pages/product-categories-page'),
+);
+const ReportsBestSellingProductsPage = lazy(
+  () => import('@/features/reports/pages/reports-best-selling-products-page'),
+);
+const ReportsSummaryPage = lazy(
+  () => import('@/features/reports/pages/reports-summary-page'),
+);
+
+function RouteFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: '40vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
 
 function ProtectedLayout() {
   return (
     <MainLayout>
-      <Outlet />
+      <RouteErrorBoundary>
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
+      </RouteErrorBoundary>
     </MainLayout>
   );
 }
