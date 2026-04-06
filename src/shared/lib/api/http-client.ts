@@ -30,6 +30,8 @@ export class ApiProblemError extends Error {
   }
 }
 
+let refreshRequestPromise: Promise<boolean> | null = null;
+
 async function parseResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
 
@@ -116,15 +118,23 @@ async function request<T>(
     !path.startsWith('/auth/refresh')
   ) {
     try {
-      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      if (!refreshRequestPromise) {
+        refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then((refreshResponse) => refreshResponse.ok)
+          .finally(() => {
+            refreshRequestPromise = null;
+          });
+      }
 
-      if (refreshResponse.ok) {
+      const refreshSucceeded = await refreshRequestPromise;
+
+      if (refreshSucceeded) {
         return request<T>(path, init, true);
       }
     } catch {

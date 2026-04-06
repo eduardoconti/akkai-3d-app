@@ -72,11 +72,16 @@ export default function ReportsSummaryPage() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+  const [hasLoadedFeiras, setHasLoadedFeiras] = useState(false);
 
   useEffect(() => {
+    if (tipoVenda !== 'FEIRA' || hasLoadedFeiras) {
+      return;
+    }
+
     let active = true;
 
-    const loadFilters = async () => {
+    const loadFeiras = async () => {
       setIsLoadingFilters(true);
 
       try {
@@ -87,6 +92,7 @@ export default function ReportsSummaryPage() {
         }
 
         setFeiras(feirasResponse);
+        setHasLoadedFeiras(true);
       } catch (error) {
         if (!active) {
           return;
@@ -100,12 +106,12 @@ export default function ReportsSummaryPage() {
       }
     };
 
-    void loadFilters();
+    void loadFeiras();
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [hasLoadedFeiras, tipoVenda]);
 
   useEffect(() => {
     if (tipoVenda !== 'FEIRA') {

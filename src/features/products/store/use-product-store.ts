@@ -29,8 +29,8 @@ const paginacaoInicial: PesquisaPaginada = {
   pagina: 1,
   tamanhoPagina: 10,
   termo: '',
-  ordenarPor: 'nome',
-  direcao: 'asc',
+  ordenarPor: 'codigo',
+  direcao: 'desc',
 };
 
 const paginacaoCategoriasInicial: PesquisaPaginada = {
@@ -120,8 +120,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       pagina: query?.pagina ?? currentPagination.pagina,
       tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
       termo: query?.termo ?? currentPagination.termo ?? '',
-      ordenarPor: query?.ordenarPor ?? currentPagination.ordenarPor ?? 'nome',
-      direcao: query?.direcao ?? currentPagination.direcao ?? 'asc',
+      ordenarPor: query?.ordenarPor ?? currentPagination.ordenarPor ?? 'codigo',
+      direcao: query?.direcao ?? currentPagination.direcao ?? 'desc',
     };
 
     set({ isFetchingProducts: true, fetchErrorMessage: null });
