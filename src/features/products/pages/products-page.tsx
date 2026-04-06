@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Divider,
@@ -19,8 +20,10 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme, type Theme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
+import NewProductDialog from '../components/new-product-dialog';
 import { useProductStore } from '../store/use-product-store';
 import {
   formatCurrency,
@@ -86,6 +89,7 @@ export default function ProductsPage() {
     produtos,
     totalItens,
   } = useProductStore();
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
@@ -156,6 +160,14 @@ export default function ProductsPage() {
             onChange={(event) => setSearchInput(event.target.value)}
             sx={{ minWidth: { xs: '100%', md: 320 } }}
           />
+
+          <Button
+            variant="contained"
+            startIcon={<AddCircleOutline />}
+            onClick={() => setDialogOpen(true)}
+          >
+            Novo produto
+          </Button>
         </Stack>
       </Stack>
 
@@ -372,6 +384,7 @@ export default function ProductsPage() {
           await fetchProdutos();
         }}
       />
+      <NewProductDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </Stack>
   );
 }

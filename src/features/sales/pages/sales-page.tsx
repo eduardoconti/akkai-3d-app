@@ -29,6 +29,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
+  Close,
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
@@ -199,6 +200,7 @@ export default function SalesPage() {
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
   const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
+  const [isDeletingSale, setIsDeletingSale] = useState(false);
 
   useEffect(() => {
     void fetchFeiras();
@@ -263,14 +265,30 @@ export default function SalesPage() {
       return;
     }
 
-    const result = await excluirVenda(saleToDelete.id);
+    setIsDeletingSale(true);
 
-    if (!result.success) {
+    try {
+      const result = await excluirVenda(saleToDelete.id);
+
+      if (!result.success) {
+        return;
+      }
+
+      await fetchVendas();
+      showSuccess('Venda excluída com sucesso.');
+      setSaleToDelete(null);
+    } finally {
+      setIsDeletingSale(false);
+    }
+  };
+
+  const isDeleteBusy = isSubmitting || isDeletingSale;
+
+  const handleCloseDeleteDialog = () => {
+    if (isDeleteBusy) {
       return;
     }
 
-    await fetchVendas();
-    showSuccess('Venda excluída com sucesso.');
     setSaleToDelete(null);
   };
 
@@ -533,24 +551,50 @@ export default function SalesPage() {
         open={Boolean(actionsAnchorEl)}
         onClose={handleCloseActions}
       >
-        <MenuItem onClick={handleStartEdit} disabled={!isOnline || isSubmitting}>
+        <MenuItem onClick={handleStartEdit} disabled={!isOnline || isDeleteBusy}>
           Alterar
         </MenuItem>
-        <MenuItem onClick={handleAskDelete} disabled={!isOnline || isSubmitting}>
+        <MenuItem onClick={handleAskDelete} disabled={!isOnline || isDeleteBusy}>
           Excluir
         </MenuItem>
       </Menu>
 
-      <Dialog open={Boolean(saleToDelete)} onClose={() => setSaleToDelete(null)}>
-        <DialogTitle>Excluir venda</DialogTitle>
-        <DialogContent>
+      <Dialog open={Boolean(saleToDelete)} onClose={handleCloseDeleteDialog}>
+        <DialogTitle sx={{ px: 3, py: 2.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                Excluir venda
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Confirme a remoção da venda selecionada.
+              </Typography>
+            </Box>
+
+            <IconButton
+              onClick={handleCloseDeleteDialog}
+              aria-label="Fechar modal de exclusão de venda"
+              disabled={isDeleteBusy}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
           <Typography variant="body2">
             Tem certeza que deseja excluir a venda #{saleToDelete?.id}? Essa ação
             não pode ser desfeita.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSaleToDelete(null)} disabled={isSubmitting}>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseDeleteDialog} disabled={isDeleteBusy}>
             Cancelar
           </Button>
           <Button
@@ -559,9 +603,9 @@ export default function SalesPage() {
             onClick={() => {
               void handleConfirmDelete();
             }}
-            disabled={isSubmitting}
+            disabled={isDeleteBusy}
           >
-            Confirmar exclusão
+            {isDeleteBusy ? 'Excluindo...' : 'Confirmar exclusão'}
           </Button>
         </DialogActions>
       </Dialog>

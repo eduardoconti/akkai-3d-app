@@ -127,6 +127,16 @@ export default function EditCategoryDialog({
     onClose();
   };
 
+  const isBusy = isSaving || isLoading;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     if (categoryId === null) {
       return;
@@ -162,7 +172,7 @@ export default function EditCategoryDialog({
     localErrors[field] ?? getFieldMessage(problem, field) ?? undefined;
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -184,7 +194,11 @@ export default function EditCategoryDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de categoria">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de categoria"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -237,7 +251,7 @@ export default function EditCategoryDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSaving}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -245,9 +259,9 @@ export default function EditCategoryDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSaving || isLoading}
+          disabled={isBusy}
         >
-          {isSaving ? 'Salvando...' : 'Salvar categoria'}
+          {isBusy ? 'Salvando...' : 'Salvar categoria'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -12,6 +12,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
@@ -29,10 +30,24 @@ export default function FinanceExpenseCategoriesPage() {
     useFinanceStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     void fetchCategoriasDespesa();
   }, [fetchCategoriasDespesa]);
+
+  const paginatedCategorias = categoriasDespesa.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage,
+  );
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(categoriasDespesa.length / rowsPerPage) - 1);
+    if (page > maxPage) {
+      setPage(maxPage);
+    }
+  }, [categoriasDespesa.length, page, rowsPerPage]);
 
   return (
     <Stack spacing={3}>
@@ -70,8 +85,8 @@ export default function FinanceExpenseCategoriesPage() {
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress />
               </Box>
-            ) : categoriasDespesa.length > 0 ? (
-              categoriasDespesa.map((categoria) => (
+            ) : paginatedCategorias.length > 0 ? (
+              paginatedCategorias.map((categoria) => (
                 <Box
                   key={categoria.id}
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
@@ -105,8 +120,8 @@ export default function FinanceExpenseCategoriesPage() {
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
-                ) : categoriasDespesa.length > 0 ? (
-                  categoriasDespesa.map((categoria) => (
+                ) : paginatedCategorias.length > 0 ? (
+                  paginatedCategorias.map((categoria) => (
                     <TableRow
                       key={categoria.id}
                       hover
@@ -127,6 +142,33 @@ export default function FinanceExpenseCategoriesPage() {
             </Table>
           </TableContainer>
         )}
+
+        <TablePagination
+          component="div"
+          count={categoriasDespesa.length}
+          page={page}
+          onPageChange={(_event, newPage) => {
+            setPage(newPage);
+          }}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(event) => {
+            setRowsPerPage(Number(event.target.value));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="Itens por página"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+          }
+          sx={{
+            '.MuiTablePagination-toolbar': {
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'center', sm: 'flex-end' },
+              gap: 1,
+              px: { xs: 1, sm: 2 },
+            },
+          }}
+        />
       </Paper>
 
       <NewExpenseCategoryDialog

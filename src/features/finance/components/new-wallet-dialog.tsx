@@ -52,6 +52,7 @@ export default function NewWalletDialog({
   const [form, setForm] = useState<WalletFormState>(initialWalletFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -71,6 +72,16 @@ export default function NewWalletDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     const errors: WalletFormErrors = {};
 
@@ -85,24 +96,30 @@ export default function NewWalletDialog({
       return;
     }
 
-    const result = await criarCarteira({
-      nome: form.nome.trim(),
-      ativa: form.ativa,
-      meiosPagamento: form.meiosPagamento,
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await criarCarteira({
+        nome: form.nome.trim(),
+        ativa: form.ativa,
+        meiosPagamento: form.meiosPagamento,
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchCarteiras();
+      showSuccess('Carteira cadastrada com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchCarteiras();
-    showSuccess('Carteira cadastrada com sucesso.');
-    handleClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -124,7 +141,11 @@ export default function NewWalletDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de carteira">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de carteira"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -190,7 +211,7 @@ export default function NewWalletDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -198,9 +219,9 @@ export default function NewWalletDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar Carteira'}
+          {isBusy ? 'Salvando...' : 'Salvar Carteira'}
         </Button>
       </DialogActions>
     </Dialog>

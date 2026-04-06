@@ -54,6 +54,7 @@ export default function NewExpenseDialog({
   const [form, setForm] = useState<ExpenseFormState>(initialExpenseFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<ExpenseFormErrors>({});
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -120,6 +121,16 @@ export default function NewExpenseDialog({
     onClose();
   };
 
+  const isBusy = isSubmitting || isSaving;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   const handleSubmit = async () => {
     const errors: ExpenseFormErrors = {};
     const dataLancamento = convertDateToApiFormat(form.dataLancamento);
@@ -156,29 +167,35 @@ export default function NewExpenseDialog({
       return;
     }
 
-    const result = await criarDespesa({
-      dataLancamento,
-      descricao: form.descricao.trim(),
-      valor: Math.round(form.valor * 100),
-      idCategoria: form.idCategoria,
-      meioPagamento: form.meioPagamento,
-      idCarteira: form.idCarteira,
-      observacao: form.observacao.trim() || undefined,
-    });
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
+    try {
+      const result = await criarDespesa({
+        dataLancamento,
+        descricao: form.descricao.trim(),
+        valor: Math.round(form.valor * 100),
+        idCategoria: form.idCategoria,
+        meioPagamento: form.meioPagamento,
+        idCarteira: form.idCarteira,
+        observacao: form.observacao.trim() || undefined,
+      });
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchDespesas({ pagina: 1 });
+      await fetchCarteiras();
+      showSuccess('Despesa cadastrada com sucesso.');
+      handleClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchDespesas({ pagina: 1 });
-    await fetchCarteiras();
-    showSuccess('Despesa cadastrada com sucesso.');
-    handleClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -200,7 +217,11 @@ export default function NewExpenseDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de despesa">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de despesa"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -384,7 +405,7 @@ export default function NewExpenseDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -392,9 +413,9 @@ export default function NewExpenseDialog({
           variant="contained"
           startIcon={<Save />}
           size="large"
-          disabled={isSubmitting}
+          disabled={isBusy}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar Despesa'}
+          {isBusy ? 'Salvando...' : 'Salvar Despesa'}
         </Button>
       </DialogActions>
     </Dialog>

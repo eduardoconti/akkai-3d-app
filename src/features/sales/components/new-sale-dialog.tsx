@@ -160,6 +160,7 @@ export default function NewSaleDialog({
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isEditMode = sale !== null;
 
@@ -419,30 +420,37 @@ export default function NewSaleDialog({
       return;
     }
 
-    const result =
-      isEditMode && sale
-        ? await alterarVenda(sale.id, payload)
-        : await criarVenda(payload);
+    setIsSaving(true);
 
-    if (!result.success) {
-      setProblem(result.problem);
-      return;
-    }
+    try {
+      const result =
+        isEditMode && sale
+          ? await alterarVenda(sale.id, payload)
+          : await criarVenda(payload);
 
-    if (result.data.id < 0) {
-      showSuccess('Venda salva offline. Sincronize quando a internet voltar.');
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      if (result.data.id < 0) {
+        showSuccess('Venda salva offline. Sincronize quando a internet voltar.');
+        handleClose();
+        return;
+      }
+
+      await fetchVendas();
+      showSuccess(
+        isEditMode ? 'Venda alterada com sucesso.' : 'Venda cadastrada com sucesso.',
+      );
       handleClose();
-      return;
+    } finally {
+      setIsSaving(false);
     }
-
-    await fetchVendas();
-    showSuccess(
-      isEditMode ? 'Venda alterada com sucesso.' : 'Venda cadastrada com sucesso.',
-    );
-    handleClose();
   };
 
   const isFetching = isLoadingCatalogProducts || isFetchingSales;
+  const isBusy = isSubmitting || isFetching || isSaving;
   const globalMessage =
     problem?.detail ??
     submitErrorMessage ??
@@ -458,8 +466,16 @@ export default function NewSaleDialog({
         : `${((totals.saleDiscount / totals.subtotal) * 100).toFixed(1)}% = ${formatCurrency(totals.saleDiscount)}`
       : undefined);
 
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    handleClose();
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="lg">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -480,7 +496,11 @@ export default function NewSaleDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={handleClose} aria-label="Fechar modal de venda">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de venda"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
@@ -850,7 +870,7 @@ export default function NewSaleDialog({
                           <IconButton
                             onClick={() => handleRemoveItem(index)}
                             color="error"
-                            disabled={form.itens.length === 1 || isSubmitting}
+                            disabled={form.itens.length === 1 || isBusy}
                             aria-label={`Remover item ${itemLabel}`}
                           >
                             <Delete />
@@ -862,7 +882,12 @@ export default function NewSaleDialog({
                 );
               })}
 
-              <Button startIcon={<Add />} onClick={handleAddItem} variant="text">
+              <Button
+                startIcon={<Add />}
+                onClick={handleAddItem}
+                variant="text"
+                disabled={isBusy}
+              >
                 Adicionar item
               </Button>
             </Stack>
@@ -1078,7 +1103,7 @@ export default function NewSaleDialog({
                           <IconButton
                             onClick={() => handleRemoveItem(index)}
                             color="error"
-                            disabled={form.itens.length === 1 || isSubmitting}
+                            disabled={form.itens.length === 1 || isBusy}
                             aria-label={`Remover item ${itemLabel}`}
                           >
                             <Delete />
@@ -1091,7 +1116,12 @@ export default function NewSaleDialog({
 
                 <TableRow>
                   <TableCell colSpan={6}>
-                    <Button startIcon={<Add />} onClick={handleAddItem} variant="text">
+                    <Button
+                      startIcon={<Add />}
+                      onClick={handleAddItem}
+                      variant="text"
+                      disabled={isBusy}
+                    >
                       Adicionar item
                     </Button>
                   </TableCell>
@@ -1261,7 +1291,7 @@ export default function NewSaleDialog({
             gap: 1,
           }}
         >
-          <Button onClick={handleClose} color="inherit" disabled={isSubmitting}>
+          <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
             Cancelar
           </Button>
           <Button
@@ -1269,9 +1299,9 @@ export default function NewSaleDialog({
             variant="contained"
             size="large"
             startIcon={<ShoppingCartCheckout />}
-            disabled={isSubmitting || isFetching || (isEditMode && !isOnline)}
+            disabled={isBusy || (isEditMode && !isOnline)}
           >
-            {isSubmitting
+            {isBusy
               ? 'Salvando...'
               : isEditMode
                 ? 'Salvar alterações'

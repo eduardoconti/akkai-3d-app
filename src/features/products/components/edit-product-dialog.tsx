@@ -354,9 +354,18 @@ export default function EditProductDialog({
 
   const movementActionLabel =
     stockForm.tipo === 'ENTRADA' ? 'Registrar entrada' : 'Registrar saida';
+  const isBusy = isLoading || isSaving || isMovingStock;
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
+  };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -378,7 +387,11 @@ export default function EditProductDialog({
             </Typography>
           </Box>
 
-          <IconButton onClick={onClose} aria-label="Fechar modal de produto">
+          <IconButton
+            onClick={handleDialogClose}
+            aria-label="Fechar modal de produto"
+            disabled={isBusy}
+          >
             <Close />
           </IconButton>
         </Box>
