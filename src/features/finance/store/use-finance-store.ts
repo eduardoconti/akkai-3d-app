@@ -3,10 +3,12 @@ import {
   createExpense,
   createExpenseCategory,
   createWallet,
+  deleteExpense,
   getWalletById,
   listExpenseCategories,
   listExpenses,
   listWallets,
+  updateExpense,
   updateExpenseCategory,
   updateWallet,
 } from '@/features/finance/api/finance-api';
@@ -54,6 +56,8 @@ interface FinanceStoreState {
     dados: CarteiraInput,
   ) => Promise<ActionResult<Carteira>>;
   criarDespesa: (dados: DespesaInput) => Promise<ActionResult<Despesa>>;
+  atualizarDespesa: (id: number, dados: DespesaInput) => Promise<ActionResult<Despesa>>;
+  excluirDespesa: (id: number) => Promise<ActionResult<void>>;
   criarCategoriaDespesa: (
     dados: CategoriaDespesaInput,
   ) => Promise<ActionResult<CategoriaDespesa>>;
@@ -162,6 +166,32 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     try {
       const despesa = await createExpense(dados);
       return { success: true, data: despesa };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarDespesa: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const despesa = await updateExpense(id, dados);
+      return { success: true, data: despesa };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  excluirDespesa: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteExpense(id);
+      return { success: true, data: undefined };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });

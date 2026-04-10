@@ -4,7 +4,14 @@ import {
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   Table,
@@ -19,7 +26,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AddCircleOutline } from '@mui/icons-material';
+import { AddCircleOutline, Close, MoreVert } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
@@ -27,7 +34,7 @@ import {
   convertDateToApiFormat,
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
-import { DatePickerField, formatCurrency } from '@/shared';
+import { DatePickerField, formatCurrency, useFeedbackStore, type Despesa } from '@/shared';
 
 function getPaymentMethodLabel(meioPagamento: string): string {
   switch (meioPagamento) {
@@ -58,16 +65,70 @@ export default function FinanceExpensesPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     despesas,
+    excluirDespesa,
     fetchDespesas,
     fetchErrorMessage,
     isFetching,
+    isSubmitting,
     paginacao,
     totalItens,
   } = useFinanceStore();
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
+  const [selectedDespesa, setSelectedDespesa] = useState<Despesa | null>(null);
+  const [despesaToDelete, setDespesaToDelete] = useState<Despesa | null>(null);
+  const [isDeletingDespesa, setIsDeletingDespesa] = useState(false);
+  const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [dataInicio, setDataInicio] = useState(getCurrentDateInput());
   const [dataFim, setDataFim] = useState(getCurrentDateInput());
+
+  const isDeleteBusy = isSubmitting || isDeletingDespesa;
+
+  const handleOpenActions = (event: React.MouseEvent<HTMLButtonElement>, despesa: Despesa) => {
+    event.stopPropagation();
+    setSelectedDespesa(despesa);
+    setActionsAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseActions = () => {
+    setActionsAnchorEl(null);
+    setSelectedDespesa(null);
+  };
+
+  const handleStartEdit = () => {
+    if (!selectedDespesa) return;
+    setEditingDespesa(selectedDespesa);
+    handleCloseActions();
+  };
+
+  const handleAskDelete = () => {
+    if (!selectedDespesa) return;
+    setDespesaToDelete(selectedDespesa);
+    handleCloseActions();
+  };
+
+  const handleCloseDeleteDialog = () => {
+    if (isDeleteBusy) return;
+    setDespesaToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!despesaToDelete) return;
+
+    setIsDeletingDespesa(true);
+    try {
+      const result = await excluirDespesa(despesaToDelete.id);
+      if (!result.success) return;
+
+      await fetchDespesas();
+      showSuccess('Despesa excluída com sucesso.');
+      setDespesaToDelete(null);
+    } finally {
+      setIsDeletingDespesa(false);
+    }
+  };
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -165,13 +226,22 @@ export default function FinanceExpensesPage() {
                           {despesa.descricao}
                         </Typography>
                       </Box>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight={700}
-                        color="error.main"
-                      >
-                        {formatCurrency(despesa.valor)}
-                      </Typography>
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight={700}
+                          color="error.main"
+                        >
+                          {formatCurrency(despesa.valor)}
+                        </Typography>
+                        <IconButton
+                          size="small"
+                          onClick={(event) => handleOpenActions(event, despesa)}
+                          aria-label="Ações da despesa"
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
+                      </Stack>
                     </Stack>
 
                     <Typography variant="body2" color="text.secondary">
@@ -215,12 +285,13 @@ export default function FinanceExpensesPage() {
                   <TableCell align="right">
                     <strong>Valor</strong>
                   </TableCell>
+                  <TableCell />
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -244,11 +315,20 @@ export default function FinanceExpensesPage() {
                       >
                         {formatCurrency(despesa.valor)}
                       </TableCell>
+                      <TableCell align="right" sx={{ py: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={(event) => handleOpenActions(event, despesa)}
+                          aria-label="Ações da despesa"
+                        >
+                          <MoreVert fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                       Nenhuma despesa encontrada para os filtros informados.
                     </TableCell>
                   </TableRow>
@@ -288,9 +368,76 @@ export default function FinanceExpensesPage() {
         />
       </Paper>
 
+      <Menu
+        anchorEl={actionsAnchorEl}
+        open={Boolean(actionsAnchorEl)}
+        onClose={handleCloseActions}
+      >
+        <MenuItem onClick={handleStartEdit} disabled={isDeleteBusy}>
+          Alterar
+        </MenuItem>
+        <MenuItem onClick={handleAskDelete} disabled={isDeleteBusy}>
+          Excluir
+        </MenuItem>
+      </Menu>
+
+      <Dialog open={Boolean(despesaToDelete)} onClose={handleCloseDeleteDialog}>
+        <DialogTitle sx={{ px: 3, py: 2.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                Excluir despesa
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Confirme a remoção da despesa selecionada.
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={handleCloseDeleteDialog}
+              aria-label="Fechar modal de exclusão de despesa"
+              disabled={isDeleteBusy}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2">
+            Tem certeza que deseja excluir a despesa &quot;{despesaToDelete?.descricao}&quot;? Essa ação
+            não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseDeleteDialog} disabled={isDeleteBusy}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => { void handleConfirmDelete(); }}
+            disabled={isDeleteBusy}
+          >
+            {isDeleteBusy ? 'Excluindo...' : 'Confirmar exclusão'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <NewExpenseDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+      />
+
+      <NewExpenseDialog
+        open={Boolean(editingDespesa)}
+        onClose={() => setEditingDespesa(null)}
+        despesa={editingDespesa}
       />
     </Stack>
   );
