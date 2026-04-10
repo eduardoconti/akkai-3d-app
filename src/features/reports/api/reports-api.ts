@@ -46,6 +46,30 @@ export interface BestSellingProductsResponse {
   totalPaginas: number;
 }
 
+export interface StockValueReportFilter {
+  pagina?: number;
+  tamanhoPagina?: number;
+}
+
+export interface StockValueProductItem {
+  codigo: string;
+  nome: string;
+  quantidade: number;
+  valor: number;
+  valorTotal: number;
+}
+
+export interface StockValueReportResponse {
+  itens: StockValueProductItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+  totalQuantidade: number;
+  totalValor: number;
+  totalValorTotal: number;
+}
+
 export function getSalesSummary(
   filtro: SalesSummaryPeriodFilter,
 ): Promise<SalesSummary> {
@@ -57,6 +81,15 @@ export function getBestSellingProducts(
 ): Promise<BestSellingProductsResponse> {
   return httpClient.get<BestSellingProductsResponse>(
     '/relatorio/vendas/produtos-mais-vendidos',
+    filtro,
+  );
+}
+
+export function getStockValueReport(
+  filtro: StockValueReportFilter,
+): Promise<StockValueReportResponse> {
+  return httpClient.get<StockValueReportResponse>(
+    '/relatorio/estoque/valor-produtos',
     filtro,
   );
 }
