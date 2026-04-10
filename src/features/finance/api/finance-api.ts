@@ -61,3 +61,11 @@ export function listExpenses(
 export function createExpense(input: DespesaInput): Promise<Despesa> {
   return httpClient.post<Despesa>('/financeiro/despesas', input);
 }
+
+export function updateExpense(id: number, input: DespesaInput): Promise<Despesa> {
+  return httpClient.put<Despesa>(`/financeiro/despesas/${id}`, input);
+}
+
+export function deleteExpense(id: number): Promise<void> {
+  return httpClient.delete<void>(`/financeiro/despesas/${id}`);
+}

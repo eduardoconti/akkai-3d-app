@@ -27,6 +27,7 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
+  type Despesa,
   type MeioPagamento,
   type ProblemDetails,
 } from '@/shared';
@@ -34,17 +35,21 @@ import {
 interface NewExpenseDialogProps {
   open: boolean;
   onClose: () => void;
+  despesa?: Despesa | null;
 }
 
 export default function NewExpenseDialog({
   open,
   onClose,
+  despesa,
 }: NewExpenseDialogProps) {
+  const isEditMode = despesa != null;
   const {
     carteiras,
     categoriasDespesa,
     clearSubmitError,
     criarDespesa,
+    atualizarDespesa,
     fetchCarteiras,
     fetchCategoriasDespesa,
     fetchDespesas,
@@ -61,6 +66,18 @@ export default function NewExpenseDialog({
     if (open) {
       void fetchCarteiras();
       void fetchCategoriasDespesa();
+
+      if (despesa) {
+        setForm({
+          dataLancamento: despesa.dataLancamento.substring(0, 10),
+          descricao: despesa.descricao,
+          valor: despesa.valor / 100,
+          idCategoria: despesa.idCategoria,
+          meioPagamento: despesa.meioPagamento,
+          idCarteira: despesa.idCarteira,
+          observacao: despesa.observacao ?? '',
+        });
+      }
       return;
     }
 
@@ -68,27 +85,27 @@ export default function NewExpenseDialog({
     setProblem(null);
     setLocalErrors({});
     clearSubmitError();
-  }, [open, fetchCarteiras, fetchCategoriasDespesa, clearSubmitError]);
+  }, [open, despesa, isEditMode, fetchCarteiras, fetchCategoriasDespesa, clearSubmitError]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
 
-    if (open && form.idCarteira === '' && carteiraPadrao) {
+    if (open && !isEditMode && form.idCarteira === '' && carteiraPadrao) {
       setForm((current) => ({
         ...current,
         idCarteira: carteiraPadrao.id,
       }));
     }
-  }, [open, carteiras, form.idCarteira]);
+  }, [open, isEditMode, carteiras, form.idCarteira]);
 
   useEffect(() => {
-    if (open && form.idCategoria === '' && categoriasDespesa.length > 0) {
+    if (open && !isEditMode && form.idCategoria === '' && categoriasDespesa.length > 0) {
       setForm((current) => ({
         ...current,
         idCategoria: categoriasDespesa[0]!.id,
       }));
     }
-  }, [open, categoriasDespesa, form.idCategoria]);
+  }, [open, isEditMode, categoriasDespesa, form.idCategoria]);
 
   const activeWallets = useMemo(
     () => carteiras.filter((carteira) => carteira.ativa),
@@ -170,7 +187,7 @@ export default function NewExpenseDialog({
     setIsSaving(true);
 
     try {
-      const result = await criarDespesa({
+      const payload = {
         dataLancamento,
         descricao: form.descricao.trim(),
         valor: Math.round(form.valor * 100),
@@ -178,7 +195,11 @@ export default function NewExpenseDialog({
         meioPagamento: form.meioPagamento,
         idCarteira: form.idCarteira,
         observacao: form.observacao.trim() || undefined,
-      });
+      };
+
+      const result = isEditMode
+        ? await atualizarDespesa(despesa.id, payload)
+        : await criarDespesa(payload);
 
       if (!result.success) {
         setProblem(result.problem);
@@ -186,8 +207,7 @@ export default function NewExpenseDialog({
       }
 
       await fetchDespesas({ pagina: 1 });
-      await fetchCarteiras();
-      showSuccess('Despesa cadastrada com sucesso.');
+      showSuccess(isEditMode ? 'Despesa alterada com sucesso.' : 'Despesa cadastrada com sucesso.');
       handleClose();
     } finally {
       setIsSaving(false);
@@ -209,11 +229,13 @@ export default function NewExpenseDialog({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
               <ReceiptLong color="primary" />
               <Typography variant="h5" fontWeight={700}>
-                Nova despesa
+                {isEditMode ? 'Alterar despesa' : 'Nova despesa'}
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary">
-              Preencha os dados para registrar uma despesa.
+              {isEditMode
+                ? 'Altere os dados da despesa selecionada.'
+                : 'Preencha os dados para registrar uma despesa.'}
             </Typography>
           </Box>
 
@@ -415,7 +437,7 @@ export default function NewExpenseDialog({
           size="large"
           disabled={isBusy}
         >
-          {isBusy ? 'Salvando...' : 'Salvar Despesa'}
+          {isBusy ? 'Salvando...' : isEditMode ? 'Salvar alterações' : 'Salvar Despesa'}
         </Button>
       </DialogActions>
     </Dialog>
