@@ -95,6 +95,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
+  const [salesMenuOpen, setSalesMenuOpen] = useState(true);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
   );
@@ -105,6 +106,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const productsSectionActive = useMemo(
     () => location.pathname.startsWith('/produtos'),
+    [location.pathname],
+  );
+  const salesSectionActive = useMemo(
+    () => location.pathname.startsWith('/vendas'),
     [location.pathname],
   );
   const reportsSectionActive = useMemo(
@@ -228,13 +233,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <List sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
-            component={NavLink}
-            to="/vendas"
-            onClick={closeMobileMenu}
+            onClick={() => setSalesMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
-              '&.active': getActiveMenuStyles(theme),
+              ...(salesSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
           >
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
@@ -244,7 +247,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <IconButton
               size="small"
               onClick={(event) => {
-                event.preventDefault();
                 event.stopPropagation();
                 openDialog(() => setSaleDialogOpen(true));
               }}
@@ -257,8 +259,38 @@ export default function MainLayout({ children }: MainLayoutProps) {
             >
               <Add fontSize="small" />
             </IconButton>
+            {salesMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
+
+        <Collapse in={salesMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                to="/vendas"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Vendas" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                disabled
+                sx={{
+                  borderRadius: 2,
+                }}
+              >
+                <ListItemText primary="Feiras" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
 
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
