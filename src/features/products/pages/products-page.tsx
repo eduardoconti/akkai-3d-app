@@ -19,7 +19,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
+import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
@@ -44,6 +44,10 @@ export default function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
+
+  const handleSearch = () => {
+    void fetchProdutos({ pagina: 1, termo: searchInput.trim() });
+  };
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -72,55 +76,59 @@ export default function ProductsPage() {
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField
-            select
-            label="Ordenar por"
-            value={paginacao.ordenarPor ?? 'codigo'}
-            onChange={(event) => {
-              void fetchProdutos({
-                pagina: 1,
-                ordenarPor: event.target.value as OrdenacaoProduto,
-              });
-            }}
-            sx={{ minWidth: { xs: '100%', md: 180 } }}
-          >
-            <MenuItem value="codigo">Código</MenuItem>
-            <MenuItem value="nome">Nome</MenuItem>
-          </TextField>
+        <Button
+          variant="contained"
+          startIcon={<AddCircleOutline />}
+          onClick={() => setDialogOpen(true)}
+        >
+          Novo produto
+        </Button>
+      </Stack>
 
-          <TextField
-            select
-            label="Direção"
-            value={paginacao.direcao ?? 'desc'}
-            onChange={(event) => {
-              void fetchProdutos({
-                pagina: 1,
-                direcao: event.target.value as DirecaoOrdenacao,
-              });
-            }}
-            sx={{ minWidth: { xs: '100%', md: 160 } }}
-          >
-            <MenuItem value="asc">Crescente</MenuItem>
-            <MenuItem value="desc">Decrescente</MenuItem>
-          </TextField>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <TextField
+          select
+          label="Ordenar por"
+          value={paginacao.ordenarPor ?? 'codigo'}
+          onChange={(event) => {
+            void fetchProdutos({
+              pagina: 1,
+              ordenarPor: event.target.value as OrdenacaoProduto,
+            });
+          }}
+          sx={{ minWidth: { xs: '100%', md: 180 } }}
+        >
+          <MenuItem value="codigo">Código</MenuItem>
+          <MenuItem value="nome">Nome</MenuItem>
+        </TextField>
 
-          <TextField
-            label="Pesquisar produto"
-            placeholder="Nome, código ou categoria"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            sx={{ minWidth: { xs: '100%', md: 320 } }}
-          />
+        <TextField
+          select
+          label="Direção"
+          value={paginacao.direcao ?? 'desc'}
+          onChange={(event) => {
+            void fetchProdutos({
+              pagina: 1,
+              direcao: event.target.value as DirecaoOrdenacao,
+            });
+          }}
+          sx={{ minWidth: { xs: '100%', md: 160 } }}
+        >
+          <MenuItem value="asc">Crescente</MenuItem>
+          <MenuItem value="desc">Decrescente</MenuItem>
+        </TextField>
 
-          <Button
-            variant="contained"
-            startIcon={<AddCircleOutline />}
-            onClick={() => setDialogOpen(true)}
-          >
-            Novo produto
-          </Button>
-        </Stack>
+        <TextField
+          label="Pesquisar produto"
+          placeholder="Nome, código ou categoria"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          sx={{ minWidth: { xs: '100%', md: 320 } }}
+        />
+
+        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
+          Pesquisar
+        </Button>
       </Stack>
 
       {fetchErrorMessage ? (

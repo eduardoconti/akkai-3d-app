@@ -41,6 +41,7 @@ export default function NewCategoryDialog({
     criarCategoria,
     submitErrorMessage,
     fetchCategorias,
+    fetchCategoriasPaginadas,
     isFetchingCategories,
     isSubmitting,
     clearSubmitError,
@@ -119,7 +120,7 @@ export default function NewCategoryDialog({
         return;
       }
 
-      await fetchCategorias();
+      await Promise.all([fetchCategorias(), fetchCategoriasPaginadas()]);
       showSuccess('Categoria cadastrada com sucesso.');
       handleClose();
     } finally {

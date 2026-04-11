@@ -16,7 +16,7 @@ import Grid from '@mui/material/Grid';
 import { Close, ReceiptLong, Save } from '@mui/icons-material';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
-  convertDateToApiFormat,
+  convertDateToApiDateTimeFormat,
   initialExpenseFormState,
   type ExpenseFormErrors,
   type ExpenseFormState,
@@ -150,7 +150,7 @@ export default function NewExpenseDialog({
 
   const handleSubmit = async () => {
     const errors: ExpenseFormErrors = {};
-    const dataLancamento = convertDateToApiFormat(form.dataLancamento);
+    const dataLancamento = convertDateToApiDateTimeFormat(form.dataLancamento);
 
     if (!dataLancamento) {
       errors.dataLancamento = 'Selecione a data da despesa.';

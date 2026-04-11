@@ -18,7 +18,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
+import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
 import NewCategoryDialog from '../components/new-category-dialog';
@@ -50,6 +50,10 @@ export default function ProductCategoriesPage() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [searchInput, setSearchInput] = useState('');
 
+  const handleSearch = () => {
+    void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
+  };
+
   useEffect(() => {
     void fetchCategorias();
   }, [fetchCategorias]);
@@ -80,23 +84,27 @@ export default function ProductCategoriesPage() {
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField
-            label="Pesquisar categoria"
-            placeholder="Nome da categoria"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            sx={{ minWidth: { xs: '100%', md: 320 } }}
-          />
+        <Button
+          variant="contained"
+          startIcon={<AddCircleOutline />}
+          onClick={() => setDialogOpen(true)}
+        >
+          Nova categoria
+        </Button>
+      </Stack>
 
-          <Button
-            variant="contained"
-            startIcon={<AddCircleOutline />}
-            onClick={() => setDialogOpen(true)}
-          >
-            Nova categoria
-          </Button>
-        </Stack>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <TextField
+          label="Pesquisar categoria"
+          placeholder="Nome da categoria"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          sx={{ minWidth: { xs: '100%', md: 320 } }}
+        />
+
+        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
+          Pesquisar
+        </Button>
       </Stack>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}

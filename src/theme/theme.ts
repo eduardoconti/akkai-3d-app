@@ -18,8 +18,18 @@ export function getActiveMenuStyles(theme: Theme) {
 
 export function getActiveSubmenuStyles(theme: Theme) {
   return {
-    backgroundColor: alpha(theme.palette.primary.main, 0.14),
+    position: 'relative',
     color: theme.palette.primary.main,
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      left: 0,
+      top: 8,
+      bottom: 8,
+      width: 3,
+      borderRadius: 999,
+      backgroundColor: theme.palette.primary.main,
+    },
     '& .MuiListItemIcon-root': {
       color: theme.palette.primary.main,
     },

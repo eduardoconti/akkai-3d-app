@@ -62,8 +62,16 @@ export const initialExpenseFormState: ExpenseFormState = {
   observacao: '',
 };
 
-export function convertDateToApiFormat(value: string): string | null {
+export function convertDateToApiDateFormat(value: string): string | null {
   return value || null;
+}
+
+export function convertDateToApiDateTimeFormat(value: string): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return `${value}T00:00:00-03:00`;
 }
 
 export function formatApiDateToDisplay(value: string): string {
