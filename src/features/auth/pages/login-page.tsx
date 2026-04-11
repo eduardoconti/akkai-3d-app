@@ -30,7 +30,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
+  const [loginValue, setLoginValue] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     try {
       await login({
-        email,
+        login: loginValue,
         password,
       });
       navigate(redirectTo, { replace: true });
@@ -84,7 +84,7 @@ export default function LoginPage() {
               Entrar no ERP
             </Typography>
             <Typography color="text.secondary">
-              Use seu e-mail e senha para acessar a operação.
+              Use seu login e senha para acessar a operação.
             </Typography>
           </Box>
 
@@ -92,11 +92,11 @@ export default function LoginPage() {
 
           <TextField
             fullWidth
-            label="E-mail"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
+            label="Login"
+            value={loginValue}
+            onChange={(event) => setLoginValue(event.target.value)}
+            autoComplete="username"
+            helperText="Apenas letras, com no minimo 3 caracteres."
           />
 
           <TextField
