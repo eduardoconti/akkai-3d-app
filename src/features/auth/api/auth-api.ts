@@ -3,13 +3,13 @@ import { httpClient } from '@/shared/lib/api/http-client';
 export interface AuthUser {
   id: number;
   name: string;
-  email: string;
+  login: string;
   role: string;
   permissions: string[];
 }
 
 export interface LoginInput {
-  email: string;
+  login: string;
   password: string;
 }
 

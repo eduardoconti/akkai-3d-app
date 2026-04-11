@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   Alert,
+  Avatar,
   AppBar,
   Box,
   Button,
-  Chip,
   Collapse,
   Divider,
   Drawer,
@@ -14,6 +14,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Snackbar,
   Stack,
   Toolbar,
@@ -26,13 +28,12 @@ import {
   AttachMoney,
   Balance,
   Category as CategoryIcon,
-  CloudOff,
-  CloudQueue,
   DarkMode,
   ExpandLess,
   ExpandMore,
   FormatListBulleted,
   Inventory as ProductIcon,
+  KeyboardArrowDown,
   LightMode,
   Logout as LogoutIcon,
   Menu as MenuIcon,
@@ -87,6 +88,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     void hydrateOfflineState();
@@ -108,8 +112,35 @@ export default function MainLayout({ children }: MainLayoutProps) {
     () => location.pathname.startsWith('/financeiro'),
     [location.pathname],
   );
+  const currentSectionTitle = useMemo(() => {
+    if (location.pathname.startsWith('/vendas')) {
+      return 'Vendas';
+    }
+
+    if (location.pathname.startsWith('/produtos')) {
+      return 'Produtos';
+    }
+
+    if (location.pathname.startsWith('/orcamentos')) {
+      return 'Orçamentos';
+    }
+
+    if (location.pathname.startsWith('/financeiro')) {
+      return 'Financeiro';
+    }
+
+    if (location.pathname.startsWith('/relatorios')) {
+      return 'Relatórios';
+    }
+
+    return 'Painel Operacional';
+  }, [location.pathname]);
 
   const closeMobileMenu = () => setMobileOpen(false);
+  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+  const handleCloseUserMenu = () => setUserMenuAnchorEl(null);
 
   const openDialog = (open: () => void) => {
     const activeElement = document.activeElement;
@@ -148,6 +179,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
     }
   }, [isOnline, handleSyncPendingSales]);
 
+  const userInitials = useMemo(() => {
+    const source = user?.name?.trim() || user?.login?.trim() || 'U';
+    return source.slice(0, 2).toUpperCase();
+  }, [user?.login, user?.name]);
+
   const drawerContent = (
     <Box
       sx={{
@@ -166,9 +202,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
           >
             AKKAI 3D
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Operação de estoque e vendas
-          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: isOnline ? 'success.main' : 'warning.main',
+              }}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {isOnline ? 'online' : 'offline'}
+            </Typography>
+          </Stack>
         </Box>
       </Toolbar>
       <Divider />
@@ -523,8 +569,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
         sx={{
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { md: `${DRAWER_WIDTH}px` },
-          borderBottom: '1px solid',
-          borderColor: 'divider',
           backdropFilter: 'blur(10px)',
         }}
       >
@@ -555,22 +599,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               noWrap
               sx={{ flexGrow: 1, minWidth: 0, fontWeight: 800 }}
             >
-              Painel Operacional
+              {currentSectionTitle}
             </Typography>
-
-            <Chip
-              icon={isOnline ? <CloudQueue /> : <CloudOff />}
-              label=""
-              color={isOnline ? 'success' : 'warning'}
-              variant="outlined"
-              size="small"
-              sx={{
-                flexShrink: 0,
-                '& .MuiChip-label': { display: 'none' },
-                '& .MuiChip-icon': { mr: 0 },
-                width: 34,
-              }}
-            />
 
             {pendingSalesCount > 0 ? (
               <IconButton
@@ -591,18 +621,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </IconButton>
             ) : null}
 
-            <IconButton
-              color="inherit"
-              onClick={toggleColorMode}
-              aria-label={
-                mode === 'light'
-                  ? 'Ativar modo escuro'
-                  : 'Ativar modo claro'
-              }
-              sx={{ flexShrink: 0 }}
-            >
-              {mode === 'light' ? <DarkMode /> : <LightMode />}
-            </IconButton>
+            <Divider orientation="vertical" flexItem />
 
             <IconButton
               onClick={() => openDialog(() => setSaleDialogOpen(true))}
@@ -617,16 +636,36 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <AddShoppingCart />
             </IconButton>
 
-            <IconButton
+            <Divider orientation="vertical" flexItem />
+
+            <Button
               color="inherit"
-              onClick={() => {
-                void logout();
+              onClick={handleOpenUserMenu}
+              aria-label="Abrir menu do usuário"
+              endIcon={<KeyboardArrowDown fontSize="small" />}
+              sx={{
+                flexShrink: 0,
+                borderRadius: 999,
+                px: 1,
+                minWidth: 0,
+                textTransform: 'none',
               }}
-              aria-label="Sair"
-              sx={{ flexShrink: 0 }}
             >
-              <LogoutIcon />
-            </IconButton>
+              <Avatar
+                sx={{
+                  width: 32,
+                  height: 32,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  mr: 1,
+                }}
+              >
+                {userInitials}
+              </Avatar>
+              {user?.name ?? 'Usuário'}
+            </Button>
           </Stack>
         </Box>
 
@@ -641,58 +680,28 @@ export default function MainLayout({ children }: MainLayoutProps) {
         >
           <Stack spacing={0.25} sx={{ minWidth: 0, flexGrow: 1 }}>
             <Typography variant="h6" fontWeight={800}>
-              Painel Operacional
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Cadastre produtos e registre vendas com rapidez durante a
-              operação.
+              {currentSectionTitle}
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1} alignItems="center" useFlexGap>
-            <Chip
-              icon={isOnline ? <CloudQueue /> : <CloudOff />}
-              label={isOnline ? 'Online' : 'Offline'}
-              color={isOnline ? 'success' : 'warning'}
+          {pendingSalesCount > 0 ? (
+            <Button
               variant="outlined"
-            />
+              color="inherit"
+              size="small"
+              startIcon={<Sync />}
+              onClick={() => {
+                void handleSyncPendingSales();
+              }}
+              disabled={!isOnline || isSyncingPendingSales}
+            >
+              {isSyncingPendingSales
+                ? 'Sincronizando...'
+                : `Sincronizar ${pendingSalesCount}`}
+            </Button>
+          ) : null}
 
-            {pendingSalesCount > 0 ? (
-              <Button
-                variant="outlined"
-                color="inherit"
-                size="small"
-                startIcon={<Sync />}
-                onClick={() => {
-                  void handleSyncPendingSales();
-                }}
-                disabled={!isOnline || isSyncingPendingSales}
-              >
-                {isSyncingPendingSales
-                  ? 'Sincronizando...'
-                  : `Sincronizar ${pendingSalesCount}`}
-              </Button>
-            ) : null}
-          </Stack>
-
-          <Stack spacing={0} sx={{ minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={700} noWrap>
-              {user?.name ?? 'Usuário'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              {user?.email ?? 'sem e-mail'}
-            </Typography>
-          </Stack>
-
-          <IconButton
-            color="inherit"
-            onClick={toggleColorMode}
-            aria-label={
-              mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'
-            }
-          >
-            {mode === 'light' ? <DarkMode /> : <LightMode />}
-          </IconButton>
+          <Divider orientation="vertical" flexItem />
 
           <Button
             variant="contained"
@@ -701,15 +710,35 @@ export default function MainLayout({ children }: MainLayoutProps) {
           >
             Nova venda
           </Button>
+
+          <Divider orientation="vertical" flexItem />
+
           <Button
-            variant="text"
             color="inherit"
-            startIcon={<LogoutIcon />}
-            onClick={() => {
-              void logout();
+            onClick={handleOpenUserMenu}
+            aria-label="Abrir menu do usuário"
+            endIcon={<KeyboardArrowDown fontSize="small" />}
+            sx={{
+              borderRadius: 999,
+              px: 1,
+              minWidth: 0,
+              textTransform: 'none',
             }}
           >
-            Sair
+            <Avatar
+              sx={{
+                width: 34,
+                height: 34,
+                fontSize: 13,
+                fontWeight: 700,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                mr: 1,
+              }}
+            >
+              {userInitials}
+            </Avatar>
+            {user?.name ?? 'Usuário'}
           </Button>
         </Toolbar>
       </AppBar>
@@ -754,6 +783,53 @@ export default function MainLayout({ children }: MainLayoutProps) {
           {drawerContent}
         </Drawer>
       </Box>
+
+      <Menu
+        anchorEl={userMenuAnchorEl}
+        open={Boolean(userMenuAnchorEl)}
+        onClose={handleCloseUserMenu}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            {user?.name ?? 'Usuário'}
+          </Typography>
+          <Typography variant="body2" fontWeight={700}>
+            {user?.login ?? 'sem login'}
+          </Typography>
+        </Box>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            toggleColorMode();
+            handleCloseUserMenu();
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            {mode === 'light' ? (
+              <DarkMode fontSize="small" />
+            ) : (
+              <LightMode fontSize="small" />
+            )}
+          </ListItemIcon>
+          <ListItemText
+            primary={mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+          />
+        </MenuItem>
+        <MenuItem disabled>Alterar cadastro</MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleCloseUserMenu();
+            void logout();
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <LogoutIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Sair" />
+        </MenuItem>
+      </Menu>
 
       <Box
         component="main"
