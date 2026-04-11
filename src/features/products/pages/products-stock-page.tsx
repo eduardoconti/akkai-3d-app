@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Collapse,
@@ -22,7 +23,11 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Search,
+} from '@mui/icons-material';
 import { useTheme, type Theme } from '@mui/material/styles';
 import StockMovementForm from '../components/stock-movement-form';
 import { listStockMovements } from '../api/products-api';
@@ -49,7 +54,12 @@ function getStockState(produto: EstoqueProduto): StockState {
       chipColor: 'error',
       rowSx: {
         backgroundColor: 'error.lighter',
-        '&:hover': { backgroundColor: 'error.light' },
+        '&:hover': {
+          backgroundColor: (theme: Theme) =>
+            theme.palette.mode === 'dark'
+              ? 'rgba(255,255,255,0.03)'
+              : theme.palette.grey[50],
+        },
       },
     };
   }
@@ -63,7 +73,12 @@ function getStockState(produto: EstoqueProduto): StockState {
       chipColor: 'warning',
       rowSx: {
         backgroundColor: 'warning.lighter',
-        '&:hover': { backgroundColor: 'warning.light' },
+        '&:hover': {
+          backgroundColor: (theme: Theme) =>
+            theme.palette.mode === 'dark'
+              ? 'rgba(255,255,255,0.03)'
+              : theme.palette.grey[50],
+        },
       },
     };
   }
@@ -222,6 +237,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
               <TableHead>
                 <TableRow>
                   <TableCell>Data</TableCell>
+                  <TableCell>Usuario</TableCell>
                   <TableCell>Movimentacao</TableCell>
                   <TableCell>Origem</TableCell>
                   <TableCell align="right">Quantidade</TableCell>
@@ -230,7 +246,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
               <TableBody>
                 {isFetchingMovements ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                       <CircularProgress size={24} />
                     </TableCell>
                   </TableRow>
@@ -240,6 +256,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                       <TableCell>
                         {formatDateTime(movimentacao.dataInclusao)}
                       </TableCell>
+                      <TableCell>{movimentacao.usuario}</TableCell>
                       <TableCell>
                         <Chip
                           label={getMovementTypeLabel(movimentacao.tipo)}
@@ -257,7 +274,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                       Nenhuma movimentacao encontrada para este produto.
                     </TableCell>
                   </TableRow>
@@ -436,6 +453,10 @@ export default function ProductsStockPage() {
   } = useProductStore();
   const [searchInput, setSearchInput] = useState('');
 
+  const handleSearch = () => {
+    void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
@@ -448,64 +469,62 @@ export default function ProductsStockPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Estoque
-          </Typography>
-          <Typography color="text.secondary">
-            Consulte o saldo, registre movimentacoes e acompanhe o historico por
-            produto.
-          </Typography>
-        </Box>
+      <Box>
+        <Typography variant="h5" fontWeight={700}>
+          Estoque
+        </Typography>
+        <Typography color="text.secondary">
+          Consulte o saldo, registre movimentacoes e acompanhe o historico por
+          produto.
+        </Typography>
+      </Box>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField
-            select
-            label="Ordenar por"
-            value={paginacaoEstoque.ordenarPor ?? 'codigo'}
-            onChange={(event) => {
-              void fetchEstoque({
-                pagina: 1,
-                ordenarPor: event.target.value as OrdenacaoProduto,
-              });
-            }}
-            sx={{ minWidth: { xs: '100%', md: 180 } }}
-          >
-            <MenuItem value="codigo">Código</MenuItem>
-            <MenuItem value="nome">Nome</MenuItem>
-            <MenuItem value="quantidade">Quantidade</MenuItem>
-            <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
-          </TextField>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <TextField
+          select
+          label="Ordenar por"
+          value={paginacaoEstoque.ordenarPor ?? 'nivelEstoque'}
+          onChange={(event) => {
+            void fetchEstoque({
+              pagina: 1,
+              ordenarPor: event.target.value as OrdenacaoProduto,
+            });
+          }}
+          sx={{ minWidth: { xs: '100%', md: 180 } }}
+        >
+          <MenuItem value="codigo">Código</MenuItem>
+          <MenuItem value="nome">Nome</MenuItem>
+          <MenuItem value="quantidade">Quantidade</MenuItem>
+          <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
+        </TextField>
 
-          <TextField
-            select
-            label="Direção"
-            value={paginacaoEstoque.direcao ?? 'desc'}
-            onChange={(event) => {
-              void fetchEstoque({
-                pagina: 1,
-                direcao: event.target.value as DirecaoOrdenacao,
-              });
-            }}
-            sx={{ minWidth: { xs: '100%', md: 160 } }}
-          >
-            <MenuItem value="asc">Crescente</MenuItem>
-            <MenuItem value="desc">Decrescente</MenuItem>
-          </TextField>
+        <TextField
+          select
+          label="Direção"
+          value={paginacaoEstoque.direcao ?? 'asc'}
+          onChange={(event) => {
+            void fetchEstoque({
+              pagina: 1,
+              direcao: event.target.value as DirecaoOrdenacao,
+            });
+          }}
+          sx={{ minWidth: { xs: '100%', md: 160 } }}
+        >
+          <MenuItem value="asc">Crescente</MenuItem>
+          <MenuItem value="desc">Decrescente</MenuItem>
+        </TextField>
 
-          <TextField
-            label="Pesquisar estoque"
-            placeholder="Nome, código ou categoria"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            sx={{ minWidth: { xs: '100%', md: 320 } }}
-          />
-        </Stack>
+        <TextField
+          label="Pesquisar estoque"
+          placeholder="Nome, código ou categoria"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          sx={{ minWidth: { xs: '100%', md: 320 } }}
+        />
+
+        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
+          Pesquisar
+        </Button>
       </Stack>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}

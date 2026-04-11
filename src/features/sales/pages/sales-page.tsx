@@ -33,6 +33,7 @@ import {
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
+  Search,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewSaleDialog from '../components/new-sale-dialog';
@@ -202,6 +203,16 @@ export default function SalesPage() {
   const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
   const [isDeletingSale, setIsDeletingSale] = useState(false);
 
+  const handleSearch = () => {
+    void fetchVendas({
+      pagina: 1,
+      dataInicio,
+      dataFim,
+      tipo: type === 'TODOS' ? undefined : type,
+      idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
+    });
+  };
+
   useEffect(() => {
     void fetchFeiras();
   }, [fetchFeiras]);
@@ -294,83 +305,89 @@ export default function SalesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', lg: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Vendas
-          </Typography>
-          <Typography color="text.secondary">
-            Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
-          </Typography>
-        </Box>
+      <Box>
+        <Typography variant="h5" fontWeight={700}>
+          Vendas
+        </Typography>
+        <Typography color="text.secondary">
+          Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
+        </Typography>
+      </Box>
 
-        <Box sx={{ width: { xs: '100%', lg: 'auto' } }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <DatePickerField
-                label="Data inicial"
-                value={dataInicio}
-                onValueChange={setDataInicio}
-              />
-            </Grid>
+      <Box>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <DatePickerField
+              label="Data inicial"
+              value={dataInicio}
+              onValueChange={setDataInicio}
+            />
+          </Grid>
 
-            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <DatePickerField
-                label="Data final"
-                value={dataFim}
-                onValueChange={setDataFim}
-              />
-            </Grid>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <DatePickerField
+              label="Data final"
+              value={dataFim}
+              onValueChange={setDataFim}
+            />
+          </Grid>
 
+          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+            <TextField
+              select
+              fullWidth
+              label="Tipo"
+              value={type}
+              onChange={(event) =>
+                setType(event.target.value as 'TODOS' | TipoVenda)
+              }
+            >
+              <MenuItem value="TODOS">Todos</MenuItem>
+              <MenuItem value="FEIRA">Feira</MenuItem>
+              <MenuItem value="LOJA">Loja</MenuItem>
+              <MenuItem value="ONLINE">Online</MenuItem>
+            </TextField>
+          </Grid>
+
+          {type === 'FEIRA' ? (
             <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
               <TextField
                 select
                 fullWidth
-                label="Tipo"
-                value={type}
+                label="Feira"
+                value={idFeira}
                 onChange={(event) =>
-                  setType(event.target.value as 'TODOS' | TipoVenda)
+                  setIdFeira(
+                    event.target.value === '' ? '' : Number(event.target.value),
+                  )
+                }
+                helperText={
+                  feiras.length === 0 ? 'Nenhuma feira cadastrada.' : 'Opcional'
                 }
               >
-                <MenuItem value="TODOS">Todos</MenuItem>
-                <MenuItem value="FEIRA">Feira</MenuItem>
-                <MenuItem value="LOJA">Loja</MenuItem>
-                <MenuItem value="ONLINE">Online</MenuItem>
+                <MenuItem value="">Todas</MenuItem>
+                {feiras.map((feira: Feira) => (
+                  <MenuItem key={feira.id} value={feira.id}>
+                    {feira.nome}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
+          ) : null}
 
-            {type === 'FEIRA' ? (
-              <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Feira"
-                  value={idFeira}
-                  onChange={(event) =>
-                    setIdFeira(
-                      event.target.value === '' ? '' : Number(event.target.value),
-                    )
-                  }
-                  helperText={
-                    feiras.length === 0 ? 'Nenhuma feira cadastrada.' : 'Opcional'
-                  }
-                >
-                  <MenuItem value="">Todas</MenuItem>
-                  {feiras.map((feira: Feira) => (
-                    <MenuItem key={feira.id} value={feira.id}>
-                      {feira.nome}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            ) : null}
+          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Search />}
+              onClick={handleSearch}
+              sx={{ height: '100%', minHeight: 56 }}
+            >
+              Pesquisar
+            </Button>
           </Grid>
-        </Box>
-      </Stack>
+        </Grid>
+      </Box>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

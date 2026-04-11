@@ -54,6 +54,7 @@ export interface MovimentacaoEstoque {
   id: number;
   idProduto: number;
   idItemVenda?: number;
+  usuario: string;
   quantidade: number;
   tipo: TipoMovimentacaoEstoque;
   origem: OrigemMovimentacaoEstoque;

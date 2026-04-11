@@ -26,12 +26,17 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AddCircleOutline, Close, MoreVert } from '@mui/icons-material';
+import {
+  AddCircleOutline,
+  Close,
+  MoreVert,
+  Search,
+} from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import { useFinanceStore } from '@/features/finance/store/use-finance-store';
 import {
-  convertDateToApiFormat,
+  convertDateToApiDateFormat,
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
 import { DatePickerField, formatCurrency, useFeedbackStore, type Despesa } from '@/shared';
@@ -84,6 +89,15 @@ export default function FinanceExpensesPage() {
   const [dataInicio, setDataInicio] = useState(getCurrentDateInput());
   const [dataFim, setDataFim] = useState(getCurrentDateInput());
 
+  const handleSearch = () => {
+    void fetchDespesas({
+      pagina: 1,
+      termo: searchInput.trim(),
+      dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
+      dataFim: convertDateToApiDateFormat(dataFim) ?? '',
+    });
+  };
+
   const isDeleteBusy = isSubmitting || isDeletingDespesa;
 
   const handleOpenActions = (event: React.MouseEvent<HTMLButtonElement>, despesa: Despesa) => {
@@ -135,8 +149,8 @@ export default function FinanceExpensesPage() {
       void fetchDespesas({
         pagina: 1,
         termo: searchInput.trim(),
-        dataInicio: convertDateToApiFormat(dataInicio) ?? '',
-        dataFim: convertDateToApiFormat(dataFim) ?? '',
+        dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
+        dataFim: convertDateToApiDateFormat(dataFim) ?? '',
       });
     }, 300);
 
@@ -170,7 +184,7 @@ export default function FinanceExpensesPage() {
       </Stack>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <TextField
             fullWidth
             label="Pesquisar despesa"
@@ -180,7 +194,7 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <DatePickerField
             label="Data inicial"
             value={dataInicio}
@@ -188,12 +202,24 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <DatePickerField
             label="Data final"
             value={dataFim}
             onValueChange={setDataFim}
           />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Search />}
+            onClick={handleSearch}
+            sx={{ height: '100%', minHeight: 56 }}
+          >
+            Pesquisar
+          </Button>
         </Grid>
       </Grid>
 

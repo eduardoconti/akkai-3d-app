@@ -23,21 +23,18 @@ import {
 } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import {
+  Add,
   AddShoppingCart,
   Assessment,
-  AttachMoney,
   Balance,
-  Category as CategoryIcon,
   DarkMode,
   ExpandLess,
   ExpandMore,
-  FormatListBulleted,
   Inventory as ProductIcon,
   KeyboardArrowDown,
   LightMode,
   Logout as LogoutIcon,
   Menu as MenuIcon,
-  PostAdd,
   RequestQuote,
   ShoppingCart as SaleIcon,
   Sync,
@@ -59,6 +56,16 @@ import { useThemeMode } from '@/theme/use-theme-mode';
 
 const DRAWER_WIDTH = 256;
 const MOBILE_APPBAR_MIN_HEIGHT = 96;
+const MENU_ITEM_COMPACT_SX = {
+  px: 1.25,
+  py: 1,
+  '& .MuiListItemText-root': {
+    my: 0,
+  },
+};
+const MENU_ITEM_ICON_SX = {
+  minWidth: 34,
+};
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -225,14 +232,31 @@ export default function MainLayout({ children }: MainLayoutProps) {
             to="/vendas"
             onClick={closeMobileMenu}
             sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
               '&.active': getActiveMenuStyles(theme),
             })}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <SaleIcon />
             </ListItemIcon>
-            <ListItemText primary="Vendas" />
+            <ListItemText primary="Vendas" primaryTypographyProps={{ noWrap: true }} />
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openDialog(() => setSaleDialogOpen(true));
+              }}
+              sx={{
+                mr: 0.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+              }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
           </ListItemButton>
         </ListItem>
 
@@ -240,14 +264,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <ListItemButton
             onClick={() => setProductsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
               ...(productsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <ProductIcon />
             </ListItemIcon>
-            <ListItemText primary="Produtos" />
+            <ListItemText primary="Produtos" primaryTypographyProps={{ noWrap: true }} />
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                openDialog(() => setProductDialogOpen(true));
+              }}
+              sx={{
+                mr: 0.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+              }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
             {productsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -265,24 +305,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   "&.active": getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Produtos" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => {
-                  openDialog(() => setProductDialogOpen(true));
-                }}
-                sx={{ borderRadius: 2 }}
-              >
-                <ListItemIcon>
-                  <PostAdd fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Novo produto" />
               </ListItemButton>
             </ListItem>
 
@@ -296,9 +319,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   "&.active": getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Estoque" />
               </ListItemButton>
             </ListItem>
@@ -313,24 +333,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   "&.active": getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Categorias" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  openDialog(() => setCategoryDialogOpen(true));
-                }}
-                sx={{ borderRadius: 2 }}
-              >
-                <ListItemIcon>
-                  <CategoryIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Nova categoria" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setCategoryDialogOpen(true));
+                  }}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
               </ListItemButton>
             </ListItem>
           </List>
@@ -340,14 +358,33 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <ListItemButton
             onClick={() => setBudgetsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
               ...(budgetsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <RequestQuote />
             </ListItemIcon>
-            <ListItemText primary="Orçamentos" />
+            <ListItemText
+              primary="Orçamentos"
+              primaryTypographyProps={{ noWrap: true }}
+            />
+            <IconButton
+              size="small"
+              onClick={(event) => {
+                event.stopPropagation();
+                openDialog(() => setBudgetDialogOpen(true));
+              }}
+              sx={{
+                mr: 0.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+              }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
             {budgetsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -364,24 +401,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Orçamentos" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  openDialog(() => setBudgetDialogOpen(true));
-                }}
-                sx={{ borderRadius: 2 }}
-              >
-                <ListItemIcon>
-                  <RequestQuote fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Novo orçamento" />
               </ListItemButton>
             </ListItem>
           </List>
@@ -391,14 +411,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <ListItemButton
             onClick={() => setFinanceMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
               ...(financeSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <Balance />
             </ListItemIcon>
-            <ListItemText primary="Financeiro" />
+            <ListItemText primary="Financeiro" primaryTypographyProps={{ noWrap: true }} />
             {financeMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -415,24 +436,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Carteiras" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                onClick={() => {
-                  openDialog(() => setWalletDialogOpen(true));
-                }}
-                sx={{ borderRadius: 2 }}
-              >
-                <ListItemIcon>
-                  <Balance fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Nova carteira" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setWalletDialogOpen(true));
+                  }}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
               </ListItemButton>
             </ListItem>
 
@@ -446,10 +465,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Despesas" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setExpenseDialogOpen(true));
+                  }}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
               </ListItemButton>
             </ListItem>
 
@@ -463,24 +494,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Categorias despesa" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding>
-              <ListItemButton
-                onClick={() => {
-                  openDialog(() => setExpenseDialogOpen(true));
-                }}
-                sx={{ borderRadius: 2 }}
-              >
-                <ListItemIcon>
-                  <AttachMoney fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Nova despesa" />
               </ListItemButton>
             </ListItem>
           </List>
@@ -490,14 +504,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <ListItemButton
             onClick={() => setReportsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
               borderRadius: 2,
               ...(reportsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
           >
-            <ListItemIcon>
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <Assessment />
             </ListItemIcon>
-            <ListItemText primary="Relatórios" />
+            <ListItemText primary="Relatórios" primaryTypographyProps={{ noWrap: true }} />
             {reportsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -507,17 +522,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding>
               <ListItemButton
                 component={NavLink}
-                to="/relatorios/valor-produtos-estoque"
+                to="/relatorios/resumo"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Valor em estoque" />
+                <ListItemText primary="Resumo" />
               </ListItemButton>
             </ListItem>
 
@@ -531,9 +543,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
                 <ListItemText primary="Mais vendidos" />
               </ListItemButton>
             </ListItem>
@@ -541,17 +550,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mt: 0.5 }}>
               <ListItemButton
                 component={NavLink}
-                to="/relatorios/resumo"
+                to="/relatorios/valor-produtos-estoque"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
                   '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
-                <ListItemIcon>
-                  <FormatListBulleted fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Resumo" />
+                <ListItemText primary="Valor em estoque" />
               </ListItemButton>
             </ListItem>
           </List>
