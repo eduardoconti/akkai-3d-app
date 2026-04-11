@@ -12,6 +12,17 @@ export interface Produto {
   estoqueMinimo?: number;
   idCategoria: number;
   valor: number;
+  quantidadeEstoque?: number;
+  categoria?: Categoria;
+}
+
+export interface EstoqueProduto {
+  id: number;
+  nome: string;
+  codigo: string;
+  descricao?: string;
+  estoqueMinimo?: number;
+  idCategoria: number;
   quantidadeEstoque: number;
   categoria?: Categoria;
 }
@@ -33,6 +44,21 @@ export interface DetalheProduto {
 
 export type OrigemEntradaEstoque = 'COMPRA' | 'AJUSTE' | 'PRODUCAO';
 export type OrigemSaidaEstoque = 'AJUSTE' | 'PERDA';
+export type TipoMovimentacaoEstoque = 'E' | 'S';
+export type OrigemMovimentacaoEstoque =
+  | OrigemEntradaEstoque
+  | OrigemSaidaEstoque
+  | 'VENDA';
+
+export interface MovimentacaoEstoque {
+  id: number;
+  idProduto: number;
+  idItemVenda?: number;
+  quantidade: number;
+  tipo: TipoMovimentacaoEstoque;
+  origem: OrigemMovimentacaoEstoque;
+  dataInclusao: string;
+}
 
 export interface Feira {
   id: number;
@@ -157,7 +183,7 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataFim?: string;
 }
 
-export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {}
+export type PesquisaPaginadaOrcamentos = PesquisaPaginada;
 
 export interface CarteiraInput {
   nome: string;

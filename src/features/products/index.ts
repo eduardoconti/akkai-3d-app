@@ -5,6 +5,7 @@ export { default as NewCategoryDialog } from './components/new-category-dialog';
 export { default as NewProductDialog } from './components/new-product-dialog';
 export { default as ProductCategoriesPage } from './pages/product-categories-page';
 export { default as ProductsPage } from './pages/products-page';
+export { default as ProductsStockPage } from './pages/products-stock-page';
 export { useProductStore } from './store/use-product-store';
 export * from './types/category-form';
 export * from './types/product-form';
