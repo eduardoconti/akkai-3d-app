@@ -13,12 +13,16 @@ import {
   listAllCategories,
   listCategories,
   listProducts,
+  listStock,
+  listStockMovements,
   updateCategory,
   type CategoriaInput,
 } from '@/features/products/api/products-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Categoria,
+  EstoqueProduto,
+  MovimentacaoEstoque,
   PesquisaPaginada,
   Produto,
   ProdutoInput,
@@ -37,6 +41,19 @@ const paginacaoCategoriasInicial: PesquisaPaginada = {
   pagina: 1,
   tamanhoPagina: 10,
   termo: '',
+};
+
+const paginacaoEstoqueInicial: PesquisaPaginada = {
+  pagina: 1,
+  tamanhoPagina: 10,
+  termo: '',
+  ordenarPor: 'codigo',
+  direcao: 'desc',
+};
+
+const paginacaoMovimentacoesInicial: PesquisaPaginada = {
+  pagina: 1,
+  tamanhoPagina: 10,
 };
 
 function paginarCategoriasEmMemoria(
@@ -69,17 +86,28 @@ interface ProductStoreState {
   produtos: Produto[];
   categorias: Categoria[];
   categoriasPaginadas: Categoria[];
+  estoqueProdutos: EstoqueProduto[];
+  movimentacoesEstoque: MovimentacaoEstoque[];
   paginacao: PesquisaPaginada;
   paginacaoCategorias: PesquisaPaginada;
+  paginacaoEstoque: PesquisaPaginada;
+  paginacaoMovimentacoesEstoque: PesquisaPaginada;
   totalItens: number;
   totalPaginas: number;
   totalCategorias: number;
   totalPaginasCategorias: number;
+  totalItensEstoque: number;
+  totalPaginasEstoque: number;
+  totalMovimentacoesEstoque: number;
+  totalPaginasMovimentacoesEstoque: number;
   isFetchingProducts: boolean;
   isFetchingCategories: boolean;
   isFetchingCategoriesPage: boolean;
+  isFetchingStock: boolean;
+  isFetchingStockMovements: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
+  stockMovementsErrorMessage: string | null;
   submitErrorMessage: string | null;
   fetchProdutos: (
     query?: Partial<PesquisaPaginada>,
@@ -88,6 +116,14 @@ interface ProductStoreState {
   fetchCategoriasPaginadas: (
     query?: Partial<PesquisaPaginada>,
   ) => Promise<ResultadoPaginado<Categoria> | void>;
+  fetchEstoque: (
+    query?: Partial<PesquisaPaginada>,
+  ) => Promise<ResultadoPaginado<EstoqueProduto> | void>;
+  fetchMovimentacoesEstoque: (
+    idProduto: number,
+    query?: Partial<PesquisaPaginada>,
+  ) => Promise<ResultadoPaginado<MovimentacaoEstoque> | void>;
+  atualizarQuantidadeEstoqueLocal: (idProduto: number, delta: number) => void;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
   criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
   obterCategoriaPorId: (id: number) => Promise<Categoria>;
@@ -102,17 +138,28 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   produtos: [],
   categorias: [],
   categoriasPaginadas: [],
+  estoqueProdutos: [],
+  movimentacoesEstoque: [],
   paginacao: paginacaoInicial,
   paginacaoCategorias: paginacaoCategoriasInicial,
+  paginacaoEstoque: paginacaoEstoqueInicial,
+  paginacaoMovimentacoesEstoque: paginacaoMovimentacoesInicial,
   totalItens: 0,
   totalPaginas: 1,
   totalCategorias: 0,
   totalPaginasCategorias: 1,
+  totalItensEstoque: 0,
+  totalPaginasEstoque: 1,
+  totalMovimentacoesEstoque: 0,
+  totalPaginasMovimentacoesEstoque: 1,
   isFetchingProducts: false,
   isFetchingCategories: false,
   isFetchingCategoriesPage: false,
+  isFetchingStock: false,
+  isFetchingStockMovements: false,
   isSubmitting: false,
   fetchErrorMessage: null,
+  stockMovementsErrorMessage: null,
   submitErrorMessage: null,
   fetchProdutos: async (query) => {
     const currentPagination = get().paginacao;
@@ -245,6 +292,81 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
     } finally {
       set({ isFetchingCategoriesPage: false });
     }
+  },
+  fetchEstoque: async (query) => {
+    const currentPagination = get().paginacaoEstoque;
+    const nextPagination: PesquisaPaginada = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      termo: query?.termo ?? currentPagination.termo ?? '',
+      ordenarPor: query?.ordenarPor ?? currentPagination.ordenarPor ?? 'codigo',
+      direcao: query?.direcao ?? currentPagination.direcao ?? 'desc',
+    };
+
+    set({ isFetchingStock: true, fetchErrorMessage: null });
+    try {
+      const response = await listStock(nextPagination);
+      set({
+        estoqueProdutos: response.itens,
+        paginacaoEstoque: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo ?? '',
+          ordenarPor: nextPagination.ordenarPor,
+          direcao: nextPagination.direcao,
+        },
+        totalItensEstoque: response.totalItens,
+        totalPaginasEstoque: response.totalPaginas,
+      });
+      return response;
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetchingStock: false });
+    }
+  },
+  fetchMovimentacoesEstoque: async (idProduto, query) => {
+    const currentPagination = get().paginacaoMovimentacoesEstoque;
+    const nextPagination: PesquisaPaginada = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+    };
+
+    set({
+      isFetchingStockMovements: true,
+      stockMovementsErrorMessage: null,
+    });
+    try {
+      const response = await listStockMovements(idProduto, nextPagination);
+      set({
+        movimentacoesEstoque: response.itens,
+        paginacaoMovimentacoesEstoque: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+        },
+        totalMovimentacoesEstoque: response.totalItens,
+        totalPaginasMovimentacoesEstoque: response.totalPaginas,
+      });
+      return response;
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ stockMovementsErrorMessage: problem.detail });
+    } finally {
+      set({ isFetchingStockMovements: false });
+    }
+  },
+  atualizarQuantidadeEstoqueLocal: (idProduto, delta) => {
+    set((state) => ({
+      estoqueProdutos: state.estoqueProdutos.map((produto) =>
+        produto.id === idProduto
+          ? {
+              ...produto,
+              quantidadeEstoque: produto.quantidadeEstoque + delta,
+            }
+          : produto,
+      ),
+    }));
   },
   criarProduto: async (novoProduto) => {
     set({ isSubmitting: true, submitErrorMessage: null });

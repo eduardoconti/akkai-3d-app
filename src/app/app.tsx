@@ -23,6 +23,9 @@ const FinanceExpensesPage = lazy(
 );
 const BudgetsPage = lazy(() => import('@/features/budgets/pages/budgets-page'));
 const ProductsPage = lazy(() => import('@/features/products/pages/products-page'));
+const ProductsStockPage = lazy(
+  () => import('@/features/products/pages/products-stock-page'),
+);
 const ProductCategoriesPage = lazy(
   () => import('@/features/products/pages/product-categories-page'),
 );
@@ -80,6 +83,7 @@ function App() {
             <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
             <Route path="/orcamentos" element={<BudgetsPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
+            <Route path="/produtos/estoque" element={<ProductsStockPage />} />
             <Route path="/produtos/categorias" element={<ProductCategoriesPage />} />
             <Route
               path="/relatorios/produtos-mais-vendidos"

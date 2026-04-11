@@ -163,6 +163,11 @@ export default function NewSaleDialog({
   const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isEditMode = sale !== null;
+  const persistedConfigRef = useRef(persistedConfig);
+
+  useEffect(() => {
+    persistedConfigRef.current = persistedConfig;
+  }, [persistedConfig]);
 
   useEffect(() => {
     async function loadCatalogProducts() {
@@ -191,7 +196,7 @@ export default function NewSaleDialog({
       setForm(
         isEditMode && sale
           ? mapSaleToForm(sale)
-          : getResetFormState(persistedConfig),
+          : getResetFormState(persistedConfigRef.current),
       );
       void loadCatalogProducts();
       void fetchFeiras();
@@ -202,7 +207,7 @@ export default function NewSaleDialog({
     setForm(
       isEditMode && sale
         ? mapSaleToForm(sale)
-        : getResetFormState(persistedConfig),
+        : getResetFormState(persistedConfigRef.current),
     );
     setCatalogProducts([]);
     setCatalogErrorMessage(null);

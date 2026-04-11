@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Divider,
   MenuItem,
@@ -21,7 +20,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { AddCircleOutline } from '@mui/icons-material';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
 import { useProductStore } from '../store/use-product-store';
@@ -29,54 +28,7 @@ import {
   formatCurrency,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
-  type Produto,
 } from '@/shared';
-
-type StockState = {
-  label: string;
-  rowSx: Record<string, unknown>;
-  chipColor: 'success' | 'warning' | 'error';
-};
-
-function getStockState(produto: Produto): StockState {
-  if (produto.quantidadeEstoque < 0) {
-    return {
-      label: 'Negativo',
-      chipColor: 'error',
-      rowSx: {
-        backgroundColor: 'error.lighter',
-        '&:hover': { backgroundColor: 'error.light' },
-      },
-    };
-  }
-
-  if (
-    produto.estoqueMinimo !== undefined &&
-    produto.quantidadeEstoque < produto.estoqueMinimo
-  ) {
-    return {
-      label: 'Abaixo do minimo',
-      chipColor: 'warning',
-      rowSx: {
-        backgroundColor: 'warning.lighter',
-        '&:hover': { backgroundColor: 'warning.light' },
-      },
-    };
-  }
-
-  return {
-    label: 'Normal',
-    chipColor: 'success',
-    rowSx: {
-      '&:hover': {
-        backgroundColor: (theme: Theme) =>
-          theme.palette.mode === 'dark'
-            ? 'rgba(255,255,255,0.03)'
-            : theme.palette.grey[50],
-      },
-    },
-  };
-}
 
 export default function ProductsPage() {
   const theme = useTheme();
@@ -115,7 +67,7 @@ export default function ProductsPage() {
             Produtos
           </Typography>
           <Typography color="text.secondary">
-            Consulte nome, código, categoria, estoque e valor dos produtos
+            Consulte nome, código, categoria, descrição e valor dos produtos
             cadastrados.
           </Typography>
         </Box>
@@ -135,8 +87,6 @@ export default function ProductsPage() {
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
-            <MenuItem value="quantidade">Quantidade</MenuItem>
-            <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
           </TextField>
 
           <TextField
@@ -186,8 +136,6 @@ export default function ProductsPage() {
               </Box>
             ) : produtos.length > 0 ? (
               produtos.map((produto) => {
-                const stockState = getStockState(produto);
-
                 return (
                   <Box
                     key={produto.id}
@@ -196,7 +144,6 @@ export default function ProductsPage() {
                       cursor: 'pointer',
                       px: 2,
                       py: 2,
-                      ...stockState.rowSx,
                     }}
                   >
                     <Stack spacing={1.5}>
@@ -214,12 +161,6 @@ export default function ProductsPage() {
                             {produto.nome}
                           </Typography>
                         </Box>
-                        <Chip
-                          label={stockState.label}
-                          size="small"
-                          color={stockState.chipColor}
-                          variant="filled"
-                        />
                       </Stack>
 
                       <Stack spacing={0.75}>
@@ -229,29 +170,9 @@ export default function ProductsPage() {
                         <Typography variant="body2" color="text.secondary">
                           Descrição: {produto.descricao || '-'}
                         </Typography>
-                      </Stack>
-
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        spacing={2}
-                      >
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Quantidade
-                          </Typography>
-                          <Typography variant="body1" fontWeight={700}>
-                            {produto.quantidadeEstoque}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ textAlign: 'right' }}>
-                          <Typography variant="caption" color="text.secondary">
-                            Valor
-                          </Typography>
-                          <Typography variant="body1" fontWeight={700}>
-                            {formatCurrency(produto.valor)}
-                          </Typography>
-                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Valor: {formatCurrency(produto.valor)}
+                        </Typography>
                       </Stack>
                     </Stack>
                   </Box>
@@ -281,12 +202,6 @@ export default function ProductsPage() {
                     <strong>Descrição</strong>
                   </TableCell>
                   <TableCell align="right">
-                    <strong>Quantidade</strong>
-                  </TableCell>
-                  <TableCell align="center">
-                    <strong>Estoque Atual</strong>
-                  </TableCell>
-                  <TableCell align="right">
                     <strong>Valor</strong>
                   </TableCell>
                 </TableRow>
@@ -295,14 +210,12 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
                 ) : produtos.length > 0 ? (
                   produtos.map((produto) => {
-                    const stockState = getStockState(produto);
-
                     return (
                       <TableRow
                         key={produto.id}
@@ -310,7 +223,6 @@ export default function ProductsPage() {
                         sx={{
                           '&:last-child td, &:last-child th': { border: 0 },
                           cursor: 'pointer',
-                          ...stockState.rowSx,
                         }}
                       >
                         <TableCell component="th" scope="row">
@@ -320,17 +232,6 @@ export default function ProductsPage() {
                         <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
                         <TableCell>{produto.descricao || '-'}</TableCell>
                         <TableCell align="right">
-                          {produto.quantidadeEstoque}
-                        </TableCell>
-                        <TableCell align="center">
-                          <Chip
-                            label={stockState.label}
-                            size="small"
-                            color={stockState.chipColor}
-                            variant="filled"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
                           {formatCurrency(produto.valor)}
                         </TableCell>
                       </TableRow>
@@ -338,7 +239,7 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
                       Nenhum produto encontrado para a pesquisa informada.
                     </TableCell>
                   </TableRow>
