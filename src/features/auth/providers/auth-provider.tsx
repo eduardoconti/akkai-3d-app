@@ -12,11 +12,15 @@ import {
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
   login as loginRequest,
+  updatePassword as updatePasswordRequest,
+  updateProfile as updateProfileRequest,
   logout as logoutRequest,
   me,
   refresh as refreshRequest,
   type AuthUser,
   type LoginInput,
+  type UpdatePasswordInput,
+  type UpdateProfileInput,
 } from '@/features/auth/api/auth-api';
 
 const AUTH_SNAPSHOT_KEY = 'akkai-auth-snapshot';
@@ -135,16 +139,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
+  const updateProfile = useCallback(async (input: UpdateProfileInput) => {
+    const authenticatedUser = await updateProfileRequest(input);
+
+    if (!authenticatedUser.isActive) {
+      setUser(null);
+      persistUserSnapshot(null);
+      return authenticatedUser;
+    }
+
+    setUser(authenticatedUser);
+    persistUserSnapshot(authenticatedUser);
+    return authenticatedUser;
+  }, []);
+
+  const updatePassword = useCallback(async (input: UpdatePasswordInput) => {
+    await updatePasswordRequest(input);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: user !== null,
       isLoading,
       login,
+      updateProfile,
+      updatePassword,
       refresh,
       logout,
     }),
-    [isLoading, login, logout, refresh, user],
+    [isLoading, login, logout, refresh, updatePassword, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

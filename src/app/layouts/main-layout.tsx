@@ -40,7 +40,7 @@ import {
   Sync,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/features/auth';
+import { EditProfileDialog, useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
 import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
@@ -65,6 +65,19 @@ const MENU_ITEM_COMPACT_SX = {
 };
 const MENU_ITEM_ICON_SX = {
   minWidth: 34,
+};
+const MENU_ACTION_BUTTON_SX = {
+  border: '1px solid',
+  borderColor: 'divider',
+  borderRadius: 2,
+  bgcolor: 'background.default',
+  boxShadow: (theme: Theme) =>
+    theme.palette.mode === 'dark'
+      ? '0 4px 10px rgba(0,0,0,0.28)'
+      : '0 6px 14px rgba(15, 23, 42, 0.12)',
+  '&:hover': {
+    bgcolor: 'action.hover',
+  },
 };
 
 interface MainLayoutProps {
@@ -97,6 +110,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
   const [salesMenuOpen, setSalesMenuOpen] = useState(true);
+  const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
   );
@@ -253,9 +267,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               }}
               sx={{
                 mr: 0.5,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
+                ...MENU_ACTION_BUTTON_SX,
               }}
             >
               <Add fontSize="small" />
@@ -269,6 +281,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/vendas"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -283,6 +296,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/vendas/feiras"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -299,9 +313,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     openDialog(() => setFairDialogOpen(true));
                   }}
                   sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
+                    ...MENU_ACTION_BUTTON_SX,
                   }}
                 >
                   <Add fontSize="small" />
@@ -332,9 +344,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               }}
               sx={{
                 mr: 0.5,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
+                ...MENU_ACTION_BUTTON_SX,
               }}
             >
               <Add fontSize="small" />
@@ -363,6 +373,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/produtos/estoque"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -377,6 +388,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/produtos/categorias"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -393,9 +405,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     openDialog(() => setCategoryDialogOpen(true));
                   }}
                   sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
+                    ...MENU_ACTION_BUTTON_SX,
                   }}
                 >
                   <Add fontSize="small" />
@@ -429,9 +439,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               }}
               sx={{
                 mr: 0.5,
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 2,
+                ...MENU_ACTION_BUTTON_SX,
               }}
             >
               <Add fontSize="small" />
@@ -445,6 +453,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/orcamentos"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -480,6 +489,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/financeiro/carteiras"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -496,9 +506,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     openDialog(() => setWalletDialogOpen(true));
                   }}
                   sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
+                    ...MENU_ACTION_BUTTON_SX,
                   }}
                 >
                   <Add fontSize="small" />
@@ -509,6 +517,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/financeiro/despesas"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -525,9 +534,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     openDialog(() => setExpenseDialogOpen(true));
                   }}
                   sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
+                    ...MENU_ACTION_BUTTON_SX,
                   }}
                 >
                   <Add fontSize="small" />
@@ -538,6 +545,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/financeiro/categorias-despesa"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -573,6 +581,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/relatorios/resumo"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -587,6 +596,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mt: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/relatorios/produtos-mais-vendidos"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -601,6 +611,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItem disablePadding sx={{ mt: 0.5 }}>
               <ListItemButton
                 component={NavLink}
+                end
                 to="/relatorios/valor-produtos-estoque"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -874,7 +885,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             primary={mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
           />
         </MenuItem>
-        <MenuItem disabled>Alterar cadastro</MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleCloseUserMenu();
+            setEditProfileDialogOpen(true);
+          }}
+        >
+          Alterar cadastro
+        </MenuItem>
         <MenuItem
           onClick={() => {
             handleCloseUserMenu();
@@ -926,6 +944,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewWalletDialog
         open={walletDialogOpen}
         onClose={() => setWalletDialogOpen(false)}
+      />
+      <EditProfileDialog
+        open={editProfileDialogOpen}
+        onClose={() => setEditProfileDialogOpen(false)}
       />
       <Snackbar open={needsUpdate} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert

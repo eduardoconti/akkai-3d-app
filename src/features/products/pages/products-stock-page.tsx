@@ -28,7 +28,7 @@ import {
   KeyboardArrowUp,
   Search,
 } from '@mui/icons-material';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import StockMovementForm from '../components/stock-movement-form';
 import { listStockMovements } from '../api/products-api';
 import { useProductStore } from '../store/use-product-store';
@@ -124,6 +124,19 @@ function getMovementOriginLabel(origem: string) {
 
 function formatDateTime(value: string) {
   return new Date(value).toLocaleString('pt-BR');
+}
+
+function formatMovementDateMobile(value: string) {
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatMovementUserMobile(usuario: string) {
+  return usuario.trim().slice(0, 2).toUpperCase() || '--';
 }
 
 interface StockExpansionProps {
@@ -238,7 +251,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                 <TableRow>
                   <TableCell>Data</TableCell>
                   <TableCell>Usuario</TableCell>
-                  <TableCell>Movimentacao</TableCell>
+                  {!isMobile ? <TableCell>Movimentacao</TableCell> : null}
                   <TableCell>Origem</TableCell>
                   <TableCell align="right">Quantidade</TableCell>
                 </TableRow>
@@ -246,35 +259,70 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
               <TableBody>
                 {isFetchingMovements ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
                       <CircularProgress size={24} />
                     </TableCell>
                   </TableRow>
                 ) : movements.length > 0 ? (
                   movements.map((movimentacao) => (
-                    <TableRow key={movimentacao.id}>
-                      <TableCell>
-                        {formatDateTime(movimentacao.dataInclusao)}
+                    <TableRow
+                      key={movimentacao.id}
+                      sx={
+                        isMobile
+                          ? {
+                              backgroundColor: (theme) =>
+                                movimentacao.tipo === 'E'
+                                  ? alpha(theme.palette.success.main, 0.12)
+                                  : alpha(theme.palette.error.main, 0.12),
+                            }
+                          : undefined
+                      }
+                    >
+                      <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
+                        {isMobile
+                          ? formatMovementDateMobile(movimentacao.dataInclusao)
+                          : formatDateTime(movimentacao.dataInclusao)}
                       </TableCell>
-                      <TableCell>{movimentacao.usuario}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getMovementTypeLabel(movimentacao.tipo)}
-                          size="small"
-                          color={getMovementTypeColor(movimentacao.tipo)}
-                        />
+                      <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
+                        {isMobile
+                          ? formatMovementUserMobile(movimentacao.usuario)
+                          : movimentacao.usuario}
                       </TableCell>
-                      <TableCell>
+                      {!isMobile ? (
+                        <TableCell>
+                          <Chip
+                            label={getMovementTypeLabel(movimentacao.tipo)}
+                            size="small"
+                            color={getMovementTypeColor(movimentacao.tipo)}
+                          />
+                        </TableCell>
+                      ) : null}
+                      <TableCell
+                        sx={
+                          isMobile
+                            ? {
+                                maxWidth: 84,
+                                px: 1,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }
+                            : undefined
+                        }
+                      >
                         {getMovementOriginLabel(movimentacao.origem)}
                       </TableCell>
-                      <TableCell align="right">
+                      <TableCell
+                        align="right"
+                        sx={isMobile ? { whiteSpace: 'nowrap', px: 1, fontWeight: 700 } : undefined}
+                      >
                         {movimentacao.quantidade}
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
                       Nenhuma movimentacao encontrada para este produto.
                     </TableCell>
                   </TableRow>
