@@ -8,6 +8,21 @@ export interface SalesSummaryPeriodFilter {
   idFeira?: number;
 }
 
+export interface DashboardMonthlySummaryItem {
+  mes: number;
+  valorVendas: number;
+  valorDespesas: number;
+  saldo: number;
+}
+
+export interface DashboardMonthlySummaryResponse {
+  ano: number;
+  totalVendas: number;
+  totalDespesas: number;
+  saldo: number;
+  itens: DashboardMonthlySummaryItem[];
+}
+
 export interface SalesSummary {
   dataInicio: string;
   dataFim: string;
@@ -77,6 +92,15 @@ export function getSalesSummary(
   filtro: SalesSummaryPeriodFilter,
 ): Promise<SalesSummary> {
   return httpClient.get<SalesSummary>('/relatorio/vendas/resumo', filtro);
+}
+
+export function getDashboardMonthlySummary(
+  filtro?: { ano?: number },
+): Promise<DashboardMonthlySummaryResponse> {
+  return httpClient.get<DashboardMonthlySummaryResponse>(
+    '/relatorio/dashboard/resumo-mensal',
+    filtro,
+  );
 }
 
 export function getBestSellingProducts(

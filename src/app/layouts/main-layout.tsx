@@ -30,6 +30,7 @@ import {
   DarkMode,
   ExpandLess,
   ExpandMore,
+  HomeOutlined,
   Inventory as ProductIcon,
   KeyboardArrowDown,
   LightMode,
@@ -123,6 +124,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
     () => location.pathname.startsWith('/produtos'),
     [location.pathname],
   );
+  const homeSectionActive = useMemo(
+    () => location.pathname === '/',
+    [location.pathname],
+  );
   const salesSectionActive = useMemo(
     () => location.pathname.startsWith('/vendas'),
     [location.pathname],
@@ -140,6 +145,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
     [location.pathname],
   );
   const currentSectionTitle = useMemo(() => {
+    if (location.pathname === '/') {
+      return 'Início';
+    }
+
     if (location.pathname.startsWith('/vendas')) {
       return 'Vendas';
     }
@@ -246,6 +255,26 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </Toolbar>
       <Divider />
       <List sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}>
+        <ListItem disablePadding sx={{ mb: 1 }}>
+          <ListItemButton
+            component={NavLink}
+            end
+            to="/"
+            onClick={closeMobileMenu}
+            sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
+              borderRadius: 2,
+              '&.active': getActiveMenuStyles(theme),
+              ...(homeSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
+          >
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
+              <HomeOutlined />
+            </ListItemIcon>
+            <ListItemText primary="Início" primaryTypographyProps={{ noWrap: true }} />
+          </ListItemButton>
+        </ListItem>
+
         <ListItem disablePadding sx={{ mb: 0.5 }}>
           <ListItemButton
             onClick={() => setSalesMenuOpen((current) => !current)}
