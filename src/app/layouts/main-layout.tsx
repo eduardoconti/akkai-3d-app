@@ -44,7 +44,7 @@ import { useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
 import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
-import { NewSaleDialog, useSaleStore } from '@/features/sales';
+import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
 import {
   GlobalFeedbackSnackbar,
   useFeedbackStore,
@@ -90,6 +90,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [budgetsMenuOpen, setBudgetsMenuOpen] = useState(true);
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
@@ -281,12 +282,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                disabled
-                sx={{
+                component={NavLink}
+                to="/vendas/feiras"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
                   borderRadius: 2,
-                }}
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
               >
                 <ListItemText primary="Feiras" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setFairDialogOpen(true));
+                  }}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
               </ListItemButton>
             </ListItem>
           </List>
@@ -899,6 +918,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewSaleDialog
         open={saleDialogOpen}
         onClose={() => setSaleDialogOpen(false)}
+      />
+      <FairDialog
+        open={fairDialogOpen}
+        onClose={() => setFairDialogOpen(false)}
       />
       <NewWalletDialog
         open={walletDialogOpen}

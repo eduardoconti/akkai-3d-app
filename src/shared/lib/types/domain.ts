@@ -69,6 +69,13 @@ export interface Feira {
   ativa: boolean;
 }
 
+export interface FeiraInput {
+  nome: string;
+  local?: string;
+  descricao?: string;
+  ativa?: boolean;
+}
+
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
 export interface CategoriaDespesa {
@@ -178,6 +185,8 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
 }
+
+export type PesquisaPaginadaFeiras = PesquisaPaginada;
 
 export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataInicio?: string;

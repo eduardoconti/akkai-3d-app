@@ -2,7 +2,9 @@ import { httpClient } from '@/shared/lib/api/http-client';
 import type {
   Carteira,
   Feira,
+  FeiraInput,
   InserirVendaInput,
+  PesquisaPaginadaFeiras,
   PesquisaPaginadaVendas,
   ResultadoPaginado,
   Venda,
@@ -16,6 +18,24 @@ export function listSales(
 
 export function listFairs(): Promise<Feira[]> {
   return httpClient.get<Feira[]>('/venda/feiras');
+}
+
+export function listPagedFairs(
+  query: PesquisaPaginadaFeiras,
+): Promise<ResultadoPaginado<Feira>> {
+  return httpClient.get<ResultadoPaginado<Feira>>('/venda/feiras/paginado', query);
+}
+
+export function getFairById(id: number): Promise<Feira> {
+  return httpClient.get<Feira>(`/venda/feiras/${id}`);
+}
+
+export function createFair(input: FeiraInput): Promise<Feira> {
+  return httpClient.post<Feira>('/venda/feiras', input);
+}
+
+export function updateFair(id: number, input: FeiraInput): Promise<Feira> {
+  return httpClient.put<Feira>(`/venda/feiras/${id}`, input);
 }
 
 export function listWallets(): Promise<Carteira[]> {

@@ -12,6 +12,7 @@ import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
 
 const SalesPage = lazy(() => import('@/features/sales/pages/sales-page'));
+const FairsPage = lazy(() => import('@/features/sales/pages/fairs-page'));
 const FinanceWalletsPage = lazy(
   () => import('@/features/finance/pages/finance-wallets-page'),
 );
@@ -94,6 +95,7 @@ function App() {
               element={<ReportsStockValuePage />}
             />
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
+            <Route path="/vendas/feiras" element={<FairsPage />} />
             <Route path="/vendas" element={<SalesPage />} />
           </Route>
         </Route>
