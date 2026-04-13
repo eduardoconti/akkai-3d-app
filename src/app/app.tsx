@@ -2,7 +2,6 @@ import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import {
   BrowserRouter,
-  Navigate,
   Outlet,
   Route,
   Routes,
@@ -38,6 +37,9 @@ const ReportsStockValuePage = lazy(
 );
 const ReportsSummaryPage = lazy(
   () => import('@/features/reports/pages/reports-summary-page'),
+);
+const DashboardHomePage = lazy(
+  () => import('@/features/reports/pages/dashboard-home-page'),
 );
 
 function RouteFallback() {
@@ -75,7 +77,7 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedLayout />}>
-            <Route path="/" element={<Navigate to="/vendas" replace />} />
+            <Route path="/" element={<DashboardHomePage />} />
             <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
             <Route
               path="/financeiro/categorias-despesa"
