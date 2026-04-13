@@ -238,7 +238,7 @@ export default function ReportsBestSellingProductsPage() {
               {item.nomeProduto}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {item.categoria?.nome ?? 'Sem categoria'}
+              Codigo: {item.codigo ?? '-'} · {item.categoria?.nome ?? 'Sem categoria'}
             </Typography>
           </Box>
 
@@ -301,36 +301,36 @@ export default function ReportsBestSellingProductsPage() {
               </TextField>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                select
-                fullWidth
-                disabled={tipoVenda !== 'FEIRA' || isLoadingFeiras}
-                label="Feira"
-                value={idFeira}
-                onChange={(event) =>
-                  setIdFeira(
-                    event.target.value === '' ? '' : Number(event.target.value),
-                  )
-                }
-                helperText={
-                  tipoVenda === 'FEIRA'
-                    ? feiras.length === 0 && !isLoadingFeiras
+            {tipoVenda === 'FEIRA' ? (
+              <Grid size={{ xs: 12, md: 3 }}>
+                <TextField
+                  select
+                  fullWidth
+                  disabled={isLoadingFeiras}
+                  label="Feira"
+                  value={idFeira}
+                  onChange={(event) =>
+                    setIdFeira(
+                      event.target.value === '' ? '' : Number(event.target.value),
+                    )
+                  }
+                  helperText={
+                    feiras.length === 0 && !isLoadingFeiras
                       ? 'Nenhuma feira cadastrada.'
                       : 'Opcional. Filtre uma feira específica.'
-                    : 'Disponível apenas para vendas do tipo feira.'
-                }
-              >
-                <MenuItem value="">Todas as feiras</MenuItem>
-                {feiras.map((feira) => (
-                  <MenuItem key={feira.id} value={feira.id}>
-                    {feira.nome}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
+                  }
+                >
+                  <MenuItem value="">Todas as feiras</MenuItem>
+                  {feiras.map((feira) => (
+                    <MenuItem key={feira.id} value={feira.id}>
+                      {feira.nome}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            ) : null}
 
-            <Grid size={{ xs: 12, md: 8 }}>
+            <Grid size={{ xs: 12, md: tipoVenda === 'FEIRA' ? 8 : 11 }}>
               <Autocomplete
                 multiple
                 options={categorias}
@@ -410,6 +410,9 @@ export default function ReportsBestSellingProductsPage() {
                       <TableHead>
                         <TableRow>
                           <TableCell>
+                            <strong>Codigo</strong>
+                          </TableCell>
+                          <TableCell>
                             <strong>Produto</strong>
                           </TableCell>
                           <TableCell>
@@ -426,6 +429,7 @@ export default function ReportsBestSellingProductsPage() {
                             <TableRow
                               key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
                             >
+                              <TableCell>{item.codigo ?? '-'}</TableCell>
                               <TableCell>{item.nomeProduto}</TableCell>
                               <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
                               <TableCell align="right">
@@ -435,7 +439,7 @@ export default function ReportsBestSellingProductsPage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
+                            <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
                               Nenhum produto encontrado para os filtros informados.
                             </TableCell>
                           </TableRow>
