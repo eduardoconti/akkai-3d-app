@@ -353,7 +353,18 @@ export default function DashboardHomePage() {
       ) : result ? (
         <Stack spacing={3}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Itens vendidos em {result.ano}
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                  {result.totalQuantidadeItensVendidos}
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 3 }}>
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   Total de vendas em {result.ano}
@@ -364,7 +375,7 @@ export default function DashboardHomePage() {
               </Paper>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   Total de despesas em {result.ano}
@@ -379,7 +390,7 @@ export default function DashboardHomePage() {
               </Paper>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
                 <Typography variant="body2" color="text.secondary">
                   Saldo acumulado em {result.ano}
