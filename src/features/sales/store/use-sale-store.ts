@@ -12,18 +12,24 @@ import {
   saveCachedWallets,
 } from '@/shared/lib/offline/indexed-db';
 import {
+  createFair,
   createSale,
   deleteSale,
+  getFairById,
+  listPagedFairs,
   listFairs,
   listSales,
   listWallets,
+  updateFair,
   updateSale,
 } from '@/features/sales/api/sales-api';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Carteira,
   Feira,
+  FeiraInput,
   InserirVendaInput,
+  PesquisaPaginadaFeiras,
   PesquisaPaginadaVendas,
   Produto,
   ResultadoPaginado,
@@ -31,6 +37,11 @@ import type {
 } from '@/shared/lib/types/domain';
 
 const paginacaoInicial: PesquisaPaginadaVendas = {
+  pagina: 1,
+  tamanhoPagina: 10,
+};
+
+const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   pagina: 1,
   tamanhoPagina: 10,
 };
@@ -95,10 +106,13 @@ function buildOfflineSale(
 interface SaleStoreState {
   vendas: Venda[];
   feiras: Feira[];
+  feirasPaginadas: Feira[];
   carteiras: Carteira[];
   paginacao: PesquisaPaginadaVendas;
+  paginacaoFeiras: PesquisaPaginadaFeiras;
   totalItens: number;
   totalPaginas: number;
+  totalFeiras: number;
   pendingSalesCount: number;
   isFetching: boolean;
   isSubmitting: boolean;
@@ -109,7 +123,13 @@ interface SaleStoreState {
     query?: Partial<PesquisaPaginadaVendas>,
   ) => Promise<ResultadoPaginado<Venda> | void>;
   fetchFeiras: () => Promise<void>;
+  fetchFeirasPaginadas: (
+    query?: Partial<PesquisaPaginadaFeiras>,
+  ) => Promise<ResultadoPaginado<Feira> | void>;
+  obterFeiraPorId: (id: number) => Promise<Feira>;
   fetchCarteiras: () => Promise<void>;
+  criarFeira: (dados: FeiraInput) => Promise<ActionResult<Feira>>;
+  atualizarFeira: (id: number, dados: FeiraInput) => Promise<ActionResult<Feira>>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
   alterarVenda: (
     id: number,
@@ -124,10 +144,13 @@ interface SaleStoreState {
 export const useSaleStore = create<SaleStoreState>((set, get) => ({
   vendas: [],
   feiras: [],
+  feirasPaginadas: [],
   carteiras: [],
   paginacao: paginacaoInicial,
+  paginacaoFeiras: paginacaoFeirasInicial,
   totalItens: 0,
   totalPaginas: 1,
+  totalFeiras: 0,
   pendingSalesCount: 0,
   isFetching: false,
   isSubmitting: false,
@@ -225,6 +248,37 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       set({ isFetching: false });
     }
   },
+  fetchFeirasPaginadas: async (query) => {
+    const currentPagination = get().paginacaoFeiras;
+    const nextPagination: PesquisaPaginadaFeiras = {
+      pagina: query?.pagina ?? currentPagination.pagina,
+      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      termo: query?.termo ?? currentPagination.termo ?? '',
+    };
+
+    set({ isFetching: true, fetchErrorMessage: null });
+    try {
+      const response = await listPagedFairs(nextPagination);
+      set({
+        feirasPaginadas: response.itens,
+        paginacaoFeiras: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo,
+        },
+        totalFeiras: response.totalItens,
+      });
+      return response;
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
+    }
+  },
+  obterFeiraPorId: async (id) => {
+    return getFairById(id);
+  },
   fetchCarteiras: async () => {
     set({ isFetching: true, fetchErrorMessage: null });
     try {
@@ -246,6 +300,32 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       set({ fetchErrorMessage: problem.detail });
     } finally {
       set({ isFetching: false });
+    }
+  },
+  criarFeira: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const feira = await createFair(dados);
+      return { success: true, data: feira };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarFeira: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const feira = await updateFair(id, dados);
+      return { success: true, data: feira };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
     }
   },
   criarVenda: async (dados) => {
