@@ -43,7 +43,7 @@ import {
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
 import {
-  DatePickerField,
+  DateRangePickerField,
   formatCurrency,
   useFeedbackStore,
   useOnlineStatus,
@@ -316,23 +316,19 @@ export default function SalesPage() {
 
       <Box>
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-            <DatePickerField
-              label="Data inicial"
-              value={dataInicio}
-              onValueChange={setDataInicio}
+          <Grid size={{ xs: 12, lg: type === 'FEIRA' ? 5 : 7 }}>
+            <DateRangePickerField
+              label="Período"
+              startValue={dataInicio}
+              endValue={dataFim}
+              onValueChange={({ startValue, endValue }) => {
+                setDataInicio(startValue);
+                setDataFim(endValue);
+              }}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-            <DatePickerField
-              label="Data final"
-              value={dataFim}
-              onValueChange={setDataFim}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, lg: type === 'FEIRA' ? 2 : 3 }}>
             <TextField
               select
               fullWidth
@@ -350,7 +346,7 @@ export default function SalesPage() {
           </Grid>
 
           {type === 'FEIRA' ? (
-            <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -375,13 +371,16 @@ export default function SalesPage() {
             </Grid>
           ) : null}
 
-          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+          <Grid
+            size={{ xs: 12, sm: 6, lg: 2 }}
+            sx={{ display: 'flex', alignItems: 'flex-start' }}
+          >
             <Button
               fullWidth
               variant="outlined"
               startIcon={<Search />}
               onClick={handleSearch}
-              sx={{ height: '100%', minHeight: 56 }}
+              sx={{ height: 56 }}
             >
               Pesquisar
             </Button>

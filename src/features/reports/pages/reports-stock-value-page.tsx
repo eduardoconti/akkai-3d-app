@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  MenuItem,
   Box,
   Button,
   Chip,
@@ -14,11 +15,12 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Inventory2 } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   getStockValueReport,
@@ -42,6 +44,10 @@ export default function ReportsStockValuePage() {
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(10);
+  const [ordenarPor, setOrdenarPor] = useState<
+    'codigo' | 'nome' | 'quantidade' | 'valor' | 'valorTotal'
+  >('codigo');
+  const [direcao, setDirecao] = useState<'asc' | 'desc'>('asc');
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,6 +59,8 @@ export default function ReportsStockValuePage() {
       const response = await getStockValueReport({
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
+        ordenarPor,
+        direcao,
       });
       setPagina(response.pagina);
       setTamanhoPagina(response.tamanhoPagina);
@@ -119,51 +127,77 @@ export default function ReportsStockValuePage() {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
-        <Stack spacing={2.5}>
-          <Grid container spacing={2}>
-            <Grid
-              size={{ xs: 12, md: 4 }}
-              sx={{ display: 'flex', alignItems: 'stretch' }}
-            >
-              <Button
-                fullWidth
-                variant="contained"
-                startIcon={
-                  isLoading ? <CircularProgress size={18} /> : <Inventory2 />
-                }
-                onClick={() => {
-                  void handleSubmit(1, tamanhoPagina);
-                }}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Consultando...' : 'Consultar relatorio'}
-              </Button>
-            </Grid>
-          </Grid>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+        <TextField
+          select
+          label="Ordenar por"
+          value={ordenarPor}
+          onChange={(event) =>
+            setOrdenarPor(
+              event.target.value as
+                | 'codigo'
+                | 'nome'
+                | 'quantidade'
+                | 'valor'
+                | 'valorTotal',
+            )
+          }
+          sx={{ minWidth: { xs: '100%', md: 180 } }}
+        >
+          <MenuItem value="codigo">Codigo</MenuItem>
+          <MenuItem value="nome">Nome</MenuItem>
+          <MenuItem value="quantidade">Quantidade</MenuItem>
+          <MenuItem value="valor">Valor</MenuItem>
+          <MenuItem value="valorTotal">Valor total</MenuItem>
+        </TextField>
 
-          <FormFeedbackAlert message={problem?.detail} />
+        <TextField
+          select
+          label="Direção"
+          value={direcao}
+          onChange={(event) => setDirecao(event.target.value as 'asc' | 'desc')}
+          sx={{ minWidth: { xs: '100%', md: 160 } }}
+        >
+          <MenuItem value="asc">Crescente</MenuItem>
+          <MenuItem value="desc">Decrescente</MenuItem>
+        </TextField>
 
-          {result ? (
-            <Stack spacing={2}>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                <Chip label={`Produtos: ${result.totalItens}`} size="small" />
-                <Chip
-                  label={`Quantidade total: ${formatQuantity(result.totalQuantidade)}`}
-                  size="small"
-                />
-                <Chip
-                  label={`Soma dos valores: ${formatCurrency(result.totalValor)}`}
-                  size="small"
-                />
-                <Chip
-                  label={`Valor total em estoque: ${formatCurrency(result.totalValorTotal)}`}
-                  color="primary"
-                  size="small"
-                />
-              </Stack>
+        <Button
+          variant="outlined"
+          startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
+          onClick={() => {
+            void handleSubmit(1, tamanhoPagina);
+          }}
+          disabled={isLoading}
+          sx={{ height: 56 }}
+        >
+          {isLoading ? 'Consultando...' : 'Pesquisar'}
+        </Button>
+      </Stack>
 
-              <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+      <FormFeedbackAlert message={problem?.detail} />
+
+      {result ? (
+        <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Produtos: ${result.totalItens}`} size="small" />
+              <Chip
+                label={`Quantidade total: ${formatQuantity(result.totalQuantidade)}`}
+                size="small"
+              />
+              <Chip
+                label={`Soma dos valores: ${formatCurrency(result.totalValor)}`}
+                size="small"
+              />
+              <Chip
+                label={`Valor total em estoque: ${formatCurrency(result.totalValorTotal)}`}
+                color="primary"
+                size="small"
+              />
+            </Stack>
+
+            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                 {isMobile ? (
                   <Stack divider={<Divider flexItem />}>
                     {result.itens.length > 0 ? (
@@ -250,11 +284,10 @@ export default function ReportsStockValuePage() {
                     },
                   }}
                 />
-              </Paper>
-            </Stack>
-          ) : null}
-        </Stack>
-      </Paper>
+            </Paper>
+          </Stack>
+        </Paper>
+      ) : null}
     </Stack>
   );
 }

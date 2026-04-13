@@ -50,6 +50,8 @@ export interface BestSellingProductsResponse {
 export interface StockValueReportFilter {
   pagina?: number;
   tamanhoPagina?: number;
+  ordenarPor?: 'codigo' | 'nome' | 'quantidade' | 'valor' | 'valorTotal';
+  direcao?: 'asc' | 'desc';
 }
 
 export interface StockValueProductItem {

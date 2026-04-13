@@ -39,7 +39,12 @@ import {
   convertDateToApiDateFormat,
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
-import { DatePickerField, formatCurrency, useFeedbackStore, type Despesa } from '@/shared';
+import {
+  DateRangePickerField,
+  formatCurrency,
+  useFeedbackStore,
+  type Despesa,
+} from '@/shared';
 
 function getPaymentMethodLabel(meioPagamento: string): string {
   switch (meioPagamento) {
@@ -184,6 +189,18 @@ export default function FinanceExpensesPage() {
       </Stack>
 
       <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+          <DateRangePickerField
+            label="Período"
+            startValue={dataInicio}
+            endValue={dataFim}
+            onValueChange={({ startValue, endValue }) => {
+              setDataInicio(startValue);
+              setDataFim(endValue);
+            }}
+          />
+        </Grid>
+
         <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <TextField
             fullWidth
@@ -194,29 +211,16 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-          <DatePickerField
-            label="Data inicial"
-            value={dataInicio}
-            onValueChange={setDataInicio}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-          <DatePickerField
-            label="Data final"
-            value={dataFim}
-            onValueChange={setDataFim}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid
+          size={{ xs: 12, md: 6, lg: 3 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
+        >
           <Button
             fullWidth
             variant="outlined"
             startIcon={<Search />}
             onClick={handleSearch}
-            sx={{ height: '100%', minHeight: 56 }}
+            sx={{ height: 56 }}
           >
             Pesquisar
           </Button>

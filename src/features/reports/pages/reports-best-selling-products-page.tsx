@@ -22,7 +22,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { LocalFireDepartment } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   getBestSellingProducts,
@@ -32,7 +32,7 @@ import {
 import { listAllCategories } from '@/features/products/api/products-api';
 import { listFairs } from '@/features/sales/api/sales-api';
 import {
-  DatePickerField,
+  DateRangePickerField,
   FormFeedbackAlert,
   getProblemDetailsFromError,
   type Categoria,
@@ -265,26 +265,20 @@ export default function ReportsBestSellingProductsPage() {
         </Typography>
       </Box>
 
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
-        <Stack spacing={2.5}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <DatePickerField
-                label="Data inicial"
-                value={dataInicio}
-                onValueChange={setDataInicio}
+      <Grid container spacing={2}>
+            <Grid size={{ xs: 12, lg: 3 }}>
+              <DateRangePickerField
+                label="Período"
+                startValue={dataInicio}
+                endValue={dataFim}
+                onValueChange={({ startValue, endValue }) => {
+                  setDataInicio(startValue);
+                  setDataFim(endValue);
+                }}
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 3 }}>
-              <DatePickerField
-                label="Data final"
-                value={dataFim}
-                onValueChange={setDataFim}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 12, md: 4, lg: 2 }}>
               <TextField
                 select
                 fullWidth
@@ -302,7 +296,7 @@ export default function ReportsBestSellingProductsPage() {
             </Grid>
 
             {tipoVenda === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 3 }}>
+              <Grid size={{ xs: 12, md: 4, lg: 2 }}>
                 <TextField
                   select
                   fullWidth
@@ -330,7 +324,7 @@ export default function ReportsBestSellingProductsPage() {
               </Grid>
             ) : null}
 
-            <Grid size={{ xs: 12, md: tipoVenda === 'FEIRA' ? 8 : 11 }}>
+            <Grid size={{ xs: 12, md: 8, lg: tipoVenda === 'FEIRA' ? 3 : 5 }}>
               <Autocomplete
                 multiple
                 options={categorias}
@@ -350,50 +344,46 @@ export default function ReportsBestSellingProductsPage() {
             </Grid>
 
             <Grid
-              size={{ xs: 12, md: 4 }}
-              sx={{ display: 'flex', alignItems: 'stretch' }}
+              size={{ xs: 12, md: 4, lg: 2 }}
+              sx={{ display: 'flex', alignItems: 'flex-start' }}
             >
               <Button
                 fullWidth
-                variant="contained"
-                startIcon={
-                  isLoading ? (
-                    <CircularProgress size={18} />
-                  ) : (
-                    <LocalFireDepartment />
-                  )
-                }
+                variant="outlined"
+                startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
                 onClick={() => {
                   void handleSubmit(1, tamanhoPagina);
                 }}
                 disabled={isLoading}
+                sx={{ height: 56 }}
               >
-                {isLoading ? 'Consultando...' : 'Consultar ranking'}
+                {isLoading ? 'Consultando...' : 'Pesquisar'}
               </Button>
             </Grid>
-          </Grid>
+      </Grid>
 
-          <FormFeedbackAlert message={localError ?? problem?.detail} />
+      <FormFeedbackAlert message={localError ?? problem?.detail} />
 
-          {result ? (
-            <Stack spacing={2}>
-              {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
+      {result ? (
+        <Paper sx={{ p: 3, borderRadius: 3 }}>
+          <Stack spacing={2}>
+            {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
 
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                <Chip label={`Tipo: ${getSaleTypeLabel(tipoVenda)}`} size="small" />
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip label={`Tipo: ${getSaleTypeLabel(tipoVenda)}`} size="small" />
+              <Chip
+                label={`Categorias: ${categoriasSelecionadas.length}`}
+                size="small"
+              />
+              {tipoVenda === 'FEIRA' && idFeira !== '' ? (
                 <Chip
-                  label={`Categorias: ${categoriasSelecionadas.length}`}
+                  label={`Feira: ${feiras.find((feira) => feira.id === idFeira)?.nome ?? idFeira}`}
                   size="small"
                 />
-                {tipoVenda === 'FEIRA' && idFeira !== '' ? (
-                  <Chip
-                    label={`Feira: ${feiras.find((feira) => feira.id === idFeira)?.nome ?? idFeira}`}
-                    size="small"
-                  />
-                ) : null}
-              </Stack>
+              ) : null}
+            </Stack>
 
-              <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
                 {isMobile ? (
                   <Stack divider={<Divider flexItem />}>
                     {result.itens.length > 0 ? (
@@ -474,11 +464,10 @@ export default function ReportsBestSellingProductsPage() {
                     },
                   }}
                 />
-              </Paper>
-            </Stack>
-          ) : null}
-        </Stack>
-      </Paper>
+            </Paper>
+          </Stack>
+        </Paper>
+      ) : null}
     </Stack>
   );
 }
