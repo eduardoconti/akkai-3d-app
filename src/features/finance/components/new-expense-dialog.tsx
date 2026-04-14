@@ -53,6 +53,7 @@ export default function NewExpenseDialog({
     categoriasDespesa,
     clearSubmitError,
     criarDespesa,
+    excluirDespesa,
     atualizarDespesa,
     fetchCarteiras,
     fetchCategoriasDespesa,
@@ -67,6 +68,7 @@ export default function NewExpenseDialog({
       categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
       clearSubmitError: financeStoreSelectors.clearSubmitError(state),
       criarDespesa: financeStoreSelectors.criarDespesa(state),
+      excluirDespesa: financeStoreSelectors.excluirDespesa(state),
       atualizarDespesa: financeStoreSelectors.atualizarDespesa(state),
       fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
       fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
@@ -81,6 +83,8 @@ export default function NewExpenseDialog({
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<ExpenseFormErrors>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -107,6 +111,7 @@ export default function NewExpenseDialog({
     setForm(initialExpenseFormState);
     setProblem(null);
     setLocalErrors({});
+    setConfirmDeleteOpen(false);
     clearSubmitError();
   }, [
     open,
@@ -165,11 +170,12 @@ export default function NewExpenseDialog({
     setForm(initialExpenseFormState);
     setProblem(null);
     setLocalErrors({});
+    setConfirmDeleteOpen(false);
     clearSubmitError();
     onClose();
   };
 
-  const isBusy = isSubmitting || isSaving;
+  const isBusy = isSubmitting || isSaving || isDeleting;
 
   const handleDialogClose = () => {
     if (isBusy) {
@@ -177,6 +183,14 @@ export default function NewExpenseDialog({
     }
 
     handleClose();
+  };
+
+  const handleConfirmDeleteDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    setConfirmDeleteOpen(false);
   };
 
   const handleSubmit = async () => {
@@ -246,75 +260,99 @@ export default function NewExpenseDialog({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!despesa) return;
+
+    setIsDeleting(true);
+    setProblem(null);
+
+    try {
+      const result = await excluirDespesa(despesa.id);
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchDespesas();
+      showSuccess('Despesa excluída com sucesso.');
+      setConfirmDeleteOpen(false);
+      handleClose();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ px: 3, py: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <ReceiptLong color="primary" />
-              <Typography variant="h5" fontWeight={700}>
-                {isEditMode ? 'Alterar despesa' : 'Nova despesa'}
+    <>
+      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+        <DialogTitle sx={{ px: 3, py: 2.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <ReceiptLong color="primary" />
+                <Typography variant="h5" fontWeight={700}>
+                  {isEditMode ? 'Alterar despesa' : 'Nova despesa'}
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                {isEditMode
+                  ? 'Altere os dados da despesa selecionada.'
+                  : 'Preencha os dados para registrar uma despesa.'}
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              {isEditMode
-                ? 'Altere os dados da despesa selecionada.'
-                : 'Preencha os dados para registrar uma despesa.'}
-            </Typography>
+
+            <IconButton
+              onClick={handleDialogClose}
+              aria-label="Fechar modal de despesa"
+              disabled={isBusy}
+            >
+              <Close />
+            </IconButton>
           </Box>
+        </DialogTitle>
 
-          <IconButton
-            onClick={handleDialogClose}
-            aria-label="Fechar modal de despesa"
-            disabled={isBusy}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
+        <DialogContent dividers>
+          <FormFeedbackAlert message={problem?.detail ?? submitErrorMessage} />
 
-      <DialogContent dividers>
-        <FormFeedbackAlert message={problem?.detail ?? submitErrorMessage} />
+          {activeWallets.length === 0 ? (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Nenhuma carteira ativa encontrada. Cadastre ou ative uma carteira
+              antes de lançar despesas.
+            </Alert>
+          ) : null}
 
-        {activeWallets.length === 0 ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Nenhuma carteira ativa encontrada. Cadastre ou ative uma carteira
-            antes de lançar despesas.
-          </Alert>
-        ) : null}
-
-        <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid size={{ xs: 12, md: 3 }}>
-            <DatePickerField
-              label="Data"
-              value={form.dataLancamento}
-              onValueChange={(dataLancamento) =>
-                setForm((current) => ({
-                  ...current,
-                  dataLancamento,
-                }))
-              }
-              slotProps={{
-                textField: {
-                  error: Boolean(
-                    localErrors.dataLancamento ||
-                    getFieldMessage(problem, 'dataLancamento'),
-                  ),
-                  helperText:
-                    localErrors.dataLancamento ??
-                    getFieldMessage(problem, 'dataLancamento'),
-                },
-              }}
-            />
-          </Grid>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <DatePickerField
+                label="Data"
+                value={form.dataLancamento}
+                onValueChange={(dataLancamento) =>
+                  setForm((current) => ({
+                    ...current,
+                    dataLancamento,
+                  }))
+                }
+                slotProps={{
+                  textField: {
+                    error: Boolean(
+                      localErrors.dataLancamento ||
+                      getFieldMessage(problem, 'dataLancamento'),
+                    ),
+                    helperText:
+                      localErrors.dataLancamento ??
+                      getFieldMessage(problem, 'dataLancamento'),
+                  },
+                }}
+              />
+            </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
@@ -479,23 +517,67 @@ export default function NewExpenseDialog({
               }
             />
           </Grid>
-        </Grid>
-      </DialogContent>
+          </Grid>
+        </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          startIcon={<Save />}
-          size="large"
-          disabled={isBusy}
+        <DialogActions
+          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
         >
-          {isBusy ? 'Salvando...' : isEditMode ? 'Salvar alterações' : 'Salvar Despesa'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Box>
+            {isEditMode ? (
+              <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+                Excluir
+              </Button>
+            ) : null}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              startIcon={<Save />}
+              size="large"
+              disabled={isBusy}
+            >
+              {isSaving || isSubmitting
+                ? 'Salvando...'
+                : isEditMode
+                  ? 'Salvar alterações'
+                  : 'Salvar Despesa'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={handleConfirmDeleteDialogClose}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Excluir despesa</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Tem certeza que deseja excluir esta despesa? Essa ação não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleConfirmDeleteDialogClose} disabled={isDeleting}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleConfirmDelete();
+            }}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

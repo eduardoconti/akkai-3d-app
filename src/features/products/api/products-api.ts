@@ -98,6 +98,10 @@ export function updateProduct(id: number, input: ProdutoInput): Promise<Produto>
   return httpClient.put<Produto>(`/produto/${id}`, input);
 }
 
+export function deleteProduct(id: number): Promise<void> {
+  return httpClient.delete<void>(`/produto/${id}`);
+}
+
 export function addProductStockEntry(
   id: number,
   input: EstoqueInput<OrigemEntradaEstoque>,
@@ -121,4 +125,8 @@ export function updateCategory(
   input: CategoriaInput,
 ): Promise<Categoria> {
   return httpClient.put<Categoria>(`/produto/categorias/${id}`, input);
+}
+
+export function deleteCategory(id: number): Promise<void> {
+  return httpClient.delete<void>(`/produto/categorias/${id}`);
 }

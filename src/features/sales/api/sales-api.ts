@@ -39,6 +39,10 @@ export function updateFair(id: number, input: FeiraInput): Promise<Feira> {
   return httpClient.put<Feira>(`/venda/feiras/${id}`, input);
 }
 
+export function deleteFair(id: number): Promise<void> {
+  return httpClient.delete<void>(`/venda/feiras/${id}`);
+}
+
 export function listWallets(): Promise<Carteira[]> {
   return httpClient.get<Carteira[]>('/financeiro/carteiras');
 }

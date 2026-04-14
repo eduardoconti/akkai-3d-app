@@ -14,6 +14,7 @@ import {
 import {
   createFair,
   createSale,
+  deleteFair,
   deleteSale,
   getFairById,
   listPagedFairs,
@@ -133,6 +134,7 @@ interface SaleStoreState {
   fetchCarteiras: () => Promise<void>;
   criarFeira: (dados: FeiraInput) => Promise<ActionResult<Feira>>;
   atualizarFeira: (id: number, dados: FeiraInput) => Promise<ActionResult<Feira>>;
+  excluirFeira: (id: number) => Promise<ActionResult<void>>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
   alterarVenda: (
     id: number,
@@ -351,6 +353,19 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  excluirFeira: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteFair(id);
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   criarVenda: async (dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
@@ -481,6 +496,7 @@ export const saleStoreSelectors = {
   fetchCarteiras: (state: SaleStoreState) => state.fetchCarteiras,
   criarFeira: (state: SaleStoreState) => state.criarFeira,
   atualizarFeira: (state: SaleStoreState) => state.atualizarFeira,
+  excluirFeira: (state: SaleStoreState) => state.excluirFeira,
   criarVenda: (state: SaleStoreState) => state.criarVenda,
   alterarVenda: (state: SaleStoreState) => state.alterarVenda,
   excluirVenda: (state: SaleStoreState) => state.excluirVenda,
