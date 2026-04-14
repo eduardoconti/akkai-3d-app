@@ -102,8 +102,10 @@ export interface Despesa {
   categoria: CategoriaDespesa;
   meioPagamento: MeioPagamento;
   idCarteira: number;
+  idFeira?: number;
   observacao?: string;
   carteira?: Carteira;
+  feira?: Feira | null;
 }
 
 export interface VendaItem {
@@ -192,6 +194,7 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
   idsCategorias?: number[];
+  idFeira?: number;
 }
 
 export type PesquisaPaginadaOrcamentos = PesquisaPaginada;
@@ -213,6 +216,7 @@ export interface DespesaInput {
   idCategoria: number;
   meioPagamento: MeioPagamento;
   idCarteira: number;
+  idFeira?: number;
   observacao?: string;
 }
 

@@ -32,6 +32,7 @@ export type ExpenseFormState = {
   idCategoria: number | '';
   meioPagamento: MeioPagamento;
   idCarteira: number | '';
+  idFeira: number | '';
   observacao: string;
 };
 
@@ -41,6 +42,7 @@ export type ExpenseFormErrors = {
   valor?: string;
   idCategoria?: string;
   idCarteira?: string;
+  idFeira?: string;
   observacao?: string;
 };
 
@@ -59,6 +61,7 @@ export const initialExpenseFormState: ExpenseFormState = {
   idCategoria: '',
   meioPagamento: 'PIX',
   idCarteira: '',
+  idFeira: '',
   observacao: '',
 };
 
