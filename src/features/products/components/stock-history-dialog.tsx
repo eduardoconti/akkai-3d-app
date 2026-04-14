@@ -157,22 +157,31 @@ export default function StockHistoryDialog({
                         <Stack
                           direction="row"
                           justifyContent="space-between"
+                          alignItems="flex-start"
                           spacing={2}
                         >
-                          <Box>
+                          <Box sx={{ minWidth: 0, flex: 1 }}>
                             <Typography variant="caption" color="text.secondary">
                               Quantidade
                             </Typography>
-                            <Typography variant="body1" fontWeight={700}>
+                            <Typography
+                              variant="body1"
+                              fontWeight={700}
+                              sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
                               {movimentacao.quantidade}
                             </Typography>
                           </Box>
 
-                          <Box sx={{ textAlign: 'right' }}>
+                          <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
                             <Typography variant="caption" color="text.secondary">
                               Origem
                             </Typography>
-                            <Typography variant="body1" fontWeight={700}>
+                            <Typography
+                              variant="body1"
+                              fontWeight={700}
+                              sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
                               {getMovementOriginLabel(movimentacao.origem)}
                             </Typography>
                           </Box>

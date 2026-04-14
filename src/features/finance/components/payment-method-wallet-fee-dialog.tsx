@@ -66,6 +66,14 @@ const initialFeeFormState: FeeFormState = {
   ativa: true,
 };
 
+function normalizePercentualInput(value: string): string {
+  return value.replace(',', '.');
+}
+
+function parsePercentualInput(value: string): number {
+  return Number(normalizePercentualInput(value));
+}
+
 export default function PaymentMethodWalletFeeDialog({
   open,
   feeId,
@@ -152,7 +160,7 @@ export default function PaymentMethodWalletFeeDialog({
         setForm({
           idCarteira: taxa.idCarteira,
           meioPagamento: taxa.meioPagamento,
-          percentual: taxa.percentual.toFixed(2),
+          percentual: taxa.percentual.toFixed(2).replace('.', ','),
           ativa: taxa.ativa,
         });
       } catch (error) {
@@ -218,7 +226,7 @@ export default function PaymentMethodWalletFeeDialog({
 
   const validateForm = (): FeeFormErrors => {
     const errors: FeeFormErrors = {};
-    const percentual = Number(form.percentual);
+    const percentual = parsePercentualInput(form.percentual);
 
     if (form.idCarteira === '') {
       errors.idCarteira = 'Selecione a carteira da taxa.';
@@ -238,7 +246,7 @@ export default function PaymentMethodWalletFeeDialog({
   const buildPayload = (): TaxaMeioPagamentoCarteiraInput => ({
     idCarteira: Number(form.idCarteira),
     meioPagamento: form.meioPagamento,
-    percentual: Number(form.percentual),
+    percentual: parsePercentualInput(form.percentual),
     ativa: form.ativa,
   });
 
@@ -396,7 +404,6 @@ export default function PaymentMethodWalletFeeDialog({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                type="number"
                 label="Percentual da taxa"
                 placeholder="Ex: 2,99"
                 value={form.percentual}
@@ -411,9 +418,10 @@ export default function PaymentMethodWalletFeeDialog({
                 helperText={getErrorMessage('percentual') ?? 'Use até 2 casas decimais.'}
                 slotProps={{
                   htmlInput: {
+                    inputMode: 'decimal',
+                    pattern: '[0-9]*[.,]?[0-9]*',
                     min: 0,
                     max: 100,
-                    step: 0.01,
                   },
                   input: {
                     startAdornment: <Percent fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
