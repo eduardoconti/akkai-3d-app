@@ -31,6 +31,7 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
   termo: '',
   dataInicio: '',
   dataFim: '',
+  idsCategorias: [],
 };
 
 interface FinanceStoreState {
@@ -102,6 +103,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       termo: query?.termo ?? currentPagination.termo ?? '',
       dataInicio: query?.dataInicio ?? currentPagination.dataInicio ?? '',
       dataFim: query?.dataFim ?? currentPagination.dataFim ?? '',
+      idsCategorias: query?.idsCategorias ?? currentPagination.idsCategorias ?? [],
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -115,6 +117,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
           termo: nextPagination.termo,
           dataInicio: nextPagination.dataInicio,
           dataFim: nextPagination.dataFim,
+          idsCategorias: nextPagination.idsCategorias,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,

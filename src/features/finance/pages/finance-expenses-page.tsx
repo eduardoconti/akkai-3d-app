@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -74,8 +75,10 @@ export default function FinanceExpensesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
+    categoriasDespesa,
     despesas,
     excluirDespesa,
+    fetchCategoriasDespesa,
     fetchDespesas,
     fetchErrorMessage,
     isFetching,
@@ -93,6 +96,9 @@ export default function FinanceExpensesPage() {
   const [searchInput, setSearchInput] = useState('');
   const [dataInicio, setDataInicio] = useState(getCurrentDateInput());
   const [dataFim, setDataFim] = useState(getCurrentDateInput());
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
+    typeof categoriasDespesa
+  >([]);
 
   const handleSearch = () => {
     void fetchDespesas({
@@ -100,6 +106,7 @@ export default function FinanceExpensesPage() {
       termo: searchInput.trim(),
       dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
       dataFim: convertDateToApiDateFormat(dataFim) ?? '',
+      idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
     });
   };
 
@@ -150,17 +157,22 @@ export default function FinanceExpensesPage() {
   };
 
   useEffect(() => {
+    void fetchCategoriasDespesa();
+  }, [fetchCategoriasDespesa]);
+
+  useEffect(() => {
     const timeout = window.setTimeout(() => {
       void fetchDespesas({
         pagina: 1,
         termo: searchInput.trim(),
         dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
         dataFim: convertDateToApiDateFormat(dataFim) ?? '',
+        idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
       });
     }, 300);
 
     return () => window.clearTimeout(timeout);
-  }, [dataFim, dataInicio, fetchDespesas, searchInput]);
+  }, [categoriasSelecionadas, dataFim, dataInicio, fetchDespesas, searchInput]);
 
   return (
     <Stack spacing={3}>
@@ -188,8 +200,8 @@ export default function FinanceExpensesPage() {
         </Button>
       </Stack>
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 16 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <DateRangePickerField
             label="Período"
             startValue={dataInicio}
@@ -201,7 +213,25 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+          <Autocomplete
+            multiple
+            options={categoriasDespesa}
+            value={categoriasSelecionadas}
+            onChange={(_event, value) => setCategoriasSelecionadas(value)}
+            getOptionLabel={(option) => option.nome}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Categorias"
+                placeholder="Selecione uma ou mais categorias"
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             fullWidth
             label="Pesquisar despesa"
