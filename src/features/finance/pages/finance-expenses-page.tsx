@@ -91,6 +91,7 @@ export default function FinanceExpensesPage() {
     isSubmitting,
     paginacao,
     totalItens,
+    totalizadores,
   } = useFinanceStore(
     useShallow((state) => ({
       categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
@@ -105,6 +106,7 @@ export default function FinanceExpensesPage() {
       isSubmitting: financeStoreSelectors.isSubmitting(state),
       paginacao: financeStoreSelectors.paginacao(state),
       totalItens: financeStoreSelectors.totalItens(state),
+      totalizadores: financeStoreSelectors.totalizadores(state),
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
@@ -303,6 +305,15 @@ export default function FinanceExpensesPage() {
           </Button>
         </Grid>
       </Grid>
+
+      <Paper variant="outlined" sx={{ p: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          Valor total das despesas
+        </Typography>
+        <Typography variant="h6" fontWeight={700} color="error.main">
+          {formatCurrency(totalizadores.valorTotal)}
+        </Typography>
+      </Paper>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

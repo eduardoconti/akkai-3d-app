@@ -195,6 +195,7 @@ export default function SalesPage() {
     paginacao,
     submitErrorMessage,
     totalItens,
+    totalizadores,
     vendas,
   } = useSaleStore(
     useShallow((state) => ({
@@ -210,6 +211,7 @@ export default function SalesPage() {
       paginacao: saleStoreSelectors.paginacao(state),
       submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
       totalItens: saleStoreSelectors.totalItens(state),
+      totalizadores: saleStoreSelectors.totalizadores(state),
       vendas: saleStoreSelectors.vendas(state),
     })),
   );
@@ -223,7 +225,9 @@ export default function SalesPage() {
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
-  const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(null);
+  const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
 
   const handleSearch = () => {
@@ -469,6 +473,29 @@ export default function SalesPage() {
         </Grid>
       </Box>
 
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Desconto total
+            </Typography>
+            <Typography variant="h6" fontWeight={700}>
+              {formatCurrency(totalizadores.descontoTotal)}
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Valor total das vendas
+            </Typography>
+            <Typography variant="h6" fontWeight={700}>
+              {formatCurrency(totalizadores.valorTotal)}
+            </Typography>
+          </Paper>
+        </Grid>
+      </Grid>
+
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
@@ -516,7 +543,12 @@ export default function SalesPage() {
                       </Stack>
                     </Stack>
 
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      flexWrap="wrap"
+                      useFlexGap
+                    >
                       <Chip
                         label={getSaleTypeLabel(venda.tipo)}
                         size="small"
@@ -537,7 +569,10 @@ export default function SalesPage() {
                       Carteira: {venda.carteira?.nome ?? '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Desconto: {venda.desconto > 0 ? formatCurrency(venda.desconto) : '-'}
+                      Desconto:{' '}
+                      {venda.desconto > 0
+                        ? formatCurrency(venda.desconto)
+                        : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Itens: {venda.itens.map(getSaleItemName).join(', ')}
@@ -648,10 +683,16 @@ export default function SalesPage() {
         open={Boolean(actionsAnchorEl)}
         onClose={handleCloseActions}
       >
-        <MenuItem onClick={handleStartEdit} disabled={!isOnline || isDeleteBusy}>
+        <MenuItem
+          onClick={handleStartEdit}
+          disabled={!isOnline || isDeleteBusy}
+        >
           Alterar
         </MenuItem>
-        <MenuItem onClick={handleAskDelete} disabled={!isOnline || isDeleteBusy}>
+        <MenuItem
+          onClick={handleAskDelete}
+          disabled={!isOnline || isDeleteBusy}
+        >
           Excluir
         </MenuItem>
       </Menu>
@@ -686,8 +727,8 @@ export default function SalesPage() {
         </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2">
-            Tem certeza que deseja excluir a venda #{saleToDelete?.id}? Essa ação
-            não pode ser desfeita.
+            Tem certeza que deseja excluir a venda #{saleToDelete?.id}? Essa
+            ação não pode ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>

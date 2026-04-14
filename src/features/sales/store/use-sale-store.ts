@@ -33,6 +33,8 @@ import type {
   PesquisaPaginadaVendas,
   Produto,
   ResultadoPaginado,
+  ResultadoPaginadoVendas,
+  TotalizadoresVendas,
   Venda,
 } from '@/shared/lib/types/domain';
 
@@ -113,6 +115,7 @@ interface SaleStoreState {
   totalItens: number;
   totalPaginas: number;
   totalFeiras: number;
+  totalizadores: TotalizadoresVendas;
   pendingSalesCount: number;
   isFetching: boolean;
   isSubmitting: boolean;
@@ -151,6 +154,10 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   totalItens: 0,
   totalPaginas: 1,
   totalFeiras: 0,
+  totalizadores: {
+    valorTotal: 0,
+    descontoTotal: 0,
+  },
   pendingSalesCount: 0,
   isFetching: false,
   isSubmitting: false,
@@ -200,6 +207,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
+        totalizadores: response.totalizadores,
       });
       await saveCachedSales(response);
       return response;
@@ -224,6 +232,11 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,
+            totalizadores:
+              (cachedResponse as ResultadoPaginadoVendas).totalizadores ?? {
+                valorTotal: 0,
+                descontoTotal: 0,
+              },
             fetchErrorMessage: null,
           });
           return cachedResponse;
@@ -453,6 +466,7 @@ export const saleStoreSelectors = {
   totalItens: (state: SaleStoreState) => state.totalItens,
   totalPaginas: (state: SaleStoreState) => state.totalPaginas,
   totalFeiras: (state: SaleStoreState) => state.totalFeiras,
+  totalizadores: (state: SaleStoreState) => state.totalizadores,
   pendingSalesCount: (state: SaleStoreState) => state.pendingSalesCount,
   isFetching: (state: SaleStoreState) => state.isFetching,
   isSubmitting: (state: SaleStoreState) => state.isSubmitting,

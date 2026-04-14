@@ -25,6 +25,7 @@ import type {
   Feira,
   PesquisaPaginadaDespesas,
   ResultadoPaginado,
+  TotalizadoresDespesas,
 } from '@/shared/lib/types/domain';
 
 const paginacaoInicial: PesquisaPaginadaDespesas = {
@@ -45,6 +46,7 @@ interface FinanceStoreState {
   paginacao: PesquisaPaginadaDespesas;
   totalItens: number;
   totalPaginas: number;
+  totalizadores: TotalizadoresDespesas;
   isFetching: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
@@ -82,6 +84,9 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
+  totalizadores: {
+    valorTotal: 0,
+  },
   isFetching: false,
   isSubmitting: false,
   fetchErrorMessage: null,
@@ -146,6 +151,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
+        totalizadores: response.totalizadores,
       });
       return response;
     } catch (error) {
@@ -275,6 +281,7 @@ export const financeStoreSelectors = {
   paginacao: (state: FinanceStoreState) => state.paginacao,
   totalItens: (state: FinanceStoreState) => state.totalItens,
   totalPaginas: (state: FinanceStoreState) => state.totalPaginas,
+  totalizadores: (state: FinanceStoreState) => state.totalizadores,
   isFetching: (state: FinanceStoreState) => state.isFetching,
   isSubmitting: (state: FinanceStoreState) => state.isSubmitting,
   fetchErrorMessage: (state: FinanceStoreState) => state.fetchErrorMessage,
