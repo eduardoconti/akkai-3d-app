@@ -21,6 +21,9 @@ const FinanceExpenseCategoriesPage = lazy(
 const FinanceExpensesPage = lazy(
   () => import('@/features/finance/pages/finance-expenses-page'),
 );
+const FinancePaymentMethodWalletFeesPage = lazy(
+  () => import('@/features/finance/pages/finance-payment-method-wallet-fees-page'),
+);
 const BudgetsPage = lazy(() => import('@/features/budgets/pages/budgets-page'));
 const ProductsPage = lazy(() => import('@/features/products/pages/products-page'));
 const ProductsStockPage = lazy(
@@ -82,6 +85,10 @@ function App() {
             <Route
               path="/financeiro/categorias-despesa"
               element={<FinanceExpenseCategoriesPage />}
+            />
+            <Route
+              path="/financeiro/taxas-meio-pagamento-carteira"
+              element={<FinancePaymentMethodWalletFeesPage />}
             />
             <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
             <Route path="/orcamentos" element={<BudgetsPage />} />

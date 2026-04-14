@@ -2,12 +2,19 @@ import { create } from 'zustand';
 import {
   createExpense,
   createExpenseCategory,
+  createPaymentMethodWalletFee,
   createWallet,
+  deleteExpenseCategory,
+  deletePaymentMethodWalletFee,
+  deleteWallet,
   deleteExpense,
+  getPaymentMethodWalletFeeById,
   getWalletById,
   listExpenseCategories,
   listExpenses,
+  listPaymentMethodWalletFees,
   listWallets,
+  updatePaymentMethodWalletFee,
   updateExpense,
   updateExpenseCategory,
   updateWallet,
@@ -25,6 +32,8 @@ import type {
   Feira,
   PesquisaPaginadaDespesas,
   ResultadoPaginado,
+  TaxaMeioPagamentoCarteira,
+  TaxaMeioPagamentoCarteiraInput,
   TotalizadoresDespesas,
 } from '@/shared/lib/types/domain';
 
@@ -40,6 +49,7 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
 
 interface FinanceStoreState {
   carteiras: Carteira[];
+  taxasMeioPagamentoCarteira: TaxaMeioPagamentoCarteira[];
   despesas: Despesa[];
   categoriasDespesa: CategoriaDespesa[];
   feiras: Feira[];
@@ -52,6 +62,10 @@ interface FinanceStoreState {
   fetchErrorMessage: string | null;
   submitErrorMessage: string | null;
   fetchCarteiras: () => Promise<void>;
+  fetchTaxasMeioPagamentoCarteira: () => Promise<void>;
+  obterTaxaMeioPagamentoCarteiraPorId: (
+    id: number,
+  ) => Promise<TaxaMeioPagamentoCarteira>;
   obterCarteiraPorId: (id: number) => Promise<Carteira>;
   fetchDespesas: (
     query?: Partial<PesquisaPaginadaDespesas>,
@@ -63,6 +77,15 @@ interface FinanceStoreState {
     id: number,
     dados: CarteiraInput,
   ) => Promise<ActionResult<Carteira>>;
+  excluirCarteira: (id: number) => Promise<ActionResult<void>>;
+  criarTaxaMeioPagamentoCarteira: (
+    dados: TaxaMeioPagamentoCarteiraInput,
+  ) => Promise<ActionResult<TaxaMeioPagamentoCarteira>>;
+  atualizarTaxaMeioPagamentoCarteira: (
+    id: number,
+    dados: TaxaMeioPagamentoCarteiraInput,
+  ) => Promise<ActionResult<TaxaMeioPagamentoCarteira>>;
+  excluirTaxaMeioPagamentoCarteira: (id: number) => Promise<ActionResult<void>>;
   criarDespesa: (dados: DespesaInput) => Promise<ActionResult<Despesa>>;
   atualizarDespesa: (id: number, dados: DespesaInput) => Promise<ActionResult<Despesa>>;
   excluirDespesa: (id: number) => Promise<ActionResult<void>>;
@@ -73,11 +96,13 @@ interface FinanceStoreState {
     id: number,
     dados: CategoriaDespesaInput,
   ) => Promise<ActionResult<CategoriaDespesa>>;
+  excluirCategoriaDespesa: (id: number) => Promise<ActionResult<void>>;
   clearSubmitError: () => void;
 }
 
 export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   carteiras: [],
+  taxasMeioPagamentoCarteira: [],
   despesas: [],
   categoriasDespesa: [],
   feiras: [],
@@ -102,6 +127,21 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     } finally {
       set({ isFetching: false });
     }
+  },
+  fetchTaxasMeioPagamentoCarteira: async () => {
+    set({ isFetching: true, fetchErrorMessage: null });
+    try {
+      const taxasMeioPagamentoCarteira = await listPaymentMethodWalletFees();
+      set({ taxasMeioPagamentoCarteira });
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
+    }
+  },
+  obterTaxaMeioPagamentoCarteiraPorId: async (id) => {
+    return getPaymentMethodWalletFeeById(id);
   },
   obterCarteiraPorId: async (id) => {
     return getWalletById(id);
@@ -203,6 +243,58 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  excluirCarteira: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteWallet(id);
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  criarTaxaMeioPagamentoCarteira: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const taxaMeioPagamentoCarteira = await createPaymentMethodWalletFee(dados);
+      return { success: true, data: taxaMeioPagamentoCarteira };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarTaxaMeioPagamentoCarteira: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const taxaMeioPagamentoCarteira = await updatePaymentMethodWalletFee(id, dados);
+      return { success: true, data: taxaMeioPagamentoCarteira };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  excluirTaxaMeioPagamentoCarteira: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deletePaymentMethodWalletFee(id);
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   criarDespesa: async (dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
@@ -268,6 +360,19 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  excluirCategoriaDespesa: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteExpenseCategory(id);
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   clearSubmitError: () => {
     set({ submitErrorMessage: null });
   },
@@ -275,6 +380,8 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
 
 export const financeStoreSelectors = {
   carteiras: (state: FinanceStoreState) => state.carteiras,
+  taxasMeioPagamentoCarteira: (state: FinanceStoreState) =>
+    state.taxasMeioPagamentoCarteira,
   despesas: (state: FinanceStoreState) => state.despesas,
   categoriasDespesa: (state: FinanceStoreState) => state.categoriasDespesa,
   feiras: (state: FinanceStoreState) => state.feiras,
@@ -287,6 +394,10 @@ export const financeStoreSelectors = {
   fetchErrorMessage: (state: FinanceStoreState) => state.fetchErrorMessage,
   submitErrorMessage: (state: FinanceStoreState) => state.submitErrorMessage,
   fetchCarteiras: (state: FinanceStoreState) => state.fetchCarteiras,
+  fetchTaxasMeioPagamentoCarteira: (state: FinanceStoreState) =>
+    state.fetchTaxasMeioPagamentoCarteira,
+  obterTaxaMeioPagamentoCarteiraPorId: (state: FinanceStoreState) =>
+    state.obterTaxaMeioPagamentoCarteiraPorId,
   obterCarteiraPorId: (state: FinanceStoreState) => state.obterCarteiraPorId,
   fetchDespesas: (state: FinanceStoreState) => state.fetchDespesas,
   fetchCategoriasDespesa: (state: FinanceStoreState) =>
@@ -294,6 +405,13 @@ export const financeStoreSelectors = {
   fetchFeiras: (state: FinanceStoreState) => state.fetchFeiras,
   criarCarteira: (state: FinanceStoreState) => state.criarCarteira,
   atualizarCarteira: (state: FinanceStoreState) => state.atualizarCarteira,
+  excluirCarteira: (state: FinanceStoreState) => state.excluirCarteira,
+  criarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>
+    state.criarTaxaMeioPagamentoCarteira,
+  atualizarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>
+    state.atualizarTaxaMeioPagamentoCarteira,
+  excluirTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>
+    state.excluirTaxaMeioPagamentoCarteira,
   criarDespesa: (state: FinanceStoreState) => state.criarDespesa,
   atualizarDespesa: (state: FinanceStoreState) => state.atualizarDespesa,
   excluirDespesa: (state: FinanceStoreState) => state.excluirDespesa,
@@ -301,5 +419,7 @@ export const financeStoreSelectors = {
     state.criarCategoriaDespesa,
   atualizarCategoriaDespesa: (state: FinanceStoreState) =>
     state.atualizarCategoriaDespesa,
+  excluirCategoriaDespesa: (state: FinanceStoreState) =>
+    state.excluirCategoriaDespesa,
   clearSubmitError: (state: FinanceStoreState) => state.clearSubmitError,
 };

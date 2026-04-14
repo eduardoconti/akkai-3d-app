@@ -33,9 +33,11 @@ import {
   getProblemDetailsFromError,
   type ProblemDetails,
 } from '@/shared';
+import { listExpenses } from '@/features/finance/api/finance-api';
 import {
   getDashboardExpenseCategories,
   getDashboardMonthlySummary,
+  getSalesSummary,
   getDashboardTopProducts,
   type DashboardExpenseCategoriesResponse,
   type DashboardMonthlySummaryItem,
@@ -75,6 +77,15 @@ interface ChartTooltipState {
   color: string;
   label: string;
   value: number;
+}
+
+interface RankingTooltipState {
+  x: number;
+  y: number;
+  color: string;
+  label: string;
+  valueLabel: string;
+  percentageLabel: string;
 }
 
 function getBarHeight(value: number, maxValue: number, chartHeight: number): number {
@@ -168,6 +179,29 @@ function getStoredHideValues(): boolean {
 
 function formatDashboardValue(value: string, hideValues: boolean): string {
   return hideValues ? '••••••' : value;
+}
+
+function formatPercentage(value: number): string {
+  return `${value.toFixed(1).replace('.', ',')}%`;
+}
+
+function getMonthDateRange(year: number, month: number): {
+  dataInicio: string;
+  dataFim: string;
+} {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0);
+  const formatDate = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  return {
+    dataInicio: formatDate(startDate),
+    dataFim: formatDate(endDate),
+  };
 }
 
 function DashboardMonthlyChart({
@@ -523,6 +557,9 @@ export default function DashboardHomePage() {
   const [dropTargetWidgetId, setDropTargetWidgetId] = useState<DashboardWidgetId | null>(
     null,
   );
+  const [rankingTooltip, setRankingTooltip] = useState<RankingTooltipState | null>(null);
+  const [topProductsMonthTotalQuantity, setTopProductsMonthTotalQuantity] = useState(0);
+  const [expenseCategoriesMonthTotalValue, setExpenseCategoriesMonthTotalValue] = useState(0);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -567,6 +604,30 @@ export default function DashboardHomePage() {
             getDashboardExpenseCategories(),
           ]);
 
+        const topProductsDateRange = getMonthDateRange(
+          topProductsResponse.ano,
+          topProductsResponse.mes,
+        );
+        const expenseCategoriesDateRange = getMonthDateRange(
+          expenseCategoriesResponse.ano,
+          expenseCategoriesResponse.mes,
+        );
+
+        const [salesSummaryResponse, expenseSummaryResponse] = await Promise.all([
+          getSalesSummary({
+            dataInicio: topProductsDateRange.dataInicio,
+            dataFim: topProductsDateRange.dataFim,
+          }),
+          listExpenses({
+            pagina: 1,
+            tamanhoPagina: 1,
+            termo: '',
+            dataInicio: expenseCategoriesDateRange.dataInicio,
+            dataFim: expenseCategoriesDateRange.dataFim,
+            idsCategorias: [],
+          }),
+        ]);
+
         if (!active) {
           return;
         }
@@ -574,6 +635,10 @@ export default function DashboardHomePage() {
         setResult(response);
         setTopProducts(topProductsResponse);
         setExpenseCategories(expenseCategoriesResponse);
+        setTopProductsMonthTotalQuantity(salesSummaryResponse.quantidadeItens);
+        setExpenseCategoriesMonthTotalValue(
+          expenseSummaryResponse.totalizadores.valorTotal,
+        );
       } catch (error) {
         if (!active) {
           return;
@@ -583,6 +648,8 @@ export default function DashboardHomePage() {
         setResult(null);
         setTopProducts(null);
         setExpenseCategories(null);
+        setTopProductsMonthTotalQuantity(0);
+        setExpenseCategoriesMonthTotalValue(0);
       } finally {
         if (active) {
           setIsLoading(false);
@@ -684,6 +751,16 @@ export default function DashboardHomePage() {
       [widgetId]: current[widgetId] === 'half' ? 'full' : 'half',
     }));
   };
+
+  const handleOpenRankingTooltip =
+    (tooltip: Omit<RankingTooltipState, 'x' | 'y'>) =>
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      setRankingTooltip({
+        ...tooltip,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    };
 
   const renderWidget = (widgetId: DashboardWidgetId) => {
     if (!result) {
@@ -809,9 +886,26 @@ export default function DashboardHomePage() {
                   1,
                 );
                 const widthPercent = (item.quantidadeVendida / maxQuantity) * 100;
+                const totalMonthQuantity = topProductsMonthTotalQuantity;
+                const monthShare =
+                  totalMonthQuantity > 0
+                    ? (item.quantidadeVendida / totalMonthQuantity) * 100
+                    : 0;
 
                 return (
-                  <Box key={`${item.idProduto ?? item.nomeProduto}-${index}`}>
+                  <Box
+                    key={`${item.idProduto ?? item.nomeProduto}-${index}`}
+                    onMouseMove={handleOpenRankingTooltip({
+                      color: '#1565C0',
+                      label: `${index + 1}. ${item.nomeProduto}`,
+                      valueLabel: `${item.quantidadeVendida} un`,
+                      percentageLabel: `${formatPercentage(monthShare)} do total vendido no mes`,
+                    })}
+                    onMouseLeave={() => setRankingTooltip(null)}
+                    sx={{
+                      cursor: 'default',
+                    }}
+                  >
                     <Stack
                       direction="row"
                       justifyContent="space-between"
@@ -890,9 +984,26 @@ export default function DashboardHomePage() {
                 1,
               );
               const widthPercent = (item.valorTotal / maxValue) * 100;
+              const totalMonthExpenses = expenseCategoriesMonthTotalValue;
+              const monthShare =
+                totalMonthExpenses > 0
+                  ? (item.valorTotal / totalMonthExpenses) * 100
+                  : 0;
 
               return (
-                <Box key={`${item.idCategoria ?? item.nomeCategoria}-${index}`}>
+                <Box
+                  key={`${item.idCategoria ?? item.nomeCategoria}-${index}`}
+                  onMouseMove={handleOpenRankingTooltip({
+                    color: '#C62828',
+                    label: `${index + 1}. ${item.nomeCategoria}`,
+                    valueLabel: formatCurrency(item.valorTotal),
+                    percentageLabel: `${formatPercentage(monthShare)} do total de despesas do mes`,
+                  })}
+                  onMouseLeave={() => setRankingTooltip(null)}
+                  sx={{
+                    cursor: 'default',
+                  }}
+                >
                   <Stack
                     direction="row"
                     justifyContent="space-between"
@@ -943,6 +1054,42 @@ export default function DashboardHomePage() {
 
   return (
     <Stack spacing={3}>
+      {rankingTooltip ? (
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: rankingTooltip.x + 12,
+            top: rankingTooltip.y - 12,
+            px: 1.25,
+            py: 1,
+            pointerEvents: 'none',
+            zIndex: 1400,
+            borderRadius: 2,
+          }}
+        >
+          <Stack spacing={0.5}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 1,
+                  bgcolor: rankingTooltip.color,
+                }}
+              />
+              <Typography variant="caption" fontWeight={700}>
+                {rankingTooltip.label}
+              </Typography>
+            </Stack>
+            <Typography variant="body2">{rankingTooltip.valueLabel}</Typography>
+            <Typography variant="caption" color="text.secondary">
+              {rankingTooltip.percentageLabel}
+            </Typography>
+          </Stack>
+        </Paper>
+      ) : null}
+
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         justifyContent="space-between"

@@ -6,6 +6,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Typography,
   FormControlLabel,
   FormHelperText,
   IconButton,
@@ -13,7 +14,6 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AccountBalanceWallet, Close, Save } from '@mui/icons-material';
@@ -54,6 +54,7 @@ export default function EditWalletDialog({
   const {
     atualizarCarteira,
     clearSubmitError,
+    excluirCarteira,
     isSubmitting,
     obterCarteiraPorId,
     submitErrorMessage,
@@ -61,6 +62,7 @@ export default function EditWalletDialog({
     useShallow((state) => ({
       atualizarCarteira: financeStoreSelectors.atualizarCarteira(state),
       clearSubmitError: financeStoreSelectors.clearSubmitError(state),
+      excluirCarteira: financeStoreSelectors.excluirCarteira(state),
       isSubmitting: financeStoreSelectors.isSubmitting(state),
       obterCarteiraPorId: financeStoreSelectors.obterCarteiraPorId(state),
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
@@ -72,6 +74,8 @@ export default function EditWalletDialog({
   const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!open || walletId === null) {
@@ -129,7 +133,7 @@ export default function EditWalletDialog({
     onClose();
   };
 
-  const isBusy = isSubmitting || isLoading || isSaving;
+  const isBusy = isSubmitting || isLoading || isSaving || isDeleting;
 
   const handleDialogClose = () => {
     if (isBusy) {
@@ -179,115 +183,174 @@ export default function EditWalletDialog({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (walletId === null) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setProblem(null);
+
+    try {
+      const result = await excluirCarteira(walletId);
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await onUpdated();
+      showSuccess('Carteira excluída com sucesso.');
+      setConfirmDeleteOpen(false);
+      handleClose();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ px: 3, py: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <AccountBalanceWallet color="primary" />
-              <Typography variant="h5" fontWeight={700}>
-                Alterar carteira
+    <>
+      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ px: 3, py: 2.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <AccountBalanceWallet color="primary" />
+                <Typography variant="h5" fontWeight={700}>
+                  Alterar carteira
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Atualize os dados da carteira selecionada.
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              Atualize os dados da carteira selecionada.
-            </Typography>
-          </Box>
 
-          <IconButton
-            onClick={handleDialogClose}
-            aria-label="Fechar modal de carteira"
-            disabled={isBusy}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        <FormFeedbackAlert message={problem?.detail ?? submitErrorMessage} />
-
-        <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid size={{ xs: 12, sm: 7 }}>
-            <TextField
-              fullWidth
-              disabled={isLoading}
-              label="Nome da carteira"
-              placeholder="Ex: Nubank PIX"
-              value={form.nome}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, nome: event.target.value }))
-              }
-              error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
-              helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Meios de pagamento aceitos{' '}
-              <Typography component="span" variant="caption" color="text.disabled">
-                (vazio = aceita todos)
-              </Typography>
-            </Typography>
-            <ToggleButtonGroup
-              value={form.meiosPagamento}
-              onChange={(_event, value: MeioPagamento[]) =>
-                setForm((current) => ({ ...current, meiosPagamento: value }))
-              }
-              size="small"
-              disabled={isLoading}
+            <IconButton
+              onClick={handleDialogClose}
+              aria-label="Fechar modal de carteira"
+              disabled={isBusy}
             >
-              {ALL_MEIOS_PAGAMENTO.map((meio) => (
-                <ToggleButton key={meio} value={meio}>
-                  {MEIO_PAGAMENTO_LABEL[meio]}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <FormHelperText>
-              Selecione quais meios serão aceitos nesta carteira.
-            </FormHelperText>
-          </Grid>
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
 
-          <Grid size={{ xs: 12 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={form.ativa}
-                  disabled={isLoading}
-                  onChange={(_event, checked) =>
-                    setForm((current) => ({ ...current, ativa: checked }))
-                  }
-                />
-              }
-              label="Carteira ativa"
-            />
-          </Grid>
-        </Grid>
-      </DialogContent>
+        <DialogContent dividers>
+          <FormFeedbackAlert message={problem?.detail ?? submitErrorMessage} />
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          startIcon={<Save />}
-          size="large"
-          disabled={isBusy}
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
+            <Grid size={{ xs: 12, sm: 7 }}>
+              <TextField
+                fullWidth
+                disabled={isLoading}
+                label="Nome da carteira"
+                placeholder="Ex: Nubank PIX"
+                value={form.nome}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, nome: event.target.value }))
+                }
+                error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
+                helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Meios de pagamento aceitos{' '}
+                <Typography component="span" variant="caption" color="text.disabled">
+                  (vazio = aceita todos)
+                </Typography>
+              </Typography>
+              <ToggleButtonGroup
+                value={form.meiosPagamento}
+                onChange={(_event, value: MeioPagamento[]) =>
+                  setForm((current) => ({ ...current, meiosPagamento: value }))
+                }
+                size="small"
+                disabled={isLoading}
+              >
+                {ALL_MEIOS_PAGAMENTO.map((meio) => (
+                  <ToggleButton key={meio} value={meio}>
+                    {MEIO_PAGAMENTO_LABEL[meio]}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+              <FormHelperText>
+                Selecione quais meios serão aceitos nesta carteira.
+              </FormHelperText>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.ativa}
+                    disabled={isLoading}
+                    onChange={(_event, checked) =>
+                      setForm((current) => ({ ...current, ativa: checked }))
+                    }
+                  />
+                }
+                label="Carteira ativa"
+              />
+            </Grid>
+          </Grid>
+        </DialogContent>
+
+        <DialogActions
+          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
         >
-          {isBusy ? 'Salvando...' : 'Salvar carteira'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Box>
+            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+              Excluir
+            </Button>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              startIcon={<Save />}
+              size="large"
+              disabled={isBusy}
+            >
+              {isSaving || isSubmitting ? 'Salvando...' : 'Salvar carteira'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={confirmDeleteOpen} onClose={handleDialogClose} fullWidth maxWidth="xs">
+        <DialogTitle>Excluir carteira</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Tem certeza que deseja excluir esta carteira? Essa ação não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleConfirmDelete();
+            }}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }

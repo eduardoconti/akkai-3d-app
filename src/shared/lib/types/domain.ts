@@ -93,6 +93,15 @@ export interface Carteira {
   meiosPagamento: MeioPagamento[];
 }
 
+export interface TaxaMeioPagamentoCarteira {
+  id: number;
+  idCarteira: number;
+  meioPagamento: MeioPagamento;
+  percentual: number;
+  ativa: boolean;
+  carteira?: Carteira;
+}
+
 export interface Despesa {
   id: number;
   dataLancamento: string;
@@ -205,6 +214,13 @@ export interface CarteiraInput {
   nome: string;
   ativa?: boolean;
   meiosPagamento?: MeioPagamento[];
+}
+
+export interface TaxaMeioPagamentoCarteiraInput {
+  idCarteira: number;
+  meioPagamento: MeioPagamento;
+  percentual: number;
+  ativa?: boolean;
 }
 
 export interface CategoriaDespesaInput {

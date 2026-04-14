@@ -43,7 +43,11 @@ import {
 import { NavLink, useLocation } from 'react-router-dom';
 import { EditProfileDialog, useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
-import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
+import {
+  NewExpenseDialog,
+  NewWalletDialog,
+  PaymentMethodWalletFeeDialog,
+} from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
 import { saleStoreSelectors } from '@/features/sales/store/use-sale-store';
@@ -116,6 +120,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [paymentMethodWalletFeeDialogOpen, setPaymentMethodWalletFeeDialogOpen] =
+    useState(false);
   const [budgetsMenuOpen, setBudgetsMenuOpen] = useState(true);
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
@@ -585,6 +591,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <ListItemButton
                 component={NavLink}
                 end
+                to="/financeiro/taxas-meio-pagamento-carteira"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Taxas pagamento" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setPaymentMethodWalletFeeDialogOpen(true));
+                  }}
+                  sx={{
+                    ...MENU_ACTION_BUTTON_SX,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
                 to="/financeiro/categorias-despesa"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
@@ -983,6 +1017,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewWalletDialog
         open={walletDialogOpen}
         onClose={() => setWalletDialogOpen(false)}
+      />
+      <PaymentMethodWalletFeeDialog
+        open={paymentMethodWalletFeeDialogOpen}
+        onClose={() => setPaymentMethodWalletFeeDialogOpen(false)}
       />
       <EditProfileDialog
         open={editProfileDialogOpen}
