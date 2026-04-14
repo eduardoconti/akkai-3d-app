@@ -53,6 +53,8 @@ export default function NewExpenseDialog({
     fetchCarteiras,
     fetchCategoriasDespesa,
     fetchDespesas,
+    fetchFeiras,
+    feiras,
     isSubmitting,
     submitErrorMessage,
   } = useFinanceStore();
@@ -66,6 +68,7 @@ export default function NewExpenseDialog({
     if (open) {
       void fetchCarteiras();
       void fetchCategoriasDespesa();
+      void fetchFeiras();
 
       if (despesa) {
         setForm({
@@ -75,6 +78,7 @@ export default function NewExpenseDialog({
           idCategoria: despesa.idCategoria,
           meioPagamento: despesa.meioPagamento,
           idCarteira: despesa.idCarteira,
+          idFeira: despesa.idFeira ?? '',
           observacao: despesa.observacao ?? '',
         });
       }
@@ -85,7 +89,15 @@ export default function NewExpenseDialog({
     setProblem(null);
     setLocalErrors({});
     clearSubmitError();
-  }, [open, despesa, isEditMode, fetchCarteiras, fetchCategoriasDespesa, clearSubmitError]);
+  }, [
+    open,
+    despesa,
+    isEditMode,
+    fetchCarteiras,
+    fetchCategoriasDespesa,
+    fetchFeiras,
+    clearSubmitError,
+  ]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -194,6 +206,7 @@ export default function NewExpenseDialog({
         idCategoria: form.idCategoria,
         meioPagamento: form.meioPagamento,
         idCarteira: form.idCarteira,
+        idFeira: form.idFeira === '' ? undefined : form.idFeira,
         observacao: form.observacao.trim() || undefined,
       };
 
@@ -329,6 +342,30 @@ export default function NewExpenseDialog({
                 localErrors.valor ?? getFieldMessage(problem, 'valor')
               }
             />
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              select
+              fullWidth
+              label="Feira"
+              value={form.idFeira}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  idFeira:
+                    event.target.value === '' ? '' : Number(event.target.value),
+                }))
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Sem feira</MenuItem>
+              {feiras.map((feira) => (
+                <MenuItem key={feira.id} value={feira.id}>
+                  {feira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
 
           <Grid size={{ xs: 12, sm: 6 }}>

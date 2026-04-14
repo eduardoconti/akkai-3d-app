@@ -12,6 +12,7 @@ import {
   updateExpenseCategory,
   updateWallet,
 } from '@/features/finance/api/finance-api';
+import { listFairs } from '@/features/sales/api/sales-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
@@ -21,6 +22,7 @@ import type {
   CategoriaDespesaInput,
   Despesa,
   DespesaInput,
+  Feira,
   PesquisaPaginadaDespesas,
   ResultadoPaginado,
 } from '@/shared/lib/types/domain';
@@ -32,12 +34,14 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
   dataInicio: '',
   dataFim: '',
   idsCategorias: [],
+  idFeira: undefined,
 };
 
 interface FinanceStoreState {
   carteiras: Carteira[];
   despesas: Despesa[];
   categoriasDespesa: CategoriaDespesa[];
+  feiras: Feira[];
   paginacao: PesquisaPaginadaDespesas;
   totalItens: number;
   totalPaginas: number;
@@ -51,6 +55,7 @@ interface FinanceStoreState {
     query?: Partial<PesquisaPaginadaDespesas>,
   ) => Promise<ResultadoPaginado<Despesa> | void>;
   fetchCategoriasDespesa: () => Promise<void>;
+  fetchFeiras: () => Promise<void>;
   criarCarteira: (dados: CarteiraInput) => Promise<ActionResult<Carteira>>;
   atualizarCarteira: (
     id: number,
@@ -73,6 +78,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   carteiras: [],
   despesas: [],
   categoriasDespesa: [],
+  feiras: [],
   paginacao: paginacaoInicial,
   totalItens: 0,
   totalPaginas: 1,
@@ -97,13 +103,31 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   },
   fetchDespesas: async (query) => {
     const currentPagination = get().paginacao;
+    const hasQueryValue = <TKey extends keyof PesquisaPaginadaDespesas>(key: TKey) =>
+      query ? Object.prototype.hasOwnProperty.call(query, key) : false;
+
     const nextPagination: PesquisaPaginadaDespesas = {
-      pagina: query?.pagina ?? currentPagination.pagina,
-      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
-      termo: query?.termo ?? currentPagination.termo ?? '',
-      dataInicio: query?.dataInicio ?? currentPagination.dataInicio ?? '',
-      dataFim: query?.dataFim ?? currentPagination.dataFim ?? '',
-      idsCategorias: query?.idsCategorias ?? currentPagination.idsCategorias ?? [],
+      pagina: hasQueryValue('pagina')
+        ? (query?.pagina ?? paginacaoInicial.pagina)
+        : currentPagination.pagina,
+      tamanhoPagina: hasQueryValue('tamanhoPagina')
+        ? (query?.tamanhoPagina ?? paginacaoInicial.tamanhoPagina)
+        : currentPagination.tamanhoPagina,
+      termo: hasQueryValue('termo')
+        ? (query?.termo ?? paginacaoInicial.termo)
+        : (currentPagination.termo ?? paginacaoInicial.termo),
+      dataInicio: hasQueryValue('dataInicio')
+        ? (query?.dataInicio ?? paginacaoInicial.dataInicio)
+        : (currentPagination.dataInicio ?? paginacaoInicial.dataInicio),
+      dataFim: hasQueryValue('dataFim')
+        ? (query?.dataFim ?? paginacaoInicial.dataFim)
+        : (currentPagination.dataFim ?? paginacaoInicial.dataFim),
+      idsCategorias: hasQueryValue('idsCategorias')
+        ? (query?.idsCategorias ?? paginacaoInicial.idsCategorias)
+        : (currentPagination.idsCategorias ?? paginacaoInicial.idsCategorias),
+      idFeira: hasQueryValue('idFeira')
+        ? query?.idFeira
+        : currentPagination.idFeira,
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -118,6 +142,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
           dataInicio: nextPagination.dataInicio,
           dataFim: nextPagination.dataFim,
           idsCategorias: nextPagination.idsCategorias,
+          idFeira: nextPagination.idFeira,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
@@ -134,6 +159,14 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     try {
       const categoriasDespesa = await listExpenseCategories();
       set({ categoriasDespesa });
+    } catch {
+      // silently ignore — não bloqueia a UI se falhar
+    }
+  },
+  fetchFeiras: async () => {
+    try {
+      const feiras = await listFairs();
+      set({ feiras });
     } catch {
       // silently ignore — não bloqueia a UI se falhar
     }

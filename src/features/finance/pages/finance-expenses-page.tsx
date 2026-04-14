@@ -80,7 +80,9 @@ export default function FinanceExpensesPage() {
     excluirDespesa,
     fetchCategoriasDespesa,
     fetchDespesas,
+    fetchFeiras,
     fetchErrorMessage,
+    feiras,
     isFetching,
     isSubmitting,
     paginacao,
@@ -96,6 +98,7 @@ export default function FinanceExpensesPage() {
   const [searchInput, setSearchInput] = useState('');
   const [dataInicio, setDataInicio] = useState(getCurrentDateInput());
   const [dataFim, setDataFim] = useState(getCurrentDateInput());
+  const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa
   >([]);
@@ -107,6 +110,7 @@ export default function FinanceExpensesPage() {
       dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
       dataFim: convertDateToApiDateFormat(dataFim) ?? '',
       idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+      idFeira: idFeira === '' ? undefined : idFeira,
     });
   };
 
@@ -158,7 +162,8 @@ export default function FinanceExpensesPage() {
 
   useEffect(() => {
     void fetchCategoriasDespesa();
-  }, [fetchCategoriasDespesa]);
+    void fetchFeiras();
+  }, [fetchCategoriasDespesa, fetchFeiras]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -168,11 +173,12 @@ export default function FinanceExpensesPage() {
         dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
         dataFim: convertDateToApiDateFormat(dataFim) ?? '',
         idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+        idFeira: idFeira === '' ? undefined : idFeira,
       });
     }, 300);
 
     return () => window.clearTimeout(timeout);
-  }, [categoriasSelecionadas, dataFim, dataInicio, fetchDespesas, searchInput]);
+  }, [categoriasSelecionadas, dataFim, dataInicio, fetchDespesas, idFeira, searchInput]);
 
   return (
     <Stack spacing={3}>
@@ -200,8 +206,8 @@ export default function FinanceExpensesPage() {
         </Button>
       </Stack>
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 16 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <DateRangePickerField
             label="Período"
             startValue={dataInicio}
@@ -231,11 +237,33 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Feira"
+            value={idFeira}
+            onChange={(event) =>
+              setIdFeira(
+                event.target.value === '' ? '' : Number(event.target.value),
+              )
+            }
+            helperText="Opcional"
+          >
+            <MenuItem value="">Todas</MenuItem>
+            {feiras.map((feira) => (
+              <MenuItem key={feira.id} value={feira.id}>
+                {feira.nome}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             fullWidth
             label="Pesquisar despesa"
-            placeholder="Descrição, categoria, observação ou carteira"
+            placeholder="Descrição, categoria, observação, carteira ou feira"
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
           />
@@ -313,6 +341,9 @@ export default function FinanceExpensesPage() {
                     <Typography variant="body2" color="text.secondary">
                       Carteira: {despesa.carteira?.nome ?? '-'}
                     </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Feira: {despesa.feira?.nome ?? '-'}
+                    </Typography>
                   </Stack>
                 </Box>
               ))
@@ -342,6 +373,9 @@ export default function FinanceExpensesPage() {
                   <TableCell>
                     <strong>Carteira</strong>
                   </TableCell>
+                  <TableCell>
+                    <strong>Feira</strong>
+                  </TableCell>
                   <TableCell align="right">
                     <strong>Valor</strong>
                   </TableCell>
@@ -351,7 +385,7 @@ export default function FinanceExpensesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -369,6 +403,7 @@ export default function FinanceExpensesPage() {
                         {getPaymentMethodLabel(despesa.meioPagamento)}
                       </TableCell>
                       <TableCell>{despesa.carteira?.nome ?? '-'}</TableCell>
+                      <TableCell>{despesa.feira?.nome ?? '-'}</TableCell>
                       <TableCell
                         align="right"
                         sx={{ color: 'error.main', fontWeight: 700 }}
@@ -388,7 +423,7 @@ export default function FinanceExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                       Nenhuma despesa encontrada para os filtros informados.
                     </TableCell>
                   </TableRow>
