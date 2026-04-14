@@ -46,6 +46,7 @@ import { NewBudgetDialog } from '@/features/budgets';
 import { NewExpenseDialog, NewWalletDialog } from '@/features/finance';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
+import { saleStoreSelectors } from '@/features/sales/store/use-sale-store';
 import {
   GlobalFeedbackSnackbar,
   useFeedbackStore,
@@ -54,6 +55,7 @@ import {
 } from '@/shared';
 import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
+import { useShallow } from 'zustand/react/shallow';
 
 const DRAWER_WIDTH = 256;
 const MOBILE_APPBAR_MIN_HEIGHT = 96;
@@ -97,7 +99,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
     isSyncingPendingSales,
     pendingSalesCount,
     sincronizarVendasPendentes,
-  } = useSaleStore();
+  } = useSaleStore(
+    useShallow((state) => ({
+      hydrateOfflineState: saleStoreSelectors.hydrateOfflineState(state),
+      isSyncingPendingSales: saleStoreSelectors.isSyncingPendingSales(state),
+      pendingSalesCount: saleStoreSelectors.pendingSalesCount(state),
+      sincronizarVendasPendentes:
+        saleStoreSelectors.sincronizarVendasPendentes(state),
+    })),
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);

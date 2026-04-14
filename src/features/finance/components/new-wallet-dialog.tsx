@@ -17,7 +17,10 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AccountBalanceWallet, Close, Save } from '@mui/icons-material';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import {
   ALL_MEIOS_PAGAMENTO,
   MEIO_PAGAMENTO_LABEL,
@@ -32,6 +35,7 @@ import {
   useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NewWalletDialogProps {
   open: boolean;
@@ -48,7 +52,15 @@ export default function NewWalletDialog({
     fetchCarteiras,
     isSubmitting,
     submitErrorMessage,
-  } = useFinanceStore();
+  } = useFinanceStore(
+    useShallow((state) => ({
+      clearSubmitError: financeStoreSelectors.clearSubmitError(state),
+      criarCarteira: financeStoreSelectors.criarCarteira(state),
+      fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
+      isSubmitting: financeStoreSelectors.isSubmitting(state),
+      submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const [form, setForm] = useState<WalletFormState>(initialWalletFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});

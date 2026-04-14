@@ -35,7 +35,10 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import {
   convertDateToApiDateFormat,
   formatApiDateToDisplay,
@@ -46,6 +49,7 @@ import {
   useFeedbackStore,
   type Despesa,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 function getPaymentMethodLabel(meioPagamento: string): string {
   switch (meioPagamento) {
@@ -87,7 +91,22 @@ export default function FinanceExpensesPage() {
     isSubmitting,
     paginacao,
     totalItens,
-  } = useFinanceStore();
+  } = useFinanceStore(
+    useShallow((state) => ({
+      categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
+      despesas: financeStoreSelectors.despesas(state),
+      excluirDespesa: financeStoreSelectors.excluirDespesa(state),
+      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchDespesas: financeStoreSelectors.fetchDespesas(state),
+      fetchFeiras: financeStoreSelectors.fetchFeiras(state),
+      fetchErrorMessage: financeStoreSelectors.fetchErrorMessage(state),
+      feiras: financeStoreSelectors.feiras(state),
+      isFetching: financeStoreSelectors.isFetching(state),
+      isSubmitting: financeStoreSelectors.isSubmitting(state),
+      paginacao: financeStoreSelectors.paginacao(state),
+      totalItens: financeStoreSelectors.totalItens(state),
+    })),
+  );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);

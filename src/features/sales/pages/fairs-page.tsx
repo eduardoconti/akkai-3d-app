@@ -21,7 +21,8 @@ import {
 import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import FairDialog from '../components/fair-dialog';
-import { useSaleStore } from '../store/use-sale-store';
+import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function FairsPage() {
   const theme = useTheme();
@@ -33,7 +34,16 @@ export default function FairsPage() {
     isFetching,
     paginacaoFeiras,
     totalFeiras,
-  } = useSaleStore();
+  } = useSaleStore(
+    useShallow((state) => ({
+      feirasPaginadas: saleStoreSelectors.feirasPaginadas(state),
+      fetchErrorMessage: saleStoreSelectors.fetchErrorMessage(state),
+      fetchFeirasPaginadas: saleStoreSelectors.fetchFeirasPaginadas(state),
+      isFetching: saleStoreSelectors.isFetching(state),
+      paginacaoFeiras: saleStoreSelectors.paginacaoFeiras(state),
+      totalFeiras: saleStoreSelectors.totalFeiras(state),
+    })),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFairId, setEditingFairId] = useState<number | null>(null);
 

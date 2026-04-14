@@ -23,12 +23,16 @@ import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
-import { useProductStore } from '../store/use-product-store';
+import {
+  productStoreSelectors,
+  useProductStore,
+} from '../store/use-product-store';
 import {
   formatCurrency,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function ProductsPage() {
   const theme = useTheme();
@@ -40,7 +44,16 @@ export default function ProductsPage() {
     paginacao,
     produtos,
     totalItens,
-  } = useProductStore();
+  } = useProductStore(
+    useShallow((state) => ({
+      fetchErrorMessage: productStoreSelectors.fetchErrorMessage(state),
+      fetchProdutos: productStoreSelectors.fetchProdutos(state),
+      isFetchingProducts: productStoreSelectors.isFetchingProducts(state),
+      paginacao: productStoreSelectors.paginacao(state),
+      produtos: productStoreSelectors.produtos(state),
+      totalItens: productStoreSelectors.totalItens(state),
+    })),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);

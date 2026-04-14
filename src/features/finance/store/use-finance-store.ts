@@ -266,3 +266,33 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     set({ submitErrorMessage: null });
   },
 }));
+
+export const financeStoreSelectors = {
+  carteiras: (state: FinanceStoreState) => state.carteiras,
+  despesas: (state: FinanceStoreState) => state.despesas,
+  categoriasDespesa: (state: FinanceStoreState) => state.categoriasDespesa,
+  feiras: (state: FinanceStoreState) => state.feiras,
+  paginacao: (state: FinanceStoreState) => state.paginacao,
+  totalItens: (state: FinanceStoreState) => state.totalItens,
+  totalPaginas: (state: FinanceStoreState) => state.totalPaginas,
+  isFetching: (state: FinanceStoreState) => state.isFetching,
+  isSubmitting: (state: FinanceStoreState) => state.isSubmitting,
+  fetchErrorMessage: (state: FinanceStoreState) => state.fetchErrorMessage,
+  submitErrorMessage: (state: FinanceStoreState) => state.submitErrorMessage,
+  fetchCarteiras: (state: FinanceStoreState) => state.fetchCarteiras,
+  obterCarteiraPorId: (state: FinanceStoreState) => state.obterCarteiraPorId,
+  fetchDespesas: (state: FinanceStoreState) => state.fetchDespesas,
+  fetchCategoriasDespesa: (state: FinanceStoreState) =>
+    state.fetchCategoriasDespesa,
+  fetchFeiras: (state: FinanceStoreState) => state.fetchFeiras,
+  criarCarteira: (state: FinanceStoreState) => state.criarCarteira,
+  atualizarCarteira: (state: FinanceStoreState) => state.atualizarCarteira,
+  criarDespesa: (state: FinanceStoreState) => state.criarDespesa,
+  atualizarDespesa: (state: FinanceStoreState) => state.atualizarDespesa,
+  excluirDespesa: (state: FinanceStoreState) => state.excluirDespesa,
+  criarCategoriaDespesa: (state: FinanceStoreState) =>
+    state.criarCategoriaDespesa,
+  atualizarCategoriaDespesa: (state: FinanceStoreState) =>
+    state.atualizarCategoriaDespesa,
+  clearSubmitError: (state: FinanceStoreState) => state.clearSubmitError,
+};

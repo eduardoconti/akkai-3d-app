@@ -12,13 +12,17 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Close, Label, Save } from '@mui/icons-material';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface EditExpenseCategoryDialogProps {
   open: boolean;
@@ -36,8 +40,20 @@ export default function EditExpenseCategoryDialog({
   onClose,
   onUpdated,
 }: EditExpenseCategoryDialogProps) {
-  const { categoriasDespesa, atualizarCategoriaDespesa, isSubmitting, clearSubmitError } =
-    useFinanceStore();
+  const {
+    categoriasDespesa,
+    atualizarCategoriaDespesa,
+    isSubmitting,
+    clearSubmitError,
+  } = useFinanceStore(
+    useShallow((state) => ({
+      categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
+      atualizarCategoriaDespesa:
+        financeStoreSelectors.atualizarCategoriaDespesa(state),
+      isSubmitting: financeStoreSelectors.isSubmitting(state),
+      clearSubmitError: financeStoreSelectors.clearSubmitError(state),
+    })),
+  );
   const [form, setForm] = useState<FormState>({ nome: '' });
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors>({});

@@ -22,8 +22,12 @@ import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
 import NewCategoryDialog from '../components/new-category-dialog';
-import { useProductStore } from '../store/use-product-store';
+import {
+  productStoreSelectors,
+  useProductStore,
+} from '../store/use-product-store';
 import type { Categoria } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 function getParentCategoryName(category: Categoria, categories: Categoria[]) {
   if (!category.idAscendente) {
@@ -45,7 +49,20 @@ export default function ProductCategoriesPage() {
     isFetchingCategoriesPage,
     paginacaoCategorias,
     totalCategorias,
-  } = useProductStore();
+  } = useProductStore(
+    useShallow((state) => ({
+      categorias: productStoreSelectors.categorias(state),
+      categoriasPaginadas: productStoreSelectors.categoriasPaginadas(state),
+      fetchCategorias: productStoreSelectors.fetchCategorias(state),
+      fetchCategoriasPaginadas:
+        productStoreSelectors.fetchCategoriasPaginadas(state),
+      fetchErrorMessage: productStoreSelectors.fetchErrorMessage(state),
+      isFetchingCategoriesPage:
+        productStoreSelectors.isFetchingCategoriesPage(state),
+      paginacaoCategorias: productStoreSelectors.paginacaoCategorias(state),
+      totalCategorias: productStoreSelectors.totalCategorias(state),
+    })),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [searchInput, setSearchInput] = useState('');

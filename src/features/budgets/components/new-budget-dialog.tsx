@@ -12,7 +12,10 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Close, RequestQuote, Save } from '@mui/icons-material';
-import { useBudgetStore } from '@/features/budgets/store/use-budget-store';
+import {
+  budgetStoreSelectors,
+  useBudgetStore,
+} from '@/features/budgets/store/use-budget-store';
 import {
   initialBudgetFormState,
   type BudgetFormErrors,
@@ -23,6 +26,7 @@ import {
   useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NewBudgetDialogProps {
   open: boolean;
@@ -33,8 +37,21 @@ export default function NewBudgetDialog({
   open,
   onClose,
 }: NewBudgetDialogProps) {
-  const { clearSubmitError, criarOrcamento, fetchOrcamentos, isSubmitting, submitErrorMessage } =
-    useBudgetStore();
+  const {
+    clearSubmitError,
+    criarOrcamento,
+    fetchOrcamentos,
+    isSubmitting,
+    submitErrorMessage,
+  } = useBudgetStore(
+    useShallow((state) => ({
+      clearSubmitError: budgetStoreSelectors.clearSubmitError(state),
+      criarOrcamento: budgetStoreSelectors.criarOrcamento(state),
+      fetchOrcamentos: budgetStoreSelectors.fetchOrcamentos(state),
+      isSubmitting: budgetStoreSelectors.isSubmitting(state),
+      submitErrorMessage: budgetStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const [form, setForm] = useState(initialBudgetFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<BudgetFormErrors>({});

@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Close, Save, Storefront } from '@mui/icons-material';
-import { useSaleStore } from '../store/use-sale-store';
+import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
   FormFeedbackAlert,
   getFieldMessage,
@@ -22,6 +22,7 @@ import {
   useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface FairDialogProps {
   open: boolean;
@@ -60,7 +61,18 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
     obterFeiraPorId,
     isSubmitting,
     submitErrorMessage,
-  } = useSaleStore();
+  } = useSaleStore(
+    useShallow((state) => ({
+      clearSubmitError: saleStoreSelectors.clearSubmitError(state),
+      criarFeira: saleStoreSelectors.criarFeira(state),
+      atualizarFeira: saleStoreSelectors.atualizarFeira(state),
+      fetchFeiras: saleStoreSelectors.fetchFeiras(state),
+      fetchFeirasPaginadas: saleStoreSelectors.fetchFeirasPaginadas(state),
+      obterFeiraPorId: saleStoreSelectors.obterFeiraPorId(state),
+      isSubmitting: saleStoreSelectors.isSubmitting(state),
+      submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const [form, setForm] = useState<FairFormState>(initialFairFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<FairFormErrors>({});
