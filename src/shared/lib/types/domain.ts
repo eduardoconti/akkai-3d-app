@@ -135,6 +135,8 @@ export interface Venda {
   tipo: TipoVenda;
   meioPagamento: MeioPagamento;
   desconto: number;
+  percentualTaxa?: number | null;
+  valorTaxa?: number | null;
   idFeira?: number;
   idCarteira: number;
   feira?: Feira | null;
