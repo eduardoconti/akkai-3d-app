@@ -31,7 +31,10 @@ import {
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import StockMovementForm from '../components/stock-movement-form';
 import { listStockMovements } from '../api/products-api';
-import { useProductStore } from '../store/use-product-store';
+import {
+  productStoreSelectors,
+  useProductStore,
+} from '../store/use-product-store';
 import type {
   DirecaoOrdenacao,
   EstoqueProduto,
@@ -40,6 +43,7 @@ import type {
   PesquisaPaginada,
 } from '@/shared';
 import { getProblemDetailsFromError } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 type StockState = {
   label: string;
@@ -145,7 +149,9 @@ interface StockExpansionProps {
 }
 
 function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
-  const { atualizarQuantidadeEstoqueLocal } = useProductStore();
+  const atualizarQuantidadeEstoqueLocal = useProductStore(
+    productStoreSelectors.atualizarQuantidadeEstoqueLocal,
+  );
   const [isFetchingMovements, setIsFetchingMovements] = useState(false);
   const [movementsErrorMessage, setMovementsErrorMessage] = useState<string | null>(
     null,
@@ -498,7 +504,16 @@ export default function ProductsStockPage() {
     isFetchingStock,
     paginacaoEstoque,
     totalItensEstoque,
-  } = useProductStore();
+  } = useProductStore(
+    useShallow((state) => ({
+      estoqueProdutos: productStoreSelectors.estoqueProdutos(state),
+      fetchErrorMessage: productStoreSelectors.fetchErrorMessage(state),
+      fetchEstoque: productStoreSelectors.fetchEstoque(state),
+      isFetchingStock: productStoreSelectors.isFetchingStock(state),
+      paginacaoEstoque: productStoreSelectors.paginacaoEstoque(state),
+      totalItensEstoque: productStoreSelectors.totalItensEstoque(state),
+    })),
+  );
   const [searchInput, setSearchInput] = useState('');
 
   const handleSearch = () => {

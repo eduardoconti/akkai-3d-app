@@ -83,3 +83,17 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
     set({ submitErrorMessage: null });
   },
 }));
+
+export const budgetStoreSelectors = {
+  orcamentos: (state: BudgetStoreState) => state.orcamentos,
+  paginacao: (state: BudgetStoreState) => state.paginacao,
+  totalItens: (state: BudgetStoreState) => state.totalItens,
+  totalPaginas: (state: BudgetStoreState) => state.totalPaginas,
+  isFetching: (state: BudgetStoreState) => state.isFetching,
+  isSubmitting: (state: BudgetStoreState) => state.isSubmitting,
+  fetchErrorMessage: (state: BudgetStoreState) => state.fetchErrorMessage,
+  submitErrorMessage: (state: BudgetStoreState) => state.submitErrorMessage,
+  fetchOrcamentos: (state: BudgetStoreState) => state.fetchOrcamentos,
+  criarOrcamento: (state: BudgetStoreState) => state.criarOrcamento,
+  clearSubmitError: (state: BudgetStoreState) => state.clearSubmitError,
+};

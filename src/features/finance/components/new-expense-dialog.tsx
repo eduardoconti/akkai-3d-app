@@ -14,7 +14,10 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Close, ReceiptLong, Save } from '@mui/icons-material';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import {
   convertDateToApiDateTimeFormat,
   initialExpenseFormState,
@@ -31,6 +34,7 @@ import {
   type MeioPagamento,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NewExpenseDialogProps {
   open: boolean;
@@ -57,7 +61,22 @@ export default function NewExpenseDialog({
     feiras,
     isSubmitting,
     submitErrorMessage,
-  } = useFinanceStore();
+  } = useFinanceStore(
+    useShallow((state) => ({
+      carteiras: financeStoreSelectors.carteiras(state),
+      categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
+      clearSubmitError: financeStoreSelectors.clearSubmitError(state),
+      criarDespesa: financeStoreSelectors.criarDespesa(state),
+      atualizarDespesa: financeStoreSelectors.atualizarDespesa(state),
+      fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
+      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchDespesas: financeStoreSelectors.fetchDespesas(state),
+      fetchFeiras: financeStoreSelectors.fetchFeiras(state),
+      feiras: financeStoreSelectors.feiras(state),
+      isSubmitting: financeStoreSelectors.isSubmitting(state),
+      submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const [form, setForm] = useState<ExpenseFormState>(initialExpenseFormState);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<ExpenseFormErrors>({});
@@ -273,7 +292,7 @@ export default function NewExpenseDialog({
         ) : null}
 
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <DatePickerField
               label="Data"
               value={form.dataLancamento}
@@ -297,78 +316,7 @@ export default function NewExpenseDialog({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Carteira"
-              value={form.idCarteira}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  idCarteira:
-                    event.target.value === '' ? '' : Number(event.target.value),
-                }))
-              }
-              error={Boolean(
-                localErrors.idCarteira ||
-                getFieldMessage(problem, 'idCarteira'),
-              )}
-              helperText={
-                localErrors.idCarteira ?? getFieldMessage(problem, 'idCarteira')
-              }
-            >
-              <MenuItem value="">Selecione a carteira</MenuItem>
-              {activeWallets.map((carteira) => (
-                <MenuItem key={carteira.id} value={carteira.id}>
-                  {carteira.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <CurrencyField
-              fullWidth
-              label="Valor"
-              value={form.valor}
-              onValueChange={(valor) =>
-                setForm((current) => ({ ...current, valor }))
-              }
-              error={Boolean(
-                localErrors.valor || getFieldMessage(problem, 'valor'),
-              )}
-              helperText={
-                localErrors.valor ?? getFieldMessage(problem, 'valor')
-              }
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              select
-              fullWidth
-              label="Feira"
-              value={form.idFeira}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  idFeira:
-                    event.target.value === '' ? '' : Number(event.target.value),
-                }))
-              }
-              helperText="Opcional"
-            >
-              <MenuItem value="">Sem feira</MenuItem>
-              {feiras.map((feira) => (
-                <MenuItem key={feira.id} value={feira.id}>
-                  {feira.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Descrição"
@@ -388,7 +336,24 @@ export default function NewExpenseDialog({
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 3 }}>
+          <Grid size={{ xs: 12, md: 3 }}>
+            <CurrencyField
+              fullWidth
+              label="Valor"
+              value={form.valor}
+              onValueChange={(valor) =>
+                setForm((current) => ({ ...current, valor }))
+              }
+              error={Boolean(
+                localErrors.valor || getFieldMessage(problem, 'valor'),
+              )}
+              helperText={
+                localErrors.valor ?? getFieldMessage(problem, 'valor')
+              }
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               select
               fullWidth
@@ -418,7 +383,37 @@ export default function NewExpenseDialog({
             </TextField>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 3 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <TextField
+              select
+              fullWidth
+              label="Carteira"
+              value={form.idCarteira}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  idCarteira:
+                    event.target.value === '' ? '' : Number(event.target.value),
+                }))
+              }
+              error={Boolean(
+                localErrors.idCarteira ||
+                getFieldMessage(problem, 'idCarteira'),
+              )}
+              helperText={
+                localErrors.idCarteira ?? getFieldMessage(problem, 'idCarteira')
+              }
+            >
+              <MenuItem value="">Selecione a carteira</MenuItem>
+              {activeWallets.map((carteira) => (
+                <MenuItem key={carteira.id} value={carteira.id}>
+                  {carteira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 4 }}>
             <TextField
               select
               fullWidth
@@ -435,6 +430,30 @@ export default function NewExpenseDialog({
               {availableMeiosPagamento.includes('DEB') && <MenuItem value="DEB">Cartão débito</MenuItem>}
               {availableMeiosPagamento.includes('DIN') && <MenuItem value="DIN">Dinheiro</MenuItem>}
               {availableMeiosPagamento.includes('PIX') && <MenuItem value="PIX">Pix</MenuItem>}
+            </TextField>
+          </Grid>
+
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              select
+              fullWidth
+              label="Feira"
+              value={form.idFeira}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  idFeira:
+                    event.target.value === '' ? '' : Number(event.target.value),
+                }))
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Sem feira</MenuItem>
+              {feiras.map((feira) => (
+                <MenuItem key={feira.id} value={feira.id}>
+                  {feira.nome}
+                </MenuItem>
+              ))}
             </TextField>
           </Grid>
 

@@ -171,6 +171,12 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         : currentPagination.tamanhoPagina,
       tipo: hasQueryValue('tipo') ? query?.tipo : currentPagination.tipo,
       idFeira: hasQueryValue('idFeira') ? query?.idFeira : currentPagination.idFeira,
+      idCarteira: hasQueryValue('idCarteira')
+        ? query?.idCarteira
+        : currentPagination.idCarteira,
+      meioPagamento: hasQueryValue('meioPagamento')
+        ? query?.meioPagamento
+        : currentPagination.meioPagamento,
       dataInicio: hasQueryValue('dataInicio')
         ? query?.dataInicio
         : currentPagination.dataInicio,
@@ -187,6 +193,8 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
           tamanhoPagina: response.tamanhoPagina,
           tipo: nextPagination.tipo,
           idFeira: nextPagination.idFeira,
+          idCarteira: nextPagination.idCarteira,
+          meioPagamento: nextPagination.meioPagamento,
           dataInicio: nextPagination.dataInicio,
           dataFim: nextPagination.dataFim,
         },
@@ -209,6 +217,8 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
               tamanhoPagina: cachedResponse.tamanhoPagina,
               tipo: nextPagination.tipo,
               idFeira: nextPagination.idFeira,
+              idCarteira: nextPagination.idCarteira,
+              meioPagamento: nextPagination.meioPagamento,
               dataInicio: nextPagination.dataInicio,
               dataFim: nextPagination.dataFim,
             },
@@ -432,6 +442,39 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     set({ submitErrorMessage: null });
   },
 }));
+
+export const saleStoreSelectors = {
+  vendas: (state: SaleStoreState) => state.vendas,
+  feiras: (state: SaleStoreState) => state.feiras,
+  feirasPaginadas: (state: SaleStoreState) => state.feirasPaginadas,
+  carteiras: (state: SaleStoreState) => state.carteiras,
+  paginacao: (state: SaleStoreState) => state.paginacao,
+  paginacaoFeiras: (state: SaleStoreState) => state.paginacaoFeiras,
+  totalItens: (state: SaleStoreState) => state.totalItens,
+  totalPaginas: (state: SaleStoreState) => state.totalPaginas,
+  totalFeiras: (state: SaleStoreState) => state.totalFeiras,
+  pendingSalesCount: (state: SaleStoreState) => state.pendingSalesCount,
+  isFetching: (state: SaleStoreState) => state.isFetching,
+  isSubmitting: (state: SaleStoreState) => state.isSubmitting,
+  isSyncingPendingSales: (state: SaleStoreState) =>
+    state.isSyncingPendingSales,
+  fetchErrorMessage: (state: SaleStoreState) => state.fetchErrorMessage,
+  submitErrorMessage: (state: SaleStoreState) => state.submitErrorMessage,
+  fetchVendas: (state: SaleStoreState) => state.fetchVendas,
+  fetchFeiras: (state: SaleStoreState) => state.fetchFeiras,
+  fetchFeirasPaginadas: (state: SaleStoreState) => state.fetchFeirasPaginadas,
+  obterFeiraPorId: (state: SaleStoreState) => state.obterFeiraPorId,
+  fetchCarteiras: (state: SaleStoreState) => state.fetchCarteiras,
+  criarFeira: (state: SaleStoreState) => state.criarFeira,
+  atualizarFeira: (state: SaleStoreState) => state.atualizarFeira,
+  criarVenda: (state: SaleStoreState) => state.criarVenda,
+  alterarVenda: (state: SaleStoreState) => state.alterarVenda,
+  excluirVenda: (state: SaleStoreState) => state.excluirVenda,
+  hydrateOfflineState: (state: SaleStoreState) => state.hydrateOfflineState,
+  sincronizarVendasPendentes: (state: SaleStoreState) =>
+    state.sincronizarVendasPendentes,
+  clearSubmitError: (state: SaleStoreState) => state.clearSubmitError,
+};
 
 export type {
   InserirVendaInput,

@@ -19,15 +19,30 @@ import {
 } from '@mui/material';
 import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import EditExpenseCategoryDialog from '../components/edit-expense-category-dialog';
 import NewExpenseCategoryDialog from '../components/new-expense-category-dialog';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceExpenseCategoriesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { categoriasDespesa, fetchCategoriasDespesa, fetchErrorMessage, isFetching } =
-    useFinanceStore();
+  const {
+    categoriasDespesa,
+    fetchCategoriasDespesa,
+    fetchErrorMessage,
+    isFetching,
+  } = useFinanceStore(
+    useShallow((state) => ({
+      categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
+      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchErrorMessage: financeStoreSelectors.fetchErrorMessage(state),
+      isFetching: financeStoreSelectors.isFetching(state),
+    })),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [page, setPage] = useState(0);

@@ -12,13 +12,17 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Close, Label, Save } from '@mui/icons-material';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
   type ProblemDetails,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NewExpenseCategoryDialogProps {
   open: boolean;
@@ -32,8 +36,21 @@ export default function NewExpenseCategoryDialog({
   open,
   onClose,
 }: NewExpenseCategoryDialogProps) {
-  const { criarCategoriaDespesa, fetchCategoriasDespesa, isSubmitting, clearSubmitError, submitErrorMessage } =
-    useFinanceStore();
+  const {
+    criarCategoriaDespesa,
+    fetchCategoriasDespesa,
+    isSubmitting,
+    clearSubmitError,
+    submitErrorMessage,
+  } = useFinanceStore(
+    useShallow((state) => ({
+      criarCategoriaDespesa: financeStoreSelectors.criarCategoriaDespesa(state),
+      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      isSubmitting: financeStoreSelectors.isSubmitting(state),
+      clearSubmitError: financeStoreSelectors.clearSubmitError(state),
+      submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const [form, setForm] = useState<FormState>({ nome: '' });
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors>({});

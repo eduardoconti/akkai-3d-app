@@ -184,6 +184,8 @@ export interface PesquisaPaginada {
 export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   tipo?: TipoVenda;
   idFeira?: number;
+  idCarteira?: number;
+  meioPagamento?: MeioPagamento;
   dataInicio?: string;
   dataFim?: string;
 }

@@ -413,3 +413,56 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
     set({ submitErrorMessage: null });
   },
 }));
+
+export const productStoreSelectors = {
+  produtos: (state: ProductStoreState) => state.produtos,
+  categorias: (state: ProductStoreState) => state.categorias,
+  categoriasPaginadas: (state: ProductStoreState) => state.categoriasPaginadas,
+  estoqueProdutos: (state: ProductStoreState) => state.estoqueProdutos,
+  movimentacoesEstoque: (state: ProductStoreState) =>
+    state.movimentacoesEstoque,
+  paginacao: (state: ProductStoreState) => state.paginacao,
+  paginacaoCategorias: (state: ProductStoreState) => state.paginacaoCategorias,
+  paginacaoEstoque: (state: ProductStoreState) => state.paginacaoEstoque,
+  paginacaoMovimentacoesEstoque: (state: ProductStoreState) =>
+    state.paginacaoMovimentacoesEstoque,
+  totalItens: (state: ProductStoreState) => state.totalItens,
+  totalPaginas: (state: ProductStoreState) => state.totalPaginas,
+  totalCategorias: (state: ProductStoreState) => state.totalCategorias,
+  totalPaginasCategorias: (state: ProductStoreState) =>
+    state.totalPaginasCategorias,
+  totalItensEstoque: (state: ProductStoreState) => state.totalItensEstoque,
+  totalPaginasEstoque: (state: ProductStoreState) =>
+    state.totalPaginasEstoque,
+  totalMovimentacoesEstoque: (state: ProductStoreState) =>
+    state.totalMovimentacoesEstoque,
+  totalPaginasMovimentacoesEstoque: (state: ProductStoreState) =>
+    state.totalPaginasMovimentacoesEstoque,
+  isFetchingProducts: (state: ProductStoreState) => state.isFetchingProducts,
+  isFetchingCategories: (state: ProductStoreState) =>
+    state.isFetchingCategories,
+  isFetchingCategoriesPage: (state: ProductStoreState) =>
+    state.isFetchingCategoriesPage,
+  isFetchingStock: (state: ProductStoreState) => state.isFetchingStock,
+  isFetchingStockMovements: (state: ProductStoreState) =>
+    state.isFetchingStockMovements,
+  isSubmitting: (state: ProductStoreState) => state.isSubmitting,
+  fetchErrorMessage: (state: ProductStoreState) => state.fetchErrorMessage,
+  stockMovementsErrorMessage: (state: ProductStoreState) =>
+    state.stockMovementsErrorMessage,
+  submitErrorMessage: (state: ProductStoreState) => state.submitErrorMessage,
+  fetchProdutos: (state: ProductStoreState) => state.fetchProdutos,
+  fetchCategorias: (state: ProductStoreState) => state.fetchCategorias,
+  fetchCategoriasPaginadas: (state: ProductStoreState) =>
+    state.fetchCategoriasPaginadas,
+  fetchEstoque: (state: ProductStoreState) => state.fetchEstoque,
+  fetchMovimentacoesEstoque: (state: ProductStoreState) =>
+    state.fetchMovimentacoesEstoque,
+  atualizarQuantidadeEstoqueLocal: (state: ProductStoreState) =>
+    state.atualizarQuantidadeEstoqueLocal,
+  criarProduto: (state: ProductStoreState) => state.criarProduto,
+  criarCategoria: (state: ProductStoreState) => state.criarCategoria,
+  obterCategoriaPorId: (state: ProductStoreState) => state.obterCategoriaPorId,
+  atualizarCategoria: (state: ProductStoreState) => state.atualizarCategoria,
+  clearSubmitError: (state: ProductStoreState) => state.clearSubmitError,
+};

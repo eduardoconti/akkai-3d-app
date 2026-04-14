@@ -21,14 +21,25 @@ import {
 import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { EditWalletDialog, NewWalletDialog } from '@/features/finance';
-import { useFinanceStore } from '@/features/finance/store/use-finance-store';
+import {
+  financeStoreSelectors,
+  useFinanceStore,
+} from '@/features/finance/store/use-finance-store';
 import { formatCurrency } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceWalletsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { carteiras, fetchCarteiras, fetchErrorMessage, isFetching } =
-    useFinanceStore();
+    useFinanceStore(
+      useShallow((state) => ({
+        carteiras: financeStoreSelectors.carteiras(state),
+        fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
+        fetchErrorMessage: financeStoreSelectors.fetchErrorMessage(state),
+        isFetching: financeStoreSelectors.isFetching(state),
+      })),
+    );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingWalletId, setEditingWalletId] = useState<number | null>(null);
   const [page, setPage] = useState(0);

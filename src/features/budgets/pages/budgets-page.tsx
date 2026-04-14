@@ -21,7 +21,11 @@ import {
 import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
-import { useBudgetStore } from '@/features/budgets/store/use-budget-store';
+import {
+  budgetStoreSelectors,
+  useBudgetStore,
+} from '@/features/budgets/store/use-budget-store';
+import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('pt-BR');
@@ -37,7 +41,16 @@ export default function BudgetsPage() {
     orcamentos,
     paginacao,
     totalItens,
-  } = useBudgetStore();
+  } = useBudgetStore(
+    useShallow((state) => ({
+      fetchErrorMessage: budgetStoreSelectors.fetchErrorMessage(state),
+      fetchOrcamentos: budgetStoreSelectors.fetchOrcamentos(state),
+      isFetching: budgetStoreSelectors.isFetching(state),
+      orcamentos: budgetStoreSelectors.orcamentos(state),
+      paginacao: budgetStoreSelectors.paginacao(state),
+      totalItens: budgetStoreSelectors.totalItens(state),
+    })),
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {

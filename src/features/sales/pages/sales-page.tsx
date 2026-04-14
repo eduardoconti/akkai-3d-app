@@ -37,7 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewSaleDialog from '../components/new-sale-dialog';
-import { useSaleStore } from '../store/use-sale-store';
+import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
   getPaymentMethodLabel,
   getSaleTypeLabel,
@@ -47,10 +47,13 @@ import {
   formatCurrency,
   useFeedbackStore,
   useOnlineStatus,
+  type Carteira,
+  type MeioPagamento,
   type Feira,
   type TipoVenda,
   type Venda,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 function getCurrentDateInput(): string {
   const now = new Date();
@@ -180,8 +183,10 @@ export default function SalesPage() {
   const isOnline = useOnlineStatus();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const {
+    carteiras,
     excluirVenda,
     feiras,
+    fetchCarteiras,
     fetchErrorMessage,
     fetchFeiras,
     fetchVendas,
@@ -191,12 +196,30 @@ export default function SalesPage() {
     submitErrorMessage,
     totalItens,
     vendas,
-  } = useSaleStore();
+  } = useSaleStore(
+    useShallow((state) => ({
+      excluirVenda: saleStoreSelectors.excluirVenda(state),
+      carteiras: saleStoreSelectors.carteiras(state),
+      feiras: saleStoreSelectors.feiras(state),
+      fetchCarteiras: saleStoreSelectors.fetchCarteiras(state),
+      fetchErrorMessage: saleStoreSelectors.fetchErrorMessage(state),
+      fetchFeiras: saleStoreSelectors.fetchFeiras(state),
+      fetchVendas: saleStoreSelectors.fetchVendas(state),
+      isFetching: saleStoreSelectors.isFetching(state),
+      isSubmitting: saleStoreSelectors.isSubmitting(state),
+      paginacao: saleStoreSelectors.paginacao(state),
+      submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
+      totalItens: saleStoreSelectors.totalItens(state),
+      vendas: saleStoreSelectors.vendas(state),
+    })),
+  );
   const initialDate = getCurrentDateInput();
   const [dataInicio, setDataInicio] = useState(initialDate);
   const [dataFim, setDataFim] = useState(initialDate);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
+  const [idCarteira, setIdCarteira] = useState<number | ''>('');
+  const [meioPagamento, setMeioPagamento] = useState<MeioPagamento | ''>('');
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
@@ -210,12 +233,15 @@ export default function SalesPage() {
       dataFim,
       tipo: type === 'TODOS' ? undefined : type,
       idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
+      idCarteira: idCarteira === '' ? undefined : idCarteira,
+      meioPagamento: meioPagamento === '' ? undefined : meioPagamento,
     });
   };
 
   useEffect(() => {
     void fetchFeiras();
-  }, [fetchFeiras]);
+    void fetchCarteiras();
+  }, [fetchCarteiras, fetchFeiras]);
 
   useEffect(() => {
     if (type !== 'FEIRA') {
@@ -231,13 +257,23 @@ export default function SalesPage() {
         dataFim,
         tipo: type === 'TODOS' ? undefined : type,
         idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
+        idCarteira: idCarteira === '' ? undefined : idCarteira,
+        meioPagamento: meioPagamento === '' ? undefined : meioPagamento,
       });
     }, 300);
 
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [dataFim, dataInicio, fetchVendas, idFeira, type]);
+  }, [
+    dataFim,
+    dataInicio,
+    fetchVendas,
+    idCarteira,
+    idFeira,
+    meioPagamento,
+    type,
+  ]);
 
   const handleOpenActions = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -315,8 +351,8 @@ export default function SalesPage() {
       </Box>
 
       <Box>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, lg: type === 'FEIRA' ? 5 : 7 }}>
+        <Grid container spacing={2} columns={{ xs: 12, lg: 20 }}>
+          <Grid size={{ xs: 12, lg: type === 'FEIRA' ? 4 : 5 }}>
             <DateRangePickerField
               label="Período"
               startValue={dataInicio}
@@ -328,7 +364,7 @@ export default function SalesPage() {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, lg: type === 'FEIRA' ? 2 : 3 }}>
+          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
             <TextField
               select
               fullWidth
@@ -345,8 +381,53 @@ export default function SalesPage() {
             </TextField>
           </Grid>
 
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <TextField
+              select
+              fullWidth
+              label="Carteira"
+              value={idCarteira}
+              onChange={(event) =>
+                setIdCarteira(
+                  event.target.value === '' ? '' : Number(event.target.value),
+                )
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Todas</MenuItem>
+              {carteiras.map((carteira: Carteira) => (
+                <MenuItem key={carteira.id} value={carteira.id}>
+                  {carteira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <TextField
+              select
+              fullWidth
+              label="Pagamento"
+              value={meioPagamento}
+              onChange={(event) =>
+                setMeioPagamento(
+                  event.target.value === ''
+                    ? ''
+                    : (event.target.value as MeioPagamento),
+                )
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="DIN">Dinheiro</MenuItem>
+              <MenuItem value="DEB">Cartão débito</MenuItem>
+              <MenuItem value="CRE">Cartão crédito</MenuItem>
+              <MenuItem value="PIX">Pix</MenuItem>
+            </TextField>
+          </Grid>
+
           {type === 'FEIRA' ? (
-            <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
               <TextField
                 select
                 fullWidth
@@ -372,7 +453,7 @@ export default function SalesPage() {
           ) : null}
 
           <Grid
-            size={{ xs: 12, sm: 6, lg: 2 }}
+            size={{ xs: 12, sm: 6, lg: type === 'FEIRA' ? 4 : 3 }}
             sx={{ display: 'flex', alignItems: 'flex-start' }}
           >
             <Button

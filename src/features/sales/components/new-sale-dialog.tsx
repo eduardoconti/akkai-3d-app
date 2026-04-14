@@ -26,7 +26,10 @@ import {
 import Grid from '@mui/material/Grid';
 import { Add, Close, Delete, ShoppingCartCheckout } from '@mui/icons-material';
 import { listAllProducts } from '@/features/products/api/products-api';
-import { useSaleStore } from '@/features/sales/store/use-sale-store';
+import {
+  saleStoreSelectors,
+  useSaleStore,
+} from '@/features/sales/store/use-sale-store';
 import {
   emptySaleItem,
   initialSaleFormState,
@@ -54,6 +57,7 @@ import {
   type TipoVenda,
   type Venda,
 } from '@/shared';
+import { useShallow } from 'zustand/react/shallow';
 
 interface NewSaleDialogProps {
   open: boolean;
@@ -138,16 +142,31 @@ export default function NewSaleDialog({
     alterarVenda,
     criarVenda,
     carteiras,
-    fetchErrorMessage: saleFetchErrorMessage,
+    saleFetchErrorMessage,
     fetchCarteiras,
     feiras,
     fetchFeiras,
     fetchVendas,
-    isFetching: isFetchingSales,
+    isFetchingSales,
     isSubmitting,
     submitErrorMessage,
     clearSubmitError,
-  } = useSaleStore();
+  } = useSaleStore(
+    useShallow((state) => ({
+      alterarVenda: saleStoreSelectors.alterarVenda(state),
+      criarVenda: saleStoreSelectors.criarVenda(state),
+      carteiras: saleStoreSelectors.carteiras(state),
+      saleFetchErrorMessage: saleStoreSelectors.fetchErrorMessage(state),
+      fetchCarteiras: saleStoreSelectors.fetchCarteiras(state),
+      feiras: saleStoreSelectors.feiras(state),
+      fetchFeiras: saleStoreSelectors.fetchFeiras(state),
+      fetchVendas: saleStoreSelectors.fetchVendas(state),
+      isFetchingSales: saleStoreSelectors.isFetching(state),
+      isSubmitting: saleStoreSelectors.isSubmitting(state),
+      submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
+      clearSubmitError: saleStoreSelectors.clearSubmitError(state),
+    })),
+  );
 
   const [form, setForm] = useState<SaleFormState>(initialSaleFormState);
   const [persistedConfig, setPersistedConfig] = useState<PersistedSaleConfig>({
