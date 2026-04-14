@@ -25,6 +25,35 @@ export interface DashboardMonthlySummaryResponse {
   itens: DashboardMonthlySummaryItem[];
 }
 
+export interface DashboardTopProductItem {
+  idProduto?: number | null;
+  codigo?: string | null;
+  nomeProduto: string;
+  categoria?: {
+    id: number;
+    nome: string;
+  } | null;
+  quantidadeVendida: number;
+}
+
+export interface DashboardTopProductsResponse {
+  ano: number;
+  mes: number;
+  itens: DashboardTopProductItem[];
+}
+
+export interface DashboardExpenseCategoryItem {
+  idCategoria: number | null;
+  nomeCategoria: string;
+  valorTotal: number;
+}
+
+export interface DashboardExpenseCategoriesResponse {
+  ano: number;
+  mes: number;
+  itens: DashboardExpenseCategoryItem[];
+}
+
 export interface SalesSummary {
   dataInicio: string;
   dataFim: string;
@@ -102,6 +131,18 @@ export function getDashboardMonthlySummary(
   return httpClient.get<DashboardMonthlySummaryResponse>(
     '/relatorio/dashboard/resumo-mensal',
     filtro,
+  );
+}
+
+export function getDashboardTopProducts(): Promise<DashboardTopProductsResponse> {
+  return httpClient.get<DashboardTopProductsResponse>(
+    '/relatorio/dashboard/top-produtos-mes',
+  );
+}
+
+export function getDashboardExpenseCategories(): Promise<DashboardExpenseCategoriesResponse> {
+  return httpClient.get<DashboardExpenseCategoriesResponse>(
+    '/relatorio/dashboard/despesas-categorias-mes',
   );
 }
 
