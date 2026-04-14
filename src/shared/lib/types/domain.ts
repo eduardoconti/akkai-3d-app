@@ -191,6 +191,7 @@ export type PesquisaPaginadaFeiras = PesquisaPaginada;
 export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
+  idsCategorias?: number[];
 }
 
 export type PesquisaPaginadaOrcamentos = PesquisaPaginada;
