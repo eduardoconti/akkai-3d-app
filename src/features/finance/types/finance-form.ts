@@ -4,16 +4,21 @@ export type WalletFormState = {
   nome: string;
   ativa: boolean;
   meiosPagamento: MeioPagamento[];
+  consideraImpostoVenda: boolean;
+  percentualImpostoVenda: string;
 };
 
 export type WalletFormErrors = {
   nome?: string;
+  percentualImpostoVenda?: string;
 };
 
 export const initialWalletFormState: WalletFormState = {
   nome: '',
   ativa: true,
   meiosPagamento: [],
+  consideraImpostoVenda: false,
+  percentualImpostoVenda: '',
 };
 
 export const ALL_MEIOS_PAGAMENTO: MeioPagamento[] = ['DIN', 'DEB', 'CRE', 'PIX'];

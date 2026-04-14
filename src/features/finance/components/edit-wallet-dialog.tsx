@@ -45,6 +45,14 @@ interface EditWalletDialogProps {
   onUpdated: () => Promise<void>;
 }
 
+function normalizePercentualInput(value: string): string {
+  return value.replace(',', '.');
+}
+
+function parsePercentualInput(value: string): number {
+  return Number(normalizePercentualInput(value));
+}
+
 export default function EditWalletDialog({
   open,
   walletId,
@@ -104,6 +112,11 @@ export default function EditWalletDialog({
           nome: carteira.nome,
           ativa: carteira.ativa,
           meiosPagamento: carteira.meiosPagamento ?? [],
+          consideraImpostoVenda: carteira.consideraImpostoVenda ?? false,
+          percentualImpostoVenda:
+            carteira.percentualImpostoVenda != null
+              ? carteira.percentualImpostoVenda.toFixed(2).replace('.', ',')
+              : '',
         });
       } catch (error) {
         if (!active) {
@@ -154,6 +167,18 @@ export default function EditWalletDialog({
       errors.nome = 'Informe um nome com pelo menos 2 caracteres.';
     }
 
+    if (form.consideraImpostoVenda) {
+      const percentual = parsePercentualInput(form.percentualImpostoVenda);
+
+      if (!Number.isFinite(percentual)) {
+        errors.percentualImpostoVenda = 'Informe um percentual de imposto válido.';
+      } else if (percentual < 0) {
+        errors.percentualImpostoVenda = 'O percentual de imposto não pode ser negativo.';
+      } else if (percentual > 100) {
+        errors.percentualImpostoVenda = 'O percentual de imposto deve ser de no máximo 100.';
+      }
+    }
+
     setLocalErrors(errors);
     setProblem(null);
 
@@ -168,6 +193,10 @@ export default function EditWalletDialog({
         nome: form.nome.trim(),
         ativa: form.ativa,
         meiosPagamento: form.meiosPagamento,
+        consideraImpostoVenda: form.consideraImpostoVenda,
+        percentualImpostoVenda: form.consideraImpostoVenda
+          ? parsePercentualInput(form.percentualImpostoVenda)
+          : null,
       });
 
       if (!result.success) {
@@ -299,6 +328,56 @@ export default function EditWalletDialog({
                   />
                 }
                 label="Carteira ativa"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.consideraImpostoVenda}
+                    disabled={isLoading}
+                    onChange={(_event, checked) =>
+                      setForm((current) => ({
+                        ...current,
+                        consideraImpostoVenda: checked,
+                        percentualImpostoVenda: checked ? current.percentualImpostoVenda : '',
+                      }))
+                    }
+                  />
+                }
+                label="Considerar imposto sobre vendas"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Percentual do imposto"
+                placeholder="Ex: 4,00"
+                value={form.percentualImpostoVenda}
+                disabled={isLoading || !form.consideraImpostoVenda}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    percentualImpostoVenda: event.target.value,
+                  }))
+                }
+                error={Boolean(
+                  localErrors.percentualImpostoVenda ||
+                    getFieldMessage(problem, 'percentualImpostoVenda'),
+                )}
+                helperText={
+                  localErrors.percentualImpostoVenda ??
+                  getFieldMessage(problem, 'percentualImpostoVenda') ??
+                  'Use vírgula ou ponto. Ex: 4,00'
+                }
+                slotProps={{
+                  htmlInput: {
+                    inputMode: 'decimal',
+                    pattern: '[0-9]*[.,]?[0-9]*',
+                  },
+                }}
               />
             </Grid>
           </Grid>

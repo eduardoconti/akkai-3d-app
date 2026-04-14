@@ -60,6 +60,7 @@ export interface SalesSummary {
   quantidadeItens: number;
   descontoTotal: number;
   valorTotal: number;
+  valorLiquido: number;
 }
 
 export interface BestSellingProductsFilter {

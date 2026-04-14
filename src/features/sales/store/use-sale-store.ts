@@ -159,6 +159,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   totalizadores: {
     valorTotal: 0,
     descontoTotal: 0,
+    valorLiquido: 0,
   },
   pendingSalesCount: 0,
   isFetching: false,
@@ -238,6 +239,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
               (cachedResponse as ResultadoPaginadoVendas).totalizadores ?? {
                 valorTotal: 0,
                 descontoTotal: 0,
+                valorLiquido: 0,
               },
             fetchErrorMessage: null,
           });

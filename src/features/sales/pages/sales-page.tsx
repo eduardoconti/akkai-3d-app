@@ -109,8 +109,17 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
         <TableCell align="right">
           {venda.desconto > 0 ? formatCurrency(venda.desconto) : '-'}
         </TableCell>
+        <TableCell align="right">
+          {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+        </TableCell>
+        <TableCell align="right">
+          {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+        </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatCurrency(venda.valorTotal)}
+        </TableCell>
+        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
+          {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
         </TableCell>
         <TableCell align="center">
           <IconButton
@@ -127,7 +136,7 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
       </TableRow>
 
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={13}>
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box
               sx={{
@@ -143,6 +152,23 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
                 Itens da Venda #{venda.id}
               </Typography>
+              <Stack
+                direction="row"
+                spacing={2}
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Taxa: {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Imposto: {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+                </Typography>
+                <Typography variant="body2" fontWeight={700} color="success.main">
+                  Líquido: {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
+                </Typography>
+              </Stack>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -474,7 +500,7 @@ export default function SalesPage() {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Desconto total
@@ -484,13 +510,23 @@ export default function SalesPage() {
             </Typography>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Valor total das vendas
             </Typography>
             <Typography variant="h6" fontWeight={700}>
               {formatCurrency(totalizadores.valorTotal)}
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Valor líquido das vendas
+            </Typography>
+            <Typography variant="h6" fontWeight={700} color="success.main">
+              {formatCurrency(totalizadores.valorLiquido)}
             </Typography>
           </Paper>
         </Grid>
@@ -575,6 +611,16 @@ export default function SalesPage() {
                         : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
+                      Taxa: {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Imposto:{' '}
+                      {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700} color="success.main">
+                      Líquido: {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
                       Itens: {venda.itens.map(getSaleItemName).join(', ')}
                     </Typography>
                   </Stack>
@@ -614,7 +660,16 @@ export default function SalesPage() {
                     <strong>Desconto</strong>
                   </TableCell>
                   <TableCell align="right">
+                    <strong>Taxa</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Imposto</strong>
+                  </TableCell>
+                  <TableCell align="right">
                     <strong>Total</strong>
+                  </TableCell>
+                  <TableCell align="right">
+                    <strong>Líquido</strong>
                   </TableCell>
                   <TableCell align="center" width={80}>
                     <strong>Ações</strong>
@@ -624,7 +679,7 @@ export default function SalesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -638,7 +693,7 @@ export default function SalesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
                       Nenhuma venda encontrada para os filtros informados.
                     </TableCell>
                   </TableRow>
