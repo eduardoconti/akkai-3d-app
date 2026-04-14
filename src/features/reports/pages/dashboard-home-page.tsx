@@ -1,22 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type DragEvent as ReactDragEvent,
+  type ReactNode,
+} from 'react';
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
+  Collapse,
+  IconButton,
   Paper,
   Stack,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import {
+  DragIndicator,
+  ExpandLess,
+  ExpandMore,
+  Visibility,
+  VisibilityOff,
+  ViewAgenda,
+  ViewWeek,
+} from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
 import {
   formatCurrency,
   getProblemDetailsFromError,
   type ProblemDetails,
 } from '@/shared';
 import {
+  getDashboardExpenseCategories,
   getDashboardMonthlySummary,
+  getDashboardTopProducts,
+  type DashboardExpenseCategoriesResponse,
   type DashboardMonthlySummaryItem,
   type DashboardMonthlySummaryResponse,
+  type DashboardTopProductsResponse,
 } from '../api/reports-api';
 
 const MONTH_LABELS = [
@@ -34,6 +58,25 @@ const MONTH_LABELS = [
   'Dez',
 ];
 
+const DASHBOARD_WIDGET_ORDER_KEY = 'akkai.dashboard.widget-order';
+const DASHBOARD_WIDGET_COLLAPSE_KEY = 'akkai.dashboard.widget-collapse';
+const DASHBOARD_WIDGET_WIDTH_KEY = 'akkai.dashboard.widget-width';
+const DASHBOARD_HIDE_VALUES_KEY = 'akkai.dashboard.hide-values';
+
+type DashboardWidgetId =
+  | 'monthly-summary'
+  | 'top-products'
+  | 'expense-categories';
+type DashboardWidgetWidth = 'full' | 'half';
+
+interface ChartTooltipState {
+  x: number;
+  y: number;
+  color: string;
+  label: string;
+  value: number;
+}
+
 function getBarHeight(value: number, maxValue: number, chartHeight: number): number {
   if (maxValue <= 0) {
     return 0;
@@ -42,12 +85,89 @@ function getBarHeight(value: number, maxValue: number, chartHeight: number): num
   return (value / maxValue) * chartHeight;
 }
 
-interface ChartTooltipState {
-  x: number;
-  y: number;
-  color: string;
-  label: string;
-  value: number;
+function getStoredWidgetOrder(): DashboardWidgetId[] {
+  if (typeof window === 'undefined') {
+    return ['monthly-summary', 'top-products', 'expense-categories'];
+  }
+
+  const rawValue = window.localStorage.getItem(DASHBOARD_WIDGET_ORDER_KEY);
+
+  if (!rawValue) {
+    return ['monthly-summary', 'top-products', 'expense-categories'];
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as DashboardWidgetId[];
+    const validWidgets: DashboardWidgetId[] = [
+      'monthly-summary',
+      'top-products',
+      'expense-categories',
+    ];
+
+    return validWidgets.filter((widgetId) => parsed.includes(widgetId));
+  } catch {
+    return ['monthly-summary', 'top-products', 'expense-categories'];
+  }
+}
+
+function getStoredCollapsedWidgets(): Partial<Record<DashboardWidgetId, boolean>> {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const rawValue = window.localStorage.getItem(DASHBOARD_WIDGET_COLLAPSE_KEY);
+
+  if (!rawValue) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(rawValue) as Partial<Record<DashboardWidgetId, boolean>>;
+  } catch {
+    return {};
+  }
+}
+
+function getStoredWidgetWidths(): Partial<Record<DashboardWidgetId, DashboardWidgetWidth>> {
+  if (typeof window === 'undefined') {
+    return {
+      'monthly-summary': 'full',
+      'top-products': 'half',
+      'expense-categories': 'half',
+    };
+  }
+
+  const rawValue = window.localStorage.getItem(DASHBOARD_WIDGET_WIDTH_KEY);
+
+  if (!rawValue) {
+    return {
+      'monthly-summary': 'full',
+      'top-products': 'half',
+      'expense-categories': 'half',
+    };
+  }
+
+  try {
+    return JSON.parse(rawValue) as Partial<Record<DashboardWidgetId, DashboardWidgetWidth>>;
+  } catch {
+    return {
+      'monthly-summary': 'full',
+      'top-products': 'half',
+      'expense-categories': 'half',
+    };
+  }
+}
+
+function getStoredHideValues(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  return window.localStorage.getItem(DASHBOARD_HIDE_VALUES_KEY) === 'true';
+}
+
+function formatDashboardValue(value: string, hideValues: boolean): string {
+  return hideValues ? '••••••' : value;
 }
 
 function DashboardMonthlyChart({
@@ -271,10 +391,166 @@ function DashboardMonthlyChart({
   );
 }
 
+function DashboardWidget({
+  children,
+  isDragging,
+  isDropTarget,
+  id,
+  isCollapsed,
+  onToggleWidth,
+  onDragOver,
+  onDragEnd,
+  onDragStart,
+  onDrop,
+  onToggleCollapse,
+  subtitle,
+  title,
+  widthMode,
+}: {
+  children: ReactNode;
+  isDragging: boolean;
+  isDropTarget: boolean;
+  id: DashboardWidgetId;
+  isCollapsed: boolean;
+  onToggleWidth: (widgetId: DashboardWidgetId) => void;
+  onDragOver: (event: ReactDragEvent<HTMLDivElement>, targetId: DashboardWidgetId) => void;
+  onDragEnd: () => void;
+  onDragStart: (
+    event: ReactDragEvent<HTMLElement>,
+    widgetId: DashboardWidgetId,
+  ) => void;
+  onDrop: (targetId: DashboardWidgetId) => void;
+  onToggleCollapse: (widgetId: DashboardWidgetId) => void;
+  subtitle: string;
+  title: string;
+  widthMode: DashboardWidgetWidth;
+}) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  return (
+    <Paper
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        opacity: isDragging ? 0.55 : 1,
+        border: '1px solid',
+        borderColor: isDropTarget ? 'primary.main' : 'divider',
+        boxShadow: isDropTarget ? '0 0 0 2px rgba(25, 118, 210, 0.12)' : undefined,
+        transition: 'opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+      }}
+      onDragOver={(event) => onDragOver(event, id)}
+      onDrop={() => onDrop(id)}
+    >
+      <Stack spacing={2.5}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          justifyContent="space-between"
+          spacing={1}
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={800}>
+              {title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {subtitle}
+            </Typography>
+          </Box>
+
+          <Stack direction="row" spacing={0.5}>
+            {!isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => onToggleWidth(id)}
+                aria-label={
+                  widthMode === 'full'
+                    ? 'Mudar para meia largura'
+                    : 'Mudar para largura total'
+                }
+              >
+                {widthMode === 'full' ? <ViewWeek /> : <ViewAgenda />}
+              </IconButton>
+            ) : null}
+            <IconButton
+              size="small"
+              onClick={() => onToggleCollapse(id)}
+              aria-label={isCollapsed ? 'Expandir gráfico' : 'Minimizar gráfico'}
+            >
+              {isCollapsed ? <ExpandMore /> : <ExpandLess />}
+            </IconButton>
+            <IconButton
+              size="small"
+              aria-label="Arrastar gráfico"
+              draggable
+              onDragStart={(event) => onDragStart(event, id)}
+              onDragEnd={onDragEnd}
+              sx={{ cursor: 'grab' }}
+            >
+              <DragIndicator />
+            </IconButton>
+          </Stack>
+        </Stack>
+
+        <Collapse in={!isCollapsed}>{children}</Collapse>
+      </Stack>
+    </Paper>
+  );
+}
+
 export default function DashboardHomePage() {
   const [result, setResult] = useState<DashboardMonthlySummaryResponse | null>(null);
+  const [topProducts, setTopProducts] = useState<DashboardTopProductsResponse | null>(
+    null,
+  );
+  const [expenseCategories, setExpenseCategories] =
+    useState<DashboardExpenseCategoriesResponse | null>(null);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [widgetOrder, setWidgetOrder] = useState<DashboardWidgetId[]>(
+    getStoredWidgetOrder,
+  );
+  const [collapsedWidgets, setCollapsedWidgets] = useState<
+    Partial<Record<DashboardWidgetId, boolean>>
+  >(getStoredCollapsedWidgets);
+  const [widgetWidths, setWidgetWidths] = useState<
+    Partial<Record<DashboardWidgetId, DashboardWidgetWidth>>
+  >(getStoredWidgetWidths);
+  const [hideValues, setHideValues] = useState<boolean>(getStoredHideValues);
+  const [draggingWidgetId, setDraggingWidgetId] = useState<DashboardWidgetId | null>(
+    null,
+  );
+  const [dropTargetWidgetId, setDropTargetWidgetId] = useState<DashboardWidgetId | null>(
+    null,
+  );
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      DASHBOARD_WIDGET_ORDER_KEY,
+      JSON.stringify(widgetOrder),
+    );
+  }, [widgetOrder]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      DASHBOARD_WIDGET_COLLAPSE_KEY,
+      JSON.stringify(collapsedWidgets),
+    );
+  }, [collapsedWidgets]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      DASHBOARD_WIDGET_WIDTH_KEY,
+      JSON.stringify(widgetWidths),
+    );
+  }, [widgetWidths]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      DASHBOARD_HIDE_VALUES_KEY,
+      String(hideValues),
+    );
+  }, [hideValues]);
 
   useEffect(() => {
     let active = true;
@@ -284,13 +560,20 @@ export default function DashboardHomePage() {
       setProblem(null);
 
       try {
-        const response = await getDashboardMonthlySummary();
+        const [response, topProductsResponse, expenseCategoriesResponse] =
+          await Promise.all([
+            getDashboardMonthlySummary(),
+            getDashboardTopProducts(),
+            getDashboardExpenseCategories(),
+          ]);
 
         if (!active) {
           return;
         }
 
         setResult(response);
+        setTopProducts(topProductsResponse);
+        setExpenseCategories(expenseCategoriesResponse);
       } catch (error) {
         if (!active) {
           return;
@@ -298,6 +581,8 @@ export default function DashboardHomePage() {
 
         setProblem(getProblemDetailsFromError(error));
         setResult(null);
+        setTopProducts(null);
+        setExpenseCategories(null);
       } finally {
         if (active) {
           setIsLoading(false);
@@ -333,16 +618,353 @@ export default function DashboardHomePage() {
     );
   }, [result]);
 
+  const handleDragStart = (
+    event: ReactDragEvent<HTMLElement>,
+    widgetId: DashboardWidgetId,
+  ) => {
+    event.dataTransfer.effectAllowed = 'move';
+    const transparentImage = new Image();
+    transparentImage.src =
+      'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+    event.dataTransfer.setDragImage(transparentImage, 0, 0);
+    setDraggingWidgetId(widgetId);
+    setDropTargetWidgetId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggingWidgetId(null);
+    setDropTargetWidgetId(null);
+  };
+
+  const handleDragOver = (
+    event: ReactDragEvent<HTMLDivElement>,
+    targetId: DashboardWidgetId,
+  ) => {
+    event.preventDefault();
+    if (draggingWidgetId && draggingWidgetId !== targetId) {
+      setDropTargetWidgetId(targetId);
+    }
+  };
+
+  const handleDrop = (targetId: DashboardWidgetId) => {
+    if (!draggingWidgetId || draggingWidgetId === targetId) {
+      setDraggingWidgetId(null);
+      setDropTargetWidgetId(null);
+      return;
+    }
+
+    setWidgetOrder((current) => {
+      const next = [...current];
+      const fromIndex = next.indexOf(draggingWidgetId);
+      const toIndex = next.indexOf(targetId);
+
+      if (fromIndex === -1 || toIndex === -1) {
+        return current;
+      }
+
+      next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, draggingWidgetId);
+      return next;
+    });
+
+    setDraggingWidgetId(null);
+    setDropTargetWidgetId(null);
+  };
+
+  const handleToggleCollapse = (widgetId: DashboardWidgetId) => {
+    setCollapsedWidgets((current) => ({
+      ...current,
+      [widgetId]: !current[widgetId],
+    }));
+  };
+
+  const handleToggleWidth = (widgetId: DashboardWidgetId) => {
+    setWidgetWidths((current) => ({
+      ...current,
+      [widgetId]: current[widgetId] === 'half' ? 'full' : 'half',
+    }));
+  };
+
+  const renderWidget = (widgetId: DashboardWidgetId) => {
+    if (!result) {
+      return null;
+    }
+
+    if (widgetId === 'monthly-summary') {
+      return (
+        <DashboardWidget
+          id={widgetId}
+          isDragging={draggingWidgetId === widgetId}
+          isDropTarget={dropTargetWidgetId === widgetId}
+          title="Resumo mensal"
+          subtitle={`Valores mensais de vendas, despesas e saldo em ${result.ano}.`}
+          isCollapsed={Boolean(collapsedWidgets[widgetId])}
+          widthMode={widgetWidths[widgetId] ?? 'full'}
+          onToggleWidth={handleToggleWidth}
+          onDragEnd={handleDragEnd}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onToggleCollapse={handleToggleCollapse}
+        >
+          <Stack spacing={2.5}>
+            {strongestMonth ? (
+              <Typography variant="body2" color="text.secondary">
+                Melhor saldo: {MONTH_LABELS[strongestMonth.mes - 1]} ·{' '}
+                {formatCurrency(strongestMonth.saldo)}
+              </Typography>
+            ) : null}
+
+            <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 1,
+                    bgcolor: '#2E7D32',
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Vendas
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 1,
+                    bgcolor: '#C62828',
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Despesas
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 1,
+                    bgcolor: '#D4AF37',
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Saldo positivo
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 1,
+                    bgcolor: '#EF6C00',
+                  }}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Saldo negativo
+                </Typography>
+              </Stack>
+            </Stack>
+
+            {chartItems.length > 0 ? (
+              <DashboardMonthlyChart items={chartItems} />
+            ) : (
+              <Box sx={{ py: 8, textAlign: 'center' }}>
+                <Typography color="text.secondary">
+                  Nenhum mês com movimentação foi encontrado para este ano.
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </DashboardWidget>
+      );
+    }
+
+    if (widgetId === 'top-products') {
+      return (
+        <DashboardWidget
+          id={widgetId}
+          isDragging={draggingWidgetId === widgetId}
+          isDropTarget={dropTargetWidgetId === widgetId}
+          title="Top 5 produtos mais vendidos no mês"
+          subtitle={`Ranking do mês ${MONTH_LABELS[(topProducts?.mes ?? 1) - 1]} de ${topProducts?.ano ?? result.ano}.`}
+          isCollapsed={Boolean(collapsedWidgets[widgetId])}
+          widthMode={widgetWidths[widgetId] ?? 'half'}
+          onToggleWidth={handleToggleWidth}
+          onDragEnd={handleDragEnd}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          onToggleCollapse={handleToggleCollapse}
+        >
+          {topProducts && topProducts.itens.length > 0 ? (
+            <Stack spacing={1.5}>
+              {topProducts.itens.map((item, index) => {
+                const maxQuantity = Math.max(
+                  ...topProducts.itens.map((current) => current.quantidadeVendida),
+                  1,
+                );
+                const widthPercent = (item.quantidadeVendida / maxQuantity) * 100;
+
+                return (
+                  <Box key={`${item.idProduto ?? item.nomeProduto}-${index}`}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      spacing={2}
+                      sx={{ mb: 0.75 }}
+                    >
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography fontWeight={700}>
+                          {index + 1}. {item.nomeProduto}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.codigo ?? '-'}
+                          {item.categoria?.nome ? ` · ${item.categoria.nome}` : ''}
+                        </Typography>
+                      </Box>
+
+                      <Typography fontWeight={700}>
+                        {item.quantidadeVendida} un
+                      </Typography>
+                    </Stack>
+
+                    <Box
+                      sx={{
+                        height: 10,
+                        borderRadius: 999,
+                        bgcolor: 'action.hover',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: `${widthPercent}%`,
+                          height: '100%',
+                          borderRadius: 999,
+                          background:
+                            'linear-gradient(90deg, #1565C0 0%, #42A5F5 100%)',
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Stack>
+          ) : (
+            <Box sx={{ py: 4, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Nenhuma venda encontrada no mês atual.
+              </Typography>
+            </Box>
+          )}
+        </DashboardWidget>
+      );
+    }
+
+    return (
+      <DashboardWidget
+        id={widgetId}
+        isDragging={draggingWidgetId === widgetId}
+        isDropTarget={dropTargetWidgetId === widgetId}
+        title="Despesas do mês por categoria"
+        subtitle={`Categorias com maior peso nas despesas de ${MONTH_LABELS[(expenseCategories?.mes ?? 1) - 1]} de ${expenseCategories?.ano ?? result.ano}.`}
+        isCollapsed={Boolean(collapsedWidgets[widgetId])}
+        widthMode={widgetWidths[widgetId] ?? 'half'}
+        onToggleWidth={handleToggleWidth}
+        onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onToggleCollapse={handleToggleCollapse}
+      >
+        {expenseCategories && expenseCategories.itens.length > 0 ? (
+          <Stack spacing={1.5}>
+            {expenseCategories.itens.map((item, index) => {
+              const maxValue = Math.max(
+                ...expenseCategories.itens.map((current) => current.valorTotal),
+                1,
+              );
+              const widthPercent = (item.valorTotal / maxValue) * 100;
+
+              return (
+                <Box key={`${item.idCategoria ?? item.nomeCategoria}-${index}`}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    spacing={2}
+                    sx={{ mb: 0.75 }}
+                  >
+                    <Typography fontWeight={700}>
+                      {index + 1}. {item.nomeCategoria}
+                    </Typography>
+
+                    <Typography fontWeight={700} color="error.main">
+                      {formatCurrency(item.valorTotal)}
+                    </Typography>
+                  </Stack>
+
+                  <Box
+                    sx={{
+                      height: 10,
+                      borderRadius: 999,
+                      bgcolor: 'action.hover',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: `${widthPercent}%`,
+                        height: '100%',
+                        borderRadius: 999,
+                        background:
+                          'linear-gradient(90deg, #C62828 0%, #EF5350 100%)',
+                      }}
+                    />
+                  </Box>
+                </Box>
+              );
+            })}
+          </Stack>
+        ) : (
+          <Box sx={{ py: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary">
+              Nenhuma despesa encontrada no mês atual.
+            </Typography>
+          </Box>
+        )}
+      </DashboardWidget>
+    );
+  };
+
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Visão geral
-        </Typography>
-        <Typography color="text.secondary">
-          Acompanhe a evolução mensal de vendas, despesas e saldo.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        spacing={2}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Visão geral
+          </Typography>
+          <Typography color="text.secondary">
+            Acompanhe a evolução mensal de vendas, despesas e saldo.
+          </Typography>
+        </Box>
+
+        <Button
+          variant="outlined"
+          startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
+          onClick={() => setHideValues((current) => !current)}
+        >
+          {hideValues ? 'Exibir valores' : 'Ocultar valores'}
+        </Button>
+      </Stack>
 
       {problem?.detail ? <Alert severity="error">{problem.detail}</Alert> : null}
 
@@ -359,7 +981,10 @@ export default function DashboardHomePage() {
                   Itens vendidos em {result.ano}
                 </Typography>
                 <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                  {result.totalQuantidadeItensVendidos}
+                  {formatDashboardValue(
+                    String(result.totalQuantidadeItensVendidos),
+                    hideValues,
+                  )}
                 </Typography>
               </Paper>
             </Grid>
@@ -370,7 +995,10 @@ export default function DashboardHomePage() {
                   Total de vendas em {result.ano}
                 </Typography>
                 <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                  {formatCurrency(result.totalVendas)}
+                  {formatDashboardValue(
+                    formatCurrency(result.totalVendas),
+                    hideValues,
+                  )}
                 </Typography>
               </Paper>
             </Grid>
@@ -385,7 +1013,10 @@ export default function DashboardHomePage() {
                   fontWeight={800}
                   sx={{ mt: 1, color: 'error.main' }}
                 >
-                  {formatCurrency(result.totalDespesas)}
+                  {formatDashboardValue(
+                    formatCurrency(result.totalDespesas),
+                    hideValues,
+                  )}
                 </Typography>
               </Paper>
             </Grid>
@@ -395,110 +1026,50 @@ export default function DashboardHomePage() {
                 <Typography variant="body2" color="text.secondary">
                   Saldo acumulado em {result.ano}
                 </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
-                    }}
-                  >
-                    {formatCurrency(result.saldo)}
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{
+                    mt: 1,
+                    color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
+                  }}
+                >
+                  {formatDashboardValue(
+                    formatCurrency(result.saldo),
+                    hideValues,
+                  )}
                 </Typography>
               </Paper>
             </Grid>
           </Grid>
 
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Stack spacing={2.5}>
-              <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                justifyContent="space-between"
-                spacing={1}
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+              alignItems: 'start',
+            }}
+          >
+            {widgetOrder.map((widgetId) => (
+              <Box
+                key={widgetId}
+                sx={{
+                  gridColumn: {
+                    xs: 'auto',
+                    lg:
+                      (widgetWidths[widgetId] ??
+                        (widgetId === 'monthly-summary' ? 'full' : 'half')) ===
+                      'full'
+                        ? '1 / -1'
+                        : 'span 1',
+                  },
+                }}
               >
-                <Box>
-                  <Typography variant="h6" fontWeight={800}>
-                    Resumo mensal
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Valores mensais de vendas, despesas e saldo em {result.ano}.
-                  </Typography>
-                </Box>
-
-                {strongestMonth ? (
-                  <Typography variant="body2" color="text.secondary">
-                    Melhor saldo: {MONTH_LABELS[strongestMonth.mes - 1]} ·{' '}
-                    {formatCurrency(strongestMonth.saldo)}
-                  </Typography>
-                ) : null}
-              </Stack>
-
-              <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 1,
-                      bgcolor: '#2E7D32',
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Vendas
-                  </Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 1,
-                      bgcolor: '#C62828',
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Despesas
-                  </Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 1,
-                      bgcolor: '#D4AF37',
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Saldo positivo
-                  </Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Box
-                    sx={{
-                      width: 12,
-                      height: 12,
-                      borderRadius: 1,
-                      bgcolor: '#EF6C00',
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Saldo negativo
-                  </Typography>
-                </Stack>
-              </Stack>
-
-              {chartItems.length > 0 ? (
-                <DashboardMonthlyChart items={chartItems} />
-              ) : (
-                <Box sx={{ py: 8, textAlign: 'center' }}>
-                  <Typography color="text.secondary">
-                    Nenhum mês com movimentação foi encontrado para este ano.
-                  </Typography>
-                </Box>
-              )}
-            </Stack>
-          </Paper>
+                {renderWidget(widgetId)}
+              </Box>
+            ))}
+          </Box>
         </Stack>
       ) : null}
     </Stack>
