@@ -7,13 +7,14 @@ import type {
   PesquisaPaginadaFeiras,
   PesquisaPaginadaVendas,
   ResultadoPaginado,
+  ResultadoPaginadoVendas,
   Venda,
 } from '@/shared/lib/types/domain';
 
 export function listSales(
   query: PesquisaPaginadaVendas,
-): Promise<ResultadoPaginado<Venda>> {
-  return httpClient.get<ResultadoPaginado<Venda>>('/venda', query);
+): Promise<ResultadoPaginadoVendas> {
+  return httpClient.get<ResultadoPaginadoVendas>('/venda', query);
 }
 
 export function listFairs(): Promise<Feira[]> {

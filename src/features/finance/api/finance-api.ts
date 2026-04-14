@@ -7,7 +7,7 @@ import type {
   Despesa,
   DespesaInput,
   PesquisaPaginadaDespesas,
-  ResultadoPaginado,
+  ResultadoPaginadoDespesas,
 } from '@/shared/lib/types/domain';
 
 export function listWallets(): Promise<Carteira[]> {
@@ -54,8 +54,8 @@ export function updateExpenseCategory(
 
 export function listExpenses(
   query: PesquisaPaginadaDespesas,
-): Promise<ResultadoPaginado<Despesa>> {
-  return httpClient.get<ResultadoPaginado<Despesa>>('/financeiro/despesas', query);
+): Promise<ResultadoPaginadoDespesas> {
+  return httpClient.get<ResultadoPaginadoDespesas>('/financeiro/despesas', query);
 }
 
 export function createExpense(input: DespesaInput): Promise<Despesa> {

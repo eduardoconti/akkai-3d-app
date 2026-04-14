@@ -236,3 +236,20 @@ export interface ResultadoPaginado<T> {
   totalItens: number;
   totalPaginas: number;
 }
+
+export interface TotalizadoresVendas {
+  valorTotal: number;
+  descontoTotal: number;
+}
+
+export interface ResultadoPaginadoVendas extends ResultadoPaginado<Venda> {
+  totalizadores: TotalizadoresVendas;
+}
+
+export interface TotalizadoresDespesas {
+  valorTotal: number;
+}
+
+export interface ResultadoPaginadoDespesas extends ResultadoPaginado<Despesa> {
+  totalizadores: TotalizadoresDespesas;
+}
