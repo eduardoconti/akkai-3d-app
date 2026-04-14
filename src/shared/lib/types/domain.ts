@@ -91,6 +91,8 @@ export interface Carteira {
   ativa: boolean;
   saldoAtual: number;
   meiosPagamento: MeioPagamento[];
+  consideraImpostoVenda?: boolean;
+  percentualImpostoVenda?: number | null;
 }
 
 export interface TaxaMeioPagamentoCarteira {
@@ -132,11 +134,14 @@ export interface Venda {
   id: number;
   dataInclusao: string;
   valorTotal: number;
+  valorLiquido?: number;
   tipo: TipoVenda;
   meioPagamento: MeioPagamento;
   desconto: number;
   percentualTaxa?: number | null;
   valorTaxa?: number | null;
+  percentualImposto?: number | null;
+  valorImposto?: number | null;
   idFeira?: number;
   idCarteira: number;
   feira?: Feira | null;
@@ -216,6 +221,8 @@ export interface CarteiraInput {
   nome: string;
   ativa?: boolean;
   meiosPagamento?: MeioPagamento[];
+  consideraImpostoVenda?: boolean;
+  percentualImpostoVenda?: number | null;
 }
 
 export interface TaxaMeioPagamentoCarteiraInput {
@@ -258,6 +265,7 @@ export interface ResultadoPaginado<T> {
 export interface TotalizadoresVendas {
   valorTotal: number;
   descontoTotal: number;
+  valorLiquido: number;
 }
 
 export interface ResultadoPaginadoVendas extends ResultadoPaginado<Venda> {

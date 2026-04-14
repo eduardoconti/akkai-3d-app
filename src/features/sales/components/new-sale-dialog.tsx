@@ -118,7 +118,7 @@ function mapSaleToForm(sale: Venda): SaleFormState {
     meioPagamento: sale.meioPagamento,
     tipo: sale.tipo,
     idFeira: sale.idFeira ?? '',
-    idCarteira: sale.idCarteira,
+    idCarteira: sale.idCarteira ?? sale.carteira?.id ?? '',
     desconto: sale.desconto / 100,
     descontoModo: 'VALOR',
     itens: sale.itens.map((item) => ({
@@ -212,10 +212,14 @@ export default function NewSaleDialog({
     }
 
     if (open) {
-      setForm(
+      const nextForm =
         isEditMode && sale
           ? mapSaleToForm(sale)
-          : getResetFormState(persistedConfigRef.current),
+          : getResetFormState(persistedConfigRef.current);
+
+      prevCarteira.current = nextForm.idCarteira;
+      setForm(
+        nextForm,
       );
       void loadCatalogProducts();
       void fetchFeiras();
@@ -223,10 +227,14 @@ export default function NewSaleDialog({
       return;
     }
 
-    setForm(
+    const nextForm =
       isEditMode && sale
         ? mapSaleToForm(sale)
-        : getResetFormState(persistedConfigRef.current),
+        : getResetFormState(persistedConfigRef.current);
+
+    prevCarteira.current = nextForm.idCarteira;
+    setForm(
+      nextForm,
     );
     setCatalogProducts([]);
     setCatalogErrorMessage(null);
@@ -239,13 +247,13 @@ export default function NewSaleDialog({
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
 
-    if (open && form.idCarteira === '' && carteiraPadrao) {
+    if (open && !isEditMode && form.idCarteira === '' && carteiraPadrao) {
       setForm((current) => ({
         ...current,
         idCarteira: carteiraPadrao.id,
       }));
     }
-  }, [open, carteiras, form.idCarteira]);
+  }, [open, isEditMode, carteiras, form.idCarteira]);
 
   useEffect(() => {
     window.__AKKAI_PRODUCTS__ = catalogProducts;
@@ -259,6 +267,7 @@ export default function NewSaleDialog({
 
   const prevCarteira = useRef(form.idCarteira);
   useEffect(() => {
+    if (!open) return;
     if (prevCarteira.current === form.idCarteira) return;
     prevCarteira.current = form.idCarteira;
     if (!availableMeiosPagamento.includes(form.meioPagamento)) {
@@ -267,7 +276,7 @@ export default function NewSaleDialog({
         meioPagamento: availableMeiosPagamento[0]!,
       }));
     }
-  }, [form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
+  }, [open, form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
 
   const totals = useMemo(() => {
     let subtotal = 0;
