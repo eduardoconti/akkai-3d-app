@@ -1053,7 +1053,7 @@ export default function DashboardHomePage() {
   };
 
   return (
-    <Stack spacing={3}>
+    <>
       {rankingTooltip ? (
         <Paper
           elevation={3}
@@ -1090,135 +1090,137 @@ export default function DashboardHomePage() {
         </Paper>
       ) : null}
 
-      <Stack
+      <Stack spacing={3}>
+        <Stack
         direction={{ xs: 'column', md: 'row' }}
         justifyContent="space-between"
         spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Visão geral
-          </Typography>
-          <Typography color="text.secondary">
-            Acompanhe a evolução mensal de vendas, despesas e saldo.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="outlined"
-          startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
-          onClick={() => setHideValues((current) => !current)}
         >
-          {hideValues ? 'Exibir valores' : 'Ocultar valores'}
-        </Button>
-      </Stack>
+          <Box>
+            <Typography variant="h5" fontWeight={700}>
+              Visão geral
+            </Typography>
+            <Typography color="text.secondary">
+              Acompanhe a evolução mensal de vendas, despesas e saldo.
+            </Typography>
+          </Box>
 
-      {problem?.detail ? <Alert severity="error">{problem.detail}</Alert> : null}
+          <Button
+            variant="outlined"
+            startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
+            onClick={() => setHideValues((current) => !current)}
+          >
+            {hideValues ? 'Exibir valores' : 'Ocultar valores'}
+          </Button>
+        </Stack>
 
-      {isLoading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-          <CircularProgress />
-        </Box>
-      ) : result ? (
-        <Stack spacing={3}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Itens vendidos em {result.ano}
-                </Typography>
-                <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                  {formatDashboardValue(
-                    String(result.totalQuantidadeItensVendidos),
-                    hideValues,
-                  )}
-                </Typography>
-              </Paper>
+        {problem?.detail ? <Alert severity="error">{problem.detail}</Alert> : null}
+
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : result ? (
+          <Stack spacing={3}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Itens vendidos em {result.ano}
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                    {formatDashboardValue(
+                      String(result.totalQuantidadeItensVendidos),
+                      hideValues,
+                    )}
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total de vendas em {result.ano}
+                  </Typography>
+                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                    {formatDashboardValue(
+                      formatCurrency(result.totalVendas),
+                      hideValues,
+                    )}
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Total de despesas em {result.ano}
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{ mt: 1, color: 'error.main' }}
+                  >
+                    {formatDashboardValue(
+                      formatCurrency(result.totalDespesas),
+                      hideValues,
+                    )}
+                  </Typography>
+                </Paper>
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Saldo acumulado em {result.ano}
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{
+                      mt: 1,
+                      color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
+                    }}
+                  >
+                    {formatDashboardValue(
+                      formatCurrency(result.saldo),
+                      hideValues,
+                    )}
+                  </Typography>
+                </Paper>
+              </Grid>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Total de vendas em {result.ano}
-                </Typography>
-                <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                  {formatDashboardValue(
-                    formatCurrency(result.totalVendas),
-                    hideValues,
-                  )}
-                </Typography>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Total de despesas em {result.ano}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
-                  sx={{ mt: 1, color: 'error.main' }}
-                >
-                  {formatDashboardValue(
-                    formatCurrency(result.totalDespesas),
-                    hideValues,
-                  )}
-                </Typography>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Saldo acumulado em {result.ano}
-                </Typography>
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 3,
+                gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+                alignItems: 'start',
+              }}
+            >
+              {widgetOrder.map((widgetId) => (
+                <Box
+                  key={widgetId}
                   sx={{
-                    mt: 1,
-                    color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
+                    gridColumn: {
+                      xs: 'auto',
+                      lg:
+                        (widgetWidths[widgetId] ??
+                          (widgetId === 'monthly-summary' ? 'full' : 'half')) ===
+                        'full'
+                          ? '1 / -1'
+                          : 'span 1',
+                    },
                   }}
                 >
-                  {formatDashboardValue(
-                    formatCurrency(result.saldo),
-                    hideValues,
-                  )}
-                </Typography>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 3,
-              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
-              alignItems: 'start',
-            }}
-          >
-            {widgetOrder.map((widgetId) => (
-              <Box
-                key={widgetId}
-                sx={{
-                  gridColumn: {
-                    xs: 'auto',
-                    lg:
-                      (widgetWidths[widgetId] ??
-                        (widgetId === 'monthly-summary' ? 'full' : 'half')) ===
-                      'full'
-                        ? '1 / -1'
-                        : 'span 1',
-                  },
-                }}
-              >
-                {renderWidget(widgetId)}
-              </Box>
-            ))}
-          </Box>
-        </Stack>
-      ) : null}
-    </Stack>
+                  {renderWidget(widgetId)}
+                </Box>
+              ))}
+            </Box>
+          </Stack>
+        ) : null}
+      </Stack>
+    </>
   );
 }
