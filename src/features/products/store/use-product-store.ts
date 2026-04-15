@@ -35,6 +35,7 @@ const paginacaoInicial: PesquisaPaginada = {
   termo: '',
   ordenarPor: 'codigo',
   direcao: 'desc',
+  idsCategorias: [],
 };
 
 const paginacaoCategoriasInicial: PesquisaPaginada = {
@@ -169,6 +170,8 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       termo: query?.termo ?? currentPagination.termo ?? '',
       ordenarPor: query?.ordenarPor ?? currentPagination.ordenarPor ?? 'codigo',
       direcao: query?.direcao ?? currentPagination.direcao ?? 'desc',
+      idsCategorias:
+        query?.idsCategorias ?? currentPagination.idsCategorias ?? [],
     };
 
     set({ isFetchingProducts: true, fetchErrorMessage: null });
@@ -182,6 +185,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
           termo: nextPagination.termo ?? '',
           ordenarPor: nextPagination.ordenarPor,
           direcao: nextPagination.direcao,
+          idsCategorias: nextPagination.idsCategorias ?? [],
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
@@ -203,6 +207,7 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
               termo: nextPagination.termo ?? '',
               ordenarPor: nextPagination.ordenarPor,
               direcao: nextPagination.direcao,
+              idsCategorias: nextPagination.idsCategorias ?? [],
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,

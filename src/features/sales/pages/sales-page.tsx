@@ -34,6 +34,8 @@ import {
   KeyboardArrowUp,
   MoreVert,
   Search,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewSaleDialog from '../components/new-sale-dialog';
@@ -55,11 +57,20 @@ import {
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
-function getCurrentDateInput(): string {
+function getMonthStartInput(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
+function getMonthEndInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(
+    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+  ).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -67,15 +78,20 @@ function getSaleItemName(vendaItem: Venda['itens'][number]): string {
   return vendaItem.nomeProduto || vendaItem.produto?.nome || 'Item sem nome';
 }
 
+function formatSaleValue(value: number, hideValues: boolean): string {
+  return hideValues ? 'R$ ••••' : formatCurrency(value);
+}
+
 interface SaleRowProps {
   venda: Venda;
+  hideValues: boolean;
   onOpenActions: (
     event: React.MouseEvent<HTMLButtonElement>,
     venda: Venda,
   ) => void;
 }
 
-function SaleRow({ venda, onOpenActions }: SaleRowProps) {
+function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -107,19 +123,19 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
         <TableCell>{venda.carteira?.nome ?? '-'}</TableCell>
         <TableCell>{getPaymentMethodLabel(venda.meioPagamento)}</TableCell>
         <TableCell align="right">
-          {venda.desconto > 0 ? formatCurrency(venda.desconto) : '-'}
+          {venda.desconto > 0 ? formatSaleValue(venda.desconto, hideValues) : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+          {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+          {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
         </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
-          {formatCurrency(venda.valorTotal)}
+          {formatSaleValue(venda.valorTotal, hideValues)}
         </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
-          {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
+          {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
         </TableCell>
         <TableCell align="center">
           <IconButton
@@ -160,13 +176,13 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
                 sx={{ mb: 2 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  Taxa: {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+                  Taxa: {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Imposto: {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+                  Imposto: {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
                 </Typography>
                 <Typography variant="body2" fontWeight={700} color="success.main">
-                  Líquido: {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
+                  Líquido: {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
                 </Typography>
               </Stack>
               <Table size="small">
@@ -186,10 +202,10 @@ function SaleRow({ venda, onOpenActions }: SaleRowProps) {
                       <TableCell>{getSaleItemName(item)}</TableCell>
                       <TableCell align="right">{item.quantidade}</TableCell>
                       <TableCell align="right">
-                        {formatCurrency(item.valorUnitario)}
+                        {formatSaleValue(item.valorUnitario, hideValues)}
                       </TableCell>
                       <TableCell align="right">
-                        {formatCurrency(item.valorTotal)}
+                        {formatSaleValue(item.valorTotal, hideValues)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -241,9 +257,8 @@ export default function SalesPage() {
       vendas: saleStoreSelectors.vendas(state),
     })),
   );
-  const initialDate = getCurrentDateInput();
-  const [dataInicio, setDataInicio] = useState(initialDate);
-  const [dataFim, setDataFim] = useState(initialDate);
+  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
+  const [dataFim, setDataFim] = useState(getMonthEndInput);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
@@ -255,6 +270,7 @@ export default function SalesPage() {
     null,
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
+  const [hideValues, setHideValues] = useState(false);
 
   const handleSearch = () => {
     void fetchVendas({
@@ -371,18 +387,32 @@ export default function SalesPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Vendas
-        </Typography>
-        <Typography color="text.secondary">
-          Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
-        </Typography>
-      </Box>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        spacing={2}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            Vendas
+          </Typography>
+          <Typography color="text.secondary">
+            Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
+          </Typography>
+        </Box>
+
+        <Button
+          variant="outlined"
+          startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
+          onClick={() => setHideValues((current) => !current)}
+        >
+          {hideValues ? 'Exibir valores' : 'Ocultar valores'}
+        </Button>
+      </Stack>
 
       <Box>
-        <Grid container spacing={2} columns={{ xs: 12, lg: 20 }}>
-          <Grid size={{ xs: 12, lg: type === 'FEIRA' ? 4 : 5 }}>
+        <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
             <DateRangePickerField
               label="Período"
               startValue={dataInicio}
@@ -394,7 +424,7 @@ export default function SalesPage() {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, lg: 2 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <TextField
               select
               fullWidth
@@ -411,7 +441,7 @@ export default function SalesPage() {
             </TextField>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <TextField
               select
               fullWidth
@@ -433,7 +463,7 @@ export default function SalesPage() {
             </TextField>
           </Grid>
 
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <TextField
               select
               fullWidth
@@ -457,7 +487,7 @@ export default function SalesPage() {
           </Grid>
 
           {type === 'FEIRA' ? (
-            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+            <Grid size={{ xs: 12, md: 6, lg: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -483,7 +513,7 @@ export default function SalesPage() {
           ) : null}
 
           <Grid
-            size={{ xs: 12, sm: 6, lg: type === 'FEIRA' ? 4 : 3 }}
+            size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 3 : 6 }}
             sx={{ display: 'flex', alignItems: 'flex-start' }}
           >
             <Button
@@ -506,7 +536,7 @@ export default function SalesPage() {
               Desconto total
             </Typography>
             <Typography variant="h6" fontWeight={700}>
-              {formatCurrency(totalizadores.descontoTotal)}
+              {formatSaleValue(totalizadores.descontoTotal, hideValues)}
             </Typography>
           </Paper>
         </Grid>
@@ -516,7 +546,7 @@ export default function SalesPage() {
               Valor total das vendas
             </Typography>
             <Typography variant="h6" fontWeight={700}>
-              {formatCurrency(totalizadores.valorTotal)}
+              {formatSaleValue(totalizadores.valorTotal, hideValues)}
             </Typography>
           </Paper>
         </Grid>
@@ -526,7 +556,7 @@ export default function SalesPage() {
               Valor líquido das vendas
             </Typography>
             <Typography variant="h6" fontWeight={700} color="success.main">
-              {formatCurrency(totalizadores.valorLiquido)}
+              {formatSaleValue(totalizadores.valorLiquido, hideValues)}
             </Typography>
           </Paper>
         </Grid>
@@ -567,7 +597,7 @@ export default function SalesPage() {
                       </Box>
                       <Stack direction="row" spacing={0.5} alignItems="center">
                         <Typography variant="subtitle1" fontWeight={700}>
-                          {formatCurrency(venda.valorTotal)}
+                          {formatSaleValue(venda.valorTotal, hideValues)}
                         </Typography>
                         <IconButton
                           size="small"
@@ -607,18 +637,18 @@ export default function SalesPage() {
                     <Typography variant="body2" color="text.secondary">
                       Desconto:{' '}
                       {venda.desconto > 0
-                        ? formatCurrency(venda.desconto)
+                        ? formatSaleValue(venda.desconto, hideValues)
                         : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Taxa: {venda.valorTaxa != null ? formatCurrency(venda.valorTaxa) : '-'}
+                      Taxa: {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Imposto:{' '}
-                      {venda.valorImposto != null ? formatCurrency(venda.valorImposto) : '-'}
+                      {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
                     </Typography>
                     <Typography variant="body2" fontWeight={700} color="success.main">
-                      Líquido: {formatCurrency(venda.valorLiquido ?? venda.valorTotal)}
+                      Líquido: {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Itens: {venda.itens.map(getSaleItemName).join(', ')}
@@ -688,6 +718,7 @@ export default function SalesPage() {
                     <SaleRow
                       key={venda.id}
                       venda={venda}
+                      hideValues={hideValues}
                       onOpenActions={handleOpenActions}
                     />
                   ))

@@ -58,11 +58,20 @@ function getPaymentMethodLabel(meioPagamento: string): string {
   }
 }
 
-function getCurrentDateInput(): string {
+function getMonthStartInput(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
+function getMonthEndInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(
+    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+  ).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -101,8 +110,8 @@ export default function FinanceExpensesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchInput, setSearchInput] = useState('');
-  const [dataInicio, setDataInicio] = useState(getCurrentDateInput());
-  const [dataFim, setDataFim] = useState(getCurrentDateInput());
+  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
+  const [dataFim, setDataFim] = useState(getMonthEndInput);
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa

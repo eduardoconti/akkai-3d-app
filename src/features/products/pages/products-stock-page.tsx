@@ -542,53 +542,70 @@ export default function ProductsStockPage() {
         </Typography>
       </Box>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextField
-          select
-          label="Ordenar por"
-          value={paginacaoEstoque.ordenarPor ?? 'nivelEstoque'}
-          onChange={(event) => {
-            void fetchEstoque({
-              pagina: 1,
-              ordenarPor: event.target.value as OrdenacaoProduto,
-            });
-          }}
-          sx={{ minWidth: { xs: '100%', md: 180 } }}
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+          <TextField
+            select
+            fullWidth
+            label="Ordenar por"
+            value={paginacaoEstoque.ordenarPor ?? 'nivelEstoque'}
+            onChange={(event) => {
+              void fetchEstoque({
+                pagina: 1,
+                ordenarPor: event.target.value as OrdenacaoProduto,
+              });
+            }}
+          >
+            <MenuItem value="codigo">Código</MenuItem>
+            <MenuItem value="nome">Nome</MenuItem>
+            <MenuItem value="quantidade">Quantidade</MenuItem>
+            <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
+          </TextField>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+          <TextField
+            select
+            fullWidth
+            label="Direção"
+            value={paginacaoEstoque.direcao ?? 'asc'}
+            onChange={(event) => {
+              void fetchEstoque({
+                pagina: 1,
+                direcao: event.target.value as DirecaoOrdenacao,
+              });
+            }}
+          >
+            <MenuItem value="asc">Crescente</MenuItem>
+            <MenuItem value="desc">Decrescente</MenuItem>
+          </TextField>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 9 }}>
+          <TextField
+            fullWidth
+            label="Pesquisar estoque"
+            placeholder="Nome, código ou categoria"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </Grid>
+
+        <Grid
+          size={{ xs: 12, md: 6, lg: 3 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
         >
-          <MenuItem value="codigo">Código</MenuItem>
-          <MenuItem value="nome">Nome</MenuItem>
-          <MenuItem value="quantidade">Quantidade</MenuItem>
-          <MenuItem value="nivelEstoque">Nível do estoque</MenuItem>
-        </TextField>
-
-        <TextField
-          select
-          label="Direção"
-          value={paginacaoEstoque.direcao ?? 'asc'}
-          onChange={(event) => {
-            void fetchEstoque({
-              pagina: 1,
-              direcao: event.target.value as DirecaoOrdenacao,
-            });
-          }}
-          sx={{ minWidth: { xs: '100%', md: 160 } }}
-        >
-          <MenuItem value="asc">Crescente</MenuItem>
-          <MenuItem value="desc">Decrescente</MenuItem>
-        </TextField>
-
-        <TextField
-          label="Pesquisar estoque"
-          placeholder="Nome, código ou categoria"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          sx={{ minWidth: { xs: '100%', md: 320 } }}
-        />
-
-        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
-          Pesquisar
-        </Button>
-      </Stack>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Search />}
+            onClick={handleSearch}
+            sx={{ height: 56 }}
+          >
+            Pesquisar
+          </Button>
+        </Grid>
+      </Grid>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 

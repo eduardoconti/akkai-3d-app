@@ -27,11 +27,20 @@ import {
   type TipoVenda,
 } from '@/shared';
 
-function getCurrentDateInput(): string {
+function getMonthStartInput(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
+function getMonthEndInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(
+    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+  ).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -45,8 +54,6 @@ function formatApiDateToDisplay(value: string): string {
   const [, year, month, day] = match;
   return `${day}/${month}/${year}`;
 }
-
-const initialDate = getCurrentDateInput();
 
 function getSaleTypeLabel(tipoVenda: 'TODOS' | TipoVenda): string {
   switch (tipoVenda) {
@@ -62,8 +69,8 @@ function getSaleTypeLabel(tipoVenda: 'TODOS' | TipoVenda): string {
 }
 
 export default function ReportsSummaryPage() {
-  const [dataInicio, setDataInicio] = useState(initialDate);
-  const [dataFim, setDataFim] = useState(initialDate);
+  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
+  const [dataFim, setDataFim] = useState(getMonthEndInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [feiras, setFeiras] = useState<Feira[]>([]);
@@ -175,6 +182,16 @@ export default function ReportsSummaryPage() {
     }
   };
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void handleSubmit();
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [dataFim, dataInicio, idFeira, tipoVenda]);
+
   return (
     <Stack spacing={3}>
       <Box>
@@ -187,8 +204,8 @@ export default function ReportsSummaryPage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 4 }}>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 7 : 8 }}>
               <DateRangePickerField
                 label="Período"
                 startValue={dataInicio}
@@ -200,7 +217,7 @@ export default function ReportsSummaryPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 6 }}>
               <TextField
                 select
                 fullWidth
@@ -218,7 +235,7 @@ export default function ReportsSummaryPage() {
             </Grid>
 
             {tipoVenda === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 3 }}>
+              <Grid size={{ xs: 12, md: 6, lg: 5 }}>
                 <TextField
                   select
                   fullWidth
@@ -247,7 +264,7 @@ export default function ReportsSummaryPage() {
             ) : null}
 
             <Grid
-              size={{ xs: 12, md: tipoVenda === 'FEIRA' ? 2 : 5 }}
+              size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 3 : 6 }}
               sx={{ display: 'flex', alignItems: 'flex-start' }}
             >
               <Button

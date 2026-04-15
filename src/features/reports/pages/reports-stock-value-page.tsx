@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MenuItem,
   Box,
@@ -73,6 +73,16 @@ export default function ReportsStockValuePage() {
     }
   };
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void handleSubmit(1, tamanhoPagina);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [direcao, ordenarPor, tamanhoPagina]);
+
   const renderProductCard = (item: StockValueProductItem) => (
     <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
       <Stack spacing={1.25}>
@@ -127,53 +137,63 @@ export default function ReportsStockValuePage() {
         </Typography>
       </Box>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextField
-          select
-          label="Ordenar por"
-          value={ordenarPor}
-          onChange={(event) =>
-            setOrdenarPor(
-              event.target.value as
-                | 'codigo'
-                | 'nome'
-                | 'quantidade'
-                | 'valor'
-                | 'valorTotal',
-            )
-          }
-          sx={{ minWidth: { xs: '100%', md: 180 } }}
-        >
-          <MenuItem value="codigo">Codigo</MenuItem>
-          <MenuItem value="nome">Nome</MenuItem>
-          <MenuItem value="quantidade">Quantidade</MenuItem>
-          <MenuItem value="valor">Valor</MenuItem>
-          <MenuItem value="valorTotal">Valor total</MenuItem>
-        </TextField>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 7 }}>
+          <TextField
+            select
+            fullWidth
+            label="Ordenar por"
+            value={ordenarPor}
+            onChange={(event) =>
+              setOrdenarPor(
+                event.target.value as
+                  | 'codigo'
+                  | 'nome'
+                  | 'quantidade'
+                  | 'valor'
+                  | 'valorTotal',
+              )
+            }
+          >
+            <MenuItem value="codigo">Codigo</MenuItem>
+            <MenuItem value="nome">Nome</MenuItem>
+            <MenuItem value="quantidade">Quantidade</MenuItem>
+            <MenuItem value="valor">Valor</MenuItem>
+            <MenuItem value="valorTotal">Valor total</MenuItem>
+          </TextField>
+        </Grid>
 
-        <TextField
-          select
-          label="Direção"
-          value={direcao}
-          onChange={(event) => setDirecao(event.target.value as 'asc' | 'desc')}
-          sx={{ minWidth: { xs: '100%', md: 160 } }}
-        >
-          <MenuItem value="asc">Crescente</MenuItem>
-          <MenuItem value="desc">Decrescente</MenuItem>
-        </TextField>
+        <Grid size={{ xs: 12, md: 6, lg: 7 }}>
+          <TextField
+            select
+            fullWidth
+            label="Direção"
+            value={direcao}
+            onChange={(event) => setDirecao(event.target.value as 'asc' | 'desc')}
+          >
+            <MenuItem value="asc">Crescente</MenuItem>
+            <MenuItem value="desc">Decrescente</MenuItem>
+          </TextField>
+        </Grid>
 
-        <Button
-          variant="outlined"
-          startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-          onClick={() => {
-            void handleSubmit(1, tamanhoPagina);
-          }}
-          disabled={isLoading}
-          sx={{ height: 56 }}
+        <Grid
+          size={{ xs: 12, md: 6, lg: 6 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
         >
-          {isLoading ? 'Consultando...' : 'Pesquisar'}
-        </Button>
-      </Stack>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
+            onClick={() => {
+              void handleSubmit(1, tamanhoPagina);
+            }}
+            disabled={isLoading}
+            sx={{ height: 56 }}
+          >
+            {isLoading ? 'Consultando...' : 'Pesquisar'}
+          </Button>
+        </Grid>
+      </Grid>
 
       <FormFeedbackAlert message={problem?.detail} />
 

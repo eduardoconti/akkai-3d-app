@@ -82,7 +82,12 @@ export interface CategoriaDespesa {
   id: number;
   nome: string;
 }
-export type OrdenacaoProduto = 'nome' | 'codigo' | 'quantidade' | 'nivelEstoque';
+export type OrdenacaoProduto =
+  | 'nome'
+  | 'codigo'
+  | 'quantidade'
+  | 'nivelEstoque'
+  | 'estoqueMinimo';
 export type DirecaoOrdenacao = 'asc' | 'desc';
 
 export interface Carteira {
@@ -195,6 +200,7 @@ export interface PesquisaPaginada {
   termo?: string;
   ordenarPor?: OrdenacaoProduto;
   direcao?: DirecaoOrdenacao;
+  idsCategorias?: number[];
 }
 
 export interface PesquisaPaginadaVendas extends PesquisaPaginada {
