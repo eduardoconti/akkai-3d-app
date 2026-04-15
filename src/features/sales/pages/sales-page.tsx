@@ -47,6 +47,8 @@ import {
 import {
   DateRangePickerField,
   formatCurrency,
+  getMonthEndInput,
+  getMonthStartInput,
   useFeedbackStore,
   useOnlineStatus,
   type Carteira,
@@ -56,23 +58,6 @@ import {
   type Venda,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
-
-function getMonthStartInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}-01`;
-}
-
-function getMonthEndInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-  ).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function getSaleItemName(vendaItem: Venda['itens'][number]): string {
   return vendaItem.nomeProduto || vendaItem.produto?.nome || 'Item sem nome';

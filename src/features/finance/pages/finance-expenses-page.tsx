@@ -4,7 +4,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  CircularProgress,
   Divider,
   MenuItem,
   Paper,
@@ -14,17 +13,13 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {
-  AddCircleOutline,
-  Search,
-} from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import {
@@ -36,44 +31,18 @@ import {
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
 import {
+  AppTablePagination,
   DateRangePickerField,
+  EmptyState,
+  LoadingState,
+  PageHeader,
   formatCurrency,
+  getMonthEndInput,
+  getMonthStartInput,
   type Despesa,
 } from '@/shared';
+import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import { useShallow } from 'zustand/react/shallow';
-
-function getPaymentMethodLabel(meioPagamento: string): string {
-  switch (meioPagamento) {
-    case 'DIN':
-      return 'Dinheiro';
-    case 'DEB':
-      return 'Cartão débito';
-    case 'CRE':
-      return 'Cartão crédito';
-
-    case 'PIX':
-      return 'Pix';
-    default:
-      return 'Cartão débito';
-  }
-}
-
-function getMonthStartInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}-01`;
-}
-
-function getMonthEndInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-  ).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export default function FinanceExpensesPage() {
   const theme = useTheme();
@@ -155,29 +124,13 @@ export default function FinanceExpensesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', lg: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Despesas
-          </Typography>
-          <Typography color="text.secondary">
-            Registre saídas com categoria, pagamento e carteira para acompanhar
-            os custos do negócio.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova despesa
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Despesas"
+        description="Registre saídas com categoria, pagamento e carteira para acompanhar os custos do negócio."
+        actionLabel="Nova despesa"
+        onAction={() => setDialogOpen(true)}
+        breakpoint="lg"
+      />
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
         <Grid size={{ xs: 12, md: 6, lg: 5 }}>
@@ -275,9 +228,7 @@ export default function FinanceExpensesPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de despesas">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : despesas.length > 0 ? (
               despesas.map((despesa) => (
                 <Box
@@ -333,9 +284,7 @@ export default function FinanceExpensesPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma despesa encontrada para os filtros informados.
-              </Box>
+              <EmptyState message="Nenhuma despesa encontrada para os filtros informados." />
             )}
           </Stack>
         ) : (
@@ -369,8 +318,8 @@ export default function FinanceExpensesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : despesas.length > 0 ? (
@@ -403,8 +352,8 @@ export default function FinanceExpensesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                      Nenhuma despesa encontrada para os filtros informados.
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma despesa encontrada para os filtros informados." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -413,32 +362,18 @@ export default function FinanceExpensesPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalItens}
           page={Math.max(0, paginacao.pagina - 1)}
+          rowsPerPage={paginacao.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchDespesas({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacao.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchDespesas({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

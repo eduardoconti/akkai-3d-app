@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -12,14 +11,13 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AddCircleOutline, Search } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
 import NewCategoryDialog from '../components/new-category-dialog';
@@ -27,7 +25,13 @@ import {
   productStoreSelectors,
   useProductStore,
 } from '../store/use-product-store';
-import type { Categoria } from '@/shared';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  type Categoria,
+} from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 function getParentCategoryName(category: Categoria, categories: Categoria[]) {
@@ -88,28 +92,12 @@ export default function ProductCategoriesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Categorias
-          </Typography>
-          <Typography color="text.secondary">
-            Consulte as categorias de produtos cadastradas e a hierarquia entre elas.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova categoria
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Categorias"
+        description="Consulte as categorias de produtos cadastradas e a hierarquia entre elas."
+        actionLabel="Nova categoria"
+        onAction={() => setDialogOpen(true)}
+      />
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
         <Grid size={{ xs: 12, md: 6, lg: 17 }}>
@@ -144,9 +132,7 @@ export default function ProductCategoriesPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de categorias">
             {isFetchingCategoriesPage ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : categoriasPaginadas.length > 0 ? (
               categoriasPaginadas.map((category) => (
                 <Box
@@ -165,9 +151,7 @@ export default function ProductCategoriesPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma categoria encontrada para a pesquisa informada.
-              </Box>
+              <EmptyState message="Nenhuma categoria encontrada para a pesquisa informada." />
             )}
           </Stack>
         ) : (
@@ -186,8 +170,8 @@ export default function ProductCategoriesPage() {
               <TableBody>
                 {isFetchingCategoriesPage ? (
                   <TableRow>
-                    <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={2} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : categoriasPaginadas.length > 0 ? (
@@ -206,8 +190,8 @@ export default function ProductCategoriesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={2} align="center" sx={{ py: 6 }}>
-                      Nenhuma categoria encontrada para a pesquisa informada.
+                    <TableCell colSpan={2} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma categoria encontrada para a pesquisa informada." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -216,32 +200,18 @@ export default function ProductCategoriesPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalCategorias}
           page={Math.max(0, paginacaoCategorias.pagina - 1)}
+          rowsPerPage={paginacaoCategorias.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchCategoriasPaginadas({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacaoCategorias.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchCategoriasPaginadas({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

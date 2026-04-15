@@ -35,14 +35,18 @@ import {
   productStoreSelectors,
   useProductStore,
 } from '../store/use-product-store';
-import type {
-  DirecaoOrdenacao,
-  EstoqueProduto,
-  MovimentacaoEstoque,
-  OrdenacaoProduto,
-  PesquisaPaginada,
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  getProblemDetailsFromError,
+  type DirecaoOrdenacao,
+  type EstoqueProduto,
+  type MovimentacaoEstoque,
+  type OrdenacaoProduto,
+  type PesquisaPaginada,
 } from '@/shared';
-import { getProblemDetailsFromError } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 type StockState = {
@@ -532,15 +536,10 @@ export default function ProductsStockPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Estoque
-        </Typography>
-        <Typography color="text.secondary">
-          Consulte o saldo, registre movimentacoes e acompanhe o historico por
-          produto.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Estoque"
+        description="Consulte o saldo, registre movimentações e acompanhe o histórico por produto."
+      />
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
@@ -613,17 +612,13 @@ export default function ProductsStockPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de estoque">
             {isFetchingStock ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : estoqueProdutos.length > 0 ? (
               estoqueProdutos.map((produto) => (
                 <MobileStockCard key={produto.id} produto={produto} />
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhum item de estoque encontrado para a pesquisa informada.
-              </Box>
+              <EmptyState message="Nenhum item de estoque encontrado para a pesquisa informada." />
             )}
           </Stack>
         ) : (
@@ -659,8 +654,8 @@ export default function ProductsStockPage() {
               <TableBody>
                 {isFetchingStock ? (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={8} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : estoqueProdutos.length > 0 ? (
@@ -669,8 +664,8 @@ export default function ProductsStockPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
-                      Nenhum item de estoque encontrado para a pesquisa informada.
+                    <TableCell colSpan={8} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhum item de estoque encontrado para a pesquisa informada." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -679,32 +674,18 @@ export default function ProductsStockPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalItensEstoque}
           page={Math.max(0, paginacaoEstoque.pagina - 1)}
+          rowsPerPage={paginacaoEstoque.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchEstoque({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacaoEstoque.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchEstoque({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

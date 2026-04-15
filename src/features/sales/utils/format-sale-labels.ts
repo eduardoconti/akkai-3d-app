@@ -1,6 +1,6 @@
 import type { MeioPagamento, TipoVenda } from '@/shared/lib/types/domain';
 
-export function getSaleTypeLabel(type: TipoVenda): string {
+export function getSaleTypeLabel(type: TipoVenda | 'TODOS'): string {
   switch (type) {
     case 'FEIRA':
       return 'Feira';
@@ -8,6 +8,8 @@ export function getSaleTypeLabel(type: TipoVenda): string {
       return 'Loja';
     case 'ONLINE':
       return 'Online';
+    default:
+      return 'Todos';
   }
 }
 
