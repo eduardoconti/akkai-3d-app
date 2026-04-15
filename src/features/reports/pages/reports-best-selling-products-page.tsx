@@ -41,11 +41,20 @@ import {
   type TipoVenda,
 } from '@/shared';
 
-function getCurrentDateInput(): string {
+function getMonthStartInput(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
+function getMonthEndInput(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(
+    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
+  ).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -73,13 +82,11 @@ function getSaleTypeLabel(tipoVenda: 'TODOS' | TipoVenda): string {
   }
 }
 
-const initialDate = getCurrentDateInput();
-
 export default function ReportsBestSellingProductsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [dataInicio, setDataInicio] = useState(initialDate);
-  const [dataFim, setDataFim] = useState(initialDate);
+  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
+  const [dataFim, setDataFim] = useState(getMonthEndInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -224,6 +231,23 @@ export default function ReportsBestSellingProductsPage() {
     }
   };
 
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void handleSubmit(1, tamanhoPagina);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [
+    categoriasSelecionadas,
+    dataFim,
+    dataInicio,
+    idFeira,
+    tamanhoPagina,
+    tipoVenda,
+  ]);
+
   const renderProductCard = (item: BestSellingProductItem) => (
     <Box key={`${item.idProduto ?? item.nomeProduto}`} sx={{ px: 2, py: 2 }}>
       <Stack spacing={1.25}>
@@ -265,8 +289,8 @@ export default function ReportsBestSellingProductsPage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2}>
-            <Grid size={{ xs: 12, lg: 3 }}>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+            <Grid size={{ xs: 12, md: 6, lg: 5 }}>
               <DateRangePickerField
                 label="Período"
                 startValue={dataInicio}
@@ -278,7 +302,7 @@ export default function ReportsBestSellingProductsPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, md: 4, lg: 2 }}>
+            <Grid size={{ xs: 12, md: 6, lg: 3 }}>
               <TextField
                 select
                 fullWidth
@@ -296,7 +320,7 @@ export default function ReportsBestSellingProductsPage() {
             </Grid>
 
             {tipoVenda === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 4, lg: 2 }}>
+              <Grid size={{ xs: 12, md: 6, lg: 3 }}>
                 <TextField
                   select
                   fullWidth
@@ -324,7 +348,7 @@ export default function ReportsBestSellingProductsPage() {
               </Grid>
             ) : null}
 
-            <Grid size={{ xs: 12, md: 8, lg: tipoVenda === 'FEIRA' ? 3 : 5 }}>
+            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 6 : 9 }}>
               <Autocomplete
                 multiple
                 options={categorias}
@@ -344,7 +368,7 @@ export default function ReportsBestSellingProductsPage() {
             </Grid>
 
             <Grid
-              size={{ xs: 12, md: 4, lg: 2 }}
+              size={{ xs: 12, md: 6, lg: 3 }}
               sx={{ display: 'flex', alignItems: 'flex-start' }}
             >
               <Button

@@ -18,6 +18,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
@@ -110,19 +111,32 @@ export default function ProductCategoriesPage() {
         </Button>
       </Stack>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextField
-          label="Pesquisar categoria"
-          placeholder="Nome da categoria"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          sx={{ minWidth: { xs: '100%', md: 320 } }}
-        />
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 17 }}>
+          <TextField
+            fullWidth
+            label="Pesquisar categoria"
+            placeholder="Nome da categoria"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </Grid>
 
-        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
-          Pesquisar
-        </Button>
-      </Stack>
+        <Grid
+          size={{ xs: 12, md: 6, lg: 3 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
+        >
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Search />}
+            onClick={handleSearch}
+            sx={{ height: 56 }}
+          >
+            Pesquisar
+          </Button>
+        </Grid>
+      </Grid>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 

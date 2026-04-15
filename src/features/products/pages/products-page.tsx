@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   CircularProgress,
@@ -19,6 +20,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { AddCircleOutline, Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
@@ -29,6 +31,7 @@ import {
 } from '../store/use-product-store';
 import {
   formatCurrency,
+  type Categoria,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
 } from '@/shared';
@@ -38,6 +41,8 @@ export default function ProductsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
+    categorias,
+    fetchCategorias,
     fetchErrorMessage,
     fetchProdutos,
     isFetchingProducts,
@@ -46,6 +51,8 @@ export default function ProductsPage() {
     totalItens,
   } = useProductStore(
     useShallow((state) => ({
+      categorias: productStoreSelectors.categorias(state),
+      fetchCategorias: productStoreSelectors.fetchCategorias(state),
       fetchErrorMessage: productStoreSelectors.fetchErrorMessage(state),
       fetchProdutos: productStoreSelectors.fetchProdutos(state),
       isFetchingProducts: productStoreSelectors.isFetchingProducts(state),
@@ -57,20 +64,35 @@ export default function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
+    Categoria[]
+  >([]);
 
   const handleSearch = () => {
-    void fetchProdutos({ pagina: 1, termo: searchInput.trim() });
+    void fetchProdutos({
+      pagina: 1,
+      termo: searchInput.trim(),
+      idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+    });
   };
 
   useEffect(() => {
+    void fetchCategorias();
+  }, [fetchCategorias]);
+
+  useEffect(() => {
     const timeout = window.setTimeout(() => {
-      void fetchProdutos({ pagina: 1, termo: searchInput.trim() });
+      void fetchProdutos({
+        pagina: 1,
+        termo: searchInput.trim(),
+        idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+      });
     }, 300);
 
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [fetchProdutos, searchInput]);
+  }, [categoriasSelecionadas, fetchProdutos, searchInput]);
 
   return (
     <Stack spacing={3}>
@@ -98,51 +120,87 @@ export default function ProductsPage() {
         </Button>
       </Stack>
 
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-        <TextField
-          select
-          label="Ordenar por"
-          value={paginacao.ordenarPor ?? 'codigo'}
-          onChange={(event) => {
-            void fetchProdutos({
-              pagina: 1,
-              ordenarPor: event.target.value as OrdenacaoProduto,
-            });
-          }}
-          sx={{ minWidth: { xs: '100%', md: 180 } }}
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Ordenar por"
+            value={paginacao.ordenarPor ?? 'codigo'}
+            onChange={(event) => {
+              void fetchProdutos({
+                pagina: 1,
+                ordenarPor: event.target.value as OrdenacaoProduto,
+              });
+            }}
+          >
+            <MenuItem value="codigo">Código</MenuItem>
+            <MenuItem value="nome">Nome</MenuItem>
+            <MenuItem value="estoqueMinimo">Estoque mínimo</MenuItem>
+          </TextField>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Direção"
+            value={paginacao.direcao ?? 'desc'}
+            onChange={(event) => {
+              void fetchProdutos({
+                pagina: 1,
+                direcao: event.target.value as DirecaoOrdenacao,
+              });
+            }}
+          >
+            <MenuItem value="asc">Crescente</MenuItem>
+            <MenuItem value="desc">Decrescente</MenuItem>
+          </TextField>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+          <Autocomplete
+            multiple
+            options={categorias}
+            value={categoriasSelecionadas}
+            onChange={(_event, value) => setCategoriasSelecionadas(value)}
+            getOptionLabel={(option) => option.nome}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Categorias"
+                placeholder="Selecione uma ou mais categorias"
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+          <TextField
+            fullWidth
+            label="Pesquisar produto"
+            placeholder="Nome, código ou categoria"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </Grid>
+
+        <Grid
+          size={{ xs: 12, md: 6, lg: 3 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
         >
-          <MenuItem value="codigo">Código</MenuItem>
-          <MenuItem value="nome">Nome</MenuItem>
-        </TextField>
-
-        <TextField
-          select
-          label="Direção"
-          value={paginacao.direcao ?? 'desc'}
-          onChange={(event) => {
-            void fetchProdutos({
-              pagina: 1,
-              direcao: event.target.value as DirecaoOrdenacao,
-            });
-          }}
-          sx={{ minWidth: { xs: '100%', md: 160 } }}
-        >
-          <MenuItem value="asc">Crescente</MenuItem>
-          <MenuItem value="desc">Decrescente</MenuItem>
-        </TextField>
-
-        <TextField
-          label="Pesquisar produto"
-          placeholder="Nome, código ou categoria"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-          sx={{ minWidth: { xs: '100%', md: 320 } }}
-        />
-
-        <Button variant="outlined" startIcon={<Search />} onClick={handleSearch}>
-          Pesquisar
-        </Button>
-      </Stack>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Search />}
+            onClick={handleSearch}
+            sx={{ height: 56 }}
+          >
+            Pesquisar
+          </Button>
+        </Grid>
+      </Grid>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>
@@ -192,6 +250,9 @@ export default function ProductsPage() {
                           Descrição: {produto.descricao || '-'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
+                          Estoque mínimo: {produto.estoqueMinimo ?? '-'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
                           Valor: {formatCurrency(produto.valor)}
                         </Typography>
                       </Stack>
@@ -223,6 +284,9 @@ export default function ProductsPage() {
                     <strong>Descrição</strong>
                   </TableCell>
                   <TableCell align="right">
+                    <strong>Estoque mínimo</strong>
+                  </TableCell>
+                  <TableCell align="right">
                     <strong>Valor</strong>
                   </TableCell>
                 </TableRow>
@@ -231,7 +295,7 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -253,6 +317,9 @@ export default function ProductsPage() {
                         <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
                         <TableCell>{produto.descricao || '-'}</TableCell>
                         <TableCell align="right">
+                          {produto.estoqueMinimo ?? '-'}
+                        </TableCell>
+                        <TableCell align="right">
                           {formatCurrency(produto.valor)}
                         </TableCell>
                       </TableRow>
@@ -260,7 +327,7 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                       Nenhum produto encontrado para a pesquisa informada.
                     </TableCell>
                   </TableRow>
