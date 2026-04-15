@@ -389,108 +389,106 @@ export default function ReportsBestSellingProductsPage() {
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 
       {result ? (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
-          <Stack spacing={2}>
-            {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
+        <Stack spacing={2}>
+          {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
 
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip label={`Tipo: ${getSaleTypeLabel(tipoVenda)}`} size="small" />
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip label={`Tipo: ${getSaleTypeLabel(tipoVenda)}`} size="small" />
+            <Chip
+              label={`Categorias: ${categoriasSelecionadas.length}`}
+              size="small"
+            />
+            {tipoVenda === 'FEIRA' && idFeira !== '' ? (
               <Chip
-                label={`Categorias: ${categoriasSelecionadas.length}`}
+                label={`Feira: ${feiras.find((feira) => feira.id === idFeira)?.nome ?? idFeira}`}
                 size="small"
               />
-              {tipoVenda === 'FEIRA' && idFeira !== '' ? (
-                <Chip
-                  label={`Feira: ${feiras.find((feira) => feira.id === idFeira)?.nome ?? idFeira}`}
-                  size="small"
-                />
-              ) : null}
-            </Stack>
+            ) : null}
+          </Stack>
 
-            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-                {isMobile ? (
-                  <Stack divider={<Divider flexItem />}>
-                    {result.itens.length > 0 ? (
-                      result.itens.map(renderProductCard)
-                    ) : (
-                      <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                        Nenhum produto encontrado para os filtros informados.
-                      </Box>
-                    )}
-                  </Stack>
-                ) : (
-                  <TableContainer>
-                    <Table aria-label="ranking de produtos mais vendidos">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>
-                            <strong>Codigo</strong>
-                          </TableCell>
-                          <TableCell>
-                            <strong>Produto</strong>
-                          </TableCell>
-                          <TableCell>
-                            <strong>Categoria</strong>
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>Quantidade vendida</strong>
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {result.itens.length > 0 ? (
-                          result.itens.map((item) => (
-                            <TableRow
-                              key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
-                            >
-                              <TableCell>{item.codigo ?? '-'}</TableCell>
-                              <TableCell>{item.nomeProduto}</TableCell>
-                              <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
-                              <TableCell align="right">
-                                {item.quantidadeVendida}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                              Nenhum produto encontrado para os filtros informados.
+          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+              {isMobile ? (
+                <Stack divider={<Divider flexItem />}>
+                  {result.itens.length > 0 ? (
+                    result.itens.map(renderProductCard)
+                  ) : (
+                    <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                      Nenhum produto encontrado para os filtros informados.
+                    </Box>
+                  )}
+                </Stack>
+              ) : (
+                <TableContainer>
+                  <Table aria-label="ranking de produtos mais vendidos">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Codigo</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Produto</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Categoria</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Quantidade vendida</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {result.itens.length > 0 ? (
+                        result.itens.map((item) => (
+                          <TableRow
+                            key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
+                          >
+                            <TableCell>{item.codigo ?? '-'}</TableCell>
+                            <TableCell>{item.nomeProduto}</TableCell>
+                            <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
+                            <TableCell align="right">
+                              {item.quantidadeVendida}
                             </TableCell>
                           </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                            Nenhum produto encontrado para os filtros informados.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
 
-                <TablePagination
-                  component="div"
-                  count={result.totalItens}
-                  page={Math.max(0, result.pagina - 1)}
-                  onPageChange={(_event, newPage) => {
-                    void handleSubmit(newPage + 1, tamanhoPagina);
-                  }}
-                  rowsPerPage={result.tamanhoPagina}
-                  onRowsPerPageChange={(event) => {
-                    void handleSubmit(1, Number(event.target.value));
-                  }}
-                  rowsPerPageOptions={[10, 25, 50]}
-                  labelRowsPerPage="Itens por página"
-                  labelDisplayedRows={({ from, to, count }) =>
-                    `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-                  }
-                  sx={{
-                    '.MuiTablePagination-toolbar': {
-                      flexWrap: 'wrap',
-                      justifyContent: { xs: 'center', sm: 'flex-end' },
-                      gap: 1,
-                      px: { xs: 1, sm: 2 },
-                    },
-                  }}
-                />
-            </Paper>
-          </Stack>
-        </Paper>
+              <TablePagination
+                component="div"
+                count={result.totalItens}
+                page={Math.max(0, result.pagina - 1)}
+                onPageChange={(_event, newPage) => {
+                  void handleSubmit(newPage + 1, tamanhoPagina);
+                }}
+                rowsPerPage={result.tamanhoPagina}
+                onRowsPerPageChange={(event) => {
+                  void handleSubmit(1, Number(event.target.value));
+                }}
+                rowsPerPageOptions={[10, 25, 50]}
+                labelRowsPerPage="Itens por página"
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+                }
+                sx={{
+                  '.MuiTablePagination-toolbar': {
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'flex-end' },
+                    gap: 1,
+                    px: { xs: 1, sm: 2 },
+                  },
+                }}
+              />
+          </Paper>
+        </Stack>
       ) : null}
     </Stack>
   );
