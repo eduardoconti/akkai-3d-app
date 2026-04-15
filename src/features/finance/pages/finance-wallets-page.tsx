@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -13,19 +11,23 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { EditWalletDialog, NewWalletDialog } from '@/features/finance';
 import {
   financeStoreSelectors,
   useFinanceStore,
 } from '@/features/finance/store/use-finance-store';
-import { formatCurrency } from '@/shared';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  formatCurrency,
+} from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceWalletsPage() {
@@ -67,29 +69,12 @@ export default function FinanceWalletsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Carteiras
-          </Typography>
-          <Typography color="text.secondary">
-            Cadastre os destinos de entrada e saída para acompanhar o saldo por
-            carteira.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova carteira
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Carteiras"
+        description="Cadastre os destinos de entrada e saída para acompanhar o saldo por carteira."
+        actionLabel="Nova carteira"
+        onAction={() => setDialogOpen(true)}
+      />
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 
@@ -97,9 +82,7 @@ export default function FinanceWalletsPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de carteiras">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : paginatedWallets.length > 0 ? (
               paginatedWallets.map((carteira) => (
                 <Box
@@ -144,9 +127,7 @@ export default function FinanceWalletsPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma carteira cadastrada até o momento.
-              </Box>
+              <EmptyState message="Nenhuma carteira cadastrada até o momento." />
             )}
           </Stack>
         ) : (
@@ -168,8 +149,8 @@ export default function FinanceWalletsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : paginatedWallets.length > 0 ? (
@@ -203,8 +184,8 @@ export default function FinanceWalletsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
-                      Nenhuma carteira cadastrada até o momento.
+                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma carteira cadastrada até o momento." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -213,30 +194,16 @@ export default function FinanceWalletsPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={wallets.length}
           page={page}
+          rowsPerPage={rowsPerPage}
           onPageChange={(_event, newPage) => {
             setPage(newPage);
           }}
-          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event) => {
             setRowsPerPage(Number(event.target.value));
             setPage(0);
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

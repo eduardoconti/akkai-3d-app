@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  CircularProgress,
   Divider,
   Link,
   Paper,
@@ -13,18 +11,22 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import {
   budgetStoreSelectors,
   useBudgetStore,
 } from '@/features/budgets/store/use-budget-store';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+} from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
@@ -59,28 +61,12 @@ export default function BudgetsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Orçamentos
-          </Typography>
-          <Typography color="text.secondary">
-            Registre e acompanhe solicitações de orçamento dos clientes.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Novo orçamento
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Orçamentos"
+        description="Registre e acompanhe solicitações de orçamento dos clientes."
+        actionLabel="Novo orçamento"
+        onAction={() => setDialogOpen(true)}
+      />
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 
@@ -88,9 +74,7 @@ export default function BudgetsPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de orçamentos">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : orcamentos.length > 0 ? (
               orcamentos.map((orcamento) => (
                 <Box key={orcamento.id} sx={{ px: 2, py: 2 }}>
@@ -134,9 +118,7 @@ export default function BudgetsPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhum orçamento cadastrado até o momento.
-              </Box>
+              <EmptyState message="Nenhum orçamento cadastrado até o momento." />
             )}
           </Stack>
         ) : (
@@ -167,8 +149,8 @@ export default function BudgetsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : orcamentos.length > 0 ? (
@@ -192,8 +174,8 @@ export default function BudgetsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                      Nenhum orçamento cadastrado até o momento.
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhum orçamento cadastrado até o momento." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -202,32 +184,18 @@ export default function BudgetsPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalItens}
           page={Math.max(0, paginacao.pagina - 1)}
+          rowsPerPage={paginacao.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchOrcamentos({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacao.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchOrcamentos({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

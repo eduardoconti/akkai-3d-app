@@ -4,7 +4,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  CircularProgress,
   Divider,
   MenuItem,
   Paper,
@@ -14,14 +13,13 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { AddCircleOutline, Search } from '@mui/icons-material';
+import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
@@ -30,6 +28,10 @@ import {
   useProductStore,
 } from '../store/use-product-store';
 import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
   formatCurrency,
   type Categoria,
   type DirecaoOrdenacao,
@@ -96,29 +98,12 @@ export default function ProductsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Produtos
-          </Typography>
-          <Typography color="text.secondary">
-            Consulte nome, código, categoria, descrição e valor dos produtos
-            cadastrados.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Novo produto
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Produtos"
+        description="Consulte nome, código, categoria, descrição e valor dos produtos cadastrados."
+        actionLabel="Novo produto"
+        onAction={() => setDialogOpen(true)}
+      />
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
         <Grid size={{ xs: 12, md: 6, lg: 3 }}>
@@ -210,9 +195,7 @@ export default function ProductsPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de produtos">
             {isFetchingProducts ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : produtos.length > 0 ? (
               produtos.map((produto) => {
                 return (
@@ -261,9 +244,7 @@ export default function ProductsPage() {
                 );
               })
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhum produto encontrado para a pesquisa informada.
-              </Box>
+              <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
             )}
           </Stack>
         ) : (
@@ -295,8 +276,8 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : produtos.length > 0 ? (
@@ -327,8 +308,8 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                      Nenhum produto encontrado para a pesquisa informada.
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -337,32 +318,18 @@ export default function ProductsPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalItens}
           page={Math.max(0, paginacao.pagina - 1)}
+          rowsPerPage={paginacao.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchProdutos({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacao.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchProdutos({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

@@ -22,27 +22,13 @@ import {
   FormFeedbackAlert,
   formatCurrency,
   getProblemDetailsFromError,
+  getMonthEndInput,
+  getMonthStartInput,
   type Feira,
   type ProblemDetails,
   type TipoVenda,
 } from '@/shared';
-
-function getMonthStartInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  return `${year}-${month}-01`;
-}
-
-function getMonthEndInput(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-  ).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
+import { getSaleTypeLabel } from '@/features/sales/utils/format-sale-labels';
 
 function formatApiDateToDisplay(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -53,19 +39,6 @@ function formatApiDateToDisplay(value: string): string {
 
   const [, year, month, day] = match;
   return `${day}/${month}/${year}`;
-}
-
-function getSaleTypeLabel(tipoVenda: 'TODOS' | TipoVenda): string {
-  switch (tipoVenda) {
-    case 'FEIRA':
-      return 'Feira';
-    case 'LOJA':
-      return 'Loja';
-    case 'ONLINE':
-      return 'Online';
-    default:
-      return 'Todos';
-  }
 }
 
 export default function ReportsSummaryPage() {

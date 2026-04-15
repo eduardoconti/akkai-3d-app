@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -12,12 +10,10 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   financeStoreSelectors,
@@ -25,6 +21,12 @@ import {
 } from '@/features/finance/store/use-finance-store';
 import EditExpenseCategoryDialog from '../components/edit-expense-category-dialog';
 import NewExpenseCategoryDialog from '../components/new-expense-category-dialog';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+} from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceExpenseCategoriesPage() {
@@ -66,28 +68,12 @@ export default function FinanceExpenseCategoriesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Categorias de despesa
-          </Typography>
-          <Typography color="text.secondary">
-            Gerencie as categorias usadas para classificar as despesas do negócio.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova categoria
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Categorias de despesa"
+        description="Gerencie as categorias usadas para classificar as despesas do negócio."
+        actionLabel="Nova categoria"
+        onAction={() => setDialogOpen(true)}
+      />
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>
@@ -97,9 +83,7 @@ export default function FinanceExpenseCategoriesPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de categorias de despesa">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : paginatedCategorias.length > 0 ? (
               paginatedCategorias.map((categoria) => (
                 <Box
@@ -113,9 +97,7 @@ export default function FinanceExpenseCategoriesPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma categoria cadastrada.
-              </Box>
+              <EmptyState message="Nenhuma categoria cadastrada." />
             )}
           </Stack>
         ) : (
@@ -131,8 +113,8 @@ export default function FinanceExpenseCategoriesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={1} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={1} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : paginatedCategorias.length > 0 ? (
@@ -148,8 +130,8 @@ export default function FinanceExpenseCategoriesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={1} align="center" sx={{ py: 6 }}>
-                      Nenhuma categoria cadastrada.
+                    <TableCell colSpan={1} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma categoria cadastrada." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -158,30 +140,16 @@ export default function FinanceExpenseCategoriesPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={categoriasDespesa.length}
           page={page}
+          rowsPerPage={rowsPerPage}
           onPageChange={(_event, newPage) => {
             setPage(newPage);
           }}
-          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event) => {
             setRowsPerPage(Number(event.target.value));
             setPage(0);
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

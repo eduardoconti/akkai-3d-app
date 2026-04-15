@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -13,15 +11,19 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import FairDialog from '../components/fair-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+} from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FairsPage() {
@@ -53,28 +55,13 @@ export default function FairsPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', lg: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Feiras
-          </Typography>
-          <Typography color="text.secondary">
-            Gerencie as feiras disponíveis para vendas presenciais e relatórios.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova feira
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Feiras"
+        description="Gerencie as feiras disponíveis para vendas presenciais e relatórios."
+        actionLabel="Nova feira"
+        onAction={() => setDialogOpen(true)}
+        breakpoint="lg"
+      />
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 
@@ -82,9 +69,7 @@ export default function FairsPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de feiras">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : feirasPaginadas.length > 0 ? (
               feirasPaginadas.map((feira) => (
                 <Box
@@ -114,9 +99,7 @@ export default function FairsPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma feira cadastrada até o momento.
-              </Box>
+              <EmptyState message="Nenhuma feira cadastrada até o momento." />
             )}
           </Stack>
         ) : (
@@ -141,8 +124,8 @@ export default function FairsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : feirasPaginadas.length > 0 ? (
@@ -168,8 +151,8 @@ export default function FairsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                      Nenhuma feira cadastrada até o momento.
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma feira cadastrada até o momento." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -178,32 +161,18 @@ export default function FairsPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={totalFeiras}
           page={Math.max(0, paginacaoFeiras.pagina - 1)}
+          rowsPerPage={paginacaoFeiras.tamanhoPagina}
           onPageChange={(_event, newPage) => {
             void fetchFeirasPaginadas({ pagina: newPage + 1 });
           }}
-          rowsPerPage={paginacaoFeiras.tamanhoPagina}
           onRowsPerPageChange={(event) => {
             void fetchFeirasPaginadas({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
             });
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>

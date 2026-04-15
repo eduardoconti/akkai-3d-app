@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -13,12 +11,10 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography,
   useMediaQuery,
 } from '@mui/material';
-import { AddCircleOutline } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -26,6 +22,12 @@ import {
   useFinanceStore,
 } from '@/features/finance/store/use-finance-store';
 import { MEIO_PAGAMENTO_LABEL } from '@/features/finance/types/finance-form';
+import {
+  AppTablePagination,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+} from '@/shared';
 import PaymentMethodWalletFeeDialog from '../components/payment-method-wallet-fee-dialog';
 
 export default function FinancePaymentMethodWalletFeesPage() {
@@ -87,29 +89,12 @@ export default function FinancePaymentMethodWalletFeesPage() {
 
   return (
     <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Taxas por pagamento
-          </Typography>
-          <Typography color="text.secondary">
-            Configure a taxa percentual aplicada para cada carteira e meio de
-            pagamento.
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddCircleOutline />}
-          onClick={() => setDialogOpen(true)}
-        >
-          Nova taxa
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Taxas por pagamento"
+        description="Configure a taxa percentual aplicada para cada carteira e meio de pagamento."
+        actionLabel="Nova taxa"
+        onAction={() => setDialogOpen(true)}
+      />
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
 
@@ -117,9 +102,7 @@ export default function FinancePaymentMethodWalletFeesPage() {
         {isMobile ? (
           <Stack divider={<Divider flexItem />} aria-label="lista de taxas">
             {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
+              <LoadingState />
             ) : paginatedFees.length > 0 ? (
               paginatedFees.map((taxa) => (
                 <Box
@@ -149,9 +132,7 @@ export default function FinancePaymentMethodWalletFeesPage() {
                 </Box>
               ))
             ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma taxa cadastrada até o momento.
-              </Box>
+              <EmptyState message="Nenhuma taxa cadastrada até o momento." />
             )}
           </Stack>
         ) : (
@@ -176,8 +157,8 @@ export default function FinancePaymentMethodWalletFeesPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                      <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : paginatedFees.length > 0 ? (
@@ -205,8 +186,8 @@ export default function FinancePaymentMethodWalletFeesPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                      Nenhuma taxa cadastrada até o momento.
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                      <EmptyState message="Nenhuma taxa cadastrada até o momento." />
                     </TableCell>
                   </TableRow>
                 )}
@@ -215,30 +196,16 @@ export default function FinancePaymentMethodWalletFeesPage() {
           </TableContainer>
         )}
 
-        <TablePagination
-          component="div"
+        <AppTablePagination
           count={fees.length}
           page={page}
+          rowsPerPage={rowsPerPage}
           onPageChange={(_event, newPage) => {
             setPage(newPage);
           }}
-          rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event) => {
             setRowsPerPage(Number(event.target.value));
             setPage(0);
-          }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
           }}
         />
       </Paper>
