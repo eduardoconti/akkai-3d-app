@@ -285,83 +285,81 @@ export default function ReportsSummaryPage() {
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 
       {summary ? (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
-          <Stack spacing={2}>
-            {periodoLabel ? (
-              <Alert severity="info">{periodoLabel}</Alert>
-            ) : null}
+        <Stack spacing={2}>
+          {periodoLabel ? (
+            <Alert severity="info">{periodoLabel}</Alert>
+          ) : null}
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Quantidade de itens
-                  </Typography>
-                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                    {summary.quantidadeItens}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Desconto total
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    sx={{ mt: 1, color: 'warning.dark' }}
-                  >
-                    {formatCurrency(summary.descontoTotal)}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Valor total
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    sx={{ mt: 1, color: 'success.main' }}
-                  >
-                    {formatCurrency(summary.valorTotal)}
-                  </Typography>
-                </Paper>
-              </Grid>
-
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Valor líquido
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    sx={{ mt: 1, color: 'success.main' }}
-                  >
-                    {formatCurrency(summary.valorLiquido)}
-                  </Typography>
-                </Paper>
-              </Grid>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Quantidade de itens
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                  {summary.quantidadeItens}
+                </Typography>
+              </Paper>
             </Grid>
-          </Stack>
-        </Paper>
+
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Desconto total
+                </Typography>
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{ mt: 1, color: 'warning.dark' }}
+                >
+                  {formatCurrency(summary.descontoTotal)}
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Valor total
+                </Typography>
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{ mt: 1, color: 'success.main' }}
+                >
+                  {formatCurrency(summary.valorTotal)}
+                </Typography>
+              </Paper>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 3 }}>
+              <Paper
+                variant="outlined"
+                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Valor líquido
+                </Typography>
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{ mt: 1, color: 'success.main' }}
+                >
+                  {formatCurrency(summary.valorLiquido)}
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Stack>
       ) : null}
     </Stack>
   );

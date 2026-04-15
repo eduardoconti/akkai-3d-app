@@ -198,115 +198,113 @@ export default function ReportsStockValuePage() {
       <FormFeedbackAlert message={problem?.detail} />
 
       {result ? (
-        <Paper sx={{ p: 3, borderRadius: 3 }}>
-          <Stack spacing={2}>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              <Chip label={`Produtos: ${result.totalItens}`} size="small" />
-              <Chip
-                label={`Quantidade total: ${formatQuantity(result.totalQuantidade)}`}
-                size="small"
-              />
-              <Chip
-                label={`Soma dos valores: ${formatCurrency(result.totalValor)}`}
-                size="small"
-              />
-              <Chip
-                label={`Valor total em estoque: ${formatCurrency(result.totalValorTotal)}`}
-                color="primary"
-                size="small"
-              />
-            </Stack>
+        <Stack spacing={2}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip label={`Produtos: ${result.totalItens}`} size="small" />
+            <Chip
+              label={`Quantidade total: ${formatQuantity(result.totalQuantidade)}`}
+              size="small"
+            />
+            <Chip
+              label={`Soma dos valores: ${formatCurrency(result.totalValor)}`}
+              size="small"
+            />
+            <Chip
+              label={`Valor total em estoque: ${formatCurrency(result.totalValorTotal)}`}
+              color="primary"
+              size="small"
+            />
+          </Stack>
 
-            <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-                {isMobile ? (
-                  <Stack divider={<Divider flexItem />}>
-                    {result.itens.length > 0 ? (
-                      result.itens.map(renderProductCard)
-                    ) : (
-                      <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                        Nenhum produto com estoque positivo foi encontrado.
-                      </Box>
-                    )}
-                  </Stack>
-                ) : (
-                  <TableContainer>
-                    <Table aria-label="relatorio de valor dos produtos em estoque">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>
-                            <strong>Codigo</strong>
-                          </TableCell>
-                          <TableCell>
-                            <strong>Nome</strong>
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>Quantidade</strong>
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>Valor</strong>
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>Valor total</strong>
-                          </TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {result.itens.length > 0 ? (
-                          result.itens.map((item) => (
-                            <TableRow key={item.codigo}>
-                              <TableCell>{item.codigo}</TableCell>
-                              <TableCell>{item.nome}</TableCell>
-                              <TableCell align="right">
-                                {formatQuantity(item.quantidade)}
-                              </TableCell>
-                              <TableCell align="right">
-                                {formatCurrency(item.valor)}
-                              </TableCell>
-                              <TableCell align="right">
-                                {formatCurrency(item.valorTotal)}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                              Nenhum produto com estoque positivo foi encontrado.
+          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+              {isMobile ? (
+                <Stack divider={<Divider flexItem />}>
+                  {result.itens.length > 0 ? (
+                    result.itens.map(renderProductCard)
+                  ) : (
+                    <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                      Nenhum produto com estoque positivo foi encontrado.
+                    </Box>
+                  )}
+                </Stack>
+              ) : (
+                <TableContainer>
+                  <Table aria-label="relatorio de valor dos produtos em estoque">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>
+                          <strong>Codigo</strong>
+                        </TableCell>
+                        <TableCell>
+                          <strong>Nome</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Quantidade</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Valor</strong>
+                        </TableCell>
+                        <TableCell align="right">
+                          <strong>Valor total</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {result.itens.length > 0 ? (
+                        result.itens.map((item) => (
+                          <TableRow key={item.codigo}>
+                            <TableCell>{item.codigo}</TableCell>
+                            <TableCell>{item.nome}</TableCell>
+                            <TableCell align="right">
+                              {formatQuantity(item.quantidade)}
+                            </TableCell>
+                            <TableCell align="right">
+                              {formatCurrency(item.valor)}
+                            </TableCell>
+                            <TableCell align="right">
+                              {formatCurrency(item.valorTotal)}
                             </TableCell>
                           </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                            Nenhum produto com estoque positivo foi encontrado.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
 
-                <TablePagination
-                  component="div"
-                  count={result.totalItens}
-                  page={Math.max(0, result.pagina - 1)}
-                  onPageChange={(_event, newPage) => {
-                    void handleSubmit(newPage + 1, tamanhoPagina);
-                  }}
-                  rowsPerPage={result.tamanhoPagina}
-                  onRowsPerPageChange={(event) => {
-                    void handleSubmit(1, Number(event.target.value));
-                  }}
-                  rowsPerPageOptions={[10, 25, 50]}
-                  labelRowsPerPage="Itens por pagina"
-                  labelDisplayedRows={({ from, to, count }) =>
-                    `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-                  }
-                  sx={{
-                    '.MuiTablePagination-toolbar': {
-                      flexWrap: 'wrap',
-                      justifyContent: { xs: 'center', sm: 'flex-end' },
-                      gap: 1,
-                      px: { xs: 1, sm: 2 },
-                    },
-                  }}
-                />
-            </Paper>
-          </Stack>
-        </Paper>
+              <TablePagination
+                component="div"
+                count={result.totalItens}
+                page={Math.max(0, result.pagina - 1)}
+                onPageChange={(_event, newPage) => {
+                  void handleSubmit(newPage + 1, tamanhoPagina);
+                }}
+                rowsPerPage={result.tamanhoPagina}
+                onRowsPerPageChange={(event) => {
+                  void handleSubmit(1, Number(event.target.value));
+                }}
+                rowsPerPageOptions={[10, 25, 50]}
+                labelRowsPerPage="Itens por pagina"
+                labelDisplayedRows={({ from, to, count }) =>
+                  `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+                }
+                sx={{
+                  '.MuiTablePagination-toolbar': {
+                    flexWrap: 'wrap',
+                    justifyContent: { xs: 'center', sm: 'flex-end' },
+                    gap: 1,
+                    px: { xs: 1, sm: 2 },
+                  },
+                }}
+              />
+          </Paper>
+        </Stack>
       ) : null}
     </Stack>
   );
