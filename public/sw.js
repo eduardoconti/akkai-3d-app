@@ -1,5 +1,11 @@
-const CACHE_NAME = 'akkai-3d-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/manifest.webmanifest', '/vite.svg'];
+const CACHE_NAME = 'akkai-3d-shell-v2';
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
