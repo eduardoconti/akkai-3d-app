@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -19,12 +18,13 @@ import {
 import {
   initialBudgetFormState,
   type BudgetFormErrors,
+  type BudgetFormState,
 } from '@/features/budgets/types/budget-form';
 import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -52,26 +52,16 @@ export default function NewBudgetDialog({
       submitErrorMessage: budgetStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState(initialBudgetFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<BudgetFormErrors>({});
-  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-
-  useEffect(() => {
-    if (!open) {
-      setForm(initialBudgetFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-    }
-  }, [open, clearSubmitError]);
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<BudgetFormState, BudgetFormErrors>({
+      open,
+      initialValues: initialBudgetFormState,
+      onReset: clearSubmitError,
+    });
 
   const handleClose = () => {
-    setForm(initialBudgetFormState);
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 
