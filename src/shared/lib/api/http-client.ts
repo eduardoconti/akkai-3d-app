@@ -1,7 +1,6 @@
 import { isProblemDetails, type ProblemDetails } from '../types/problem-details';
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 const fallbackProblems = {
   network: {
