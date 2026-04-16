@@ -1,8 +1,13 @@
 import { create } from 'zustand';
-import { createBudget, listBudgets } from '@/features/budgets/api/budgets-api';
+import {
+  createBudget,
+  listBudgets,
+  updateBudget,
+} from '@/features/budgets/api/budgets-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
+  AtualizarOrcamentoInput,
   Orcamento,
   OrcamentoInput,
   PesquisaPaginadaOrcamentos,
@@ -27,6 +32,10 @@ interface BudgetStoreState {
     query?: Partial<PesquisaPaginadaOrcamentos>,
   ) => Promise<ResultadoPaginado<Orcamento> | void>;
   criarOrcamento: (dados: OrcamentoInput) => Promise<ActionResult<Orcamento>>;
+  atualizarOrcamento: (
+    id: number,
+    dados: AtualizarOrcamentoInput,
+  ) => Promise<ActionResult<Orcamento>>;
   clearSubmitError: () => void;
 }
 
@@ -79,6 +88,22 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  atualizarOrcamento: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const orcamento = await updateBudget(id, dados);
+      set((state) => ({
+        orcamentos: state.orcamentos.map((o) => (o.id === id ? orcamento : o)),
+      }));
+      return { success: true, data: orcamento };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   clearSubmitError: () => {
     set({ submitErrorMessage: null });
   },
@@ -95,5 +120,6 @@ export const budgetStoreSelectors = {
   submitErrorMessage: (state: BudgetStoreState) => state.submitErrorMessage,
   fetchOrcamentos: (state: BudgetStoreState) => state.fetchOrcamentos,
   criarOrcamento: (state: BudgetStoreState) => state.criarOrcamento,
+  atualizarOrcamento: (state: BudgetStoreState) => state.atualizarOrcamento,
   clearSubmitError: (state: BudgetStoreState) => state.clearSubmitError,
 };

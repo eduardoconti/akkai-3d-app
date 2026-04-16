@@ -78,6 +78,12 @@ export interface FeiraInput {
 
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
+export type StatusOrcamento =
+  | 'PENDENTE'
+  | 'AGUARDANDO_APROVACAO'
+  | 'APROVADO'
+  | 'PRODUZIDO'
+  | 'FINALIZADO';
 export interface CategoriaDespesa {
   id: number;
   nome: string;
@@ -157,10 +163,16 @@ export interface Venda {
 export interface Orcamento {
   id: number;
   nomeCliente: string;
-  telefoneCliente: string;
+  telefoneCliente?: string;
   descricao?: string;
   linkSTL?: string;
   dataInclusao: string;
+  status: StatusOrcamento;
+  tipo: TipoVenda;
+  idFeira?: number;
+  valor?: number;
+  quantidade?: number;
+  feira?: Feira | null;
 }
 
 export interface ProdutoInput {
@@ -255,9 +267,26 @@ export interface DespesaInput {
 
 export interface OrcamentoInput {
   nomeCliente: string;
-  telefoneCliente: string;
+  telefoneCliente?: string;
   descricao?: string;
   linkSTL?: string;
+  status?: StatusOrcamento;
+  tipo: TipoVenda;
+  idFeira?: number;
+  valor?: number;
+  quantidade?: number;
+}
+
+export interface AtualizarOrcamentoInput {
+  nomeCliente?: string;
+  telefoneCliente?: string;
+  descricao?: string;
+  linkSTL?: string;
+  status?: StatusOrcamento;
+  tipo?: TipoVenda;
+  idFeira?: number;
+  valor?: number;
+  quantidade?: number;
 }
 
 export interface ResultadoPaginado<T> {

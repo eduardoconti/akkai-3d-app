@@ -1,5 +1,6 @@
 import { httpClient } from '@/shared/lib/api/http-client';
 import type {
+  AtualizarOrcamentoInput,
   Orcamento,
   OrcamentoInput,
   PesquisaPaginadaOrcamentos,
@@ -14,4 +15,11 @@ export function listBudgets(
 
 export function createBudget(input: OrcamentoInput): Promise<Orcamento> {
   return httpClient.post<Orcamento>('/orcamento', input);
+}
+
+export function updateBudget(
+  id: number,
+  input: AtualizarOrcamentoInput,
+): Promise<Orcamento> {
+  return httpClient.put<Orcamento>(`/orcamento/${id}`, input);
 }
