@@ -33,7 +33,7 @@ import {
   getFieldMessage,
   getProblemDetailsFromError,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import type {
   MeioPagamento,
@@ -110,11 +110,13 @@ export default function PaymentMethodWalletFeeDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState<FeeFormState>(initialFeeFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<FeeFormErrors>({});
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
+    useFormDialog<FeeFormState, FeeFormErrors>({
+      open,
+      initialValues: initialFeeFormState,
+      onReset: clearSubmitError,
+    });
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
@@ -127,21 +129,11 @@ export default function PaymentMethodWalletFeeDialog({
 
   useEffect(() => {
     if (!open) {
-      setForm(initialFeeFormState);
-      setProblem(null);
-      setLocalErrors({});
       setConfirmDeleteOpen(false);
-      clearSubmitError();
       return;
     }
 
-    if (!isEditMode || feeId == null) {
-      setForm(initialFeeFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-      return;
-    }
+    if (!isEditMode || feeId == null) return;
 
     let active = true;
 
@@ -179,13 +171,7 @@ export default function PaymentMethodWalletFeeDialog({
     return () => {
       active = false;
     };
-  }, [
-    clearSubmitError,
-    feeId,
-    isEditMode,
-    obterTaxaMeioPagamentoCarteiraPorId,
-    open,
-  ]);
+  }, [feeId, isEditMode, obterTaxaMeioPagamentoCarteiraPorId, open]);
 
   const availableWallets = useMemo(
     () => [...carteiras].sort((a, b) => a.nome.localeCompare(b.nome)),

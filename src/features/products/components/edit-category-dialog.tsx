@@ -29,7 +29,7 @@ import {
   getFieldMessage,
   getProblemDetailsFromError,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 
 interface EditCategoryDialogProps {
@@ -47,19 +47,15 @@ export default function EditCategoryDialog({
 }: EditCategoryDialogProps) {
   const { categorias, fetchCategorias, isFetchingCategories } = useProductStore();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const [form, setForm] = useState<CategoryFormState>(initialCategoryFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<CategoryFormErrors>({});
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<CategoryFormState, CategoryFormErrors>({
+      open,
+      initialValues: initialCategoryFormState,
+    });
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!open || categoryId === null) {
-      setForm(initialCategoryFormState);
-      setProblem(null);
-      setLocalErrors({});
-      return;
-    }
+    if (!open || categoryId === null) return;
 
     let active = true;
 
@@ -121,9 +117,7 @@ export default function EditCategoryDialog({
   };
 
   const handleClose = () => {
-    setForm(initialCategoryFormState);
-    setProblem(null);
-    setLocalErrors({});
+    resetForm();
     onClose();
   };
 

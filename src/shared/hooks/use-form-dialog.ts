@@ -7,7 +7,7 @@ interface UseFormDialogOptions<T> {
   onReset?: () => void;
 }
 
-interface UseFormDialogReturn<T, E extends Record<string, string | undefined>> {
+interface UseFormDialogReturn<T, E extends object> {
   form: T;
   setForm: React.Dispatch<React.SetStateAction<T>>;
   problem: ProblemDetails | null;
@@ -21,7 +21,7 @@ interface UseFormDialogReturn<T, E extends Record<string, string | undefined>> {
 
 export function useFormDialog<
   T,
-  E extends Record<string, string | undefined> = Record<string, string | undefined>,
+  E extends object = Record<string, string | undefined>,
 >({
   open,
   initialValues,

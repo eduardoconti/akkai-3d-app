@@ -30,9 +30,9 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
+  useFormDialog,
   type Despesa,
   type MeioPagamento,
-  type ProblemDetails,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -79,49 +79,39 @@ export default function NewExpenseDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState<ExpenseFormState>(initialExpenseFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<ExpenseFormErrors>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<ExpenseFormState, ExpenseFormErrors>({
+      open,
+      initialValues: initialExpenseFormState,
+      onReset: clearSubmitError,
+    });
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
-    if (open) {
-      void fetchCarteiras();
-      void fetchCategoriasDespesa();
-      void fetchFeiras();
-
-      if (despesa) {
-        setForm({
-          dataLancamento: despesa.dataLancamento.substring(0, 10),
-          descricao: despesa.descricao,
-          valor: despesa.valor / 100,
-          idCategoria: despesa.idCategoria,
-          meioPagamento: despesa.meioPagamento,
-          idCarteira: despesa.idCarteira,
-          idFeira: despesa.idFeira ?? '',
-          observacao: despesa.observacao ?? '',
-        });
-      }
+    if (!open) {
+      setConfirmDeleteOpen(false);
       return;
     }
 
-    setForm(initialExpenseFormState);
-    setProblem(null);
-    setLocalErrors({});
-    setConfirmDeleteOpen(false);
-    clearSubmitError();
-  }, [
-    open,
-    despesa,
-    isEditMode,
-    fetchCarteiras,
-    fetchCategoriasDespesa,
-    fetchFeiras,
-    clearSubmitError,
-  ]);
+    void fetchCarteiras();
+    void fetchCategoriasDespesa();
+    void fetchFeiras();
+
+    if (despesa) {
+      setForm({
+        dataLancamento: despesa.dataLancamento.substring(0, 10),
+        descricao: despesa.descricao,
+        valor: despesa.valor / 100,
+        idCategoria: despesa.idCategoria,
+        meioPagamento: despesa.meioPagamento,
+        idCarteira: despesa.idCarteira,
+        idFeira: despesa.idFeira ?? '',
+        observacao: despesa.observacao ?? '',
+      });
+    }
+  }, [open, despesa, fetchCarteiras, fetchCategoriasDespesa, fetchFeiras]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -167,11 +157,8 @@ export default function NewExpenseDialog({
   }, [form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
 
   const handleClose = () => {
-    setForm(initialExpenseFormState);
-    setProblem(null);
-    setLocalErrors({});
     setConfirmDeleteOpen(false);
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 

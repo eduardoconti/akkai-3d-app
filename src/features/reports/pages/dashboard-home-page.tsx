@@ -478,12 +478,12 @@ function DashboardWidget({
     >
       <Stack spacing={2.5}>
         <Stack
-          direction={{ xs: 'column', md: 'row' }}
+          direction="row"
           justifyContent="space-between"
           spacing={1}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
+          alignItems="flex-start"
         >
-          <Box>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" fontWeight={800}>
               {title}
             </Typography>
@@ -492,7 +492,7 @@ function DashboardWidget({
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={0.5}>
+          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
             {!isMobile ? (
               <IconButton
                 size="small"

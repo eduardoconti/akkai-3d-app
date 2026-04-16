@@ -33,8 +33,8 @@ import {
   getFieldMessage,
   getProblemDetailsFromError,
   useFeedbackStore,
+  useFormDialog,
   type Categoria,
-  type ProblemDetails,
 } from '@/shared';
 
 interface EditProductDialogProps {
@@ -51,13 +51,14 @@ export default function EditProductDialog({
   onUpdated,
 }: EditProductDialogProps) {
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
+    useFormDialog<ProductFormState, ProductFormErrors>({
+      open,
+      initialValues: initialProductFormState,
+    });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [form, setForm] = useState<ProductFormState>(initialProductFormState);
   const [productName, setProductName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<ProductFormErrors>({});
 
   const categoryOptions = useMemo(
     () => formatCategoryOptions(categorias),
@@ -67,10 +68,7 @@ export default function EditProductDialog({
   useEffect(() => {
     if (!open || productId === null) {
       setCategorias([]);
-      setForm(initialProductFormState);
       setProductName('');
-      setProblem(null);
-      setLocalErrors({});
       return;
     }
 

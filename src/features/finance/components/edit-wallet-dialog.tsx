@@ -34,7 +34,7 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -77,22 +77,18 @@ export default function EditWalletDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const [form, setForm] = useState<WalletFormState>(initialWalletFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<WalletFormState, WalletFormErrors>({
+      open,
+      initialValues: initialWalletFormState,
+      onReset: clearSubmitError,
+    });
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (!open || walletId === null) {
-      setForm(initialWalletFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-      return;
-    }
+    if (!open || walletId === null) return;
 
     let active = true;
 
@@ -136,13 +132,10 @@ export default function EditWalletDialog({
     return () => {
       active = false;
     };
-  }, [clearSubmitError, obterCarteiraPorId, open, walletId]);
+  }, [obterCarteiraPorId, open, walletId]);
 
   const handleClose = () => {
-    setForm(initialWalletFormState);
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 
