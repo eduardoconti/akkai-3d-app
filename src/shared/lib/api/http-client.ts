@@ -1,4 +1,12 @@
 import { isProblemDetails, type ProblemDetails } from '../types/problem-details';
+import {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  notifyAuthFailure,
+  setAccessToken,
+  setRefreshToken,
+} from './token-storage';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
@@ -81,7 +89,6 @@ export async function checkApiConnectivity(): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
-      credentials: 'include',
     });
 
     return response.ok;
@@ -97,11 +104,13 @@ async function request<T>(
 ): Promise<T> {
   let response: Response;
 
+  const accessToken = getAccessToken();
+
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(init?.headers ?? {}),
       },
       ...init,
@@ -116,28 +125,48 @@ async function request<T>(
     !path.startsWith('/auth/login') &&
     !path.startsWith('/auth/refresh')
   ) {
-    try {
-      if (!refreshRequestPromise) {
-        refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-          .then((refreshResponse) => refreshResponse.ok)
-          .finally(() => {
-            refreshRequestPromise = null;
-          });
-      }
+    const storedRefreshToken = getRefreshToken();
 
-      const refreshSucceeded = await refreshRequestPromise;
+    if (storedRefreshToken) {
+      try {
+        if (!refreshRequestPromise) {
+          refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          })
+            .then(async (refreshResponse) => {
+              if (refreshResponse.ok) {
+                const data = (await refreshResponse.json()) as {
+                  accessToken: string;
+                  refreshToken: string;
+                };
+                setAccessToken(data.accessToken);
+                setRefreshToken(data.refreshToken);
+                return true;
+              }
+              clearTokens();
+              notifyAuthFailure();
+              return false;
+            })
+            .catch(() => {
+              clearTokens();
+              notifyAuthFailure();
+              return false;
+            })
+            .finally(() => {
+              refreshRequestPromise = null;
+            });
+        }
 
-      if (refreshSucceeded) {
-        return request<T>(path, init, true);
+        const refreshSucceeded = await refreshRequestPromise;
+
+        if (refreshSucceeded) {
+          return request<T>(path, init, true);
+        }
+      } catch {
+        throw new ApiProblemError(fallbackProblems.network);
       }
-    } catch {
-      throw new ApiProblemError(fallbackProblems.network);
     }
   }
 
