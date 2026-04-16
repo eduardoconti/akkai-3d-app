@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -33,7 +32,7 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -69,26 +68,16 @@ export default function NewWalletDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState<WalletFormState>(initialWalletFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<WalletFormErrors>({});
-  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-
-  useEffect(() => {
-    if (!open) {
-      setForm(initialWalletFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-    }
-  }, [open, clearSubmitError]);
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<WalletFormState, WalletFormErrors>({
+      open,
+      initialValues: initialWalletFormState,
+      onReset: clearSubmitError,
+    });
 
   const handleClose = () => {
-    setForm(initialWalletFormState);
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 

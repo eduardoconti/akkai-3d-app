@@ -106,7 +106,7 @@ export function buildTheme(mode: PaletteMode) {
         styleOverrides: {
           root: {
             borderRadius: 0,
-            overflow: 'visible',
+            overflowX: 'auto',
             boxShadow: 'none',
           },
         },

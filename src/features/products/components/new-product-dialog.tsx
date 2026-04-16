@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Button,
@@ -25,7 +25,7 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 
 interface NewProductDialogProps {
@@ -49,25 +49,21 @@ export default function NewProductDialog({
   } = useProductStore();
 
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const [form, setForm] = useState<ProductFormState>(initialProductFormState);
-  const [isSaving, setIsSaving] = useState(false);
   const isSubmittingRef = useRef(false);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<ProductFormErrors>({});
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<ProductFormState, ProductFormErrors>({
+      open,
+      initialValues: initialProductFormState,
+      onReset: clearSubmitError,
+    });
 
   useEffect(() => {
     if (open) {
       void fetchCategorias();
-      return;
+    } else {
+      isSubmittingRef.current = false;
     }
-
-    setForm(initialProductFormState);
-    setIsSaving(false);
-    isSubmittingRef.current = false;
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
-  }, [open, fetchCategorias, clearSubmitError]);
+  }, [open, fetchCategorias]);
 
   const categoryOptions = useMemo(
     () => formatCategoryOptions(categorias),
@@ -97,12 +93,8 @@ export default function NewProductDialog({
   };
 
   const handleClose = () => {
-    setForm(initialProductFormState);
-    setIsSaving(false);
     isSubmittingRef.current = false;
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 

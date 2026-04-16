@@ -59,3 +59,4 @@ export type {
 export { getFieldMessage, getFieldMessages } from './lib/utils/problem';
 export { formatCurrency } from './utils/format-currency';
 export { getMonthStartInput, getMonthEndInput } from './utils/date-range';
+export { useFormDialog } from './hooks/use-form-dialog';

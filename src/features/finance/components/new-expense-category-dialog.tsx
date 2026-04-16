@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -20,7 +19,7 @@ import {
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -51,26 +50,16 @@ export default function NewExpenseCategoryDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState<FormState>({ nome: '' });
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<FormErrors>({});
-  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-
-  useEffect(() => {
-    if (!open) {
-      setForm({ nome: '' });
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-    }
-  }, [open, clearSubmitError]);
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
+    useFormDialog<FormState, FormErrors>({
+      open,
+      initialValues: { nome: '' },
+      onReset: clearSubmitError,
+    });
 
   const handleClose = () => {
-    setForm({ nome: '' });
-    setProblem(null);
-    setLocalErrors({});
-    clearSubmitError();
+    resetForm();
     onClose();
   };
 
