@@ -230,7 +230,6 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
 
         <Grid size={{ xs: 12, lg: 7 }}>
           <Stack
-            spacing={2}
             sx={{
               height: '100%',
               border: '1px solid',
@@ -240,10 +239,10 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                 theme.palette.mode === 'dark'
                   ? 'rgba(255,255,255,0.02)'
                   : 'grey.50',
-              p: 2.5,
+              overflow: 'hidden',
             }}
           >
-            <Box>
+            <Box sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                 Historico de movimentacoes
               </Typography>
@@ -253,92 +252,96 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
             </Box>
 
             {movementsErrorMessage ? (
-              <Alert severity="error">{movementsErrorMessage}</Alert>
+              <Box sx={{ px: 2.5, pb: 1 }}>
+                <Alert severity="error">{movementsErrorMessage}</Alert>
+              </Box>
             ) : null}
 
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Data</TableCell>
-                  <TableCell>Usuario</TableCell>
-                  {!isMobile ? <TableCell>Movimentacao</TableCell> : null}
-                  <TableCell>Origem</TableCell>
-                  <TableCell align="right">Quantidade</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetchingMovements ? (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={24} />
-                    </TableCell>
+                    <TableCell sx={{ pl: 2.5 }}>Data</TableCell>
+                    <TableCell>Usuario</TableCell>
+                    {!isMobile ? <TableCell>Movimentacao</TableCell> : null}
+                    <TableCell>Origem</TableCell>
+                    <TableCell align="right" sx={{ pr: 2.5 }}>Quantidade</TableCell>
                   </TableRow>
-                ) : movements.length > 0 ? (
-                  movements.map((movimentacao) => (
-                    <TableRow
-                      key={movimentacao.id}
-                      sx={
-                        isMobile
-                          ? {
-                              backgroundColor: (theme) =>
-                                movimentacao.tipo === 'E'
-                                  ? alpha(theme.palette.success.main, 0.12)
-                                  : alpha(theme.palette.error.main, 0.12),
-                            }
-                          : undefined
-                      }
-                    >
-                      <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
-                        {isMobile
-                          ? formatMovementDateMobile(movimentacao.dataInclusao)
-                          : formatDateTime(movimentacao.dataInclusao)}
+                </TableHead>
+                <TableBody>
+                  {isFetchingMovements ? (
+                    <TableRow>
+                      <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
+                        <CircularProgress size={24} />
                       </TableCell>
-                      <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
-                        {isMobile
-                          ? formatMovementUserMobile(movimentacao.usuario)
-                          : movimentacao.usuario}
-                      </TableCell>
-                      {!isMobile ? (
-                        <TableCell>
-                          <Chip
-                            label={getMovementTypeLabel(movimentacao.tipo)}
-                            size="small"
-                            color={getMovementTypeColor(movimentacao.tipo)}
-                          />
-                        </TableCell>
-                      ) : null}
-                      <TableCell
+                    </TableRow>
+                  ) : movements.length > 0 ? (
+                    movements.map((movimentacao) => (
+                      <TableRow
+                        key={movimentacao.id}
                         sx={
                           isMobile
                             ? {
-                                maxWidth: 84,
-                                px: 1,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
+                                backgroundColor: (theme) =>
+                                  movimentacao.tipo === 'E'
+                                    ? alpha(theme.palette.success.main, 0.12)
+                                    : alpha(theme.palette.error.main, 0.12),
                               }
                             : undefined
                         }
                       >
-                        {getMovementOriginLabel(movimentacao.origem)}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={isMobile ? { whiteSpace: 'nowrap', px: 1, fontWeight: 700 } : undefined}
-                      >
-                        {movimentacao.quantidade}
+                        <TableCell sx={isMobile ? { whiteSpace: 'nowrap', pl: 2.5, pr: 1 } : { pl: 2.5 }}>
+                          {isMobile
+                            ? formatMovementDateMobile(movimentacao.dataInclusao)
+                            : formatDateTime(movimentacao.dataInclusao)}
+                        </TableCell>
+                        <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
+                          {isMobile
+                            ? formatMovementUserMobile(movimentacao.usuario)
+                            : movimentacao.usuario}
+                        </TableCell>
+                        {!isMobile ? (
+                          <TableCell>
+                            <Chip
+                              label={getMovementTypeLabel(movimentacao.tipo)}
+                              size="small"
+                              color={getMovementTypeColor(movimentacao.tipo)}
+                            />
+                          </TableCell>
+                        ) : null}
+                        <TableCell
+                          sx={
+                            isMobile
+                              ? {
+                                  maxWidth: 80,
+                                  px: 1,
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }
+                              : undefined
+                          }
+                        >
+                          {getMovementOriginLabel(movimentacao.origem)}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={isMobile ? { whiteSpace: 'nowrap', pl: 1, pr: 2.5, fontWeight: 700 } : { pr: 2.5 }}
+                        >
+                          {movimentacao.quantidade}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
+                        Nenhuma movimentacao encontrada para este produto.
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
-                      Nenhuma movimentacao encontrada para este produto.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
             <TablePagination
               component="div"
@@ -364,7 +367,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                   flexWrap: 'wrap',
                   justifyContent: { xs: 'center', sm: 'flex-end' },
                   gap: 1,
-                  px: { xs: 1, sm: 0 },
+                  px: { xs: 2, sm: 2 },
                 },
               }}
             />

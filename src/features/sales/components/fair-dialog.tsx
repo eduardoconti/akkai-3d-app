@@ -20,7 +20,7 @@ import {
   getFieldMessage,
   getProblemDetailsFromError,
   useFeedbackStore,
-  type ProblemDetails,
+  useFormDialog,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -73,29 +73,17 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
       submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const [form, setForm] = useState<FairFormState>(initialFairFormState);
-  const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localErrors, setLocalErrors] = useState<FairFormErrors>({});
+  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
+    useFormDialog<FairFormState, FairFormErrors>({
+      open,
+      initialValues: initialFairFormState,
+      onReset: clearSubmitError,
+    });
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
-    if (!open) {
-      setForm(initialFairFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-      return;
-    }
-
-    if (!isEditMode || fairId == null) {
-      setForm(initialFairFormState);
-      setProblem(null);
-      setLocalErrors({});
-      clearSubmitError();
-      return;
-    }
+    if (!open || !isEditMode || fairId == null) return;
 
     let active = true;
 
@@ -133,7 +121,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
     return () => {
       active = false;
     };
-  }, [clearSubmitError, fairId, isEditMode, obterFeiraPorId, open]);
+  }, [fairId, isEditMode, obterFeiraPorId, open]);
 
   const isBusy = isSubmitting || isSaving || isLoading;
 
