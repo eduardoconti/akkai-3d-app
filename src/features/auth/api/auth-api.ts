@@ -12,6 +12,11 @@ export interface AuthUser {
   updatedAt: string;
 }
 
+export interface AuthResponse extends AuthUser {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface LoginInput {
   login: string;
   password: string;
@@ -35,16 +40,16 @@ export interface UpdatePasswordInput {
   newPassword: string;
 }
 
-export function login(input: LoginInput): Promise<AuthUser> {
-  return httpClient.post<AuthUser>('/auth/login', input);
+export function login(input: LoginInput): Promise<AuthResponse> {
+  return httpClient.post<AuthResponse>('/auth/login', input);
 }
 
-export function refresh(): Promise<AuthUser> {
-  return httpClient.post<AuthUser>('/auth/refresh', {});
+export function refresh(refreshToken: string): Promise<AuthResponse> {
+  return httpClient.post<AuthResponse>('/auth/refresh', { refreshToken });
 }
 
-export function logout(): Promise<void> {
-  return httpClient.post<void>('/auth/logout', {});
+export function logout(refreshToken?: string): Promise<void> {
+  return httpClient.post<void>('/auth/logout', { refreshToken });
 }
 
 export function me(): Promise<AuthUser> {
@@ -55,8 +60,10 @@ export function listRoles(): Promise<AuthRole[]> {
   return httpClient.get<AuthRole[]>('/auth/roles');
 }
 
-export function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
-  return httpClient.put<AuthUser>('/auth/me', input);
+export function updateProfile(
+  input: UpdateProfileInput,
+): Promise<AuthResponse | AuthUser> {
+  return httpClient.put<AuthResponse | AuthUser>('/auth/me', input);
 }
 
 export function updatePassword(input: UpdatePasswordInput): Promise<void> {

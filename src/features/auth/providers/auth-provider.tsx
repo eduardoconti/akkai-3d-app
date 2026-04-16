@@ -11,12 +11,19 @@ import {
 } from '@/features/auth/context/auth-context';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
+  clearTokens,
+  getRefreshToken,
+  setAccessToken,
+  setAuthFailureCallback,
+  setRefreshToken,
+} from '@/shared/lib/api/token-storage';
+import {
   login as loginRequest,
+  logout as logoutRequest,
+  refresh as refreshRequest,
   updatePassword as updatePasswordRequest,
   updateProfile as updateProfileRequest,
-  logout as logoutRequest,
-  me,
-  refresh as refreshRequest,
+  type AuthResponse,
   type AuthUser,
   type LoginInput,
   type UpdatePasswordInput,
@@ -53,77 +60,100 @@ function persistUserSnapshot(user: AuthUser | null) {
   window.localStorage.setItem(AUTH_SNAPSHOT_KEY, JSON.stringify(user));
 }
 
+function extractUser(response: AuthResponse): AuthUser {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { accessToken: _at, refreshToken: _rt, ...user } = response;
+  return user;
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadCurrentUser = useCallback(async (): Promise<AuthUser | null> => {
-    try {
-      const authenticatedUser = await me();
-      setUser(authenticatedUser);
-      persistUserSnapshot(authenticatedUser);
-      return authenticatedUser;
-    } catch (error) {
-      const problem = getProblemDetailsFromError(error);
-
-      if (problem.status === 401) {
-        setUser(null);
-        persistUserSnapshot(null);
-        return null;
-      }
-
-      if (problem.status === 0) {
-        const snapshot = readUserSnapshot();
-
-        if (snapshot) {
-          setUser(snapshot);
-          return snapshot;
-        }
-      }
-
-      throw error;
-    }
+  useEffect(() => {
+    setAuthFailureCallback(() => {
+      setUser(null);
+      persistUserSnapshot(null);
+      clearTokens();
+    });
   }, []);
 
   useEffect(() => {
     const bootstrapAuth = async () => {
+      const storedRefreshToken = getRefreshToken();
+
+      if (!storedRefreshToken) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        await loadCurrentUser();
+        const response = await refreshRequest(storedRefreshToken);
+        setAccessToken(response.accessToken);
+        setRefreshToken(response.refreshToken);
+        const authUser = extractUser(response);
+        setUser(authUser);
+        persistUserSnapshot(authUser);
+      } catch (error) {
+        const problem = getProblemDetailsFromError(error);
+
+        if (problem.status === 0) {
+          const snapshot = readUserSnapshot();
+          if (snapshot) {
+            setUser(snapshot);
+          }
+        } else {
+          clearTokens();
+          setUser(null);
+          persistUserSnapshot(null);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     void bootstrapAuth();
-  }, [loadCurrentUser]);
+  }, []);
 
   const login = useCallback(async (input: LoginInput) => {
-    await loginRequest(input);
-    const authenticatedUser = await me();
-    setUser(authenticatedUser);
-    persistUserSnapshot(authenticatedUser);
-    return authenticatedUser;
+    const response = await loginRequest(input);
+    setAccessToken(response.accessToken);
+    setRefreshToken(response.refreshToken);
+    const authUser = extractUser(response);
+    setUser(authUser);
+    persistUserSnapshot(authUser);
+    return authUser;
   }, []);
 
   const refresh = useCallback(async () => {
+    const storedRefreshToken = getRefreshToken();
+
+    if (!storedRefreshToken) {
+      setUser(null);
+      persistUserSnapshot(null);
+      return null;
+    }
+
     try {
-      await refreshRequest();
-      const authenticatedUser = await me();
-      setUser(authenticatedUser);
-      persistUserSnapshot(authenticatedUser);
-      return authenticatedUser;
+      const response = await refreshRequest(storedRefreshToken);
+      setAccessToken(response.accessToken);
+      setRefreshToken(response.refreshToken);
+      const authUser = extractUser(response);
+      setUser(authUser);
+      persistUserSnapshot(authUser);
+      return authUser;
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
 
       if (problem.status === 0) {
         const snapshot = readUserSnapshot();
-
         if (snapshot) {
           setUser(snapshot);
           return snapshot;
         }
       }
 
+      clearTokens();
       setUser(null);
       persistUserSnapshot(null);
       return null;
@@ -132,25 +162,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     try {
-      await logoutRequest();
+      const storedRefreshToken = getRefreshToken();
+      await logoutRequest(storedRefreshToken ?? undefined);
     } finally {
+      clearTokens();
       setUser(null);
       persistUserSnapshot(null);
     }
   }, []);
 
   const updateProfile = useCallback(async (input: UpdateProfileInput) => {
-    const authenticatedUser = await updateProfileRequest(input);
+    const response = await updateProfileRequest(input);
 
-    if (!authenticatedUser.isActive) {
+    if (!response.isActive) {
+      clearTokens();
       setUser(null);
       persistUserSnapshot(null);
-      return authenticatedUser;
+      return response;
     }
 
-    setUser(authenticatedUser);
-    persistUserSnapshot(authenticatedUser);
-    return authenticatedUser;
+    if ('accessToken' in response) {
+      const authResponse = response as AuthResponse;
+      setAccessToken(authResponse.accessToken);
+      setRefreshToken(authResponse.refreshToken);
+      const authUser = extractUser(authResponse);
+      setUser(authUser);
+      persistUserSnapshot(authUser);
+      return authUser;
+    }
+
+    setUser(response);
+    persistUserSnapshot(response);
+    return response;
   }, []);
 
   const updatePassword = useCallback(async (input: UpdatePasswordInput) => {
