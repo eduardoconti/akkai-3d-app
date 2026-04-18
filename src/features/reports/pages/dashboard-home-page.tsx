@@ -88,6 +88,17 @@ interface RankingTooltipState {
   percentageLabel: string;
 }
 
+interface CardTooltipLine {
+  label: string;
+  value: string;
+}
+
+interface CardTooltipState {
+  x: number;
+  y: number;
+  lines: CardTooltipLine[];
+}
+
 function getBarHeight(value: number, maxValue: number, chartHeight: number): number {
   if (maxValue <= 0) {
     return 0;
@@ -558,6 +569,7 @@ export default function DashboardHomePage() {
     null,
   );
   const [rankingTooltip, setRankingTooltip] = useState<RankingTooltipState | null>(null);
+  const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
   const [topProductsMonthTotalQuantity, setTopProductsMonthTotalQuantity] = useState(0);
   const [expenseCategoriesMonthTotalValue, setExpenseCategoriesMonthTotalValue] = useState(0);
 
@@ -760,6 +772,11 @@ export default function DashboardHomePage() {
         x: event.clientX,
         y: event.clientY,
       });
+    };
+
+  const handleCardMouseMove =
+    (lines: CardTooltipLine[]) => (event: React.MouseEvent<HTMLDivElement>) => {
+      setCardTooltip({ x: event.clientX, y: event.clientY, lines });
     };
 
   const renderWidget = (widgetId: DashboardWidgetId) => {
@@ -1090,6 +1107,35 @@ export default function DashboardHomePage() {
         </Paper>
       ) : null}
 
+      {cardTooltip ? (
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: cardTooltip.x + 14,
+            top: cardTooltip.y - 14,
+            px: 1.5,
+            py: 1,
+            pointerEvents: 'none',
+            zIndex: 1400,
+            borderRadius: 2,
+          }}
+        >
+          <Stack spacing={0.5}>
+            {cardTooltip.lines.map((line) => (
+              <Stack key={line.label} direction="row" spacing={1.5} justifyContent="space-between" alignItems="center">
+                <Typography variant="caption" color="text.secondary">
+                  {line.label}
+                </Typography>
+                <Typography variant="caption" fontWeight={700}>
+                  {line.value}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
+      ) : null}
+
       <Stack spacing={3}>
         <Stack
         direction={{ xs: 'column', md: 'row' }}
@@ -1124,7 +1170,21 @@ export default function DashboardHomePage() {
           <Stack spacing={3}>
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 3 }}>
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  onMouseMove={handleCardMouseMove([
+                    {
+                      label: 'Itens',
+                      value: String(result.totalQuantidadeItensVendidos),
+                    },
+                    {
+                      label: 'Brindes',
+                      value: String(result.totalQuantidadeBrindes),
+                    },
+                  ])}
+                  onMouseLeave={() => setCardTooltip(null)}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Itens vendidos em {result.ano}
                   </Typography>
@@ -1138,7 +1198,29 @@ export default function DashboardHomePage() {
               </Grid>
 
               <Grid size={{ xs: 12, md: 3 }}>
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  onMouseMove={handleCardMouseMove([
+                    {
+                      label: 'Taxas',
+                      value: hideValues ? '••••••' : formatCurrency(result.totalTaxas),
+                    },
+                    {
+                      label: 'Impostos',
+                      value: hideValues ? '••••••' : formatCurrency(result.totalImpostos),
+                    },
+                    {
+                      label: 'Valor líquido',
+                      value: hideValues
+                        ? '••••••'
+                        : formatCurrency(
+                            result.totalVendas - result.totalTaxas - result.totalImpostos,
+                          ),
+                    },
+                  ])}
+                  onMouseLeave={() => setCardTooltip(null)}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Total de vendas em {result.ano}
                   </Typography>

@@ -11,7 +11,10 @@ export interface SalesSummaryPeriodFilter {
 export interface DashboardMonthlySummaryItem {
   mes: number;
   quantidadeItensVendidos: number;
+  quantidadeBrindes: number;
   valorVendas: number;
+  valorTaxas: number;
+  valorImpostos: number;
   valorDespesas: number;
   saldo: number;
 }
@@ -19,7 +22,10 @@ export interface DashboardMonthlySummaryItem {
 export interface DashboardMonthlySummaryResponse {
   ano: number;
   totalQuantidadeItensVendidos: number;
+  totalQuantidadeBrindes: number;
   totalVendas: number;
+  totalTaxas: number;
+  totalImpostos: number;
   totalDespesas: number;
   saldo: number;
   itens: DashboardMonthlySummaryItem[];
