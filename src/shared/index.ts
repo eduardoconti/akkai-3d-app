@@ -18,6 +18,28 @@ export { useSwUpdate } from './lib/offline/use-sw-update';
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
 export type { ActionResult } from './lib/types/action-result';
 export type {
+  AlterarCicloAssinaturaInput,
+  AlterarKitMensalInput,
+  Assinante,
+  AssinanteInput,
+  CicloAssinatura,
+  CicloAssinaturaInput,
+  GerarCiclosResult,
+  ItemCicloAssinatura,
+  ItemCicloAssinaturaInput,
+  ItemKitMensal,
+  ItemKitMensalInput,
+  KitMensal,
+  KitMensalInput,
+  PesquisarAssinantesInput,
+  PesquisarCiclosInput,
+  PesquisarKitsInput,
+  PlanoAssinatura,
+  PlanoAssinaturaInput,
+  StatusAssinante,
+  StatusCiclo,
+} from './lib/types/domain';
+export type {
   Carteira,
   CarteiraInput,
   CategoriaDespesa,

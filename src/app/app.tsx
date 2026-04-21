@@ -44,6 +44,10 @@ const ReportsSummaryPage = lazy(
 const DashboardHomePage = lazy(
   () => import('@/features/reports/pages/dashboard-home-page'),
 );
+const PlanosPage = lazy(() => import('@/features/assinatura/pages/planos-page'));
+const AssinantesPage = lazy(() => import('@/features/assinatura/pages/assinantes-page'));
+const CiclosPage = lazy(() => import('@/features/assinatura/pages/ciclos-page'));
+const KitsPage = lazy(() => import('@/features/assinatura/pages/kits-page'));
 
 function RouteFallback() {
   return (
@@ -106,6 +110,10 @@ function App() {
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
             <Route path="/vendas/feiras" element={<FairsPage />} />
             <Route path="/vendas" element={<SalesPage />} />
+            <Route path="/assinatura/planos" element={<PlanosPage />} />
+            <Route path="/assinatura/assinantes" element={<AssinantesPage />} />
+            <Route path="/assinatura/ciclos" element={<CiclosPage />} />
+            <Route path="/assinatura/kits" element={<KitsPage />} />
           </Route>
         </Route>
       </Routes>

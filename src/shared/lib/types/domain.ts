@@ -289,6 +289,165 @@ export interface AtualizarOrcamentoInput {
   quantidade?: number;
 }
 
+// ── Assinatura ───────────────────────────────────────────────────────────────
+
+export type StatusAssinante = 'ATIVO' | 'PAUSADO' | 'CANCELADO';
+export type StatusCiclo =
+  | 'PENDENTE'
+  | 'EM_PREPARO'
+  | 'ENVIADO'
+  | 'ENTREGUE'
+  | 'CANCELADO';
+
+export interface PlanoAssinatura {
+  id: number;
+  nome: string;
+  descricao?: string;
+  valor: number;
+  ativo: boolean;
+  dataInclusao: string;
+}
+
+export interface PlanoAssinaturaInput {
+  nome: string;
+  descricao?: string;
+  valor: number;
+  ativo: boolean;
+}
+
+export interface Assinante {
+  id: number;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  enderecoEntrega?: string;
+  status: StatusAssinante;
+  idPlano: number;
+  plano?: PlanoAssinatura;
+  dataInclusao: string;
+}
+
+export interface AssinanteInput {
+  nome: string;
+  email?: string;
+  telefone?: string;
+  enderecoEntrega?: string;
+  idPlano: number;
+  status: StatusAssinante;
+}
+
+export interface ItemCicloAssinatura {
+  id: number;
+  idCiclo: number;
+  nomeProduto: string;
+  quantidade: number;
+  observacao?: string;
+}
+
+export interface ItemCicloAssinaturaInput {
+  nomeProduto: string;
+  quantidade: number;
+  observacao?: string;
+}
+
+export interface CicloAssinatura {
+  id: number;
+  idAssinante: number;
+  assinante?: Assinante;
+  mesReferencia: number;
+  anoReferencia: number;
+  status: StatusCiclo;
+  codigoRastreio?: string;
+  dataEnvio?: string;
+  observacao?: string;
+  dataInclusao: string;
+  itens: ItemCicloAssinatura[];
+}
+
+export interface CicloAssinaturaInput {
+  idAssinante: number;
+  mesReferencia: number;
+  anoReferencia: number;
+  status?: StatusCiclo;
+  codigoRastreio?: string;
+  observacao?: string;
+  itens: ItemCicloAssinaturaInput[];
+}
+
+export interface AlterarCicloAssinaturaInput {
+  status: StatusCiclo;
+  codigoRastreio?: string;
+  observacao?: string;
+  itens: ItemCicloAssinaturaInput[];
+}
+
+export interface PesquisarAssinantesInput {
+  pagina?: number;
+  tamanhoPagina?: number;
+  termo?: string;
+  status?: StatusAssinante;
+  idPlano?: number;
+}
+
+export interface PesquisarCiclosInput {
+  pagina?: number;
+  tamanhoPagina?: number;
+  idAssinante?: number;
+  status?: StatusCiclo;
+  mes?: number;
+  ano?: number;
+}
+
+export interface ItemKitMensal {
+  id: number;
+  idKit: number;
+  nomeProduto: string;
+  quantidade: number;
+  observacao?: string;
+}
+
+export interface ItemKitMensalInput {
+  nomeProduto: string;
+  quantidade: number;
+  observacao?: string;
+}
+
+export interface KitMensal {
+  id: number;
+  idPlano: number;
+  plano?: PlanoAssinatura;
+  mesReferencia: number;
+  anoReferencia: number;
+  dataInclusao: string;
+  itens: ItemKitMensal[];
+}
+
+export interface KitMensalInput {
+  idPlano: number;
+  mesReferencia: number;
+  anoReferencia: number;
+  itens: ItemKitMensalInput[];
+}
+
+export interface AlterarKitMensalInput {
+  itens: ItemKitMensalInput[];
+}
+
+export interface GerarCiclosResult {
+  criados: number;
+  ignorados: number;
+}
+
+export interface PesquisarKitsInput {
+  pagina?: number;
+  tamanhoPagina?: number;
+  idPlano?: number;
+  mes?: number;
+  ano?: number;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface ResultadoPaginado<T> {
   itens: T[];
   pagina: number;

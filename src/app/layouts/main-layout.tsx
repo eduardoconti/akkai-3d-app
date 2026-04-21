@@ -34,6 +34,7 @@ import {
   Inventory as ProductIcon,
   KeyboardArrowDown,
   LightMode,
+  Loyalty,
   Logout as LogoutIcon,
   Menu as MenuIcon,
   RequestQuote,
@@ -48,6 +49,12 @@ import {
   NewWalletDialog,
   PaymentMethodWalletFeeDialog,
 } from '@/features/finance';
+import {
+  NewAssinanteDialog,
+  NewCicloDialog,
+  NewKitDialog,
+  NewPlanDialog,
+} from '@/features/assinatura';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
 import { saleStoreSelectors } from '@/features/sales/store/use-sale-store';
@@ -122,8 +129,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [paymentMethodWalletFeeDialogOpen, setPaymentMethodWalletFeeDialogOpen] =
     useState(false);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [assinanteDialogOpen, setAssinanteDialogOpen] = useState(false);
+  const [cicloDialogOpen, setCicloDialogOpen] = useState(false);
+  const [kitDialogOpen, setKitDialogOpen] = useState(false);
   const [budgetsMenuOpen, setBudgetsMenuOpen] = useState(true);
   const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
+  const [assinaturaMenuOpen, setAssinaturaMenuOpen] = useState(true);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
   const [salesMenuOpen, setSalesMenuOpen] = useState(true);
@@ -160,6 +172,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
     () => location.pathname.startsWith('/financeiro'),
     [location.pathname],
   );
+  const assinaturaSectionActive = useMemo(
+    () => location.pathname.startsWith('/assinatura'),
+    [location.pathname],
+  );
   const currentSectionTitle = useMemo(() => {
     if (location.pathname === '/') {
       return 'Início';
@@ -179,6 +195,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
     if (location.pathname.startsWith('/financeiro')) {
       return 'Financeiro';
+    }
+
+    if (location.pathname.startsWith('/assinatura')) {
+      return 'Assinatura';
     }
 
     if (location.pathname.startsWith('/relatorios')) {
@@ -634,6 +654,131 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
+            onClick={() => setAssinaturaMenuOpen((current) => !current)}
+            sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
+              borderRadius: 2,
+              ...(assinaturaSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
+          >
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
+              <Loyalty />
+            </ListItemIcon>
+            <ListItemText primary="Assinatura" primaryTypographyProps={{ noWrap: true }} />
+            {assinaturaMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={assinaturaMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/assinatura/planos"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Planos" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setPlanDialogOpen(true));
+                  }}
+                  sx={{ ...MENU_ACTION_BUTTON_SX }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/assinatura/assinantes"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Assinantes" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setAssinanteDialogOpen(true));
+                  }}
+                  sx={{ ...MENU_ACTION_BUTTON_SX }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/assinatura/ciclos"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Ciclos" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setCicloDialogOpen(true));
+                  }}
+                  sx={{ ...MENU_ACTION_BUTTON_SX }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/assinatura/kits"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Kits mensais" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setKitDialogOpen(true));
+                  }}
+                  sx={{ ...MENU_ACTION_BUTTON_SX }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
+        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+          <ListItemButton
             onClick={() => setReportsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
@@ -1025,6 +1170,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <EditProfileDialog
         open={editProfileDialogOpen}
         onClose={() => setEditProfileDialogOpen(false)}
+      />
+      <NewPlanDialog
+        open={planDialogOpen}
+        onClose={() => setPlanDialogOpen(false)}
+      />
+      <NewAssinanteDialog
+        open={assinanteDialogOpen}
+        onClose={() => setAssinanteDialogOpen(false)}
+      />
+      <NewCicloDialog
+        open={cicloDialogOpen}
+        onClose={() => setCicloDialogOpen(false)}
+      />
+      <NewKitDialog
+        open={kitDialogOpen}
+        onClose={() => setKitDialogOpen(false)}
       />
       <Snackbar open={needsUpdate} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
         <Alert
