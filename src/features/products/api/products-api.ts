@@ -27,7 +27,10 @@ export function listProducts(
 export function listStock(
   query: PesquisaPaginada,
 ): Promise<ResultadoPaginado<EstoqueProduto>> {
-  return httpClient.get<ResultadoPaginado<EstoqueProduto>>('/produto/estoque', query);
+  return httpClient.get<ResultadoPaginado<EstoqueProduto>>(
+    '/produto/estoque',
+    query,
+  );
 }
 
 export function listStockMovements(
@@ -64,7 +67,10 @@ export async function listAllProducts(): Promise<Produto[]> {
 export function listCategories(
   query: PesquisaPaginada,
 ): Promise<ResultadoPaginado<Categoria>> {
-  return httpClient.get<ResultadoPaginado<Categoria>>('/produto/categorias', query);
+  return httpClient.get<ResultadoPaginado<Categoria>>(
+    '/produto/categorias',
+    query,
+  );
 }
 
 export async function listAllCategories(): Promise<Categoria[]> {
@@ -94,7 +100,10 @@ export function createProduct(input: ProdutoInput): Promise<Produto> {
   return httpClient.post<Produto>('/produto', input);
 }
 
-export function updateProduct(id: number, input: ProdutoInput): Promise<Produto> {
+export function updateProduct(
+  id: number,
+  input: ProdutoInput,
+): Promise<Produto> {
   return httpClient.put<Produto>(`/produto/${id}`, input);
 }
 

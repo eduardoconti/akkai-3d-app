@@ -96,7 +96,9 @@ export default function FinancePaymentMethodWalletFeesPage() {
         onAction={() => setDialogOpen(true)}
       />
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -170,7 +172,9 @@ export default function FinancePaymentMethodWalletFeesPage() {
                       onClick={() => setEditingFeeId(taxa.id)}
                     >
                       <TableCell>{taxa.carteira?.nome ?? '-'}</TableCell>
-                      <TableCell>{MEIO_PAGAMENTO_LABEL[taxa.meioPagamento]}</TableCell>
+                      <TableCell>
+                        {MEIO_PAGAMENTO_LABEL[taxa.meioPagamento]}
+                      </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>
                         {taxa.percentual.toFixed(2)}%
                       </TableCell>

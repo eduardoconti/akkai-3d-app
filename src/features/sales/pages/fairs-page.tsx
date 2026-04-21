@@ -63,7 +63,9 @@ export default function FairsPage() {
         breakpoint="lg"
       />
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -85,7 +87,9 @@ export default function FairsPage() {
                       Local: {feira.local ?? '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {feira.descricao?.trim() ? feira.descricao : 'Sem descrição'}
+                      {feira.descricao?.trim()
+                        ? feira.descricao
+                        : 'Sem descrição'}
                     </Typography>
                     <Box>
                       <Chip

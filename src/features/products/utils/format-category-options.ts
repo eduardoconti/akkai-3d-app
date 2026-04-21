@@ -19,7 +19,9 @@ function getCategoryPath(category: Categoria, categories: Categoria[]): string {
   return `${getCategoryPath(parent, categories)} > ${category.nome}`;
 }
 
-export function formatCategoryOptions(categories: Categoria[]): CategoryOption[] {
+export function formatCategoryOptions(
+  categories: Categoria[],
+): CategoryOption[] {
   return categories
     .map((category) => ({
       id: category.id,

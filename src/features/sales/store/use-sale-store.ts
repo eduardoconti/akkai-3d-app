@@ -70,12 +70,13 @@ function buildOfflineSale(
     carteiras.find((current) => current.id === dados.idCarteira) ?? null;
 
   const itens = dados.itens.map((item, index) => {
-    const produto = produtos.find((current) => current.id === item.idProduto) ?? null;
+    const produto =
+      produtos.find((current) => current.id === item.idProduto) ?? null;
     const valorUnitario = item.brinde
       ? 0
       : item.idProduto
         ? getCatalogProductValue(item, produtos)
-        : item.valorUnitario ?? 0;
+        : (item.valorUnitario ?? 0);
 
     return {
       id: saleId - index - 1,
@@ -89,7 +90,10 @@ function buildOfflineSale(
     };
   });
 
-  const totalItens = itens.reduce((accumulator, item) => accumulator + item.valorTotal, 0);
+  const totalItens = itens.reduce(
+    (accumulator, item) => accumulator + item.valorTotal,
+    0,
+  );
 
   return {
     id: saleId,
@@ -133,7 +137,10 @@ interface SaleStoreState {
   obterFeiraPorId: (id: number) => Promise<Feira>;
   fetchCarteiras: () => Promise<void>;
   criarFeira: (dados: FeiraInput) => Promise<ActionResult<Feira>>;
-  atualizarFeira: (id: number, dados: FeiraInput) => Promise<ActionResult<Feira>>;
+  atualizarFeira: (
+    id: number,
+    dados: FeiraInput,
+  ) => Promise<ActionResult<Feira>>;
   excluirFeira: (id: number) => Promise<ActionResult<void>>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
   alterarVenda: (
@@ -169,8 +176,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   submitErrorMessage: null,
   fetchVendas: async (query) => {
     const currentPagination = get().paginacao;
-    const hasQueryValue = <TKey extends keyof PesquisaPaginadaVendas>(key: TKey) =>
-      query ? Object.prototype.hasOwnProperty.call(query, key) : false;
+    const hasQueryValue = <TKey extends keyof PesquisaPaginadaVendas>(
+      key: TKey,
+    ) => (query ? Object.prototype.hasOwnProperty.call(query, key) : false);
 
     const nextPagination: PesquisaPaginadaVendas = {
       pagina: hasQueryValue('pagina')
@@ -180,7 +188,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         ? (query?.tamanhoPagina ?? paginacaoInicial.tamanhoPagina)
         : currentPagination.tamanhoPagina,
       tipo: hasQueryValue('tipo') ? query?.tipo : currentPagination.tipo,
-      idFeira: hasQueryValue('idFeira') ? query?.idFeira : currentPagination.idFeira,
+      idFeira: hasQueryValue('idFeira')
+        ? query?.idFeira
+        : currentPagination.idFeira,
       idCarteira: hasQueryValue('idCarteira')
         ? query?.idCarteira
         : currentPagination.idCarteira,
@@ -190,7 +200,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       dataInicio: hasQueryValue('dataInicio')
         ? query?.dataInicio
         : currentPagination.dataInicio,
-      dataFim: hasQueryValue('dataFim') ? query?.dataFim : currentPagination.dataFim,
+      dataFim: hasQueryValue('dataFim')
+        ? query?.dataFim
+        : currentPagination.dataFim,
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -235,12 +247,12 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,
-            totalizadores:
-              (cachedResponse as ResultadoPaginadoVendas).totalizadores ?? {
-                valorTotal: 0,
-                descontoTotal: 0,
-                valorLiquido: 0,
-              },
+            totalizadores: (cachedResponse as ResultadoPaginadoVendas)
+              .totalizadores ?? {
+              valorTotal: 0,
+              descontoTotal: 0,
+              valorLiquido: 0,
+            },
             fetchErrorMessage: null,
           });
           return cachedResponse;
@@ -379,7 +391,8 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       if (problem.status === 0) {
         const localSale = buildOfflineSale(
           dados,
-          (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] }).__AKKAI_PRODUCTS__ ?? [],
+          (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] })
+            .__AKKAI_PRODUCTS__ ?? [],
           get().feiras,
           get().carteiras,
         );
@@ -447,7 +460,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         }),
       );
 
-      const syncedCount = results.filter((r) => r.status === 'fulfilled').length;
+      const syncedCount = results.filter(
+        (r) => r.status === 'fulfilled',
+      ).length;
       const failedCount = results.filter((r) => r.status === 'rejected').length;
 
       const remainingSales = await listPendingSales();
@@ -487,8 +502,7 @@ export const saleStoreSelectors = {
   pendingSalesCount: (state: SaleStoreState) => state.pendingSalesCount,
   isFetching: (state: SaleStoreState) => state.isFetching,
   isSubmitting: (state: SaleStoreState) => state.isSubmitting,
-  isSyncingPendingSales: (state: SaleStoreState) =>
-    state.isSyncingPendingSales,
+  isSyncingPendingSales: (state: SaleStoreState) => state.isSyncingPendingSales,
   fetchErrorMessage: (state: SaleStoreState) => state.fetchErrorMessage,
   submitErrorMessage: (state: SaleStoreState) => state.submitErrorMessage,
   fetchVendas: (state: SaleStoreState) => state.fetchVendas,

@@ -126,7 +126,9 @@ interface ProductStoreState {
   ) => Promise<ResultadoPaginado<MovimentacaoEstoque> | void>;
   atualizarQuantidadeEstoqueLocal: (idProduto: number, delta: number) => void;
   criarProduto: (novoProduto: ProdutoInput) => Promise<ActionResult<Produto>>;
-  criarCategoria: (novaCategoria: CategoriaInput) => Promise<ActionResult<Categoria>>;
+  criarCategoria: (
+    novaCategoria: CategoriaInput,
+  ) => Promise<ActionResult<Categoria>>;
   obterCategoriaPorId: (id: number) => Promise<Categoria>;
   atualizarCategoria: (
     id: number,
@@ -276,7 +278,10 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
           : ((await getCachedCategories()) ?? []);
 
         if (categorias.length > 0) {
-          const response = paginarCategoriasEmMemoria(categorias, nextPagination);
+          const response = paginarCategoriasEmMemoria(
+            categorias,
+            nextPagination,
+          );
           set({
             categorias,
             categoriasPaginadas: response.itens,
@@ -437,8 +442,7 @@ export const productStoreSelectors = {
   totalPaginasCategorias: (state: ProductStoreState) =>
     state.totalPaginasCategorias,
   totalItensEstoque: (state: ProductStoreState) => state.totalItensEstoque,
-  totalPaginasEstoque: (state: ProductStoreState) =>
-    state.totalPaginasEstoque,
+  totalPaginasEstoque: (state: ProductStoreState) => state.totalPaginasEstoque,
   totalMovimentacoesEstoque: (state: ProductStoreState) =>
     state.totalMovimentacoesEstoque,
   totalPaginasMovimentacoesEstoque: (state: ProductStoreState) =>

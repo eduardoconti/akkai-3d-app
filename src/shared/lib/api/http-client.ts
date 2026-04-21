@@ -1,4 +1,7 @@
-import { isProblemDetails, type ProblemDetails } from '../types/problem-details';
+import {
+  isProblemDetails,
+  type ProblemDetails,
+} from '../types/problem-details';
 import {
   clearTokens,
   getAccessToken,

@@ -24,7 +24,10 @@ export function listFairs(): Promise<Feira[]> {
 export function listPagedFairs(
   query: PesquisaPaginadaFeiras,
 ): Promise<ResultadoPaginado<Feira>> {
-  return httpClient.get<ResultadoPaginado<Feira>>('/venda/feiras/paginado', query);
+  return httpClient.get<ResultadoPaginado<Feira>>(
+    '/venda/feiras/paginado',
+    query,
+  );
 }
 
 export function getFairById(id: number): Promise<Feira> {
@@ -51,7 +54,10 @@ export function createSale(input: InserirVendaInput): Promise<Venda> {
   return httpClient.post<Venda>('/venda', input);
 }
 
-export function updateSale(id: number, input: InserirVendaInput): Promise<Venda> {
+export function updateSale(
+  id: number,
+  input: InserirVendaInput,
+): Promise<Venda> {
   return httpClient.put<Venda>(`/venda/${id}`, input);
 }
 

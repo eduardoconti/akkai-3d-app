@@ -67,7 +67,9 @@ export default function ReportsBestSellingProductsPage() {
     Categoria[]
   >([]);
   const [feiras, setFeiras] = useState<Feira[]>([]);
-  const [result, setResult] = useState<BestSellingProductsResponse | null>(null);
+  const [result, setResult] = useState<BestSellingProductsResponse | null>(
+    null,
+  );
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(10);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
@@ -168,7 +170,10 @@ export default function ReportsBestSellingProductsPage() {
     return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)} até ${formatApiDateToDisplay(result.dataFim)}`;
   }, [result]);
 
-  const handleSubmit = async (nextPage = pagina, nextPageSize = tamanhoPagina) => {
+  const handleSubmit = async (
+    nextPage = pagina,
+    nextPageSize = tamanhoPagina,
+  ) => {
     setProblem(null);
     setLocalError(null);
     setIsLoading(true);
@@ -235,7 +240,8 @@ export default function ReportsBestSellingProductsPage() {
               {item.nomeProduto}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Codigo: {item.codigo ?? '-'} · {item.categoria?.nome ?? 'Sem categoria'}
+              Codigo: {item.codigo ?? '-'} ·{' '}
+              {item.categoria?.nome ?? 'Sem categoria'}
             </Typography>
           </Box>
 
@@ -245,7 +251,6 @@ export default function ReportsBestSellingProductsPage() {
             size="small"
           />
         </Stack>
-
       </Stack>
     </Box>
   );
@@ -263,100 +268,100 @@ export default function ReportsBestSellingProductsPage() {
       </Box>
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-            <Grid size={{ xs: 12, md: 6, lg: 5 }}>
-              <DateRangePickerField
-                label="Período"
-                startValue={dataInicio}
-                endValue={dataFim}
-                onValueChange={({ startValue, endValue }) => {
-                  setDataInicio(startValue);
-                  setDataFim(endValue);
-                }}
-              />
-            </Grid>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+          <DateRangePickerField
+            label="Período"
+            startValue={dataInicio}
+            endValue={dataFim}
+            onValueChange={({ startValue, endValue }) => {
+              setDataInicio(startValue);
+              setDataFim(endValue);
+            }}
+          />
+        </Grid>
 
-            <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-              <TextField
-                select
-                fullWidth
-                label="Tipo de venda"
-                value={tipoVenda}
-                onChange={(event) =>
-                  setTipoVenda(event.target.value as 'TODOS' | TipoVenda)
-                }
-              >
-                <MenuItem value="TODOS">Todos</MenuItem>
-                <MenuItem value="FEIRA">Feira</MenuItem>
-                <MenuItem value="LOJA">Loja</MenuItem>
-                <MenuItem value="ONLINE">Online</MenuItem>
-              </TextField>
-            </Grid>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Tipo de venda"
+            value={tipoVenda}
+            onChange={(event) =>
+              setTipoVenda(event.target.value as 'TODOS' | TipoVenda)
+            }
+          >
+            <MenuItem value="TODOS">Todos</MenuItem>
+            <MenuItem value="FEIRA">Feira</MenuItem>
+            <MenuItem value="LOJA">Loja</MenuItem>
+            <MenuItem value="ONLINE">Online</MenuItem>
+          </TextField>
+        </Grid>
 
-            {tipoVenda === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-                <TextField
-                  select
-                  fullWidth
-                  disabled={isLoadingFeiras}
-                  label="Feira"
-                  value={idFeira}
-                  onChange={(event) =>
-                    setIdFeira(
-                      event.target.value === '' ? '' : Number(event.target.value),
-                    )
-                  }
-                  helperText={
-                    feiras.length === 0 && !isLoadingFeiras
-                      ? 'Nenhuma feira cadastrada.'
-                      : 'Opcional. Filtre uma feira específica.'
-                  }
-                >
-                  <MenuItem value="">Todas as feiras</MenuItem>
-                  {feiras.map((feira) => (
-                    <MenuItem key={feira.id} value={feira.id}>
-                      {feira.nome}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            ) : null}
-
-            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 6 : 9 }}>
-              <Autocomplete
-                multiple
-                options={categorias}
-                value={categoriasSelecionadas}
-                loading={isLoadingFilters}
-                onChange={(_event, value) => setCategoriasSelecionadas(value)}
-                getOptionLabel={(option) => option.nome}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Categorias"
-                    placeholder="Selecione uma ou mais categorias"
-                  />
-                )}
-              />
-            </Grid>
-
-            <Grid
-              size={{ xs: 12, md: 6, lg: 3 }}
-              sx={{ display: 'flex', alignItems: 'flex-start' }}
+        {tipoVenda === 'FEIRA' ? (
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+            <TextField
+              select
+              fullWidth
+              disabled={isLoadingFeiras}
+              label="Feira"
+              value={idFeira}
+              onChange={(event) =>
+                setIdFeira(
+                  event.target.value === '' ? '' : Number(event.target.value),
+                )
+              }
+              helperText={
+                feiras.length === 0 && !isLoadingFeiras
+                  ? 'Nenhuma feira cadastrada.'
+                  : 'Opcional. Filtre uma feira específica.'
+              }
             >
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-                onClick={() => {
-                  void handleSubmit(1, tamanhoPagina);
-                }}
-                disabled={isLoading}
-                sx={{ height: 56 }}
-              >
-                {isLoading ? 'Consultando...' : 'Pesquisar'}
-              </Button>
-            </Grid>
+              <MenuItem value="">Todas as feiras</MenuItem>
+              {feiras.map((feira) => (
+                <MenuItem key={feira.id} value={feira.id}>
+                  {feira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        ) : null}
+
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 6 : 9 }}>
+          <Autocomplete
+            multiple
+            options={categorias}
+            value={categoriasSelecionadas}
+            loading={isLoadingFilters}
+            onChange={(_event, value) => setCategoriasSelecionadas(value)}
+            getOptionLabel={(option) => option.nome}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Categorias"
+                placeholder="Selecione uma ou mais categorias"
+              />
+            )}
+          />
+        </Grid>
+
+        <Grid
+          size={{ xs: 12, md: 6, lg: 3 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
+        >
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
+            onClick={() => {
+              void handleSubmit(1, tamanhoPagina);
+            }}
+            disabled={isLoading}
+            sx={{ height: 56 }}
+          >
+            {isLoading ? 'Consultando...' : 'Pesquisar'}
+          </Button>
+        </Grid>
       </Grid>
 
       <FormFeedbackAlert message={localError ?? problem?.detail} />
@@ -380,86 +385,86 @@ export default function ReportsBestSellingProductsPage() {
           </Stack>
 
           <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-              {isMobile ? (
-                <Stack divider={<Divider flexItem />}>
-                  {result.itens.length > 0 ? (
-                    result.itens.map(renderProductCard)
-                  ) : (
-                    <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                      Nenhum produto encontrado para os filtros informados.
-                    </Box>
-                  )}
-                </Stack>
-              ) : (
-                <TableContainer>
-                  <Table aria-label="ranking de produtos mais vendidos">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>
-                          <strong>Codigo</strong>
-                        </TableCell>
-                        <TableCell>
-                          <strong>Produto</strong>
-                        </TableCell>
-                        <TableCell>
-                          <strong>Categoria</strong>
-                        </TableCell>
-                        <TableCell align="right">
-                          <strong>Quantidade vendida</strong>
-                        </TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {result.itens.length > 0 ? (
-                        result.itens.map((item) => (
-                          <TableRow
-                            key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
-                          >
-                            <TableCell>{item.codigo ?? '-'}</TableCell>
-                            <TableCell>{item.nomeProduto}</TableCell>
-                            <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
-                            <TableCell align="right">
-                              {item.quantidadeVendida}
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                            Nenhum produto encontrado para os filtros informados.
+            {isMobile ? (
+              <Stack divider={<Divider flexItem />}>
+                {result.itens.length > 0 ? (
+                  result.itens.map(renderProductCard)
+                ) : (
+                  <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
+                    Nenhum produto encontrado para os filtros informados.
+                  </Box>
+                )}
+              </Stack>
+            ) : (
+              <TableContainer>
+                <Table aria-label="ranking de produtos mais vendidos">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <strong>Codigo</strong>
+                      </TableCell>
+                      <TableCell>
+                        <strong>Produto</strong>
+                      </TableCell>
+                      <TableCell>
+                        <strong>Categoria</strong>
+                      </TableCell>
+                      <TableCell align="right">
+                        <strong>Quantidade vendida</strong>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {result.itens.length > 0 ? (
+                      result.itens.map((item) => (
+                        <TableRow
+                          key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
+                        >
+                          <TableCell>{item.codigo ?? '-'}</TableCell>
+                          <TableCell>{item.nomeProduto}</TableCell>
+                          <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
+                          <TableCell align="right">
+                            {item.quantidadeVendida}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                          Nenhum produto encontrado para os filtros informados.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
 
-              <TablePagination
-                component="div"
-                count={result.totalItens}
-                page={Math.max(0, result.pagina - 1)}
-                onPageChange={(_event, newPage) => {
-                  void handleSubmit(newPage + 1, tamanhoPagina);
-                }}
-                rowsPerPage={result.tamanhoPagina}
-                onRowsPerPageChange={(event) => {
-                  void handleSubmit(1, Number(event.target.value));
-                }}
-                rowsPerPageOptions={[10, 25, 50]}
-                labelRowsPerPage="Itens por página"
-                labelDisplayedRows={({ from, to, count }) =>
-                  `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-                }
-                sx={{
-                  '.MuiTablePagination-toolbar': {
-                    flexWrap: 'wrap',
-                    justifyContent: { xs: 'center', sm: 'flex-end' },
-                    gap: 1,
-                    px: { xs: 1, sm: 2 },
-                  },
-                }}
-              />
+            <TablePagination
+              component="div"
+              count={result.totalItens}
+              page={Math.max(0, result.pagina - 1)}
+              onPageChange={(_event, newPage) => {
+                void handleSubmit(newPage + 1, tamanhoPagina);
+              }}
+              rowsPerPage={result.tamanhoPagina}
+              onRowsPerPageChange={(event) => {
+                void handleSubmit(1, Number(event.target.value));
+              }}
+              rowsPerPageOptions={[10, 25, 50]}
+              labelRowsPerPage="Itens por página"
+              labelDisplayedRows={({ from, to, count }) =>
+                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+              }
+              sx={{
+                '.MuiTablePagination-toolbar': {
+                  flexWrap: 'wrap',
+                  justifyContent: { xs: 'center', sm: 'flex-end' },
+                  gap: 1,
+                  px: { xs: 1, sm: 2 },
+                },
+              }}
+            />
           </Paper>
         </Stack>
       ) : null}

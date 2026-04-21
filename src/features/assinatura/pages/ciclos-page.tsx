@@ -111,7 +111,9 @@ export default function CiclosPage() {
             label="Assinante"
             value={idAssinanteFiltro}
             onChange={(e) =>
-              setIdAssinanteFiltro(e.target.value === '' ? '' : Number(e.target.value))
+              setIdAssinanteFiltro(
+                e.target.value === '' ? '' : Number(e.target.value),
+              )
             }
           >
             <MenuItem value="">Todos</MenuItem>
@@ -129,7 +131,9 @@ export default function CiclosPage() {
             fullWidth
             label="Status"
             value={statusFiltro}
-            onChange={(e) => setStatusFiltro(e.target.value as StatusCiclo | '')}
+            onChange={(e) =>
+              setStatusFiltro(e.target.value as StatusCiclo | '')
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {(Object.keys(STATUS_CICLO_LABEL) as StatusCiclo[]).map((s) => (
@@ -146,7 +150,9 @@ export default function CiclosPage() {
             fullWidth
             label="Mês"
             value={mesFiltro}
-            onChange={(e) => setMesFiltro(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setMesFiltro(e.target.value === '' ? '' : Number(e.target.value))
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {Object.entries(MESES_LABEL).map(([mes, label]) => (
@@ -163,7 +169,9 @@ export default function CiclosPage() {
             fullWidth
             label="Ano"
             value={anoFiltro}
-            onChange={(e) => setAnoFiltro(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setAnoFiltro(e.target.value === '' ? '' : Number(e.target.value))
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {ANOS.map((ano) => (
@@ -175,7 +183,9 @@ export default function CiclosPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -189,13 +199,20 @@ export default function CiclosPage() {
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
                   onClick={() => setEditingCicloId(ciclo.id)}
                 >
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.5}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    spacing={1.5}
+                  >
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {ciclo.assinante?.nome ?? `Assinante #${ciclo.idAssinante}`}
+                        {ciclo.assinante?.nome ??
+                          `Assinante #${ciclo.idAssinante}`}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {MESES_LABEL[ciclo.mesReferencia]} / {ciclo.anoReferencia}
+                        {MESES_LABEL[ciclo.mesReferencia]} /{' '}
+                        {ciclo.anoReferencia}
                       </Typography>
                       {ciclo.codigoRastreio ? (
                         <Typography variant="caption" color="text.secondary">
@@ -255,10 +272,12 @@ export default function CiclosPage() {
                       onClick={() => setEditingCicloId(ciclo.id)}
                     >
                       <TableCell>
-                        {ciclo.assinante?.nome ?? `Assinante #${ciclo.idAssinante}`}
+                        {ciclo.assinante?.nome ??
+                          `Assinante #${ciclo.idAssinante}`}
                       </TableCell>
                       <TableCell>
-                        {MESES_LABEL[ciclo.mesReferencia]} / {ciclo.anoReferencia}
+                        {MESES_LABEL[ciclo.mesReferencia]} /{' '}
+                        {ciclo.anoReferencia}
                       </TableCell>
                       <TableCell>
                         <Chip
@@ -269,7 +288,8 @@ export default function CiclosPage() {
                         />
                       </TableCell>
                       <TableCell sx={{ color: 'text.secondary' }}>
-                        {ciclo.itens?.length ?? 0} {ciclo.itens?.length === 1 ? 'item' : 'itens'}
+                        {ciclo.itens?.length ?? 0}{' '}
+                        {ciclo.itens?.length === 1 ? 'item' : 'itens'}
                       </TableCell>
                       <TableCell sx={{ color: 'text.secondary' }}>
                         {ciclo.codigoRastreio ?? '—'}
@@ -296,12 +316,18 @@ export default function CiclosPage() {
             void fetchCiclos({ pagina: newPage + 1 });
           }}
           onRowsPerPageChange={(event) => {
-            void fetchCiclos({ pagina: 1, tamanhoPagina: Number(event.target.value) });
+            void fetchCiclos({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
           }}
         />
       </Paper>
 
-      <NewCicloDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
+      <NewCicloDialog
+        open={newDialogOpen}
+        onClose={() => setNewDialogOpen(false)}
+      />
       <EditCicloDialog
         open={editingCicloId !== null}
         cicloId={editingCicloId}

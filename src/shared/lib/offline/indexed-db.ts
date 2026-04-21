@@ -114,7 +114,9 @@ export async function getCachedProducts(): Promise<ResultadoPaginado<Produto> | 
   return getCachedValue<ResultadoPaginado<Produto>>('products');
 }
 
-export async function saveCachedProductCatalog(produtos: Produto[]): Promise<void> {
+export async function saveCachedProductCatalog(
+  produtos: Produto[],
+): Promise<void> {
   await saveCachedValue('products-catalog', produtos);
 }
 
@@ -122,7 +124,9 @@ export async function getCachedProductCatalog(): Promise<Produto[] | null> {
   return getCachedValue<Produto[]>('products-catalog');
 }
 
-export async function saveCachedCategories(categorias: Categoria[]): Promise<void> {
+export async function saveCachedCategories(
+  categorias: Categoria[],
+): Promise<void> {
   await saveCachedValue('categories', categorias);
 }
 
@@ -157,7 +161,9 @@ export async function getCachedSales(): Promise<ResultadoPaginado<Venda> | null>
 }
 
 export async function addPendingSale(record: PendingSaleRecord): Promise<void> {
-  await withStore(PENDING_SALES_STORE, 'readwrite', (store) => store.put(record));
+  await withStore(PENDING_SALES_STORE, 'readwrite', (store) =>
+    store.put(record),
+  );
 }
 
 export async function listPendingSales(): Promise<PendingSaleRecord[]> {
@@ -173,5 +179,7 @@ export async function listPendingSales(): Promise<PendingSaleRecord[]> {
 }
 
 export async function removePendingSale(id: string): Promise<void> {
-  await withStore(PENDING_SALES_STORE, 'readwrite', (store) => store.delete(id));
+  await withStore(PENDING_SALES_STORE, 'readwrite', (store) =>
+    store.delete(id),
+  );
 }

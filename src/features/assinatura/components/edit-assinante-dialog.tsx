@@ -68,12 +68,21 @@ export default function EditAssinanteDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<AssinanteFormState, AssinanteFormErrors>({
-      open,
-      initialValues: initialAssinanteFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<AssinanteFormState, AssinanteFormErrors>({
+    open,
+    initialValues: initialAssinanteFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -212,7 +221,9 @@ export default function EditAssinanteDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <Person color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar assinante
@@ -222,7 +233,11 @@ export default function EditAssinanteDialog({
                 Atualize os dados do assinante selecionado.
               </Typography>
             </Box>
-            <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+            <IconButton
+              onClick={handleDialogClose}
+              disabled={isBusy}
+              aria-label="Fechar"
+            >
               <Close />
             </IconButton>
           </Box>
@@ -239,9 +254,15 @@ export default function EditAssinanteDialog({
                 label="Nome"
                 placeholder="Ex: João da Silva"
                 value={form.nome}
-                onChange={(e) => setForm((c) => ({ ...c, nome: e.target.value }))}
-                error={Boolean(localErrors.nome ?? getFieldMessage(problem, 'nome'))}
-                helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, nome: e.target.value }))
+                }
+                error={Boolean(
+                  localErrors.nome ?? getFieldMessage(problem, 'nome'),
+                )}
+                helperText={
+                  localErrors.nome ?? getFieldMessage(problem, 'nome')
+                }
               />
             </Grid>
 
@@ -252,13 +273,20 @@ export default function EditAssinanteDialog({
                 disabled={isLoading}
                 label="Status"
                 value={form.status}
-                onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as StatusAssinante }))}
+                onChange={(e) =>
+                  setForm((c) => ({
+                    ...c,
+                    status: e.target.value as StatusAssinante,
+                  }))
+                }
               >
-                {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map((s) => (
-                  <MenuItem key={s} value={s}>
-                    {STATUS_ASSINANTE_LABEL[s]}
-                  </MenuItem>
-                ))}
+                {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map(
+                  (s) => (
+                    <MenuItem key={s} value={s}>
+                      {STATUS_ASSINANTE_LABEL[s]}
+                    </MenuItem>
+                  ),
+                )}
               </TextField>
             </Grid>
 
@@ -272,11 +300,16 @@ export default function EditAssinanteDialog({
                 onChange={(e) =>
                   setForm((c) => ({
                     ...c,
-                    idPlano: e.target.value === '' ? '' : Number(e.target.value),
+                    idPlano:
+                      e.target.value === '' ? '' : Number(e.target.value),
                   }))
                 }
-                error={Boolean(localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'))}
-                helperText={localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')}
+                error={Boolean(
+                  localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'),
+                )}
+                helperText={
+                  localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')
+                }
               >
                 <MenuItem value="">Selecione um plano</MenuItem>
                 {planos.map((p) => (
@@ -294,7 +327,9 @@ export default function EditAssinanteDialog({
                 label="E-mail"
                 placeholder="Ex: joao@email.com"
                 value={form.email}
-                onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, email: e.target.value }))
+                }
                 error={Boolean(getFieldMessage(problem, 'email'))}
                 helperText={getFieldMessage(problem, 'email') ?? 'Opcional'}
               />
@@ -307,7 +342,9 @@ export default function EditAssinanteDialog({
                 label="Telefone"
                 placeholder="Ex: (11) 99999-9999"
                 value={form.telefone}
-                onChange={(e) => setForm((c) => ({ ...c, telefone: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, telefone: e.target.value }))
+                }
                 error={Boolean(getFieldMessage(problem, 'telefone'))}
                 helperText={getFieldMessage(problem, 'telefone') ?? 'Opcional'}
               />
@@ -322,7 +359,9 @@ export default function EditAssinanteDialog({
                 label="Endereço de entrega"
                 placeholder="Ex: Rua das Flores, 123 – São Paulo/SP"
                 value={form.enderecoEntrega}
-                onChange={(e) => setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))
+                }
                 helperText="Opcional"
               />
             </Grid>
@@ -330,15 +369,29 @@ export default function EditAssinanteDialog({
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -354,15 +407,24 @@ export default function EditAssinanteDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir assinante</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir este assinante? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir este assinante? Essa ação não pode
+            ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

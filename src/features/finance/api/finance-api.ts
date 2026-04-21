@@ -35,7 +35,9 @@ export function deleteWallet(id: number): Promise<void> {
   return httpClient.delete<void>(`/financeiro/carteiras/${id}`);
 }
 
-export function listPaymentMethodWalletFees(): Promise<TaxaMeioPagamentoCarteira[]> {
+export function listPaymentMethodWalletFees(): Promise<
+  TaxaMeioPagamentoCarteira[]
+> {
   return httpClient.get<TaxaMeioPagamentoCarteira[]>(
     '/financeiro/taxas-meio-pagamento-carteira',
   );
@@ -69,7 +71,9 @@ export function updatePaymentMethodWalletFee(
 }
 
 export function deletePaymentMethodWalletFee(id: number): Promise<void> {
-  return httpClient.delete<void>(`/financeiro/taxas-meio-pagamento-carteira/${id}`);
+  return httpClient.delete<void>(
+    `/financeiro/taxas-meio-pagamento-carteira/${id}`,
+  );
 }
 
 export function listExpenseCategories(): Promise<CategoriaDespesa[]> {
@@ -102,14 +106,20 @@ export function deleteExpenseCategory(id: number): Promise<void> {
 export function listExpenses(
   query: PesquisaPaginadaDespesas,
 ): Promise<ResultadoPaginadoDespesas> {
-  return httpClient.get<ResultadoPaginadoDespesas>('/financeiro/despesas', query);
+  return httpClient.get<ResultadoPaginadoDespesas>(
+    '/financeiro/despesas',
+    query,
+  );
 }
 
 export function createExpense(input: DespesaInput): Promise<Despesa> {
   return httpClient.post<Despesa>('/financeiro/despesas', input);
 }
 
-export function updateExpense(id: number, input: DespesaInput): Promise<Despesa> {
+export function updateExpense(
+  id: number,
+  input: DespesaInput,
+): Promise<Despesa> {
   return httpClient.put<Despesa>(`/financeiro/despesas/${id}`, input);
 }
 

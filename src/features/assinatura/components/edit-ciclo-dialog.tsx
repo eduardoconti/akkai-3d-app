@@ -73,12 +73,21 @@ export default function EditCicloDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<CicloFormState, CicloFormErrors>({
-      open,
-      initialValues: initialCicloFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<CicloFormState, CicloFormErrors>({
+    open,
+    initialValues: initialCicloFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -129,7 +138,9 @@ export default function EditCicloDialog({
 
         if (!active) return;
 
-        setAssinanteName(ciclo.assinante?.nome ?? `Assinante #${ciclo.idAssinante}`);
+        setAssinanteName(
+          ciclo.assinante?.nome ?? `Assinante #${ciclo.idAssinante}`,
+        );
         setForm({
           idAssinante: ciclo.idAssinante,
           mesReferencia: ciclo.mesReferencia,
@@ -167,7 +178,8 @@ export default function EditCicloDialog({
     onClose();
   };
 
-  const isBusy = isSubmitting || isLoading || isSaving || isDeleting || isLoadingProducts;
+  const isBusy =
+    isSubmitting || isLoading || isSaving || isDeleting || isLoadingProducts;
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -177,7 +189,9 @@ export default function EditCicloDialog({
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
     setForm((c) => ({
       ...c,
-      itens: c.itens.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+      itens: c.itens.map((item, i) =>
+        i === index ? { ...item, ...patch } : item,
+      ),
     }));
   };
 
@@ -201,11 +215,15 @@ export default function EditCicloDialog({
     const errors: CicloFormErrors = {};
 
     const itensInvalidos = form.itens.some(
-      (item) => item.idProduto === '' || item.quantidade === '' || Number(item.quantidade) <= 0,
+      (item) =>
+        item.idProduto === '' ||
+        item.quantidade === '' ||
+        Number(item.quantidade) <= 0,
     );
 
     if (itensInvalidos) {
-      errors.itens = 'Todos os itens devem ter produto e quantidade maior que zero.';
+      errors.itens =
+        'Todos os itens devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -276,7 +294,9 @@ export default function EditCicloDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <AllInbox color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar ciclo
@@ -288,7 +308,11 @@ export default function EditCicloDialog({
                   : 'Atualize os dados do ciclo selecionado.'}
               </Typography>
             </Box>
-            <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+            <IconButton
+              onClick={handleDialogClose}
+              disabled={isBusy}
+              aria-label="Fechar"
+            >
               <Close />
             </IconButton>
           </Box>
@@ -299,7 +323,8 @@ export default function EditCicloDialog({
 
           {produtos.length === 0 && !isLoadingProducts ? (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Nenhum produto cadastrado. Cadastre produtos antes de montar o ciclo.
+              Nenhum produto cadastrado. Cadastre produtos antes de montar o
+              ciclo.
             </Alert>
           ) : null}
 
@@ -311,7 +336,12 @@ export default function EditCicloDialog({
                 disabled={isLoading}
                 label="Status"
                 value={form.status}
-                onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as StatusCiclo }))}
+                onChange={(e) =>
+                  setForm((c) => ({
+                    ...c,
+                    status: e.target.value as StatusCiclo,
+                  }))
+                }
               >
                 {(Object.keys(STATUS_CICLO_LABEL) as StatusCiclo[]).map((s) => (
                   <MenuItem key={s} value={s}>
@@ -328,9 +358,13 @@ export default function EditCicloDialog({
                 label="Código de rastreio"
                 placeholder="Ex: BR123456789BR"
                 value={form.codigoRastreio}
-                onChange={(e) => setForm((c) => ({ ...c, codigoRastreio: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, codigoRastreio: e.target.value }))
+                }
                 error={Boolean(getFieldMessage(problem, 'codigoRastreio'))}
-                helperText={getFieldMessage(problem, 'codigoRastreio') ?? 'Opcional'}
+                helperText={
+                  getFieldMessage(problem, 'codigoRastreio') ?? 'Opcional'
+                }
               />
             </Grid>
 
@@ -343,24 +377,40 @@ export default function EditCicloDialog({
                 label="Observação"
                 placeholder="Ex: Substituir peça X pelo modelo Y"
                 value={form.observacao}
-                onChange={(e) => setForm((c) => ({ ...c, observacao: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, observacao: e.target.value }))
+                }
                 helperText="Opcional"
               />
             </Grid>
           </Grid>
 
           <Box sx={{ mt: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1.5 }}
+            >
               <Typography variant="subtitle1" fontWeight={700}>
                 Itens do ciclo
               </Typography>
-              <Button size="small" startIcon={<Add />} onClick={addItem} disabled={isBusy}>
+              <Button
+                size="small"
+                startIcon={<Add />}
+                onClick={addItem}
+                disabled={isBusy}
+              >
                 Adicionar item
               </Button>
             </Stack>
 
             {localErrors.itens ? (
-              <Typography variant="caption" color="error" sx={{ mb: 1, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ mb: 1, display: 'block' }}
+              >
                 {localErrors.itens}
               </Typography>
             ) : null}
@@ -373,13 +423,17 @@ export default function EditCicloDialog({
                       products={produtos}
                       productId={item.idProduto}
                       loading={isLoadingProducts}
-                      disabled={isLoading || isLoadingProducts || produtos.length === 0}
+                      disabled={
+                        isLoading || isLoadingProducts || produtos.length === 0
+                      }
                       onChange={(newValue) =>
                         setItem(index, {
                           idProduto: newValue?.id ?? '',
                         })
                       }
-                      helperText={index === 0 ? 'Pesquise por nome ou código.' : undefined}
+                      helperText={
+                        index === 0 ? 'Pesquise por nome ou código.' : undefined
+                      }
                     />
                   </Grid>
 
@@ -393,7 +447,8 @@ export default function EditCicloDialog({
                       value={item.quantidade}
                       onChange={(e) =>
                         setItem(index, {
-                          quantidade: e.target.value === '' ? '' : Number(e.target.value),
+                          quantidade:
+                            e.target.value === '' ? '' : Number(e.target.value),
                         })
                       }
                     />
@@ -406,11 +461,16 @@ export default function EditCicloDialog({
                       label="Observação"
                       placeholder="Opcional"
                       value={item.observacao}
-                      onChange={(e) => setItem(index, { observacao: e.target.value })}
+                      onChange={(e) =>
+                        setItem(index, { observacao: e.target.value })
+                      }
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 6, sm: 1 }} sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Grid
+                    size={{ xs: 6, sm: 1 }}
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                  >
                     <IconButton
                       color="error"
                       onClick={() => removeItem(index)}
@@ -427,15 +487,29 @@ export default function EditCicloDialog({
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -451,15 +525,24 @@ export default function EditCicloDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir ciclo</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir este ciclo? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir este ciclo? Essa ação não pode ser
+            desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

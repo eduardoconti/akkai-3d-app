@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   Alert,
   Avatar,
@@ -127,8 +134,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
-  const [paymentMethodWalletFeeDialogOpen, setPaymentMethodWalletFeeDialogOpen] =
-    useState(false);
+  const [
+    paymentMethodWalletFeeDialogOpen,
+    setPaymentMethodWalletFeeDialogOpen,
+  ] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [assinanteDialogOpen, setAssinanteDialogOpen] = useState(false);
   const [cicloDialogOpen, setCicloDialogOpen] = useState(false);
@@ -265,7 +274,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         flexDirection: 'column',
         bgcolor: 'background.paper',
         overflow: 'hidden',
-      }}>
+      }}
+    >
       <Toolbar>
         <Box>
           <Typography
@@ -274,7 +284,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
           >
             AKKAI 3D
           </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ mt: 0.5 }}
+          >
             <Box
               sx={{
                 width: 8,
@@ -290,7 +305,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
         </Box>
       </Toolbar>
       <Divider />
-      <List sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}>
+      <List
+        sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}
+      >
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton
             component={NavLink}
@@ -307,7 +324,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <HomeOutlined />
             </ListItemIcon>
-            <ListItemText primary="Início" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Início"
+              primaryTypographyProps={{ noWrap: true }}
+            />
           </ListItemButton>
         </ListItem>
 
@@ -323,7 +343,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <SaleIcon />
             </ListItemIcon>
-            <ListItemText primary="Vendas" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Vendas"
+              primaryTypographyProps={{ noWrap: true }}
+            />
             <IconButton
               size="small"
               onClick={(event) => {
@@ -400,7 +423,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <ProductIcon />
             </ListItemIcon>
-            <ListItemText primary="Produtos" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Produtos"
+              primaryTypographyProps={{ noWrap: true }}
+            />
             <IconButton
               size="small"
               onClick={(event) => {
@@ -428,7 +454,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  "&.active": getActiveSubmenuStyles(theme),
+                  '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
                 <ListItemText primary="Produtos" />
@@ -443,7 +469,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  "&.active": getActiveSubmenuStyles(theme),
+                  '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
                 <ListItemText primary="Estoque" />
@@ -458,7 +484,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
                   borderRadius: 2,
-                  "&.active": getActiveSubmenuStyles(theme),
+                  '&.active': getActiveSubmenuStyles(theme),
                 })}
               >
                 <ListItemText primary="Categorias" />
@@ -544,7 +570,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <Balance />
             </ListItemIcon>
-            <ListItemText primary="Financeiro" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Financeiro"
+              primaryTypographyProps={{ noWrap: true }}
+            />
             {financeMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -664,7 +693,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <Loyalty />
             </ListItemIcon>
-            <ListItemText primary="Assinatura" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Assinatura"
+              primaryTypographyProps={{ noWrap: true }}
+            />
             {assinaturaMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -789,7 +821,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
               <Assessment />
             </ListItemIcon>
-            <ListItemText primary="Relatórios" primaryTypographyProps={{ noWrap: true }} />
+            <ListItemText
+              primary="Relatórios"
+              primaryTypographyProps={{ noWrap: true }}
+            />
             {reportsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
@@ -1100,7 +1135,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
             )}
           </ListItemIcon>
           <ListItemText
-            primary={mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}
+            primary={
+              mode === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'
+            }
           />
         </MenuItem>
         <MenuItem
@@ -1187,7 +1224,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         open={kitDialogOpen}
         onClose={() => setKitDialogOpen(false)}
       />
-      <Snackbar open={needsUpdate} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+      <Snackbar
+        open={needsUpdate}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
         <Alert
           severity="info"
           action={

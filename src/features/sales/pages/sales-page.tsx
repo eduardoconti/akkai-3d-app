@@ -108,18 +108,27 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
         <TableCell>{venda.carteira?.nome ?? '-'}</TableCell>
         <TableCell>{getPaymentMethodLabel(venda.meioPagamento)}</TableCell>
         <TableCell align="right">
-          {venda.desconto > 0 ? formatSaleValue(venda.desconto, hideValues) : '-'}
+          {venda.desconto > 0
+            ? formatSaleValue(venda.desconto, hideValues)
+            : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
+          {venda.valorTaxa != null
+            ? formatSaleValue(venda.valorTaxa, hideValues)
+            : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
+          {venda.valorImposto != null
+            ? formatSaleValue(venda.valorImposto, hideValues)
+            : '-'}
         </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
           {formatSaleValue(venda.valorTotal, hideValues)}
         </TableCell>
-        <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>
+        <TableCell
+          align="right"
+          sx={{ fontWeight: 700, color: 'success.main' }}
+        >
           {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
         </TableCell>
         <TableCell align="center">
@@ -161,13 +170,27 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
                 sx={{ mb: 2 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  Taxa: {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
+                  Taxa:{' '}
+                  {venda.valorTaxa != null
+                    ? formatSaleValue(venda.valorTaxa, hideValues)
+                    : '-'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Imposto: {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
+                  Imposto:{' '}
+                  {venda.valorImposto != null
+                    ? formatSaleValue(venda.valorImposto, hideValues)
+                    : '-'}
                 </Typography>
-                <Typography variant="body2" fontWeight={700} color="success.main">
-                  Líquido: {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
+                <Typography
+                  variant="body2"
+                  fontWeight={700}
+                  color="success.main"
+                >
+                  Líquido:{' '}
+                  {formatSaleValue(
+                    venda.valorLiquido ?? venda.valorTotal,
+                    hideValues,
+                  )}
                 </Typography>
               </Stack>
               <Table size="small">
@@ -382,7 +405,8 @@ export default function SalesPage() {
             Vendas
           </Typography>
           <Typography color="text.secondary">
-            Acompanhe as últimas vendas com contexto de feira, pagamento e itens.
+            Acompanhe as últimas vendas com contexto de feira, pagamento e
+            itens.
           </Typography>
         </Box>
 
@@ -626,14 +650,27 @@ export default function SalesPage() {
                         : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Taxa: {venda.valorTaxa != null ? formatSaleValue(venda.valorTaxa, hideValues) : '-'}
+                      Taxa:{' '}
+                      {venda.valorTaxa != null
+                        ? formatSaleValue(venda.valorTaxa, hideValues)
+                        : '-'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Imposto:{' '}
-                      {venda.valorImposto != null ? formatSaleValue(venda.valorImposto, hideValues) : '-'}
+                      {venda.valorImposto != null
+                        ? formatSaleValue(venda.valorImposto, hideValues)
+                        : '-'}
                     </Typography>
-                    <Typography variant="body2" fontWeight={700} color="success.main">
-                      Líquido: {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
+                    <Typography
+                      variant="body2"
+                      fontWeight={700}
+                      color="success.main"
+                    >
+                      Líquido:{' '}
+                      {formatSaleValue(
+                        venda.valorLiquido ?? venda.valorTotal,
+                        hideValues,
+                      )}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Itens: {venda.itens.map(getSaleItemName).join(', ')}

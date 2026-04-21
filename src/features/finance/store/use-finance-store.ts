@@ -87,7 +87,10 @@ interface FinanceStoreState {
   ) => Promise<ActionResult<TaxaMeioPagamentoCarteira>>;
   excluirTaxaMeioPagamentoCarteira: (id: number) => Promise<ActionResult<void>>;
   criarDespesa: (dados: DespesaInput) => Promise<ActionResult<Despesa>>;
-  atualizarDespesa: (id: number, dados: DespesaInput) => Promise<ActionResult<Despesa>>;
+  atualizarDespesa: (
+    id: number,
+    dados: DespesaInput,
+  ) => Promise<ActionResult<Despesa>>;
   excluirDespesa: (id: number) => Promise<ActionResult<void>>;
   criarCategoriaDespesa: (
     dados: CategoriaDespesaInput,
@@ -148,8 +151,9 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   },
   fetchDespesas: async (query) => {
     const currentPagination = get().paginacao;
-    const hasQueryValue = <TKey extends keyof PesquisaPaginadaDespesas>(key: TKey) =>
-      query ? Object.prototype.hasOwnProperty.call(query, key) : false;
+    const hasQueryValue = <TKey extends keyof PesquisaPaginadaDespesas>(
+      key: TKey,
+    ) => (query ? Object.prototype.hasOwnProperty.call(query, key) : false);
 
     const nextPagination: PesquisaPaginadaDespesas = {
       pagina: hasQueryValue('pagina')
@@ -259,7 +263,8 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   criarTaxaMeioPagamentoCarteira: async (dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
-      const taxaMeioPagamentoCarteira = await createPaymentMethodWalletFee(dados);
+      const taxaMeioPagamentoCarteira =
+        await createPaymentMethodWalletFee(dados);
       return { success: true, data: taxaMeioPagamentoCarteira };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
@@ -272,7 +277,10 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   atualizarTaxaMeioPagamentoCarteira: async (id, dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
-      const taxaMeioPagamentoCarteira = await updatePaymentMethodWalletFee(id, dados);
+      const taxaMeioPagamentoCarteira = await updatePaymentMethodWalletFee(
+        id,
+        dados,
+      );
       return { success: true, data: taxaMeioPagamentoCarteira };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);

@@ -69,12 +69,21 @@ export default function NewWalletDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<WalletFormState, WalletFormErrors>({
-      open,
-      initialValues: initialWalletFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<WalletFormState, WalletFormErrors>({
+    open,
+    initialValues: initialWalletFormState,
+    onReset: clearSubmitError,
+  });
 
   const handleClose = () => {
     resetForm();
@@ -102,11 +111,14 @@ export default function NewWalletDialog({
       const percentual = parsePercentualInput(form.percentualImpostoVenda);
 
       if (!Number.isFinite(percentual)) {
-        errors.percentualImpostoVenda = 'Informe um percentual de imposto válido.';
+        errors.percentualImpostoVenda =
+          'Informe um percentual de imposto válido.';
       } else if (percentual < 0) {
-        errors.percentualImpostoVenda = 'O percentual de imposto não pode ser negativo.';
+        errors.percentualImpostoVenda =
+          'O percentual de imposto não pode ser negativo.';
       } else if (percentual > 100) {
-        errors.percentualImpostoVenda = 'O percentual de imposto deve ser de no máximo 100.';
+        errors.percentualImpostoVenda =
+          'O percentual de imposto deve ser de no máximo 100.';
       }
     }
 
@@ -155,7 +167,9 @@ export default function NewWalletDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <AccountBalanceWallet color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Nova carteira
@@ -189,7 +203,9 @@ export default function NewWalletDialog({
               onChange={(event) =>
                 setForm((current) => ({ ...current, nome: event.target.value }))
               }
-              error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
+              error={Boolean(
+                localErrors.nome || getFieldMessage(problem, 'nome'),
+              )}
               helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
             />
           </Grid>
@@ -197,7 +213,11 @@ export default function NewWalletDialog({
           <Grid size={{ xs: 12 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
               Meios de pagamento aceitos{' '}
-              <Typography component="span" variant="caption" color="text.disabled">
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.disabled"
+              >
                 (vazio = aceita todos)
               </Typography>
             </Typography>
@@ -242,7 +262,9 @@ export default function NewWalletDialog({
                     setForm((current) => ({
                       ...current,
                       consideraImpostoVenda: checked,
-                      percentualImpostoVenda: checked ? current.percentualImpostoVenda : '',
+                      percentualImpostoVenda: checked
+                        ? current.percentualImpostoVenda
+                        : '',
                     }))
                   }
                 />
@@ -266,7 +288,7 @@ export default function NewWalletDialog({
               }
               error={Boolean(
                 localErrors.percentualImpostoVenda ||
-                  getFieldMessage(problem, 'percentualImpostoVenda'),
+                getFieldMessage(problem, 'percentualImpostoVenda'),
               )}
               helperText={
                 localErrors.percentualImpostoVenda ??

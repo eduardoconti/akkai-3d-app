@@ -64,12 +64,21 @@ export default function EditPlanDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<PlanoFormState, PlanoFormErrors>({
-      open,
-      initialValues: initialPlanoFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<PlanoFormState, PlanoFormErrors>({
+    open,
+    initialValues: initialPlanoFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -199,7 +208,9 @@ export default function EditPlanDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <Loyalty color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar plano
@@ -209,7 +220,11 @@ export default function EditPlanDialog({
                 Atualize os dados do plano selecionado.
               </Typography>
             </Box>
-            <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+            <IconButton
+              onClick={handleDialogClose}
+              disabled={isBusy}
+              aria-label="Fechar"
+            >
               <Close />
             </IconButton>
           </Box>
@@ -226,9 +241,15 @@ export default function EditPlanDialog({
                 label="Nome do plano"
                 placeholder="Ex: Kit Mensal Básico"
                 value={form.nome}
-                onChange={(e) => setForm((c) => ({ ...c, nome: e.target.value }))}
-                error={Boolean(localErrors.nome ?? getFieldMessage(problem, 'nome'))}
-                helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, nome: e.target.value }))
+                }
+                error={Boolean(
+                  localErrors.nome ?? getFieldMessage(problem, 'nome'),
+                )}
+                helperText={
+                  localErrors.nome ?? getFieldMessage(problem, 'nome')
+                }
               />
             </Grid>
 
@@ -236,9 +257,15 @@ export default function EditPlanDialog({
               <CurrencyField
                 label="Valor (R$)"
                 value={form.valor === '' ? 0 : form.valor}
-                onValueChange={(value) => setForm((c) => ({ ...c, valor: value }))}
-                error={Boolean(localErrors.valor ?? getFieldMessage(problem, 'valor'))}
-                helperText={localErrors.valor ?? getFieldMessage(problem, 'valor')}
+                onValueChange={(value) =>
+                  setForm((c) => ({ ...c, valor: value }))
+                }
+                error={Boolean(
+                  localErrors.valor ?? getFieldMessage(problem, 'valor'),
+                )}
+                helperText={
+                  localErrors.valor ?? getFieldMessage(problem, 'valor')
+                }
                 disabled={isLoading}
               />
             </Grid>
@@ -252,7 +279,9 @@ export default function EditPlanDialog({
                 label="Descrição"
                 placeholder="Ex: Kit com 3 peças impressas em 3D"
                 value={form.descricao}
-                onChange={(e) => setForm((c) => ({ ...c, descricao: e.target.value }))}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, descricao: e.target.value }))
+                }
               />
             </Grid>
 
@@ -262,7 +291,9 @@ export default function EditPlanDialog({
                   <Switch
                     checked={form.ativo}
                     disabled={isLoading}
-                    onChange={(_e, checked) => setForm((c) => ({ ...c, ativo: checked }))}
+                    onChange={(_e, checked) =>
+                      setForm((c) => ({ ...c, ativo: checked }))
+                    }
                   />
                 }
                 label="Plano ativo"
@@ -272,15 +303,29 @@ export default function EditPlanDialog({
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -296,15 +341,24 @@ export default function EditPlanDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir plano</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir este plano? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir este plano? Essa ação não pode ser
+            desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

@@ -33,14 +33,15 @@ import { useShallow } from 'zustand/react/shallow';
 export default function PlanosPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { fetchErrorMessage, fetchPlanos, isFetching, planos } = useAssinaturaStore(
-    useShallow((state) => ({
-      fetchErrorMessage: assinaturaStoreSelectors.fetchErrorMessage(state),
-      fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
-      isFetching: assinaturaStoreSelectors.isFetching(state),
-      planos: assinaturaStoreSelectors.planos(state),
-    })),
-  );
+  const { fetchErrorMessage, fetchPlanos, isFetching, planos } =
+    useAssinaturaStore(
+      useShallow((state) => ({
+        fetchErrorMessage: assinaturaStoreSelectors.fetchErrorMessage(state),
+        fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
+        isFetching: assinaturaStoreSelectors.isFetching(state),
+        planos: assinaturaStoreSelectors.planos(state),
+      })),
+    );
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -56,12 +57,16 @@ export default function PlanosPage() {
   );
 
   const paginatedPlanos = useMemo(
-    () => sortedPlanos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    () =>
+      sortedPlanos.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [page, rowsPerPage, sortedPlanos],
   );
 
   useEffect(() => {
-    const maxPage = Math.max(0, Math.ceil(sortedPlanos.length / rowsPerPage) - 1);
+    const maxPage = Math.max(
+      0,
+      Math.ceil(sortedPlanos.length / rowsPerPage) - 1,
+    );
     if (page > maxPage) setPage(maxPage);
   }, [page, rowsPerPage, sortedPlanos.length]);
 
@@ -74,7 +79,9 @@ export default function PlanosPage() {
         onAction={() => setNewDialogOpen(true)}
       />
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -88,13 +95,22 @@ export default function PlanosPage() {
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
                   onClick={() => setEditingPlanId(plano.id)}
                 >
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1.5}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    spacing={1.5}
+                  >
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="subtitle1" fontWeight={700} noWrap>
                         {plano.nome}
                       </Typography>
                       {plano.descricao ? (
-                        <Typography variant="body2" color="text.secondary" noWrap>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          noWrap
+                        >
                           {plano.descricao}
                         </Typography>
                       ) : null}
@@ -107,7 +123,11 @@ export default function PlanosPage() {
                       />
                     </Box>
                     <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={700}
+                        color="primary.main"
+                      >
                         {formatCurrency(plano.valor)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -167,7 +187,10 @@ export default function PlanosPage() {
                           variant="outlined"
                         />
                       </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                      <TableCell
+                        align="right"
+                        sx={{ fontWeight: 700, color: 'primary.main' }}
+                      >
                         {formatCurrency(plano.valor)}
                       </TableCell>
                     </TableRow>
@@ -196,7 +219,10 @@ export default function PlanosPage() {
         />
       </Paper>
 
-      <NewPlanDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
+      <NewPlanDialog
+        open={newDialogOpen}
+        onClose={() => setNewDialogOpen(false)}
+      />
       <EditPlanDialog
         open={editingPlanId !== null}
         planId={editingPlanId}

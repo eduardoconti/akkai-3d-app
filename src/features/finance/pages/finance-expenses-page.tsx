@@ -64,7 +64,8 @@ export default function FinanceExpensesPage() {
     useShallow((state) => ({
       categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
       despesas: financeStoreSelectors.despesas(state),
-      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchCategoriasDespesa:
+        financeStoreSelectors.fetchCategoriasDespesa(state),
       fetchDespesas: financeStoreSelectors.fetchDespesas(state),
       fetchFeiras: financeStoreSelectors.fetchFeiras(state),
       fetchErrorMessage: financeStoreSelectors.fetchErrorMessage(state),
@@ -120,7 +121,14 @@ export default function FinanceExpensesPage() {
     }, 300);
 
     return () => window.clearTimeout(timeout);
-  }, [categoriasSelecionadas, dataFim, dataInicio, fetchDespesas, idFeira, searchInput]);
+  }, [
+    categoriasSelecionadas,
+    dataFim,
+    dataInicio,
+    fetchDespesas,
+    idFeira,
+    searchInput,
+  ]);
 
   return (
     <Stack spacing={3}>
@@ -334,9 +342,7 @@ export default function FinanceExpensesPage() {
                         {formatApiDateToDisplay(despesa.dataLancamento)}
                       </TableCell>
                       <TableCell>{despesa.descricao}</TableCell>
-                      <TableCell>
-                        {despesa.categoria?.nome ?? '-'}
-                      </TableCell>
+                      <TableCell>{despesa.categoria?.nome ?? '-'}</TableCell>
                       <TableCell>
                         {getPaymentMethodLabel(despesa.meioPagamento)}
                       </TableCell>

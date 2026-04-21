@@ -201,7 +201,10 @@ export function buildTheme(mode: PaletteMode) {
           },
           outlinedPrimary: {
             borderColor: alpha('#1296d4', 0.42),
-            backgroundColor: alpha(isDark ? '#171224' : '#ffffff', isDark ? 0.72 : 0.72),
+            backgroundColor: alpha(
+              isDark ? '#171224' : '#ffffff',
+              isDark ? 0.72 : 0.72,
+            ),
           },
         },
       },

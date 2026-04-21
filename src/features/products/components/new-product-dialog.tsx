@@ -50,12 +50,21 @@ export default function NewProductDialog({
 
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isSubmittingRef = useRef(false);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<ProductFormState, ProductFormErrors>({
-      open,
-      initialValues: initialProductFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<ProductFormState, ProductFormErrors>({
+    open,
+    initialValues: initialProductFormState,
+    onReset: clearSubmitError,
+  });
 
   useEffect(() => {
     if (open) {
@@ -168,7 +177,9 @@ export default function NewProductDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Inventory color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Novo produto
@@ -200,7 +211,10 @@ export default function NewProductDialog({
               placeholder="Ex: Stegossauro Brilha"
               value={form.nome}
               onChange={(event) => {
-                setForm((current) => ({ ...current, nome: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  nome: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('nome'))}
               helperText={getErrorMessage('nome')}
@@ -214,7 +228,10 @@ export default function NewProductDialog({
               placeholder="DINO02"
               value={form.codigo}
               onChange={(event) => {
-                setForm((current) => ({ ...current, codigo: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  codigo: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('codigo'))}
               helperText={getErrorMessage('codigo')}

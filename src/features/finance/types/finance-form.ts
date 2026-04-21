@@ -21,7 +21,12 @@ export const initialWalletFormState: WalletFormState = {
   percentualImpostoVenda: '',
 };
 
-export const ALL_MEIOS_PAGAMENTO: MeioPagamento[] = ['DIN', 'DEB', 'CRE', 'PIX'];
+export const ALL_MEIOS_PAGAMENTO: MeioPagamento[] = [
+  'DIN',
+  'DEB',
+  'CRE',
+  'PIX',
+];
 
 export const MEIO_PAGAMENTO_LABEL: Record<MeioPagamento, string> = {
   DIN: 'Dinheiro',

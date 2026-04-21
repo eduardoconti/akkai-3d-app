@@ -63,8 +63,12 @@ export default function EditProfileDialog({
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [profileProblem, setProfileProblem] = useState<ProblemDetails | null>(null);
-  const [passwordProblem, setPasswordProblem] = useState<ProblemDetails | null>(null);
+  const [profileProblem, setProfileProblem] = useState<ProblemDetails | null>(
+    null,
+  );
+  const [passwordProblem, setPasswordProblem] = useState<ProblemDetails | null>(
+    null,
+  );
   const [profileForm, setProfileForm] = useState<ProfileFormState>({
     name: '',
     login: '',
@@ -79,9 +83,14 @@ export default function EditProfileDialog({
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
-  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const canUpdateRole = user?.permissions.includes('auth.user.update_role') ?? false;
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const canUpdateRole =
+    user?.permissions.includes('auth.user.update_role') ?? false;
   const canUpdateStatus =
     user?.permissions.includes('auth.user.update_status') ?? false;
 
@@ -210,7 +219,8 @@ export default function EditProfileDialog({
     const errors: Record<string, string> = {};
 
     if (passwordForm.currentPassword.length < 6) {
-      errors.currentPassword = 'Informe a senha atual com pelo menos 6 caracteres.';
+      errors.currentPassword =
+        'Informe a senha atual com pelo menos 6 caracteres.';
     }
 
     if (passwordForm.newPassword.length < 6) {
@@ -218,7 +228,8 @@ export default function EditProfileDialog({
     }
 
     if (passwordForm.confirmPassword !== passwordForm.newPassword) {
-      errors.confirmPassword = 'A confirmação da senha deve ser igual à nova senha.';
+      errors.confirmPassword =
+        'A confirmação da senha deve ser igual à nova senha.';
     }
 
     setPasswordErrors(errors);
@@ -305,9 +316,13 @@ export default function EditProfileDialog({
                       name: event.target.value,
                     }));
                   }}
-                  error={Boolean(profileErrors.name || getFieldMessage(profileProblem, 'name'))}
+                  error={Boolean(
+                    profileErrors.name ||
+                    getFieldMessage(profileProblem, 'name'),
+                  )}
                   helperText={
-                    profileErrors.name ?? getFieldMessage(profileProblem, 'name')
+                    profileErrors.name ??
+                    getFieldMessage(profileProblem, 'name')
                   }
                 />
 
@@ -321,9 +336,13 @@ export default function EditProfileDialog({
                       login: event.target.value,
                     }));
                   }}
-                  error={Boolean(profileErrors.login || getFieldMessage(profileProblem, 'login'))}
+                  error={Boolean(
+                    profileErrors.login ||
+                    getFieldMessage(profileProblem, 'login'),
+                  )}
                   helperText={
-                    profileErrors.login ?? getFieldMessage(profileProblem, 'login')
+                    profileErrors.login ??
+                    getFieldMessage(profileProblem, 'login')
                   }
                 />
 
@@ -341,7 +360,7 @@ export default function EditProfileDialog({
                     }}
                     error={Boolean(
                       profileErrors.roleId ||
-                        getFieldMessage(profileProblem, 'roleId'),
+                      getFieldMessage(profileProblem, 'roleId'),
                     )}
                     helperText={
                       profileErrors.roleId ??
@@ -441,7 +460,7 @@ export default function EditProfileDialog({
                   }}
                   error={Boolean(
                     passwordErrors.currentPassword ||
-                      getFieldMessage(passwordProblem, 'currentPassword'),
+                    getFieldMessage(passwordProblem, 'currentPassword'),
                   )}
                   helperText={
                     passwordErrors.currentPassword ??
@@ -466,7 +485,9 @@ export default function EditProfileDialog({
                         <InputAdornment position="end">
                           <IconButton
                             edge="end"
-                            onClick={() => setShowNewPassword((current) => !current)}
+                            onClick={() =>
+                              setShowNewPassword((current) => !current)
+                            }
                             onMouseDown={(event) => event.preventDefault()}
                             aria-label={
                               showNewPassword
@@ -474,7 +495,11 @@ export default function EditProfileDialog({
                                 : 'Exibir nova senha'
                             }
                           >
-                            {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                            {showNewPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -482,7 +507,7 @@ export default function EditProfileDialog({
                   }}
                   error={Boolean(
                     passwordErrors.newPassword ||
-                      getFieldMessage(passwordProblem, 'newPassword'),
+                    getFieldMessage(passwordProblem, 'newPassword'),
                   )}
                   helperText={
                     passwordErrors.newPassword ??
@@ -531,7 +556,13 @@ export default function EditProfileDialog({
                   helperText={passwordErrors.confirmPassword}
                 />
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 'auto' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    mt: 'auto',
+                  }}
+                >
                   <Button
                     variant="contained"
                     startIcon={<Save />}

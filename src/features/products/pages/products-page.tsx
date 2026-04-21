@@ -342,7 +342,10 @@ export default function ProductsPage() {
           await fetchProdutos();
         }}
       />
-      <NewProductDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <NewProductDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
     </Stack>
   );
 }

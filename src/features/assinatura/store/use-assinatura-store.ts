@@ -85,7 +85,9 @@ interface AssinaturaStoreState {
 
   fetchPlanos: () => Promise<void>;
   obterPlanoPorId: (id: number) => Promise<PlanoAssinatura>;
-  criarPlano: (dados: PlanoAssinaturaInput) => Promise<ActionResult<PlanoAssinatura>>;
+  criarPlano: (
+    dados: PlanoAssinaturaInput,
+  ) => Promise<ActionResult<PlanoAssinatura>>;
   atualizarPlano: (
     id: number,
     dados: PlanoAssinaturaInput,
@@ -117,7 +119,9 @@ interface AssinaturaStoreState {
 
   fetchCiclos: (query?: Partial<PesquisarCiclosInput>) => Promise<void>;
   obterCicloPorId: (id: number) => Promise<CicloAssinatura>;
-  criarCiclo: (dados: CicloAssinaturaInput) => Promise<ActionResult<CicloAssinatura>>;
+  criarCiclo: (
+    dados: CicloAssinaturaInput,
+  ) => Promise<ActionResult<CicloAssinatura>>;
   atualizarCiclo: (
     id: number,
     dados: AlterarCicloAssinaturaInput,
@@ -281,7 +285,8 @@ export const useAssinaturaStore = create<AssinaturaStoreState>((set, get) => ({
     const next = mergeQuery(get().paginacaoCiclos, query);
     set({ isFetching: true, fetchErrorMessage: null });
     try {
-      const response: ResultadoPaginado<CicloAssinatura> = await listCiclos(next);
+      const response: ResultadoPaginado<CicloAssinatura> =
+        await listCiclos(next);
       set({
         ciclos: response.itens,
         paginacaoCiclos: { ...next, pagina: response.pagina },

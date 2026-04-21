@@ -37,26 +37,45 @@ interface NewAssinanteDialogProps {
   onClose: () => void;
 }
 
-export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialogProps) {
-  const { clearSubmitError, criarAssinante, fetchAssinantes, fetchPlanos, isSubmitting, planos, submitErrorMessage } =
-    useAssinaturaStore(
-      useShallow((state) => ({
-        clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
-        criarAssinante: assinaturaStoreSelectors.criarAssinante(state),
-        fetchAssinantes: assinaturaStoreSelectors.fetchAssinantes(state),
-        fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
-        isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
-        planos: assinaturaStoreSelectors.planos(state),
-        submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
-      })),
-    );
+export default function NewAssinanteDialog({
+  open,
+  onClose,
+}: NewAssinanteDialogProps) {
+  const {
+    clearSubmitError,
+    criarAssinante,
+    fetchAssinantes,
+    fetchPlanos,
+    isSubmitting,
+    planos,
+    submitErrorMessage,
+  } = useAssinaturaStore(
+    useShallow((state) => ({
+      clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
+      criarAssinante: assinaturaStoreSelectors.criarAssinante(state),
+      fetchAssinantes: assinaturaStoreSelectors.fetchAssinantes(state),
+      fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
+      isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
+      planos: assinaturaStoreSelectors.planos(state),
+      submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<AssinanteFormState, AssinanteFormErrors>({
-      open,
-      initialValues: initialAssinanteFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<AssinanteFormState, AssinanteFormErrors>({
+    open,
+    initialValues: initialAssinanteFormState,
+    onReset: clearSubmitError,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -130,7 +149,9 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Person color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Novo assinante
@@ -140,7 +161,11 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               Cadastre um assinante e vincule-o a um plano mensal.
             </Typography>
           </Box>
-          <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+          <IconButton
+            onClick={handleDialogClose}
+            disabled={isBusy}
+            aria-label="Fechar"
+          >
             <Close />
           </IconButton>
         </Box>
@@ -157,7 +182,9 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               placeholder="Ex: João da Silva"
               value={form.nome}
               onChange={(e) => setForm((c) => ({ ...c, nome: e.target.value }))}
-              error={Boolean(localErrors.nome ?? getFieldMessage(problem, 'nome'))}
+              error={Boolean(
+                localErrors.nome ?? getFieldMessage(problem, 'nome'),
+              )}
               helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
             />
           </Grid>
@@ -168,13 +195,20 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               fullWidth
               label="Status"
               value={form.status}
-              onChange={(e) => setForm((c) => ({ ...c, status: e.target.value as StatusAssinante }))}
+              onChange={(e) =>
+                setForm((c) => ({
+                  ...c,
+                  status: e.target.value as StatusAssinante,
+                }))
+              }
             >
-              {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map((s) => (
-                <MenuItem key={s} value={s}>
-                  {STATUS_ASSINANTE_LABEL[s]}
-                </MenuItem>
-              ))}
+              {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map(
+                (s) => (
+                  <MenuItem key={s} value={s}>
+                    {STATUS_ASSINANTE_LABEL[s]}
+                  </MenuItem>
+                ),
+              )}
             </TextField>
           </Grid>
 
@@ -190,8 +224,12 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
                   idPlano: e.target.value === '' ? '' : Number(e.target.value),
                 }))
               }
-              error={Boolean(localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'))}
-              helperText={localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')}
+              error={Boolean(
+                localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'),
+              )}
+              helperText={
+                localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')
+              }
             >
               <MenuItem value="">Selecione um plano</MenuItem>
               {activePlanos.map((p) => (
@@ -208,7 +246,9 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               label="E-mail"
               placeholder="Ex: joao@email.com"
               value={form.email}
-              onChange={(e) => setForm((c) => ({ ...c, email: e.target.value }))}
+              onChange={(e) =>
+                setForm((c) => ({ ...c, email: e.target.value }))
+              }
               error={Boolean(getFieldMessage(problem, 'email'))}
               helperText={getFieldMessage(problem, 'email') ?? 'Opcional'}
             />
@@ -220,7 +260,9 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               label="Telefone"
               placeholder="Ex: (11) 99999-9999"
               value={form.telefone}
-              onChange={(e) => setForm((c) => ({ ...c, telefone: e.target.value }))}
+              onChange={(e) =>
+                setForm((c) => ({ ...c, telefone: e.target.value }))
+              }
               error={Boolean(getFieldMessage(problem, 'telefone'))}
               helperText={getFieldMessage(problem, 'telefone') ?? 'Opcional'}
             />
@@ -234,7 +276,9 @@ export default function NewAssinanteDialog({ open, onClose }: NewAssinanteDialog
               label="Endereço de entrega"
               placeholder="Ex: Rua das Flores, 123 – São Paulo/SP"
               value={form.enderecoEntrega}
-              onChange={(e) => setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))}
+              onChange={(e) =>
+                setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))
+              }
               helperText="Opcional"
             />
           </Grid>
