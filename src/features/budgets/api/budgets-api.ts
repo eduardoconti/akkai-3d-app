@@ -23,3 +23,7 @@ export function updateBudget(
 ): Promise<Orcamento> {
   return httpClient.put<Orcamento>(`/orcamento/${id}`, input);
 }
+
+export function deleteBudget(id: number): Promise<void> {
+  return httpClient.delete<void>(`/orcamento/${id}`);
+}

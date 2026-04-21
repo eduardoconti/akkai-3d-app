@@ -34,7 +34,11 @@ import {
   LoadingState,
   PageHeader,
 } from '@/shared';
-import type { Orcamento, StatusOrcamento, TipoVenda } from '@/shared/lib/types/domain';
+import type {
+  Orcamento,
+  StatusOrcamento,
+  TipoVenda,
+} from '@/shared/lib/types/domain';
 import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
@@ -81,7 +85,14 @@ function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
         color={STATUS_COLOR[orcamento.status]}
         size="small"
         clickable={!disabled}
-        onClick={disabled ? undefined : (e) => setAnchor(e.currentTarget)}
+        onClick={
+          disabled
+            ? undefined
+            : (e) => {
+                e.stopPropagation();
+                setAnchor(e.currentTarget);
+              }
+        }
       />
       <Menu
         anchorEl={anchor}
@@ -93,7 +104,8 @@ function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
           <MenuItem
             key={status}
             selected={orcamento.status === status}
-            onClick={() => {
+            onClick={(event) => {
+              event.stopPropagation();
               onStatusChange(orcamento.id, status);
               setAnchor(null);
             }}
@@ -131,6 +143,7 @@ export default function BudgetsPage() {
     })),
   );
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
 
   useEffect(() => {
     void fetchOrcamentos();
@@ -140,25 +153,57 @@ export default function BudgetsPage() {
     void atualizarOrcamento(id, { status });
   };
 
+  const handleOpenCreateDialog = () => {
+    setSelectedBudget(null);
+    setDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (budget: Orcamento) => {
+    setSelectedBudget(budget);
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setSelectedBudget(null);
+  };
+
   return (
     <Stack spacing={3}>
       <PageHeader
         title="Orçamentos"
         description="Registre e acompanhe solicitações de orçamento dos clientes."
         actionLabel="Novo orçamento"
-        onAction={() => setDialogOpen(true)}
+        onAction={handleOpenCreateDialog}
       />
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de orçamentos">
+          <Stack
+            divider={<Divider flexItem />}
+            aria-label="lista de orçamentos"
+          >
             {isFetching ? (
               <LoadingState />
             ) : orcamentos.length > 0 ? (
               orcamentos.map((orcamento) => (
-                <Box key={orcamento.id} sx={{ px: 2, py: 2 }}>
+                <Box
+                  key={orcamento.id}
+                  sx={{
+                    px: 2,
+                    py: 2,
+                    cursor: 'pointer',
+                    transition: 'background-color 0.2s ease',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                    },
+                  }}
+                  onClick={() => handleOpenEditDialog(orcamento)}
+                >
                   <Stack spacing={1}>
                     <Stack
                       direction="row"
@@ -183,12 +228,19 @@ export default function BudgetsPage() {
                       </Typography>
                     </Stack>
 
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <StatusChip
-                        orcamento={orcamento}
-                        onStatusChange={handleStatusChange}
-                        disabled={isSubmitting}
-                      />
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
+                      <Box onClick={(event) => event.stopPropagation()}>
+                        <StatusChip
+                          orcamento={orcamento}
+                          onStatusChange={handleStatusChange}
+                          disabled={isSubmitting}
+                        />
+                      </Box>
                       <Chip
                         label={TIPO_LABEL[orcamento.tipo]}
                         size="small"
@@ -230,7 +282,12 @@ export default function BudgetsPage() {
                     {orcamento.linkSTL ? (
                       <Typography variant="body2" color="text.secondary">
                         STL:{' '}
-                        <Link href={orcamento.linkSTL} target="_blank" rel="noreferrer">
+                        <Link
+                          href={orcamento.linkSTL}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           Abrir link
                         </Link>
                       </Typography>
@@ -254,6 +311,9 @@ export default function BudgetsPage() {
                     <strong>Cliente</strong>
                   </TableCell>
                   <TableCell>
+                    <strong>Descrição</strong>
+                  </TableCell>
+                  <TableCell>
                     <strong>Telefone</strong>
                   </TableCell>
                   <TableCell>
@@ -268,6 +328,7 @@ export default function BudgetsPage() {
                   <TableCell>
                     <strong>Qtd</strong>
                   </TableCell>
+
                   <TableCell>
                     <strong>Data de inclusão</strong>
                   </TableCell>
@@ -276,15 +337,23 @@ export default function BudgetsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={8} sx={{ p: 0 }}>
+                    <TableCell colSpan={9} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : orcamentos.length > 0 ? (
                   orcamentos.map((orcamento) => (
-                    <TableRow key={orcamento.id}>
+                    <TableRow
+                      key={orcamento.id}
+                      hover
+                      onClick={() => handleOpenEditDialog(orcamento)}
+                      sx={{ cursor: 'pointer' }}
+                    >
                       <TableCell>#{orcamento.id}</TableCell>
                       <TableCell>{orcamento.nomeCliente}</TableCell>
+                      <TableCell>
+                        {orcamento.descricao?.trim() || '-'}
+                      </TableCell>
                       <TableCell>{orcamento.telefoneCliente ?? '-'}</TableCell>
                       <TableCell>
                         <Stack spacing={0.5}>
@@ -292,13 +361,16 @@ export default function BudgetsPage() {
                             {TIPO_LABEL[orcamento.tipo]}
                           </Typography>
                           {orcamento.tipo === 'FEIRA' && orcamento.feira ? (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {orcamento.feira.nome}
                             </Typography>
                           ) : null}
                         </Stack>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(event) => event.stopPropagation()}>
                         <StatusChip
                           orcamento={orcamento}
                           onStatusChange={handleStatusChange}
@@ -306,15 +378,20 @@ export default function BudgetsPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        {orcamento.valor != null ? formatCurrency(orcamento.valor) : '-'}
+                        {orcamento.valor != null
+                          ? formatCurrency(orcamento.valor)
+                          : '-'}
                       </TableCell>
                       <TableCell>{orcamento.quantidade ?? '-'}</TableCell>
-                      <TableCell>{formatDateTime(orcamento.dataInclusao)}</TableCell>
+
+                      <TableCell>
+                        {formatDateTime(orcamento.dataInclusao)}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} sx={{ p: 0 }}>
+                    <TableCell colSpan={9} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum orçamento cadastrado até o momento." />
                     </TableCell>
                   </TableRow>
@@ -340,7 +417,11 @@ export default function BudgetsPage() {
         />
       </Paper>
 
-      <NewBudgetDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <NewBudgetDialog
+        open={dialogOpen}
+        budget={selectedBudget}
+        onClose={handleCloseDialog}
+      />
     </Stack>
   );
 }
