@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   createBudget,
+  deleteBudget,
   listBudgets,
   updateBudget,
 } from '@/features/budgets/api/budgets-api';
@@ -36,6 +37,7 @@ interface BudgetStoreState {
     id: number,
     dados: AtualizarOrcamentoInput,
   ) => Promise<ActionResult<Orcamento>>;
+  excluirOrcamento: (id: number) => Promise<ActionResult<void>>;
   clearSubmitError: () => void;
 }
 
@@ -104,6 +106,23 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  excluirOrcamento: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteBudget(id);
+      set((state) => ({
+        orcamentos: state.orcamentos.filter((o) => o.id !== id),
+        totalItens: Math.max(0, state.totalItens - 1),
+      }));
+      return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   clearSubmitError: () => {
     set({ submitErrorMessage: null });
   },
@@ -121,5 +140,6 @@ export const budgetStoreSelectors = {
   fetchOrcamentos: (state: BudgetStoreState) => state.fetchOrcamentos,
   criarOrcamento: (state: BudgetStoreState) => state.criarOrcamento,
   atualizarOrcamento: (state: BudgetStoreState) => state.atualizarOrcamento,
+  excluirOrcamento: (state: BudgetStoreState) => state.excluirOrcamento,
   clearSubmitError: (state: BudgetStoreState) => state.clearSubmitError,
 };

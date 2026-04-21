@@ -1,21 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormHelperText,
   IconButton,
+  FormHelperText,
+  Typography,
+  DialogContentText,
   MenuItem,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Close, RequestQuote, Save } from '@mui/icons-material';
+import { Close, DeleteOutline, Edit, RequestQuote, Save } from '@mui/icons-material';
 import {
   budgetStoreSelectors,
   useBudgetStore,
@@ -35,30 +37,39 @@ import {
   useFeedbackStore,
   useFormDialog,
 } from '@/shared';
-import type { TipoVenda } from '@/shared/lib/types/domain';
+import type { Orcamento, TipoVenda } from '@/shared/lib/types/domain';
 import { useShallow } from 'zustand/react/shallow';
 
 interface NewBudgetDialogProps {
   open: boolean;
+  budget?: Orcamento | null;
   onClose: () => void;
 }
 
 export default function NewBudgetDialog({
   open,
+  budget,
   onClose,
 }: NewBudgetDialogProps) {
+  const isEditMode = budget != null;
   const {
+    atualizarOrcamento,
     clearSubmitError,
     criarOrcamento,
+    excluirOrcamento,
     fetchOrcamentos,
     isSubmitting,
+    paginacao,
     submitErrorMessage,
   } = useBudgetStore(
     useShallow((state) => ({
+      atualizarOrcamento: budgetStoreSelectors.atualizarOrcamento(state),
       clearSubmitError: budgetStoreSelectors.clearSubmitError(state),
       criarOrcamento: budgetStoreSelectors.criarOrcamento(state),
+      excluirOrcamento: budgetStoreSelectors.excluirOrcamento(state),
       fetchOrcamentos: budgetStoreSelectors.fetchOrcamentos(state),
       isSubmitting: budgetStoreSelectors.isSubmitting(state),
+      paginacao: budgetStoreSelectors.paginacao(state),
       submitErrorMessage: budgetStoreSelectors.submitErrorMessage(state),
     })),
   );
@@ -84,6 +95,8 @@ export default function NewBudgetDialog({
     initialValues: initialBudgetFormState,
     onReset: clearSubmitError,
   });
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -91,12 +104,39 @@ export default function NewBudgetDialog({
     }
   }, [open, fetchFeiras]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setProblem(null);
+    setLocalErrors({});
+
+    if (!budget) {
+      setForm(initialBudgetFormState);
+      return;
+    }
+
+    setForm({
+      nomeCliente: budget.nomeCliente,
+      telefoneCliente: budget.telefoneCliente ?? '',
+      descricao: budget.descricao ?? '',
+      linkSTL: budget.linkSTL ?? '',
+      status: budget.status,
+      tipo: budget.tipo,
+      idFeira: budget.idFeira ?? '',
+      valor: budget.valor != null ? budget.valor / 100 : 0,
+      quantidade: budget.quantidade ?? '',
+    });
+  }, [budget, open, setForm, setLocalErrors, setProblem]);
+
   const handleClose = () => {
+    setConfirmDeleteOpen(false);
     resetForm();
     onClose();
   };
 
-  const isBusy = isSubmitting || isSaving;
+  const isBusy = isSubmitting || isSaving || isDeleting;
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -149,7 +189,7 @@ export default function NewBudgetDialog({
     setIsSaving(true);
 
     try {
-      const result = await criarOrcamento({
+      const payload = {
         nomeCliente: form.nomeCliente.trim(),
         telefoneCliente: form.telefoneCliente.trim() || undefined,
         descricao: form.descricao.trim() || undefined,
@@ -159,18 +199,61 @@ export default function NewBudgetDialog({
         idFeira: form.idFeira === '' ? undefined : form.idFeira,
         valor: form.valor > 0 ? Math.round(form.valor * 100) : undefined,
         quantidade: form.quantidade === '' ? undefined : Number(form.quantidade),
-      });
+      };
+      const result =
+        isEditMode && budget
+          ? await atualizarOrcamento(budget.id, payload)
+          : await criarOrcamento(payload);
 
       if (!result.success) {
         setProblem(result.problem);
         return;
       }
 
-      await fetchOrcamentos({ pagina: 1 });
-      showSuccess('Orçamento cadastrado com sucesso.');
+      await fetchOrcamentos(
+        isEditMode ? paginacao : { ...paginacao, pagina: 1 },
+      );
+      showSuccess(
+        isEditMode
+          ? 'Orçamento alterado com sucesso.'
+          : 'Orçamento cadastrado com sucesso.',
+      );
       handleClose();
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteClose = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setConfirmDeleteOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!budget) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setProblem(null);
+
+    try {
+      const result = await excluirOrcamento(budget.id);
+
+      if (!result.success) {
+        setProblem(result.problem);
+        return;
+      }
+
+      await fetchOrcamentos(paginacao);
+      showSuccess('Orçamento excluído com sucesso.');
+      setConfirmDeleteOpen(false);
+      handleClose();
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -178,47 +261,58 @@ export default function NewBudgetDialog({
   const activeFeiras = feiras.filter((f) => f.ativa);
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ px: 3, py: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-              <RequestQuote color="primary" />
-              <Typography variant="h5" fontWeight={700}>
-                Novo orçamento
+    <>
+      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+        <DialogTitle sx={{ px: 3, py: 2.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                {isEditMode ? <Edit color="primary" /> : <RequestQuote color="primary" />}
+                <Typography variant="h5" fontWeight={700}>
+                  {isEditMode ? 'Alterar orçamento' : 'Novo orçamento'}
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                {isEditMode
+                  ? 'Atualize os dados do orçamento selecionado.'
+                  : 'Preencha os dados para registrar um novo orçamento.'}
               </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              Preencha os dados para registrar um novo orçamento.
-            </Typography>
+
+            <IconButton
+              onClick={handleDialogClose}
+              aria-label="Fechar modal de orçamento"
+              disabled={isBusy}
+            >
+              <Close />
+            </IconButton>
           </Box>
+        </DialogTitle>
 
-          <IconButton
-            onClick={handleDialogClose}
-            aria-label="Fechar modal de orçamento"
-            disabled={isBusy}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
+        <DialogContent dividers>
+          <FormFeedbackAlert message={globalMessage} />
 
-      <DialogContent dividers>
-        <FormFeedbackAlert message={globalMessage} />
+          {activeFeiras.length === 0 && form.tipo === 'FEIRA' ? (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Nenhuma feira ativa encontrada. Cadastre ou ative uma feira para usar esse
+              tipo de orçamento.
+            </Alert>
+          ) : null}
 
-        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid container spacing={2} sx={{ mt: 0.5 }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Nome do cliente"
               value={form.nomeCliente}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({ ...current, nomeCliente: event.target.value }))
               }
@@ -237,6 +331,7 @@ export default function NewBudgetDialog({
               label="Telefone do cliente"
               placeholder="Opcional"
               value={form.telefoneCliente}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({ ...current, telefoneCliente: event.target.value }))
               }
@@ -258,6 +353,7 @@ export default function NewBudgetDialog({
             <ToggleButtonGroup
               exclusive
               value={form.tipo}
+              disabled={isDeleting}
               onChange={(_event, value: TipoVenda | null) => {
                 if (!value) return;
                 setForm((current) => ({
@@ -284,6 +380,7 @@ export default function NewBudgetDialog({
                 fullWidth
                 label="Feira"
                 value={form.idFeira}
+                disabled={isDeleting}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
@@ -310,6 +407,7 @@ export default function NewBudgetDialog({
               fullWidth
               label="Valor estimado"
               value={form.valor}
+              disabled={isDeleting}
               onValueChange={(valor) =>
                 setForm((current) => ({ ...current, valor }))
               }
@@ -327,6 +425,7 @@ export default function NewBudgetDialog({
               label="Quantidade"
               placeholder="Opcional"
               value={form.quantidade}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -350,6 +449,7 @@ export default function NewBudgetDialog({
               fullWidth
               label="Status"
               value={form.status}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({
                   ...current,
@@ -372,6 +472,7 @@ export default function NewBudgetDialog({
               rows={3}
               label="Descrição"
               value={form.descricao}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({ ...current, descricao: event.target.value }))
               }
@@ -390,6 +491,7 @@ export default function NewBudgetDialog({
               label="Link STL"
               placeholder="https://..."
               value={form.linkSTL}
+              disabled={isDeleting}
               onChange={(event) =>
                 setForm((current) => ({ ...current, linkSTL: event.target.value }))
               }
@@ -399,25 +501,70 @@ export default function NewBudgetDialog({
               helperText={localErrors.linkSTL ?? getFieldMessage(problem, 'linkSTL')}
             />
           </Grid>
-        </Grid>
-      </DialogContent>
+          </Grid>
+        </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={() => {
-            void handleSubmit();
-          }}
-          variant="contained"
-          startIcon={<Save />}
-          size="large"
-          disabled={isBusy}
+        <DialogActions
+          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
         >
-          {isBusy ? 'Salvando...' : 'Salvar orçamento'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Box>
+            {isEditMode ? (
+              <Button
+                color="error"
+                startIcon={<DeleteOutline />}
+                onClick={() => setConfirmDeleteOpen(true)}
+                disabled={isBusy}
+              >
+                Excluir
+              </Button>
+            ) : null}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                void handleSubmit();
+              }}
+              variant="contained"
+              startIcon={<Save />}
+              size="large"
+              disabled={isBusy}
+            >
+              {isSubmitting || isSaving
+                ? 'Salvando...'
+                : isEditMode
+                  ? 'Salvar alterações'
+                  : 'Salvar orçamento'}
+            </Button>
+          </Box>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onClose={handleDeleteClose} fullWidth maxWidth="xs">
+        <DialogTitle>Excluir orçamento</DialogTitle>
+        <DialogContent dividers>
+          <DialogContentText>
+            Tem certeza que deseja excluir este orçamento? Essa ação não pode ser desfeita.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleDeleteClose} disabled={isDeleting}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleConfirmDelete();
+            }}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
