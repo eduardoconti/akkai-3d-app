@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add, AutoAwesome, Close, Delete, Inventory2, Save } from '@mui/icons-material';
+import { listAllProducts } from '@/features/products/api/products-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
   assinaturaStoreSelectors,
@@ -30,7 +31,9 @@ import {
 } from '@/features/assinatura/types/assinatura-form';
 import {
   FormFeedbackAlert,
+  ProductAutocompleteField,
   type GerarCiclosResult,
+  type Produto,
   useFeedbackStore,
   useFormDialog,
 } from '@/shared';
@@ -81,6 +84,36 @@ export default function EditKitDialog({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateResult, setGenerateResult] = useState<GerarCiclosResult | null>(null);
   const [kitLabel, setKitLabel] = useState('');
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let active = true;
+
+    const loadProducts = async () => {
+      setIsLoadingProducts(true);
+
+      try {
+        const response = await listAllProducts();
+
+        if (active) {
+          setProdutos(response);
+        }
+      } finally {
+        if (active) {
+          setIsLoadingProducts(false);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || kitId === null) return;
@@ -108,7 +141,7 @@ export default function EditKitDialog({
           itens:
             kit.itens.length > 0
               ? kit.itens.map((item) => ({
-                  nomeProduto: item.nomeProduto,
+                  idProduto: item.idProduto ?? item.produto?.id ?? '',
                   quantidade: item.quantidade,
                   observacao: item.observacao ?? '',
                 }))
@@ -136,7 +169,8 @@ export default function EditKitDialog({
     onClose();
   };
 
-  const isBusy = isSubmitting || isLoading || isSaving || isDeleting || isGenerating;
+  const isBusy =
+    isSubmitting || isLoading || isSaving || isDeleting || isGenerating || isLoadingProducts;
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -170,11 +204,11 @@ export default function EditKitDialog({
     const errors: KitFormErrors = {};
 
     const itensInvalidos = form.itens.some(
-      (item) => item.nomeProduto.trim().length === 0 || item.quantidade === '' || Number(item.quantidade) <= 0,
+      (item) => item.idProduto === '' || item.quantidade === '' || Number(item.quantidade) <= 0,
     );
 
     if (itensInvalidos) {
-      errors.itens = 'Todos os itens devem ter nome e quantidade maior que zero.';
+      errors.itens = 'Todos os itens devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -187,7 +221,7 @@ export default function EditKitDialog({
     try {
       const result = await atualizarKit(kitId, {
         itens: form.itens.map((item) => ({
-          nomeProduto: item.nomeProduto.trim(),
+          idProduto: item.idProduto as number,
           quantidade: item.quantidade as number,
           observacao: item.observacao.trim() || undefined,
         })),
@@ -302,6 +336,12 @@ export default function EditKitDialog({
             </Alert>
           ) : null}
 
+          {produtos.length === 0 && !isLoadingProducts ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Nenhum produto cadastrado. Cadastre produtos antes de montar o kit mensal.
+            </Alert>
+          ) : null}
+
           <Box sx={{ mt: 1 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
               <Typography variant="subtitle1" fontWeight={700}>
@@ -322,13 +362,17 @@ export default function EditKitDialog({
               {form.itens.map((item, index) => (
                 <Grid container spacing={2} key={index} alignItems="flex-start">
                   <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      fullWidth
-                      disabled={isLoading}
-                      label="Nome do produto"
-                      placeholder="Ex: Porta-copo dragão"
-                      value={item.nomeProduto}
-                      onChange={(e) => setItem(index, { nomeProduto: e.target.value })}
+                    <ProductAutocompleteField
+                      products={produtos}
+                      productId={item.idProduto}
+                      loading={isLoadingProducts}
+                      disabled={isLoading || isLoadingProducts || produtos.length === 0}
+                      onChange={(newValue) =>
+                        setItem(index, {
+                          idProduto: newValue?.id ?? '',
+                        })
+                      }
+                      helperText={index === 0 ? 'Pesquise por nome ou código.' : undefined}
                     />
                   </Grid>
 

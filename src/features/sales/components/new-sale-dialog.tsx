@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
   Checkbox,
@@ -49,6 +48,7 @@ import {
   FormFeedbackAlert,
   formatCurrency,
   getFieldMessage,
+  ProductAutocompleteField,
   useFeedbackStore,
   useOnlineStatus,
   type MeioPagamento,
@@ -735,45 +735,26 @@ export default function NewSaleDialog({
 
                       <Grid size={{ xs: 12 }}>
                         {item.tipoItem === 'CATALOGO' ? (
-                          <Autocomplete
-                            options={catalogProducts}
-                            getOptionLabel={(option) =>
-                              `${option.nome} (${option.codigo})`
-                            }
-                            value={
-                              catalogProducts.find(
-                                (produto) => produto.id === item.idProduto,
-                              ) ?? null
-                            }
+                          <ProductAutocompleteField
+                            products={catalogProducts}
+                            productId={item.idProduto}
                             loading={isFetching}
-                            onChange={(_event, newValue) => {
+                            size="small"
+                            onChange={(newValue) => {
                               updateItem(index, {
                                 idProduto: newValue?.id ?? null,
                                 nomeProduto: newValue?.nome ?? '',
                                 valorUnitario: newValue ? newValue.valor / 100 : 0,
                               });
                             }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                size="small"
-                                label="Produto"
-                                error={Boolean(
-                                  itemErrors[index]?.idProduto ||
-                                    getFieldMessage(
-                                      problem,
-                                      `itens[${index}].idProduto`,
-                                    ),
-                                )}
-                                helperText={
-                                  itemErrors[index]?.idProduto ??
-                                  getFieldMessage(
-                                    problem,
-                                    `itens[${index}].idProduto`,
-                                  )
-                                }
-                              />
+                            error={Boolean(
+                              itemErrors[index]?.idProduto ||
+                                getFieldMessage(problem, `itens[${index}].idProduto`),
                             )}
+                            helperText={
+                              itemErrors[index]?.idProduto ??
+                              getFieldMessage(problem, `itens[${index}].idProduto`)
+                            }
                           />
                         ) : (
                           <TextField
@@ -973,45 +954,26 @@ export default function NewSaleDialog({
 
                       <TableCell sx={{ verticalAlign: 'top', minWidth: 300 }}>
                         {item.tipoItem === 'CATALOGO' ? (
-                          <Autocomplete
-                            options={catalogProducts}
-                            getOptionLabel={(option) =>
-                              `${option.nome} (${option.codigo})`
-                            }
-                            value={
-                              catalogProducts.find(
-                                (produto) => produto.id === item.idProduto,
-                              ) ?? null
-                            }
+                          <ProductAutocompleteField
+                            products={catalogProducts}
+                            productId={item.idProduto}
                             loading={isFetching}
-                            onChange={(_event, newValue) => {
+                            size="small"
+                            onChange={(newValue) => {
                               updateItem(index, {
                                 idProduto: newValue?.id ?? null,
                                 nomeProduto: newValue?.nome ?? '',
                                 valorUnitario: newValue ? newValue.valor / 100 : 0,
                               });
                             }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                size="small"
-                                label="Produto"
-                                error={Boolean(
-                                  itemErrors[index]?.idProduto ||
-                                    getFieldMessage(
-                                      problem,
-                                      `itens[${index}].idProduto`,
-                                    ),
-                                )}
-                                helperText={
-                                  itemErrors[index]?.idProduto ??
-                                  getFieldMessage(
-                                    problem,
-                                    `itens[${index}].idProduto`,
-                                  )
-                                }
-                              />
+                            error={Boolean(
+                              itemErrors[index]?.idProduto ||
+                                getFieldMessage(problem, `itens[${index}].idProduto`),
                             )}
+                            helperText={
+                              itemErrors[index]?.idProduto ??
+                              getFieldMessage(problem, `itens[${index}].idProduto`)
+                            }
                           />
                         ) : (
                           <TextField

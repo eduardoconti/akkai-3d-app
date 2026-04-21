@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Autocomplete,
   Box,
   Chip,
   Divider,
@@ -15,6 +16,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
   useMediaQuery,
 } from '@mui/material';
@@ -144,13 +146,20 @@ export default function BudgetsPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
+  const statusSelecionados =
+    paginacao.status ??
+    ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO');
 
   useEffect(() => {
     void fetchOrcamentos();
   }, [fetchOrcamentos]);
 
-  const handleStatusChange = (id: number, status: StatusOrcamento) => {
-    void atualizarOrcamento(id, { status });
+  const handleStatusChange = async (id: number, status: StatusOrcamento) => {
+    const result = await atualizarOrcamento(id, { status });
+
+    if (result.success) {
+      await fetchOrcamentos();
+    }
   };
 
   const handleOpenCreateDialog = () => {
@@ -180,6 +189,27 @@ export default function BudgetsPage() {
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
+
+      <Autocomplete
+        multiple
+        options={ALL_STATUSES_ORCAMENTO}
+        value={statusSelecionados}
+        onChange={(_event, value) => {
+          void fetchOrcamentos({
+            pagina: 1,
+            status: value,
+          });
+        }}
+        getOptionLabel={(option) => STATUS_ORCAMENTO_LABEL[option]}
+        disableCloseOnSelect
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Status"
+            placeholder="Selecione um ou mais status"
+          />
+        )}
+      />
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (

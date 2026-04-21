@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   Divider,
   MenuItem,
@@ -18,6 +19,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { AutoAwesome } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { EditKitDialog, NewKitDialog } from '@/features/assinatura';
 import {
@@ -30,6 +32,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  useFeedbackStore,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -40,23 +43,30 @@ export default function KitsPage() {
     fetchErrorMessage,
     fetchKits,
     fetchPlanos,
+    gerarCiclosMensais,
     isFetching,
+    isSubmitting,
     kits,
     paginacaoKits,
     planos,
+    submitErrorMessage,
     totalKits,
   } = useAssinaturaStore(
     useShallow((state) => ({
       fetchErrorMessage: assinaturaStoreSelectors.fetchErrorMessage(state),
       fetchKits: assinaturaStoreSelectors.fetchKits(state),
       fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
+      gerarCiclosMensais: assinaturaStoreSelectors.gerarCiclosMensais(state),
       isFetching: assinaturaStoreSelectors.isFetching(state),
+      isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
       kits: assinaturaStoreSelectors.kits(state),
       paginacaoKits: assinaturaStoreSelectors.paginacaoKits(state),
       planos: assinaturaStoreSelectors.planos(state),
+      submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
       totalKits: assinaturaStoreSelectors.totalKits(state),
     })),
   );
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingKitId, setEditingKitId] = useState<number | null>(null);
   const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>('');
@@ -82,6 +92,24 @@ export default function KitsPage() {
 
   const handleUpdated = async () => {
     await fetchKits({ pagina: 1 });
+  };
+
+  const handleGerarCiclos = async (idKit: number) => {
+    const result = await gerarCiclosMensais(idKit);
+
+    if (!result.success) {
+      return;
+    }
+
+    const { criados, ignorados } = result.data;
+    if (criados > 0) {
+      showSuccess(
+        `${criados} ${criados === 1 ? 'ciclo criado' : 'ciclos criados'}${ignorados > 0 ? ` e ${ignorados} ${ignorados === 1 ? 'assinante ignorado' : 'assinantes ignorados'}` : ''}.`,
+      );
+      return;
+    }
+
+    showSuccess('Nenhum ciclo criado. Todos os assinantes já possuem ciclo para este período.');
   };
 
   const currentYear = new Date().getFullYear();
@@ -152,6 +180,7 @@ export default function KitsPage() {
       </Grid>
 
       {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {submitErrorMessage ? <Alert severity="error">{submitErrorMessage}</Alert> : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -177,12 +206,26 @@ export default function KitsPage() {
                         {kit.itens?.length ?? 0} {kit.itens?.length === 1 ? 'item' : 'itens'}
                       </Typography>
                     </Box>
-                    <Chip
-                      size="small"
-                      label={`${kit.itens?.length ?? 0} itens`}
-                      variant="outlined"
-                      sx={{ flexShrink: 0 }}
-                    />
+                    <Stack alignItems="flex-end" spacing={1}>
+                      <Chip
+                        size="small"
+                        label={`${kit.itens?.length ?? 0} itens`}
+                        variant="outlined"
+                        sx={{ flexShrink: 0 }}
+                      />
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<AutoAwesome />}
+                        disabled={isSubmitting}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleGerarCiclos(kit.id);
+                        }}
+                      >
+                        Gerar ciclos
+                      </Button>
+                    </Stack>
                   </Stack>
                 </Box>
               ))
@@ -204,12 +247,15 @@ export default function KitsPage() {
                   <TableCell>
                     <strong>Itens</strong>
                   </TableCell>
+                  <TableCell align="right">
+                    <strong>Ações</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -230,11 +276,24 @@ export default function KitsPage() {
                       <TableCell sx={{ color: 'text.secondary' }}>
                         {kit.itens?.length ?? 0} {kit.itens?.length === 1 ? 'item' : 'itens'}
                       </TableCell>
+                      <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<AutoAwesome />}
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            void handleGerarCiclos(kit.id);
+                          }}
+                        >
+                          Gerar ciclos
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum kit encontrado para os filtros informados." />
                     </TableCell>
                   </TableRow>
