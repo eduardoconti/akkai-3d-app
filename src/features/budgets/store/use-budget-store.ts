@@ -5,6 +5,7 @@ import {
   listBudgets,
   updateBudget,
 } from '@/features/budgets/api/budgets-api';
+import { ALL_STATUSES_ORCAMENTO } from '@/features/budgets/types/budget-form';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
@@ -18,6 +19,7 @@ import type {
 const paginacaoInicial: PesquisaPaginadaOrcamentos = {
   pagina: 1,
   tamanhoPagina: 10,
+  status: ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO'),
 };
 
 interface BudgetStoreState {
@@ -55,6 +57,7 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
     const nextPagination: PesquisaPaginadaOrcamentos = {
       pagina: query?.pagina ?? currentPagination.pagina,
       tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
+      status: query?.status ?? currentPagination.status,
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -65,6 +68,7 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
         paginacao: {
           pagina: response.pagina,
           tamanhoPagina: response.tamanhoPagina,
+          status: nextPagination.status,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,

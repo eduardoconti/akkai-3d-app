@@ -7,6 +7,7 @@ export { default as DatePickerField } from './components/form/date-picker-field'
 export { default as DateRangePickerField } from './components/form/date-range-picker-field';
 export { default as CurrencyField } from './components/form/currency-field';
 export { default as FormFeedbackAlert } from './components/form/form-feedback-alert';
+export { default as ProductAutocompleteField } from './components/form/product-autocomplete-field';
 export { default as MoneyInput } from './components/inputs/money-input';
 export {
   httpClient,

@@ -64,7 +64,7 @@ export const STATUS_ASSINANTE_COLOR: Record<
 // ── Ciclo ────────────────────────────────────────────────────────────────────
 
 export type ItemCicloFormState = {
-  nomeProduto: string;
+  idProduto: number | '';
   quantidade: number | '';
   observacao: string;
 };
@@ -85,7 +85,7 @@ export type CicloFormErrors = {
 };
 
 export const initialItemCicloFormState: ItemCicloFormState = {
-  nomeProduto: '',
+  idProduto: '',
   quantidade: '',
   observacao: '',
 };

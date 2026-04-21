@@ -233,7 +233,9 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   idFeira?: number;
 }
 
-export type PesquisaPaginadaOrcamentos = PesquisaPaginada;
+export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {
+  status?: StatusOrcamento[];
+}
 
 export interface CarteiraInput {
   nome: string;
@@ -339,13 +341,15 @@ export interface AssinanteInput {
 export interface ItemCicloAssinatura {
   id: number;
   idCiclo: number;
-  nomeProduto: string;
+  idProduto: number;
   quantidade: number;
   observacao?: string;
+  nomeProduto?: string;
+  produto?: Produto | null;
 }
 
 export interface ItemCicloAssinaturaInput {
-  nomeProduto: string;
+  idProduto: number;
   quantidade: number;
   observacao?: string;
 }
@@ -401,13 +405,15 @@ export interface PesquisarCiclosInput {
 export interface ItemKitMensal {
   id: number;
   idKit: number;
-  nomeProduto: string;
+  idProduto: number;
   quantidade: number;
   observacao?: string;
+  nomeProduto?: string;
+  produto?: Produto | null;
 }
 
 export interface ItemKitMensalInput {
-  nomeProduto: string;
+  idProduto: number;
   quantidade: number;
   observacao?: string;
 }

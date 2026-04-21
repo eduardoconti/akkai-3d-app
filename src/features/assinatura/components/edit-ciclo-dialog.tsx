@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
   Dialog,
@@ -15,6 +16,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Add, AllInbox, Close, Delete, Save } from '@mui/icons-material';
+import { listAllProducts } from '@/features/products/api/products-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
   assinaturaStoreSelectors,
@@ -32,8 +34,10 @@ import {
 import {
   FormFeedbackAlert,
   getFieldMessage,
+  ProductAutocompleteField,
   useFeedbackStore,
   useFormDialog,
+  type Produto,
   type StatusCiclo,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -79,6 +83,36 @@ export default function EditCicloDialog({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [assinanteName, setAssinanteName] = useState('');
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let active = true;
+
+    const loadProducts = async () => {
+      setIsLoadingProducts(true);
+
+      try {
+        const response = await listAllProducts();
+
+        if (active) {
+          setProdutos(response);
+        }
+      } finally {
+        if (active) {
+          setIsLoadingProducts(false);
+        }
+      }
+    };
+
+    void loadProducts();
+
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open || cicloId === null) return;
@@ -106,7 +140,7 @@ export default function EditCicloDialog({
           itens:
             ciclo.itens.length > 0
               ? ciclo.itens.map((item) => ({
-                  nomeProduto: item.nomeProduto,
+                  idProduto: item.idProduto ?? item.produto?.id ?? '',
                   quantidade: item.quantidade,
                   observacao: item.observacao ?? '',
                 }))
@@ -133,7 +167,7 @@ export default function EditCicloDialog({
     onClose();
   };
 
-  const isBusy = isSubmitting || isLoading || isSaving || isDeleting;
+  const isBusy = isSubmitting || isLoading || isSaving || isDeleting || isLoadingProducts;
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -167,11 +201,11 @@ export default function EditCicloDialog({
     const errors: CicloFormErrors = {};
 
     const itensInvalidos = form.itens.some(
-      (item) => item.nomeProduto.trim().length === 0 || item.quantidade === '' || Number(item.quantidade) <= 0,
+      (item) => item.idProduto === '' || item.quantidade === '' || Number(item.quantidade) <= 0,
     );
 
     if (itensInvalidos) {
-      errors.itens = 'Todos os itens devem ter nome e quantidade maior que zero.';
+      errors.itens = 'Todos os itens devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -187,7 +221,7 @@ export default function EditCicloDialog({
         codigoRastreio: form.codigoRastreio.trim() || undefined,
         observacao: form.observacao.trim() || undefined,
         itens: form.itens.map((item) => ({
-          nomeProduto: item.nomeProduto.trim(),
+          idProduto: item.idProduto as number,
           quantidade: item.quantidade as number,
           observacao: item.observacao.trim() || undefined,
         })),
@@ -263,6 +297,12 @@ export default function EditCicloDialog({
         <DialogContent dividers>
           <FormFeedbackAlert message={problem?.detail ?? submitErrorMessage} />
 
+          {produtos.length === 0 && !isLoadingProducts ? (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Nenhum produto cadastrado. Cadastre produtos antes de montar o ciclo.
+            </Alert>
+          ) : null}
+
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
@@ -329,13 +369,17 @@ export default function EditCicloDialog({
               {form.itens.map((item, index) => (
                 <Grid container spacing={2} key={index} alignItems="flex-start">
                   <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      fullWidth
-                      disabled={isLoading}
-                      label="Nome do produto"
-                      placeholder="Ex: Porta-copo"
-                      value={item.nomeProduto}
-                      onChange={(e) => setItem(index, { nomeProduto: e.target.value })}
+                    <ProductAutocompleteField
+                      products={produtos}
+                      productId={item.idProduto}
+                      loading={isLoadingProducts}
+                      disabled={isLoading || isLoadingProducts || produtos.length === 0}
+                      onChange={(newValue) =>
+                        setItem(index, {
+                          idProduto: newValue?.id ?? '',
+                        })
+                      }
+                      helperText={index === 0 ? 'Pesquise por nome ou código.' : undefined}
                     />
                   </Grid>
 
