@@ -76,7 +76,9 @@ export default function FinanceWalletsPage() {
         onAction={() => setDialogOpen(true)}
       />
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
@@ -117,7 +119,9 @@ export default function FinanceWalletsPage() {
                         variant="subtitle1"
                         fontWeight={700}
                         color={
-                          carteira.saldoAtual < 0 ? 'error.main' : 'success.main'
+                          carteira.saldoAtual < 0
+                            ? 'error.main'
+                            : 'success.main'
                         }
                       >
                         {formatCurrency(carteira.saldoAtual)}
@@ -175,7 +179,9 @@ export default function FinanceWalletsPage() {
                         sx={{
                           fontWeight: 700,
                           color:
-                            carteira.saldoAtual < 0 ? 'error.main' : 'success.main',
+                            carteira.saldoAtual < 0
+                              ? 'error.main'
+                              : 'success.main',
                         }}
                       >
                         {formatCurrency(carteira.saldoAtual)}

@@ -40,13 +40,16 @@ export default function FinanceExpenseCategoriesPage() {
   } = useFinanceStore(
     useShallow((state) => ({
       categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
-      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchCategoriasDespesa:
+        financeStoreSelectors.fetchCategoriasDespesa(state),
       fetchErrorMessage: financeStoreSelectors.fetchErrorMessage(state),
       isFetching: financeStoreSelectors.isFetching(state),
     })),
   );
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
+    null,
+  );
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -60,7 +63,10 @@ export default function FinanceExpenseCategoriesPage() {
   );
 
   useEffect(() => {
-    const maxPage = Math.max(0, Math.ceil(categoriasDespesa.length / rowsPerPage) - 1);
+    const maxPage = Math.max(
+      0,
+      Math.ceil(categoriasDespesa.length / rowsPerPage) - 1,
+    );
     if (page > maxPage) {
       setPage(maxPage);
     }
@@ -81,7 +87,10 @@ export default function FinanceExpenseCategoriesPage() {
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de categorias de despesa">
+          <Stack
+            divider={<Divider flexItem />}
+            aria-label="lista de categorias de despesa"
+          >
             {isFetching ? (
               <LoadingState />
             ) : paginatedCategorias.length > 0 ? (

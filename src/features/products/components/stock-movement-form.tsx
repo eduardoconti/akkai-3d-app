@@ -166,7 +166,9 @@ export default function StockMovementForm({
               onChange={(event) => {
                 setForm((current) => ({
                   ...current,
-                  origem: event.target.value as OrigemEntradaEstoque | OrigemSaidaEstoque,
+                  origem: event.target.value as
+                    | OrigemEntradaEstoque
+                    | OrigemSaidaEstoque,
                 }));
               }}
             >
@@ -209,7 +211,12 @@ export default function StockMovementForm({
         </Box>
       </Stack>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{

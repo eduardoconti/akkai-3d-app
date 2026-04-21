@@ -99,7 +99,11 @@ interface CardTooltipState {
   lines: CardTooltipLine[];
 }
 
-function getBarHeight(value: number, maxValue: number, chartHeight: number): number {
+function getBarHeight(
+  value: number,
+  maxValue: number,
+  chartHeight: number,
+): number {
   if (maxValue <= 0) {
     return 0;
   }
@@ -132,7 +136,9 @@ function getStoredWidgetOrder(): DashboardWidgetId[] {
   }
 }
 
-function getStoredCollapsedWidgets(): Partial<Record<DashboardWidgetId, boolean>> {
+function getStoredCollapsedWidgets(): Partial<
+  Record<DashboardWidgetId, boolean>
+> {
   if (typeof window === 'undefined') {
     return {};
   }
@@ -150,7 +156,9 @@ function getStoredCollapsedWidgets(): Partial<Record<DashboardWidgetId, boolean>
   }
 }
 
-function getStoredWidgetWidths(): Partial<Record<DashboardWidgetId, DashboardWidgetWidth>> {
+function getStoredWidgetWidths(): Partial<
+  Record<DashboardWidgetId, DashboardWidgetWidth>
+> {
   if (typeof window === 'undefined') {
     return {
       'monthly-summary': 'full',
@@ -170,7 +178,9 @@ function getStoredWidgetWidths(): Partial<Record<DashboardWidgetId, DashboardWid
   }
 
   try {
-    return JSON.parse(rawValue) as Partial<Record<DashboardWidgetId, DashboardWidgetWidth>>;
+    return JSON.parse(rawValue) as Partial<
+      Record<DashboardWidgetId, DashboardWidgetWidth>
+    >;
   } catch {
     return {
       'monthly-summary': 'full',
@@ -196,7 +206,10 @@ function formatPercentage(value: number): string {
   return `${value.toFixed(1).replace('.', ',')}%`;
 }
 
-function getMonthDateRange(year: number, month: number): {
+function getMonthDateRange(
+  year: number,
+  month: number,
+): {
   dataInicio: string;
   dataFim: string;
 } {
@@ -252,7 +265,9 @@ function DashboardMonthlyChart({
       return baselineY;
     }
 
-    return baselineY + (Math.abs(value) / maxNegativeValue) * negativeAreaHeight;
+    return (
+      baselineY + (Math.abs(value) / maxNegativeValue) * negativeAreaHeight
+    );
   };
 
   const axisTicks = [
@@ -305,13 +320,20 @@ function DashboardMonthlyChart({
                 {tooltip.label}
               </Typography>
             </Stack>
-            <Typography variant="body2">{formatCurrency(tooltip.value)}</Typography>
+            <Typography variant="body2">
+              {formatCurrency(tooltip.value)}
+            </Typography>
           </Stack>
         </Paper>
       ) : null}
 
       <Box sx={{ minWidth: chartWidth }}>
-        <svg width={chartWidth} height={320} role="img" aria-label="Resumo mensal">
+        <svg
+          width={chartWidth}
+          height={320}
+          role="img"
+          aria-label="Resumo mensal"
+        >
           {axisTicks.map((tick) => {
             const y = getValueY(tick);
 
@@ -364,10 +386,15 @@ function DashboardMonthlyChart({
             const balanceHeight =
               item.saldo >= 0
                 ? getBarHeight(item.saldo, maxPositiveValue, positiveAreaHeight)
-                : getBarHeight(Math.abs(item.saldo), maxNegativeValue, negativeAreaHeight);
+                : getBarHeight(
+                    Math.abs(item.saldo),
+                    maxNegativeValue,
+                    negativeAreaHeight,
+                  );
             const salesY = baselineY - salesHeight;
             const expenseY = baselineY - expenseHeight;
-            const balanceY = item.saldo >= 0 ? baselineY - balanceHeight : baselineY;
+            const balanceY =
+              item.saldo >= 0 ? baselineY - balanceHeight : baselineY;
             const balanceColor = item.saldo >= 0 ? '#D4AF37' : '#EF6C00';
 
             return (
@@ -458,7 +485,10 @@ function DashboardWidget({
   id: DashboardWidgetId;
   isCollapsed: boolean;
   onToggleWidth: (widgetId: DashboardWidgetId) => void;
-  onDragOver: (event: ReactDragEvent<HTMLDivElement>, targetId: DashboardWidgetId) => void;
+  onDragOver: (
+    event: ReactDragEvent<HTMLDivElement>,
+    targetId: DashboardWidgetId,
+  ) => void;
   onDragEnd: () => void;
   onDragStart: (
     event: ReactDragEvent<HTMLElement>,
@@ -481,8 +511,11 @@ function DashboardWidget({
         opacity: isDragging ? 0.55 : 1,
         border: '1px solid',
         borderColor: isDropTarget ? 'primary.main' : 'divider',
-        boxShadow: isDropTarget ? '0 0 0 2px rgba(25, 118, 210, 0.12)' : undefined,
-        transition: 'opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+        boxShadow: isDropTarget
+          ? '0 0 0 2px rgba(25, 118, 210, 0.12)'
+          : undefined,
+        transition:
+          'opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
       }}
       onDragOver={(event) => onDragOver(event, id)}
       onDrop={() => onDrop(id)}
@@ -520,7 +553,9 @@ function DashboardWidget({
             <IconButton
               size="small"
               onClick={() => onToggleCollapse(id)}
-              aria-label={isCollapsed ? 'Expandir gráfico' : 'Minimizar gráfico'}
+              aria-label={
+                isCollapsed ? 'Expandir gráfico' : 'Minimizar gráfico'
+              }
             >
               {isCollapsed ? <ExpandMore /> : <ExpandLess />}
             </IconButton>
@@ -544,17 +579,17 @@ function DashboardWidget({
 }
 
 export default function DashboardHomePage() {
-  const [result, setResult] = useState<DashboardMonthlySummaryResponse | null>(null);
-  const [topProducts, setTopProducts] = useState<DashboardTopProductsResponse | null>(
+  const [result, setResult] = useState<DashboardMonthlySummaryResponse | null>(
     null,
   );
+  const [topProducts, setTopProducts] =
+    useState<DashboardTopProductsResponse | null>(null);
   const [expenseCategories, setExpenseCategories] =
     useState<DashboardExpenseCategoriesResponse | null>(null);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [widgetOrder, setWidgetOrder] = useState<DashboardWidgetId[]>(
-    getStoredWidgetOrder,
-  );
+  const [widgetOrder, setWidgetOrder] =
+    useState<DashboardWidgetId[]>(getStoredWidgetOrder);
   const [collapsedWidgets, setCollapsedWidgets] = useState<
     Partial<Record<DashboardWidgetId, boolean>>
   >(getStoredCollapsedWidgets);
@@ -562,16 +597,19 @@ export default function DashboardHomePage() {
     Partial<Record<DashboardWidgetId, DashboardWidgetWidth>>
   >(getStoredWidgetWidths);
   const [hideValues, setHideValues] = useState<boolean>(getStoredHideValues);
-  const [draggingWidgetId, setDraggingWidgetId] = useState<DashboardWidgetId | null>(
-    null,
-  );
-  const [dropTargetWidgetId, setDropTargetWidgetId] = useState<DashboardWidgetId | null>(
-    null,
-  );
-  const [rankingTooltip, setRankingTooltip] = useState<RankingTooltipState | null>(null);
+  const [draggingWidgetId, setDraggingWidgetId] =
+    useState<DashboardWidgetId | null>(null);
+  const [dropTargetWidgetId, setDropTargetWidgetId] =
+    useState<DashboardWidgetId | null>(null);
+  const [rankingTooltip, setRankingTooltip] =
+    useState<RankingTooltipState | null>(null);
   const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
-  const [topProductsMonthTotalQuantity, setTopProductsMonthTotalQuantity] = useState(0);
-  const [expenseCategoriesMonthTotalValue, setExpenseCategoriesMonthTotalValue] = useState(0);
+  const [topProductsMonthTotalQuantity, setTopProductsMonthTotalQuantity] =
+    useState(0);
+  const [
+    expenseCategoriesMonthTotalValue,
+    setExpenseCategoriesMonthTotalValue,
+  ] = useState(0);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -595,10 +633,7 @@ export default function DashboardHomePage() {
   }, [widgetWidths]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      DASHBOARD_HIDE_VALUES_KEY,
-      String(hideValues),
-    );
+    window.localStorage.setItem(DASHBOARD_HIDE_VALUES_KEY, String(hideValues));
   }, [hideValues]);
 
   useEffect(() => {
@@ -625,20 +660,21 @@ export default function DashboardHomePage() {
           expenseCategoriesResponse.mes,
         );
 
-        const [salesSummaryResponse, expenseSummaryResponse] = await Promise.all([
-          getSalesSummary({
-            dataInicio: topProductsDateRange.dataInicio,
-            dataFim: topProductsDateRange.dataFim,
-          }),
-          listExpenses({
-            pagina: 1,
-            tamanhoPagina: 1,
-            termo: '',
-            dataInicio: expenseCategoriesDateRange.dataInicio,
-            dataFim: expenseCategoriesDateRange.dataFim,
-            idsCategorias: [],
-          }),
-        ]);
+        const [salesSummaryResponse, expenseSummaryResponse] =
+          await Promise.all([
+            getSalesSummary({
+              dataInicio: topProductsDateRange.dataInicio,
+              dataFim: topProductsDateRange.dataFim,
+            }),
+            listExpenses({
+              pagina: 1,
+              tamanhoPagina: 1,
+              termo: '',
+              dataInicio: expenseCategoriesDateRange.dataInicio,
+              dataFim: expenseCategoriesDateRange.dataFim,
+              idsCategorias: [],
+            }),
+          ]);
 
         if (!active) {
           return;
@@ -899,10 +935,13 @@ export default function DashboardHomePage() {
             <Stack spacing={1.5}>
               {topProducts.itens.map((item, index) => {
                 const maxQuantity = Math.max(
-                  ...topProducts.itens.map((current) => current.quantidadeVendida),
+                  ...topProducts.itens.map(
+                    (current) => current.quantidadeVendida,
+                  ),
                   1,
                 );
-                const widthPercent = (item.quantidadeVendida / maxQuantity) * 100;
+                const widthPercent =
+                  (item.quantidadeVendida / maxQuantity) * 100;
                 const totalMonthQuantity = topProductsMonthTotalQuantity;
                 const monthShare =
                   totalMonthQuantity > 0
@@ -935,7 +974,9 @@ export default function DashboardHomePage() {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                           {item.codigo ?? '-'}
-                          {item.categoria?.nome ? ` · ${item.categoria.nome}` : ''}
+                          {item.categoria?.nome
+                            ? ` · ${item.categoria.nome}`
+                            : ''}
                         </Typography>
                       </Box>
 
@@ -1123,7 +1164,13 @@ export default function DashboardHomePage() {
         >
           <Stack spacing={0.5}>
             {cardTooltip.lines.map((line) => (
-              <Stack key={line.label} direction="row" spacing={1.5} justifyContent="space-between" alignItems="center">
+              <Stack
+                key={line.label}
+                direction="row"
+                spacing={1.5}
+                justifyContent="space-between"
+                alignItems="center"
+              >
                 <Typography variant="caption" color="text.secondary">
                   {line.label}
                 </Typography>
@@ -1138,9 +1185,9 @@ export default function DashboardHomePage() {
 
       <Stack spacing={3}>
         <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
+          direction={{ xs: 'column', md: 'row' }}
+          justifyContent="space-between"
+          spacing={2}
         >
           <Box>
             <Typography variant="h5" fontWeight={700}>
@@ -1160,7 +1207,9 @@ export default function DashboardHomePage() {
           </Button>
         </Stack>
 
-        {problem?.detail ? <Alert severity="error">{problem.detail}</Alert> : null}
+        {problem?.detail ? (
+          <Alert severity="error">{problem.detail}</Alert>
+        ) : null}
 
         {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -1204,18 +1253,24 @@ export default function DashboardHomePage() {
                   onMouseMove={handleCardMouseMove([
                     {
                       label: 'Taxas',
-                      value: hideValues ? '••••••' : formatCurrency(result.totalTaxas),
+                      value: hideValues
+                        ? '••••••'
+                        : formatCurrency(result.totalTaxas),
                     },
                     {
                       label: 'Impostos',
-                      value: hideValues ? '••••••' : formatCurrency(result.totalImpostos),
+                      value: hideValues
+                        ? '••••••'
+                        : formatCurrency(result.totalImpostos),
                     },
                     {
                       label: 'Valor líquido',
                       value: hideValues
                         ? '••••••'
                         : formatCurrency(
-                            result.totalVendas - result.totalTaxas - result.totalImpostos,
+                            result.totalVendas -
+                              result.totalTaxas -
+                              result.totalImpostos,
                           ),
                     },
                   ])}
@@ -1277,7 +1332,10 @@ export default function DashboardHomePage() {
               sx={{
                 display: 'grid',
                 gap: 3,
-                gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, minmax(0, 1fr))' },
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  lg: 'repeat(2, minmax(0, 1fr))',
+                },
                 alignItems: 'start',
               }}
             >
@@ -1289,8 +1347,9 @@ export default function DashboardHomePage() {
                       xs: 'auto',
                       lg:
                         (widgetWidths[widgetId] ??
-                          (widgetId === 'monthly-summary' ? 'full' : 'half')) ===
-                        'full'
+                          (widgetId === 'monthly-summary'
+                            ? 'full'
+                            : 'half')) === 'full'
                           ? '1 / -1'
                           : 'span 1',
                     },

@@ -39,7 +39,9 @@ function getParentCategoryName(category: Categoria, categories: Categoria[]) {
     return '-';
   }
 
-  return categories.find((item) => item.id === category.idAscendente)?.nome ?? '-';
+  return (
+    categories.find((item) => item.id === category.idAscendente)?.nome ?? '-'
+  );
 }
 
 export default function ProductCategoriesPage() {
@@ -69,7 +71,9 @@ export default function ProductCategoriesPage() {
     })),
   );
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
+    null,
+  );
   const [searchInput, setSearchInput] = useState('');
 
   const handleSearch = () => {
@@ -126,11 +130,16 @@ export default function ProductCategoriesPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de categorias">
+          <Stack
+            divider={<Divider flexItem />}
+            aria-label="lista de categorias"
+          >
             {isFetchingCategoriesPage ? (
               <LoadingState />
             ) : categoriasPaginadas.length > 0 ? (
@@ -145,7 +154,8 @@ export default function ProductCategoriesPage() {
                       {category.nome}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Categoria superior: {getParentCategoryName(category, categorias)}
+                      Categoria superior:{' '}
+                      {getParentCategoryName(category, categorias)}
                     </Typography>
                   </Stack>
                 </Box>
@@ -216,7 +226,10 @@ export default function ProductCategoriesPage() {
         />
       </Paper>
 
-      <NewCategoryDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
+      <NewCategoryDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
       <EditCategoryDialog
         open={editingCategoryId !== null}
         categoryId={editingCategoryId}

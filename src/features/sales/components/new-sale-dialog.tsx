@@ -174,8 +174,11 @@ export default function NewSaleDialog({
     idFeira: initialSaleFormState.idFeira,
   });
   const [catalogProducts, setCatalogProducts] = useState<Produto[]>([]);
-  const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(null);
-  const [isLoadingCatalogProducts, setIsLoadingCatalogProducts] = useState(false);
+  const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(
+    null,
+  );
+  const [isLoadingCatalogProducts, setIsLoadingCatalogProducts] =
+    useState(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
@@ -204,7 +207,9 @@ export default function NewSaleDialog({
           setCatalogProducts(cachedProducts);
           setCatalogErrorMessage(null);
         } else {
-          setCatalogErrorMessage('Nao foi possivel carregar o catalogo de produtos.');
+          setCatalogErrorMessage(
+            'Nao foi possivel carregar o catalogo de produtos.',
+          );
         }
       } finally {
         setIsLoadingCatalogProducts(false);
@@ -218,9 +223,7 @@ export default function NewSaleDialog({
           : getResetFormState(persistedConfigRef.current);
 
       prevCarteira.current = nextForm.idCarteira;
-      setForm(
-        nextForm,
-      );
+      setForm(nextForm);
       void loadCatalogProducts();
       void fetchFeiras();
       void fetchCarteiras();
@@ -233,9 +236,7 @@ export default function NewSaleDialog({
         : getResetFormState(persistedConfigRef.current);
 
     prevCarteira.current = nextForm.idCarteira;
-    setForm(
-      nextForm,
-    );
+    setForm(nextForm);
     setCatalogProducts([]);
     setCatalogErrorMessage(null);
     setProblem(null);
@@ -261,7 +262,8 @@ export default function NewSaleDialog({
 
   const availableMeiosPagamento = useMemo(() => {
     const carteira = carteiras.find((c) => c.id === form.idCarteira);
-    if (!carteira?.meiosPagamento?.length) return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
+    if (!carteira?.meiosPagamento?.length)
+      return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
     return carteira.meiosPagamento;
   }, [carteiras, form.idCarteira]);
 
@@ -372,7 +374,11 @@ export default function NewSaleDialog({
         errors.nomeProduto = 'Informe o nome do item avulso.';
       }
 
-      if (item.tipoItem === 'AVULSO' && !item.brinde && item.valorUnitario <= 0) {
+      if (
+        item.tipoItem === 'AVULSO' &&
+        !item.brinde &&
+        item.valorUnitario <= 0
+      ) {
         errors.valorUnitario = 'Informe um valor unitário maior que zero.';
       }
 
@@ -401,7 +407,8 @@ export default function NewSaleDialog({
     }
 
     if (form.descontoModo === 'VALOR' && form.desconto > 999.99) {
-      nextLocalErrors.desconto = 'O desconto em R$ deve ser de no máximo 999,99.';
+      nextLocalErrors.desconto =
+        'O desconto em R$ deve ser de no máximo 999,99.';
     }
 
     if (form.itens.length === 0) {
@@ -467,14 +474,18 @@ export default function NewSaleDialog({
       }
 
       if (result.data.id < 0) {
-        showSuccess('Venda salva offline. Sincronize quando a internet voltar.');
+        showSuccess(
+          'Venda salva offline. Sincronize quando a internet voltar.',
+        );
         handleClose();
         return;
       }
 
       await fetchVendas();
       showSuccess(
-        isEditMode ? 'Venda alterada com sucesso.' : 'Venda cadastrada com sucesso.',
+        isEditMode
+          ? 'Venda alterada com sucesso.'
+          : 'Venda cadastrada com sucesso.',
       );
       handleClose();
     } finally {
@@ -607,7 +618,9 @@ export default function NewSaleDialog({
                   value={form.idFeira}
                   onChange={(event) => {
                     const nextFairId =
-                      event.target.value === '' ? '' : Number(event.target.value);
+                      event.target.value === ''
+                        ? ''
+                        : Number(event.target.value);
                     setPersistedConfig((current) => ({
                       ...current,
                       idFeira: nextFairId,
@@ -644,12 +657,14 @@ export default function NewSaleDialog({
                   setForm((current) => ({
                     ...current,
                     idCarteira:
-                      event.target.value === '' ? '' : Number(event.target.value),
+                      event.target.value === ''
+                        ? ''
+                        : Number(event.target.value),
                   }));
                 }}
                 error={Boolean(
                   localErrors.idCarteira ||
-                    getFieldMessage(problem, 'idCarteira'),
+                  getFieldMessage(problem, 'idCarteira'),
                 )}
                 helperText={
                   localErrors.idCarteira ??
@@ -680,10 +695,18 @@ export default function NewSaleDialog({
                   }));
                 }}
               >
-                {availableMeiosPagamento.includes('DEB') && <MenuItem value="DEB">Cartão débito</MenuItem>}
-                {availableMeiosPagamento.includes('CRE') && <MenuItem value="CRE">Cartão crédito</MenuItem>}
-                {availableMeiosPagamento.includes('DIN') && <MenuItem value="DIN">Dinheiro</MenuItem>}
-                {availableMeiosPagamento.includes('PIX') && <MenuItem value="PIX">Pix</MenuItem>}
+                {availableMeiosPagamento.includes('DEB') && (
+                  <MenuItem value="DEB">Cartão débito</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('CRE') && (
+                  <MenuItem value="CRE">Cartão crédito</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('DIN') && (
+                  <MenuItem value="DIN">Dinheiro</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('PIX') && (
+                  <MenuItem value="PIX">Pix</MenuItem>
+                )}
               </TextField>
             </Grid>
           </Grid>
@@ -744,16 +767,24 @@ export default function NewSaleDialog({
                               updateItem(index, {
                                 idProduto: newValue?.id ?? null,
                                 nomeProduto: newValue?.nome ?? '',
-                                valorUnitario: newValue ? newValue.valor / 100 : 0,
+                                valorUnitario: newValue
+                                  ? newValue.valor / 100
+                                  : 0,
                               });
                             }}
                             error={Boolean(
                               itemErrors[index]?.idProduto ||
-                                getFieldMessage(problem, `itens[${index}].idProduto`),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.idProduto ??
-                              getFieldMessage(problem, `itens[${index}].idProduto`)
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              )
                             }
                           />
                         ) : (
@@ -769,10 +800,10 @@ export default function NewSaleDialog({
                             }}
                             error={Boolean(
                               itemErrors[index]?.nomeProduto ||
-                                getFieldMessage(
-                                  problem,
-                                  `itens[${index}].nomeProduto`,
-                                ),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].nomeProduto`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.nomeProduto ??
@@ -793,7 +824,10 @@ export default function NewSaleDialog({
                             value={
                               item.brinde
                                 ? 0
-                                : getCatalogProductValue(item, catalogProducts) / 100
+                                : getCatalogProductValue(
+                                    item,
+                                    catalogProducts,
+                                  ) / 100
                             }
                             onValueChange={() => undefined}
                             name={`valorCatalogo-${index}`}
@@ -811,10 +845,10 @@ export default function NewSaleDialog({
                             disabled={item.brinde}
                             error={Boolean(
                               itemErrors[index]?.valorUnitario ||
-                                getFieldMessage(
-                                  problem,
-                                  `itens[${index}].valorUnitario`,
-                                ),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].valorUnitario`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.valorUnitario ??
@@ -841,14 +875,17 @@ export default function NewSaleDialog({
                           }}
                           error={Boolean(
                             itemErrors[index]?.quantidade ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].quantidade`,
-                              ),
+                            getFieldMessage(
+                              problem,
+                              `itens[${index}].quantidade`,
+                            ),
                           )}
                           helperText={
                             itemErrors[index]?.quantidade ??
-                            getFieldMessage(problem, `itens[${index}].quantidade`)
+                            getFieldMessage(
+                              problem,
+                              `itens[${index}].quantidade`,
+                            )
                           }
                         />
                       </Grid>
@@ -932,7 +969,9 @@ export default function NewSaleDialog({
                     item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
 
                   return (
-                    <TableRow key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}>
+                    <TableRow
+                      key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
+                    >
                       <TableCell sx={{ verticalAlign: 'top', minWidth: 150 }}>
                         <TextField
                           select
@@ -963,16 +1002,24 @@ export default function NewSaleDialog({
                               updateItem(index, {
                                 idProduto: newValue?.id ?? null,
                                 nomeProduto: newValue?.nome ?? '',
-                                valorUnitario: newValue ? newValue.valor / 100 : 0,
+                                valorUnitario: newValue
+                                  ? newValue.valor / 100
+                                  : 0,
                               });
                             }}
                             error={Boolean(
                               itemErrors[index]?.idProduto ||
-                                getFieldMessage(problem, `itens[${index}].idProduto`),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.idProduto ??
-                              getFieldMessage(problem, `itens[${index}].idProduto`)
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].idProduto`,
+                              )
                             }
                           />
                         ) : (
@@ -988,10 +1035,10 @@ export default function NewSaleDialog({
                             }}
                             error={Boolean(
                               itemErrors[index]?.nomeProduto ||
-                                getFieldMessage(
-                                  problem,
-                                  `itens[${index}].nomeProduto`,
-                                ),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].nomeProduto`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.nomeProduto ??
@@ -1012,7 +1059,10 @@ export default function NewSaleDialog({
                             value={
                               item.brinde
                                 ? 0
-                                : getCatalogProductValue(item, catalogProducts) / 100
+                                : getCatalogProductValue(
+                                    item,
+                                    catalogProducts,
+                                  ) / 100
                             }
                             onValueChange={() => undefined}
                             name={`valorCatalogo-${index}`}
@@ -1030,10 +1080,10 @@ export default function NewSaleDialog({
                             disabled={item.brinde}
                             error={Boolean(
                               itemErrors[index]?.valorUnitario ||
-                                getFieldMessage(
-                                  problem,
-                                  `itens[${index}].valorUnitario`,
-                                ),
+                              getFieldMessage(
+                                problem,
+                                `itens[${index}].valorUnitario`,
+                              ),
                             )}
                             helperText={
                               itemErrors[index]?.valorUnitario ??
@@ -1060,20 +1110,29 @@ export default function NewSaleDialog({
                           }}
                           error={Boolean(
                             itemErrors[index]?.quantidade ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].quantidade`,
-                              ),
+                            getFieldMessage(
+                              problem,
+                              `itens[${index}].quantidade`,
+                            ),
                           )}
                           helperText={
                             itemErrors[index]?.quantidade ??
-                            getFieldMessage(problem, `itens[${index}].quantidade`)
+                            getFieldMessage(
+                              problem,
+                              `itens[${index}].quantidade`,
+                            )
                           }
                         />
                       </TableCell>
 
                       <TableCell sx={{ verticalAlign: 'top', minWidth: 100 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 1.25 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            pt: 1.25,
+                          }}
+                        >
                           <Checkbox
                             checked={item.brinde}
                             onChange={(event) => {
@@ -1094,7 +1153,13 @@ export default function NewSaleDialog({
                       </TableCell>
 
                       <TableCell sx={{ verticalAlign: 'top' }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.75 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            pt: 0.75,
+                          }}
+                        >
                           <IconButton
                             onClick={() => handleRemoveItem(index)}
                             color="error"
@@ -1155,7 +1220,8 @@ export default function NewSaleDialog({
                   setForm((current) => ({
                     ...current,
                     descontoModo: newValue,
-                    desconto: current.descontoModo === newValue ? current.desconto : 0,
+                    desconto:
+                      current.descontoModo === newValue ? current.desconto : 0,
                   }));
                 }}
                 sx={{
@@ -1186,7 +1252,8 @@ export default function NewSaleDialog({
                     }}
                     name="desconto"
                     error={Boolean(
-                      localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                      localErrors.desconto ||
+                      getFieldMessage(problem, 'desconto'),
                     )}
                     inputProps={{
                       'aria-label': 'Desconto em reais',
@@ -1215,7 +1282,8 @@ export default function NewSaleDialog({
                       'aria-label': 'Desconto em percentual',
                     }}
                     error={Boolean(
-                      localErrors.desconto || getFieldMessage(problem, 'desconto'),
+                      localErrors.desconto ||
+                      getFieldMessage(problem, 'desconto'),
                     )}
                   />
                 )}
@@ -1223,7 +1291,11 @@ export default function NewSaleDialog({
             </Box>
 
             {discountHelperText ? (
-              <Typography variant="caption" color="text.secondary" sx={{ pl: 0.5 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ pl: 0.5 }}
+              >
                 {discountHelperText}
               </Typography>
             ) : null}
@@ -1249,7 +1321,7 @@ export default function NewSaleDialog({
           alignItems: { xs: 'stretch', md: 'center' },
           gap: 2,
         }}
-        >
+      >
         <Box>
           <Typography variant="body2" color="text.secondary">
             Total ({totals.totalQuantidadeItens}{' '}
@@ -1301,8 +1373,8 @@ export default function NewSaleDialog({
               : isEditMode
                 ? 'Salvar alterações'
                 : isOnline
-                ? 'Finalizar e salvar'
-                : 'Salvar offline'}
+                  ? 'Finalizar e salvar'
+                  : 'Salvar offline'}
           </Button>
         </Box>
       </Box>

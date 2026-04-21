@@ -1,11 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
-import {
-  BrowserRouter,
-  Outlet,
-  Route,
-  Routes,
-} from 'react-router-dom';
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import RouteErrorBoundary from './components/route-error-boundary';
 import MainLayout from './layouts/main-layout';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
@@ -22,10 +17,13 @@ const FinanceExpensesPage = lazy(
   () => import('@/features/finance/pages/finance-expenses-page'),
 );
 const FinancePaymentMethodWalletFeesPage = lazy(
-  () => import('@/features/finance/pages/finance-payment-method-wallet-fees-page'),
+  () =>
+    import('@/features/finance/pages/finance-payment-method-wallet-fees-page'),
 );
 const BudgetsPage = lazy(() => import('@/features/budgets/pages/budgets-page'));
-const ProductsPage = lazy(() => import('@/features/products/pages/products-page'));
+const ProductsPage = lazy(
+  () => import('@/features/products/pages/products-page'),
+);
 const ProductsStockPage = lazy(
   () => import('@/features/products/pages/products-stock-page'),
 );
@@ -44,9 +42,15 @@ const ReportsSummaryPage = lazy(
 const DashboardHomePage = lazy(
   () => import('@/features/reports/pages/dashboard-home-page'),
 );
-const PlanosPage = lazy(() => import('@/features/assinatura/pages/planos-page'));
-const AssinantesPage = lazy(() => import('@/features/assinatura/pages/assinantes-page'));
-const CiclosPage = lazy(() => import('@/features/assinatura/pages/ciclos-page'));
+const PlanosPage = lazy(
+  () => import('@/features/assinatura/pages/planos-page'),
+);
+const AssinantesPage = lazy(
+  () => import('@/features/assinatura/pages/assinantes-page'),
+);
+const CiclosPage = lazy(
+  () => import('@/features/assinatura/pages/ciclos-page'),
+);
 const KitsPage = lazy(() => import('@/features/assinatura/pages/kits-page'));
 
 function RouteFallback() {
@@ -85,7 +89,10 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedLayout />}>
             <Route path="/" element={<DashboardHomePage />} />
-            <Route path="/financeiro/carteiras" element={<FinanceWalletsPage />} />
+            <Route
+              path="/financeiro/carteiras"
+              element={<FinanceWalletsPage />}
+            />
             <Route
               path="/financeiro/categorias-despesa"
               element={<FinanceExpenseCategoriesPage />}
@@ -94,11 +101,17 @@ function App() {
               path="/financeiro/taxas-meio-pagamento-carteira"
               element={<FinancePaymentMethodWalletFeesPage />}
             />
-            <Route path="/financeiro/despesas" element={<FinanceExpensesPage />} />
+            <Route
+              path="/financeiro/despesas"
+              element={<FinanceExpensesPage />}
+            />
             <Route path="/orcamentos" element={<BudgetsPage />} />
             <Route path="/produtos" element={<ProductsPage />} />
             <Route path="/produtos/estoque" element={<ProductsStockPage />} />
-            <Route path="/produtos/categorias" element={<ProductCategoriesPage />} />
+            <Route
+              path="/produtos/categorias"
+              element={<ProductCategoriesPage />}
+            />
             <Route
               path="/relatorios/produtos-mais-vendidos"
               element={<ReportsBestSellingProductsPage />}

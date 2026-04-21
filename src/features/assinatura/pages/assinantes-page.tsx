@@ -62,7 +62,9 @@ export default function AssinantesPage() {
     })),
   );
   const [newDialogOpen, setNewDialogOpen] = useState(false);
-  const [editingAssinanteId, setEditingAssinanteId] = useState<number | null>(null);
+  const [editingAssinanteId, setEditingAssinanteId] = useState<number | null>(
+    null,
+  );
   const [termo, setTermo] = useState('');
   const [statusFiltro, setStatusFiltro] = useState<StatusAssinante | ''>('');
   const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>('');
@@ -98,7 +100,7 @@ export default function AssinantesPage() {
       />
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <TextField
             fullWidth
             label="Pesquisar"
@@ -108,30 +110,38 @@ export default function AssinantesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <TextField
             select
             fullWidth
             label="Status"
             value={statusFiltro}
-            onChange={(e) => setStatusFiltro(e.target.value as StatusAssinante | '')}
+            onChange={(e) =>
+              setStatusFiltro(e.target.value as StatusAssinante | '')
+            }
           >
             <MenuItem value="">Todos</MenuItem>
-            {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map((s) => (
-              <MenuItem key={s} value={s}>
-                {STATUS_ASSINANTE_LABEL[s]}
-              </MenuItem>
-            ))}
+            {(Object.keys(STATUS_ASSINANTE_LABEL) as StatusAssinante[]).map(
+              (s) => (
+                <MenuItem key={s} value={s}>
+                  {STATUS_ASSINANTE_LABEL[s]}
+                </MenuItem>
+              ),
+            )}
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <TextField
             select
             fullWidth
             label="Plano"
             value={idPlanoFiltro}
-            onChange={(e) => setIdPlanoFiltro(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setIdPlanoFiltro(
+                e.target.value === '' ? '' : Number(e.target.value),
+              )
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {planos.map((p) => (
@@ -143,11 +153,16 @@ export default function AssinantesPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de assinantes">
+          <Stack
+            divider={<Divider flexItem />}
+            aria-label="lista de assinantes"
+          >
             {isFetching ? (
               <LoadingState />
             ) : assinantes.length > 0 ? (
@@ -157,13 +172,22 @@ export default function AssinantesPage() {
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
                   onClick={() => setEditingAssinanteId(assinante.id)}
                 >
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.5}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    spacing={1.5}
+                  >
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="subtitle1" fontWeight={700} noWrap>
                         {assinante.nome}
                       </Typography>
                       {assinante.email ? (
-                        <Typography variant="body2" color="text.secondary" noWrap>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          noWrap
+                        >
                           {assinante.email}
                         </Typography>
                       ) : null}
@@ -267,12 +291,18 @@ export default function AssinantesPage() {
             void fetchAssinantes({ pagina: newPage + 1 });
           }}
           onRowsPerPageChange={(event) => {
-            void fetchAssinantes({ pagina: 1, tamanhoPagina: Number(event.target.value) });
+            void fetchAssinantes({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
           }}
         />
       </Paper>
 
-      <NewAssinanteDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
+      <NewAssinanteDialog
+        open={newDialogOpen}
+        onClose={() => setNewDialogOpen(false)}
+      />
       <EditAssinanteDialog
         open={editingAssinanteId !== null}
         assinanteId={editingAssinanteId}

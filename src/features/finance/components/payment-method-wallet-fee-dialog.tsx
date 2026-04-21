@@ -110,12 +110,20 @@ export default function PaymentMethodWalletFeeDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
-    useFormDialog<FeeFormState, FeeFormErrors>({
-      open,
-      initialValues: initialFeeFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+  } = useFormDialog<FeeFormState, FeeFormErrors>({
+    open,
+    initialValues: initialFeeFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -312,7 +320,9 @@ export default function PaymentMethodWalletFeeDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <AccountBalanceWallet color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   {isEditMode ? 'Alterar taxa' : 'Nova taxa'}
@@ -401,7 +411,9 @@ export default function PaymentMethodWalletFeeDialog({
                   }));
                 }}
                 error={Boolean(getErrorMessage('percentual'))}
-                helperText={getErrorMessage('percentual') ?? 'Use até 2 casas decimais.'}
+                helperText={
+                  getErrorMessage('percentual') ?? 'Use até 2 casas decimais.'
+                }
                 slotProps={{
                   htmlInput: {
                     inputMode: 'decimal',
@@ -410,7 +422,12 @@ export default function PaymentMethodWalletFeeDialog({
                     max: 100,
                   },
                   input: {
-                    startAdornment: <Percent fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />,
+                    startAdornment: (
+                      <Percent
+                        fontSize="small"
+                        sx={{ mr: 1, color: 'text.secondary' }}
+                      />
+                    ),
                   },
                 }}
               />
@@ -459,7 +476,11 @@ export default function PaymentMethodWalletFeeDialog({
           </Box>
 
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -475,11 +496,17 @@ export default function PaymentMethodWalletFeeDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onClose={handleDialogClose} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir taxa</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir esta taxa? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir esta taxa? Essa ação não pode ser
+            desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>

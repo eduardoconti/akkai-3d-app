@@ -71,7 +71,8 @@ export default function NewExpenseDialog({
       excluirDespesa: financeStoreSelectors.excluirDespesa(state),
       atualizarDespesa: financeStoreSelectors.atualizarDespesa(state),
       fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
-      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchCategoriasDespesa:
+        financeStoreSelectors.fetchCategoriasDespesa(state),
       fetchDespesas: financeStoreSelectors.fetchDespesas(state),
       fetchFeiras: financeStoreSelectors.fetchFeiras(state),
       feiras: financeStoreSelectors.feiras(state),
@@ -79,12 +80,21 @@ export default function NewExpenseDialog({
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<ExpenseFormState, ExpenseFormErrors>({
-      open,
-      initialValues: initialExpenseFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<ExpenseFormState, ExpenseFormErrors>({
+    open,
+    initialValues: initialExpenseFormState,
+    onReset: clearSubmitError,
+  });
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
@@ -125,7 +135,12 @@ export default function NewExpenseDialog({
   }, [open, isEditMode, carteiras, form.idCarteira]);
 
   useEffect(() => {
-    if (open && !isEditMode && form.idCategoria === '' && categoriasDespesa.length > 0) {
+    if (
+      open &&
+      !isEditMode &&
+      form.idCategoria === '' &&
+      categoriasDespesa.length > 0
+    ) {
       setForm((current) => ({
         ...current,
         idCategoria: categoriasDespesa[0]!.id,
@@ -140,7 +155,8 @@ export default function NewExpenseDialog({
 
   const availableMeiosPagamento = useMemo(() => {
     const carteira = carteiras.find((c) => c.id === form.idCarteira);
-    if (!carteira?.meiosPagamento?.length) return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
+    if (!carteira?.meiosPagamento?.length)
+      return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
     return carteira.meiosPagamento;
   }, [carteiras, form.idCarteira]);
 
@@ -240,7 +256,11 @@ export default function NewExpenseDialog({
       }
 
       await fetchDespesas({ pagina: 1 });
-      showSuccess(isEditMode ? 'Despesa alterada com sucesso.' : 'Despesa cadastrada com sucesso.');
+      showSuccess(
+        isEditMode
+          ? 'Despesa alterada com sucesso.'
+          : 'Despesa cadastrada com sucesso.',
+      );
       handleClose();
     } finally {
       setIsSaving(false);
@@ -283,7 +303,9 @@ export default function NewExpenseDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <ReceiptLong color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   {isEditMode ? 'Alterar despesa' : 'Nova despesa'}
@@ -341,184 +363,213 @@ export default function NewExpenseDialog({
               />
             </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Descrição"
-              value={form.descricao}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  descricao: event.target.value,
-                }))
-              }
-              error={Boolean(
-                localErrors.descricao || getFieldMessage(problem, 'descricao'),
-              )}
-              helperText={
-                localErrors.descricao ?? getFieldMessage(problem, 'descricao')
-              }
-            />
-          </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Descrição"
+                value={form.descricao}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    descricao: event.target.value,
+                  }))
+                }
+                error={Boolean(
+                  localErrors.descricao ||
+                  getFieldMessage(problem, 'descricao'),
+                )}
+                helperText={
+                  localErrors.descricao ?? getFieldMessage(problem, 'descricao')
+                }
+              />
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 3 }}>
-            <CurrencyField
-              fullWidth
-              label="Valor"
-              value={form.valor}
-              onValueChange={(valor) =>
-                setForm((current) => ({ ...current, valor }))
-              }
-              error={Boolean(
-                localErrors.valor || getFieldMessage(problem, 'valor'),
-              )}
-              helperText={
-                localErrors.valor ?? getFieldMessage(problem, 'valor')
-              }
-            />
-          </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <CurrencyField
+                fullWidth
+                label="Valor"
+                value={form.valor}
+                onValueChange={(valor) =>
+                  setForm((current) => ({ ...current, valor }))
+                }
+                error={Boolean(
+                  localErrors.valor || getFieldMessage(problem, 'valor'),
+                )}
+                helperText={
+                  localErrors.valor ?? getFieldMessage(problem, 'valor')
+                }
+              />
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Categoria"
-              value={form.idCategoria}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  idCategoria: Number(event.target.value),
-                }))
-              }
-              error={Boolean(
-                localErrors.idCategoria ||
-                getFieldMessage(problem, 'idCategoria'),
-              )}
-              helperText={
-                localErrors.idCategoria ??
-                getFieldMessage(problem, 'idCategoria')
-              }
-            >
-              <MenuItem value="">Selecione a categoria</MenuItem>
-              {categoriasDespesa.map((cat) => (
-                <MenuItem key={cat.id} value={cat.id}>
-                  {cat.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                select
+                fullWidth
+                label="Categoria"
+                value={form.idCategoria}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    idCategoria: Number(event.target.value),
+                  }))
+                }
+                error={Boolean(
+                  localErrors.idCategoria ||
+                  getFieldMessage(problem, 'idCategoria'),
+                )}
+                helperText={
+                  localErrors.idCategoria ??
+                  getFieldMessage(problem, 'idCategoria')
+                }
+              >
+                <MenuItem value="">Selecione a categoria</MenuItem>
+                {categoriasDespesa.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.nome}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Carteira"
-              value={form.idCarteira}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  idCarteira:
-                    event.target.value === '' ? '' : Number(event.target.value),
-                }))
-              }
-              error={Boolean(
-                localErrors.idCarteira ||
-                getFieldMessage(problem, 'idCarteira'),
-              )}
-              helperText={
-                localErrors.idCarteira ?? getFieldMessage(problem, 'idCarteira')
-              }
-            >
-              <MenuItem value="">Selecione a carteira</MenuItem>
-              {activeWallets.map((carteira) => (
-                <MenuItem key={carteira.id} value={carteira.id}>
-                  {carteira.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                select
+                fullWidth
+                label="Carteira"
+                value={form.idCarteira}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    idCarteira:
+                      event.target.value === ''
+                        ? ''
+                        : Number(event.target.value),
+                  }))
+                }
+                error={Boolean(
+                  localErrors.idCarteira ||
+                  getFieldMessage(problem, 'idCarteira'),
+                )}
+                helperText={
+                  localErrors.idCarteira ??
+                  getFieldMessage(problem, 'idCarteira')
+                }
+              >
+                <MenuItem value="">Selecione a carteira</MenuItem>
+                {activeWallets.map((carteira) => (
+                  <MenuItem key={carteira.id} value={carteira.id}>
+                    {carteira.nome}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 4 }}>
-            <TextField
-              select
-              fullWidth
-              label="Pagamento"
-              value={form.meioPagamento}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  meioPagamento: event.target.value as MeioPagamento,
-                }))
-              }
-            >
-              {availableMeiosPagamento.includes('CRE') && <MenuItem value="CRE">Cartão crédito</MenuItem>}
-              {availableMeiosPagamento.includes('DEB') && <MenuItem value="DEB">Cartão débito</MenuItem>}
-              {availableMeiosPagamento.includes('DIN') && <MenuItem value="DIN">Dinheiro</MenuItem>}
-              {availableMeiosPagamento.includes('PIX') && <MenuItem value="PIX">Pix</MenuItem>}
-            </TextField>
-          </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                select
+                fullWidth
+                label="Pagamento"
+                value={form.meioPagamento}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    meioPagamento: event.target.value as MeioPagamento,
+                  }))
+                }
+              >
+                {availableMeiosPagamento.includes('CRE') && (
+                  <MenuItem value="CRE">Cartão crédito</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('DEB') && (
+                  <MenuItem value="DEB">Cartão débito</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('DIN') && (
+                  <MenuItem value="DIN">Dinheiro</MenuItem>
+                )}
+                {availableMeiosPagamento.includes('PIX') && (
+                  <MenuItem value="PIX">Pix</MenuItem>
+                )}
+              </TextField>
+            </Grid>
 
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              select
-              fullWidth
-              label="Feira"
-              value={form.idFeira}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  idFeira:
-                    event.target.value === '' ? '' : Number(event.target.value),
-                }))
-              }
-              helperText="Opcional"
-            >
-              <MenuItem value="">Sem feira</MenuItem>
-              {feiras.map((feira) => (
-                <MenuItem key={feira.id} value={feira.id}>
-                  {feira.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                select
+                fullWidth
+                label="Feira"
+                value={form.idFeira}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    idFeira:
+                      event.target.value === ''
+                        ? ''
+                        : Number(event.target.value),
+                  }))
+                }
+                helperText="Opcional"
+              >
+                <MenuItem value="">Sem feira</MenuItem>
+                {feiras.map((feira) => (
+                  <MenuItem key={feira.id} value={feira.id}>
+                    {feira.nome}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
 
-          <Grid size={{ xs: 12 }}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              label="Observação"
-              value={form.observacao}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  observacao: event.target.value,
-                }))
-              }
-              error={Boolean(
-                localErrors.observacao ||
-                getFieldMessage(problem, 'observacao'),
-              )}
-              helperText={
-                localErrors.observacao ?? getFieldMessage(problem, 'observacao')
-              }
-            />
-          </Grid>
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                rows={2}
+                label="Observação"
+                value={form.observacao}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    observacao: event.target.value,
+                  }))
+                }
+                error={Boolean(
+                  localErrors.observacao ||
+                  getFieldMessage(problem, 'observacao'),
+                )}
+                helperText={
+                  localErrors.observacao ??
+                  getFieldMessage(problem, 'observacao')
+                }
+              />
+            </Grid>
           </Grid>
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
             {isEditMode ? (
-              <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+              <Button
+                color="error"
+                onClick={() => setConfirmDeleteOpen(true)}
+                disabled={isBusy}
+              >
                 Excluir
               </Button>
             ) : null}
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -546,11 +597,15 @@ export default function NewExpenseDialog({
         <DialogTitle>Excluir despesa</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir esta despesa? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir esta despesa? Essa ação não pode ser
+            desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleConfirmDeleteDialogClose} disabled={isDeleting}>
+          <Button
+            onClick={handleConfirmDeleteDialogClose}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

@@ -157,9 +157,9 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
     productStoreSelectors.atualizarQuantidadeEstoqueLocal,
   );
   const [isFetchingMovements, setIsFetchingMovements] = useState(false);
-  const [movementsErrorMessage, setMovementsErrorMessage] = useState<string | null>(
-    null,
-  );
+  const [movementsErrorMessage, setMovementsErrorMessage] = useState<
+    string | null
+  >(null);
   const [movements, setMovements] = useState<MovimentacaoEstoque[]>([]);
   const [pagination, setPagination] = useState<PesquisaPaginada>({
     pagina: 1,
@@ -167,29 +167,32 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
   });
   const [totalItems, setTotalItems] = useState(0);
 
-  const fetchMovements = useCallback(async (query?: Partial<PesquisaPaginada>) => {
-    setIsFetchingMovements(true);
-    setMovementsErrorMessage(null);
+  const fetchMovements = useCallback(
+    async (query?: Partial<PesquisaPaginada>) => {
+      setIsFetchingMovements(true);
+      setMovementsErrorMessage(null);
 
-    const nextPagination: PesquisaPaginada = {
-      pagina: query?.pagina ?? pagination.pagina,
-      tamanhoPagina: query?.tamanhoPagina ?? pagination.tamanhoPagina,
-    };
+      const nextPagination: PesquisaPaginada = {
+        pagina: query?.pagina ?? pagination.pagina,
+        tamanhoPagina: query?.tamanhoPagina ?? pagination.tamanhoPagina,
+      };
 
-    try {
-      const response = await listStockMovements(produto.id, nextPagination);
-      setMovements(response.itens);
-      setPagination({
-        pagina: response.pagina,
-        tamanhoPagina: response.tamanhoPagina,
-      });
-      setTotalItems(response.totalItens);
-    } catch (error) {
-      setMovementsErrorMessage(getProblemDetailsFromError(error).detail);
-    } finally {
-      setIsFetchingMovements(false);
-    }
-  }, [pagination.pagina, pagination.tamanhoPagina, produto.id]);
+      try {
+        const response = await listStockMovements(produto.id, nextPagination);
+        setMovements(response.itens);
+        setPagination({
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+        });
+        setTotalItems(response.totalItens);
+      } catch (error) {
+        setMovementsErrorMessage(getProblemDetailsFromError(error).detail);
+      } finally {
+        setIsFetchingMovements(false);
+      }
+    },
+    [pagination.pagina, pagination.tamanhoPagina, produto.id],
+  );
 
   const handleSavedMovement = async (delta: number) => {
     atualizarQuantidadeEstoqueLocal(produto.id, delta);
@@ -224,7 +227,10 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                   : '0 10px 24px rgba(15, 23, 42, 0.06)',
             }}
           >
-            <StockMovementForm produto={produto} onSaved={handleSavedMovement} />
+            <StockMovementForm
+              produto={produto}
+              onSaved={handleSavedMovement}
+            />
           </Box>
         </Grid>
 
@@ -265,13 +271,19 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                     <TableCell>Usuario</TableCell>
                     {!isMobile ? <TableCell>Movimentacao</TableCell> : null}
                     <TableCell>Origem</TableCell>
-                    <TableCell align="right" sx={{ pr: 2.5 }}>Quantidade</TableCell>
+                    <TableCell align="right" sx={{ pr: 2.5 }}>
+                      Quantidade
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {isFetchingMovements ? (
                     <TableRow>
-                      <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
+                      <TableCell
+                        colSpan={isMobile ? 4 : 5}
+                        align="center"
+                        sx={{ py: 4 }}
+                      >
                         <CircularProgress size={24} />
                       </TableCell>
                     </TableRow>
@@ -290,12 +302,26 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                             : undefined
                         }
                       >
-                        <TableCell sx={isMobile ? { whiteSpace: 'nowrap', pl: 2.5, pr: 1 } : { pl: 2.5 }}>
+                        <TableCell
+                          sx={
+                            isMobile
+                              ? { whiteSpace: 'nowrap', pl: 2.5, pr: 1 }
+                              : { pl: 2.5 }
+                          }
+                        >
                           {isMobile
-                            ? formatMovementDateMobile(movimentacao.dataInclusao)
+                            ? formatMovementDateMobile(
+                                movimentacao.dataInclusao,
+                              )
                             : formatDateTime(movimentacao.dataInclusao)}
                         </TableCell>
-                        <TableCell sx={isMobile ? { whiteSpace: 'nowrap', px: 1 } : undefined}>
+                        <TableCell
+                          sx={
+                            isMobile
+                              ? { whiteSpace: 'nowrap', px: 1 }
+                              : undefined
+                          }
+                        >
                           {isMobile
                             ? formatMovementUserMobile(movimentacao.usuario)
                             : movimentacao.usuario}
@@ -326,7 +352,16 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                         </TableCell>
                         <TableCell
                           align="right"
-                          sx={isMobile ? { whiteSpace: 'nowrap', pl: 1, pr: 2.5, fontWeight: 700 } : { pr: 2.5 }}
+                          sx={
+                            isMobile
+                              ? {
+                                  whiteSpace: 'nowrap',
+                                  pl: 1,
+                                  pr: 2.5,
+                                  fontWeight: 700,
+                                }
+                              : { pr: 2.5 }
+                          }
                         >
                           {movimentacao.quantidade}
                         </TableCell>
@@ -334,7 +369,11 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={isMobile ? 4 : 5} align="center" sx={{ py: 4 }}>
+                      <TableCell
+                        colSpan={isMobile ? 4 : 5}
+                        align="center"
+                        sx={{ py: 4 }}
+                      >
                         Nenhuma movimentacao encontrada para este produto.
                       </TableCell>
                     </TableRow>
@@ -459,7 +498,10 @@ function MobileStockCard({ produto }: { produto: EstoqueProduto }) {
               color={stockState.chipColor}
               variant="filled"
             />
-            <IconButton size="small" onClick={() => setOpen((current) => !current)}>
+            <IconButton
+              size="small"
+              onClick={() => setOpen((current) => !current)}
+            >
               {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
             </IconButton>
           </Stack>
@@ -609,7 +651,9 @@ export default function ProductsStockPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (

@@ -13,10 +13,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Category, Close, Save } from '@mui/icons-material';
-import {
-  getCategoryById,
-  updateCategory,
-} from '../api/products-api';
+import { getCategoryById, updateCategory } from '../api/products-api';
 import { formatCategoryOptions } from '../utils/format-category-options';
 import {
   initialCategoryFormState,
@@ -45,13 +42,23 @@ export default function EditCategoryDialog({
   onClose,
   onUpdated,
 }: EditCategoryDialogProps) {
-  const { categorias, fetchCategorias, isFetchingCategories } = useProductStore();
+  const { categorias, fetchCategorias, isFetchingCategories } =
+    useProductStore();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<CategoryFormState, CategoryFormErrors>({
-      open,
-      initialValues: initialCategoryFormState,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<CategoryFormState, CategoryFormErrors>({
+    open,
+    initialValues: initialCategoryFormState,
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -177,7 +184,9 @@ export default function EditCategoryDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Category color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Alterar categoria
@@ -210,7 +219,10 @@ export default function EditCategoryDialog({
               value={form.nome}
               disabled={isLoading}
               onChange={(event) => {
-                setForm((current) => ({ ...current, nome: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  nome: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('nome'))}
               helperText={getErrorMessage('nome')}

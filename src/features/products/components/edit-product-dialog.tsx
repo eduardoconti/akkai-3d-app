@@ -51,11 +51,19 @@ export default function EditProductDialog({
   onUpdated,
 }: EditProductDialogProps) {
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
-    useFormDialog<ProductFormState, ProductFormErrors>({
-      open,
-      initialValues: initialProductFormState,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+  } = useFormDialog<ProductFormState, ProductFormErrors>({
+    open,
+    initialValues: initialProductFormState,
+  });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productName, setProductName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -207,7 +215,9 @@ export default function EditProductDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Edit color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Alterar produto
@@ -240,127 +250,128 @@ export default function EditProductDialog({
                 {productName || 'Editar produto'}
               </Typography>
               <Typography color="text.secondary">
-                Ajuste nome, codigo, descricao, categoria, valor e estoque minimo.
+                Ajuste nome, codigo, descricao, categoria, valor e estoque
+                minimo.
               </Typography>
             </Box>
             <Stack spacing={3}>
               <FormFeedbackAlert message={problem?.detail} />
 
               <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, sm: 8 }}>
-                    <TextField
-                      fullWidth
-                      label="Nome do Produto"
-                      value={form.nome}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          nome: event.target.value,
-                        }));
-                      }}
-                      error={Boolean(getErrorMessage('nome'))}
-                      helperText={getErrorMessage('nome')}
-                    />
-                  </Grid>
+                <Grid size={{ xs: 12, sm: 8 }}>
+                  <TextField
+                    fullWidth
+                    label="Nome do Produto"
+                    value={form.nome}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        nome: event.target.value,
+                      }));
+                    }}
+                    error={Boolean(getErrorMessage('nome'))}
+                    helperText={getErrorMessage('nome')}
+                  />
+                </Grid>
 
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      fullWidth
-                      label="Codigo/SKU"
-                      value={form.codigo}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          codigo: event.target.value,
-                        }));
-                      }}
-                      error={Boolean(getErrorMessage('codigo'))}
-                      helperText={getErrorMessage('codigo')}
-                    />
-                  </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    label="Codigo/SKU"
+                    value={form.codigo}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        codigo: event.target.value,
+                      }));
+                    }}
+                    error={Boolean(getErrorMessage('codigo'))}
+                    helperText={getErrorMessage('codigo')}
+                  />
+                </Grid>
 
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      rows={2}
-                      label="Descricao"
-                      value={form.descricao}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          descricao: event.target.value,
-                        }));
-                      }}
-                      error={Boolean(getErrorMessage('descricao'))}
-                      helperText={getErrorMessage('descricao')}
-                    />
-                  </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="Descricao"
+                    value={form.descricao}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        descricao: event.target.value,
+                      }));
+                    }}
+                    error={Boolean(getErrorMessage('descricao'))}
+                    helperText={getErrorMessage('descricao')}
+                  />
+                </Grid>
 
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      label="Estoque minimo"
-                      value={form.estoqueMinimo}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          estoqueMinimo:
-                            event.target.value === ''
-                              ? ''
-                              : Number(event.target.value),
-                        }));
-                      }}
-                      inputProps={{ min: 0, step: 1 }}
-                      error={Boolean(getErrorMessage('estoqueMinimo'))}
-                      helperText={
-                        getErrorMessage('estoqueMinimo') ??
-                        'Opcional. Usado para destacar quando o saldo estiver baixo.'
-                      }
-                    />
-                  </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Estoque minimo"
+                    value={form.estoqueMinimo}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        estoqueMinimo:
+                          event.target.value === ''
+                            ? ''
+                            : Number(event.target.value),
+                      }));
+                    }}
+                    inputProps={{ min: 0, step: 1 }}
+                    error={Boolean(getErrorMessage('estoqueMinimo'))}
+                    helperText={
+                      getErrorMessage('estoqueMinimo') ??
+                      'Opcional. Usado para destacar quando o saldo estiver baixo.'
+                    }
+                  />
+                </Grid>
 
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <TextField
-                      select
-                      fullWidth
-                      label="Categoria"
-                      value={form.idCategoria}
-                      onChange={(event) => {
-                        setForm((current) => ({
-                          ...current,
-                          idCategoria:
-                            event.target.value === ''
-                              ? ''
-                              : Number(event.target.value),
-                        }));
-                      }}
-                      error={Boolean(getErrorMessage('idCategoria'))}
-                      helperText={getErrorMessage('idCategoria')}
-                    >
-                      <MenuItem value="">Selecione uma categoria</MenuItem>
-                      {categoryOptions.map((category) => (
-                        <MenuItem key={category.id} value={category.id}>
-                          {category.label}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Categoria"
+                    value={form.idCategoria}
+                    onChange={(event) => {
+                      setForm((current) => ({
+                        ...current,
+                        idCategoria:
+                          event.target.value === ''
+                            ? ''
+                            : Number(event.target.value),
+                      }));
+                    }}
+                    error={Boolean(getErrorMessage('idCategoria'))}
+                    helperText={getErrorMessage('idCategoria')}
+                  >
+                    <MenuItem value="">Selecione uma categoria</MenuItem>
+                    {categoryOptions.map((category) => (
+                      <MenuItem key={category.id} value={category.id}>
+                        {category.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
 
-                  <Grid size={{ xs: 12, sm: 4 }}>
-                    <CurrencyField
-                      fullWidth
-                      label="Valor de Venda"
-                      value={form.valor}
-                      onValueChange={(valor) => {
-                        setForm((current) => ({ ...current, valor }));
-                      }}
-                      name="valor"
-                      error={Boolean(getErrorMessage('valor'))}
-                      helperText={getErrorMessage('valor')}
-                    />
-                  </Grid>
+                <Grid size={{ xs: 12, sm: 4 }}>
+                  <CurrencyField
+                    fullWidth
+                    label="Valor de Venda"
+                    value={form.valor}
+                    onValueChange={(valor) => {
+                      setForm((current) => ({ ...current, valor }));
+                    }}
+                    name="valor"
+                    error={Boolean(getErrorMessage('valor'))}
+                    helperText={getErrorMessage('valor')}
+                  />
+                </Grid>
               </Grid>
             </Stack>
           </Stack>

@@ -102,11 +102,15 @@ export default function StockHistoryDialog({
               Historico de estoque
             </Typography>
             <Typography color="text.secondary">
-              {productName || 'Produto'} com movimentacoes mais recentes primeiro.
+              {productName || 'Produto'} com movimentacoes mais recentes
+              primeiro.
             </Typography>
           </Box>
 
-          <IconButton onClick={onClose} aria-label="Fechar historico de estoque">
+          <IconButton
+            onClick={onClose}
+            aria-label="Fechar historico de estoque"
+          >
             <Close />
           </IconButton>
         </Box>
@@ -125,7 +129,9 @@ export default function StockHistoryDialog({
                 aria-label="lista de movimentacoes de estoque"
               >
                 {isFetchingStockMovements ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'center', py: 6 }}
+                  >
                     <CircularProgress />
                   </Box>
                 ) : movimentacoesEstoque.length > 0 ? (
@@ -161,26 +167,41 @@ export default function StockHistoryDialog({
                           spacing={2}
                         >
                           <Box sx={{ minWidth: 0, flex: 1 }}>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               Quantidade
                             </Typography>
                             <Typography
                               variant="body1"
                               fontWeight={700}
-                              sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              sx={{
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
                             >
                               {movimentacao.quantidade}
                             </Typography>
                           </Box>
 
-                          <Box sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}>
-                            <Typography variant="caption" color="text.secondary">
+                          <Box
+                            sx={{ minWidth: 0, flex: 1, textAlign: 'right' }}
+                          >
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               Origem
                             </Typography>
                             <Typography
                               variant="body1"
                               fontWeight={700}
-                              sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              sx={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
                             >
                               {getMovementOriginLabel(movimentacao.origem)}
                             </Typography>
@@ -264,7 +285,9 @@ export default function StockHistoryDialog({
                   return;
                 }
 
-                void fetchMovimentacoesEstoque(productId, { pagina: newPage + 1 });
+                void fetchMovimentacoesEstoque(productId, {
+                  pagina: newPage + 1,
+                });
               }}
               rowsPerPage={paginacaoMovimentacoesEstoque.tamanhoPagina}
               onRowsPerPageChange={(event) => {

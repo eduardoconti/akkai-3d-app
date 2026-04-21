@@ -114,7 +114,9 @@ export default function LoginPage() {
                       edge="end"
                       onClick={() => setShowPassword((current) => !current)}
                       onMouseDown={(event) => event.preventDefault()}
-                      aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
+                      aria-label={
+                        showPassword ? 'Ocultar senha' : 'Exibir senha'
+                      }
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -129,7 +131,11 @@ export default function LoginPage() {
             variant="contained"
             size="large"
             startIcon={
-              isSubmitting || isLoading ? <CircularProgress size={18} /> : <LoginIcon />
+              isSubmitting || isLoading ? (
+                <CircularProgress size={18} />
+              ) : (
+                <LoginIcon />
+              )
             }
             onClick={() => {
               void handleSubmit();

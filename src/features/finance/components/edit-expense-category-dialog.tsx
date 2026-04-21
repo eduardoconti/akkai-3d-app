@@ -57,12 +57,21 @@ export default function EditExpenseCategoryDialog({
       clearSubmitError: financeStoreSelectors.clearSubmitError(state),
     })),
   );
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<FormState, FormErrors>({
-      open,
-      initialValues: { nome: '' },
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<FormState, FormErrors>({
+    open,
+    initialValues: { nome: '' },
+    onReset: clearSubmitError,
+  });
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
@@ -163,7 +172,9 @@ export default function EditExpenseCategoryDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <Label color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar categoria
@@ -194,25 +205,46 @@ export default function EditExpenseCategoryDialog({
                 label="Nome da categoria"
                 value={form.nome}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, nome: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    nome: event.target.value,
+                  }))
                 }
-                error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
-                helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
+                error={Boolean(
+                  localErrors.nome || getFieldMessage(problem, 'nome'),
+                )}
+                helperText={
+                  localErrors.nome ?? getFieldMessage(problem, 'nome')
+                }
               />
             </Grid>
           </Grid>
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -227,16 +259,24 @@ export default function EditExpenseCategoryDialog({
           </Box>
         </DialogActions>
       </Dialog>
-      <Dialog open={confirmDeleteOpen} onClose={handleDialogClose} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir categoria</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir esta categoria de despesa? Essa ação não pode ser
-            desfeita.
+            Tem certeza que deseja excluir esta categoria de despesa? Essa ação
+            não pode ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

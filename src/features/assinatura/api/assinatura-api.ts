@@ -24,11 +24,16 @@ export function getPlanoById(id: number): Promise<PlanoAssinatura> {
   return httpClient.get<PlanoAssinatura>(`/assinatura/planos/${id}`);
 }
 
-export function createPlano(input: PlanoAssinaturaInput): Promise<PlanoAssinatura> {
+export function createPlano(
+  input: PlanoAssinaturaInput,
+): Promise<PlanoAssinatura> {
   return httpClient.post<PlanoAssinatura>('/assinatura/planos', input);
 }
 
-export function updatePlano(id: number, input: PlanoAssinaturaInput): Promise<PlanoAssinatura> {
+export function updatePlano(
+  id: number,
+  input: PlanoAssinaturaInput,
+): Promise<PlanoAssinatura> {
   return httpClient.put<PlanoAssinatura>(`/assinatura/planos/${id}`, input);
 }
 
@@ -39,7 +44,10 @@ export function deletePlano(id: number): Promise<void> {
 export function listAssinantes(
   query?: PesquisarAssinantesInput,
 ): Promise<ResultadoPaginado<Assinante>> {
-  return httpClient.get<ResultadoPaginado<Assinante>>('/assinatura/assinantes', query);
+  return httpClient.get<ResultadoPaginado<Assinante>>(
+    '/assinatura/assinantes',
+    query,
+  );
 }
 
 export function getAssinanteById(id: number): Promise<Assinante> {
@@ -78,14 +86,19 @@ export function deleteAssinante(id: number): Promise<void> {
 export function listCiclos(
   query?: PesquisarCiclosInput,
 ): Promise<ResultadoPaginado<CicloAssinatura>> {
-  return httpClient.get<ResultadoPaginado<CicloAssinatura>>('/assinatura/ciclos', query);
+  return httpClient.get<ResultadoPaginado<CicloAssinatura>>(
+    '/assinatura/ciclos',
+    query,
+  );
 }
 
 export function getCicloById(id: number): Promise<CicloAssinatura> {
   return httpClient.get<CicloAssinatura>(`/assinatura/ciclos/${id}`);
 }
 
-export function createCiclo(input: CicloAssinaturaInput): Promise<CicloAssinatura> {
+export function createCiclo(
+  input: CicloAssinaturaInput,
+): Promise<CicloAssinatura> {
   return httpClient.post<CicloAssinatura>('/assinatura/ciclos', input);
 }
 
@@ -103,7 +116,10 @@ export function deleteCiclo(id: number): Promise<void> {
 export function listKits(
   query?: PesquisarKitsInput,
 ): Promise<ResultadoPaginado<KitMensal>> {
-  return httpClient.get<ResultadoPaginado<KitMensal>>('/assinatura/kits', query);
+  return httpClient.get<ResultadoPaginado<KitMensal>>(
+    '/assinatura/kits',
+    query,
+  );
 }
 
 export function getKitById(id: number): Promise<KitMensal> {
@@ -114,7 +130,10 @@ export function createKit(input: KitMensalInput): Promise<KitMensal> {
   return httpClient.post<KitMensal>('/assinatura/kits', input);
 }
 
-export function updateKit(id: number, input: AlterarKitMensalInput): Promise<KitMensal> {
+export function updateKit(
+  id: number,
+  input: AlterarKitMensalInput,
+): Promise<KitMensal> {
   return httpClient.put<KitMensal>(`/assinatura/kits/${id}`, input);
 }
 
@@ -123,5 +142,8 @@ export function deleteKit(id: number): Promise<void> {
 }
 
 export function gerarCiclosMensais(id: number): Promise<GerarCiclosResult> {
-  return httpClient.post<GerarCiclosResult>(`/assinatura/kits/${id}/gerar-ciclos`, {});
+  return httpClient.post<GerarCiclosResult>(
+    `/assinatura/kits/${id}/gerar-ciclos`,
+    {},
+  );
 }

@@ -48,12 +48,21 @@ export default function NewCategoryDialog({
   } = useProductStore();
 
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<CategoryFormState, CategoryFormErrors>({
-      open,
-      initialValues: initialCategoryFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<CategoryFormState, CategoryFormErrors>({
+    open,
+    initialValues: initialCategoryFormState,
+    onReset: clearSubmitError,
+  });
 
   useEffect(() => {
     if (open) {
@@ -137,7 +146,9 @@ export default function NewCategoryDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Category color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Nova categoria
@@ -169,7 +180,10 @@ export default function NewCategoryDialog({
               placeholder="Ex: CHAVEIROS"
               value={form.nome}
               onChange={(event) => {
-                setForm((current) => ({ ...current, nome: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  nome: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('nome'))}
               helperText={getErrorMessage('nome')}

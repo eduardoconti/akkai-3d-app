@@ -5,7 +5,5 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({ message }: EmptyStateProps) {
-  return (
-    <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>{message}</Box>
-  );
+  return <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>{message}</Box>;
 }

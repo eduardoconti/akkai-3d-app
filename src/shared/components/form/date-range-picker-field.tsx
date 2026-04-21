@@ -128,12 +128,18 @@ export default function DateRangePickerField({
     });
   };
 
-  const handleQuickSelect = (range: { startValue: string; endValue: string }) => {
+  const handleQuickSelect = (range: {
+    startValue: string;
+    endValue: string;
+  }) => {
     onValueChange(range);
   };
 
   const content = (
-    <Stack spacing={2.5} sx={{ p: isMobile ? 0 : 2, width: { xs: '100%', md: 760 } }}>
+    <Stack
+      spacing={2.5}
+      sx={{ p: isMobile ? 0 : 2, width: { xs: '100%', md: 760 } }}
+    >
       <Stack spacing={1}>
         <Typography variant="subtitle2" fontWeight={700}>
           Atalhos
@@ -248,7 +254,9 @@ export default function DateRangePickerField({
         }}
         InputProps={{
           readOnly: true,
-          startAdornment: <CalendarMonth fontSize="small" color="action" sx={{ mr: 1 }} />,
+          startAdornment: (
+            <CalendarMonth fontSize="small" color="action" sx={{ mr: 1 }} />
+          ),
         }}
         inputProps={{
           'aria-label': label,
@@ -262,7 +270,12 @@ export default function DateRangePickerField({
       />
 
       {isMobile ? (
-        <Dialog open={Boolean(anchorEl)} onClose={handleClose} fullWidth maxWidth="md">
+        <Dialog
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+          fullWidth
+          maxWidth="md"
+        >
           <DialogTitle>{label}</DialogTitle>
           <DialogContent>{content}</DialogContent>
         </Dialog>

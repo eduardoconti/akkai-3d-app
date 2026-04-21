@@ -132,9 +132,9 @@ export function getSalesSummary(
   return httpClient.get<SalesSummary>('/relatorio/vendas/resumo', filtro);
 }
 
-export function getDashboardMonthlySummary(
-  filtro?: { ano?: number },
-): Promise<DashboardMonthlySummaryResponse> {
+export function getDashboardMonthlySummary(filtro?: {
+  ano?: number;
+}): Promise<DashboardMonthlySummaryResponse> {
   return httpClient.get<DashboardMonthlySummaryResponse>(
     '/relatorio/dashboard/resumo-mensal',
     filtro,

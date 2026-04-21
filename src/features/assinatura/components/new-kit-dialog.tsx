@@ -48,25 +48,41 @@ const currentYear = new Date().getFullYear();
 const ANOS = Array.from({ length: 11 }, (_, i) => currentYear - 2 + i);
 
 export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
-  const { clearSubmitError, criarKit, fetchKits, fetchPlanos, isSubmitting, planos, submitErrorMessage } =
-    useAssinaturaStore(
-      useShallow((state) => ({
-        clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
-        criarKit: assinaturaStoreSelectors.criarKit(state),
-        fetchKits: assinaturaStoreSelectors.fetchKits(state),
-        fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
-        isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
-        planos: assinaturaStoreSelectors.planos(state),
-        submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
-      })),
-    );
+  const {
+    clearSubmitError,
+    criarKit,
+    fetchKits,
+    fetchPlanos,
+    isSubmitting,
+    planos,
+    submitErrorMessage,
+  } = useAssinaturaStore(
+    useShallow((state) => ({
+      clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
+      criarKit: assinaturaStoreSelectors.criarKit(state),
+      fetchKits: assinaturaStoreSelectors.fetchKits(state),
+      fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
+      isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
+      planos: assinaturaStoreSelectors.planos(state),
+      submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<KitFormState, KitFormErrors>({
-      open,
-      initialValues: initialKitFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<KitFormState, KitFormErrors>({
+    open,
+    initialValues: initialKitFormState,
+    onReset: clearSubmitError,
+  });
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
@@ -118,7 +134,9 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
     setForm((c) => ({
       ...c,
-      itens: c.itens.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+      itens: c.itens.map((item, i) =>
+        i === index ? { ...item, ...patch } : item,
+      ),
     }));
   };
 
@@ -144,11 +162,15 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
     }
 
     const itensInvalidos = form.itens.some(
-      (item) => item.idProduto === '' || item.quantidade === '' || Number(item.quantidade) <= 0,
+      (item) =>
+        item.idProduto === '' ||
+        item.quantidade === '' ||
+        Number(item.quantidade) <= 0,
     );
 
     if (itensInvalidos) {
-      errors.itens = 'Todos os itens devem ter produto e quantidade maior que zero.';
+      errors.itens =
+        'Todos os itens devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -195,17 +217,24 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Inventory2 color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Novo kit mensal
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary">
-              Defina o kit de produtos que será enviado para os assinantes de um plano.
+              Defina o kit de produtos que será enviado para os assinantes de um
+              plano.
             </Typography>
           </Box>
-          <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+          <IconButton
+            onClick={handleDialogClose}
+            disabled={isBusy}
+            aria-label="Fechar"
+          >
             <Close />
           </IconButton>
         </Box>
@@ -216,7 +245,8 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
 
         {produtos.length === 0 && !isLoadingProducts ? (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Nenhum produto cadastrado. Cadastre produtos antes de montar o kit mensal.
+            Nenhum produto cadastrado. Cadastre produtos antes de montar o kit
+            mensal.
           </Alert>
         ) : null}
 
@@ -233,8 +263,12 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
                   idPlano: e.target.value === '' ? '' : Number(e.target.value),
                 }))
               }
-              error={Boolean(localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'))}
-              helperText={localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')}
+              error={Boolean(
+                localErrors.idPlano ?? getFieldMessage(problem, 'idPlano'),
+              )}
+              helperText={
+                localErrors.idPlano ?? getFieldMessage(problem, 'idPlano')
+              }
             >
               <MenuItem value="">Selecione um plano</MenuItem>
               {planos.map((p) => (
@@ -251,7 +285,12 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
               fullWidth
               label="Mês"
               value={form.mesReferencia}
-              onChange={(e) => setForm((c) => ({ ...c, mesReferencia: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((c) => ({
+                  ...c,
+                  mesReferencia: Number(e.target.value),
+                }))
+              }
             >
               {Object.entries(MESES_LABEL).map(([mes, label]) => (
                 <MenuItem key={mes} value={Number(mes)}>
@@ -267,7 +306,12 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
               fullWidth
               label="Ano"
               value={form.anoReferencia}
-              onChange={(e) => setForm((c) => ({ ...c, anoReferencia: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((c) => ({
+                  ...c,
+                  anoReferencia: Number(e.target.value),
+                }))
+              }
             >
               {ANOS.map((ano) => (
                 <MenuItem key={ano} value={ano}>
@@ -279,17 +323,31 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
         </Grid>
 
         <Box sx={{ mt: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ mb: 1.5 }}
+          >
             <Typography variant="subtitle1" fontWeight={700}>
               Itens do kit
             </Typography>
-            <Button size="small" startIcon={<Add />} onClick={addItem} disabled={isBusy}>
+            <Button
+              size="small"
+              startIcon={<Add />}
+              onClick={addItem}
+              disabled={isBusy}
+            >
               Adicionar item
             </Button>
           </Stack>
 
           {localErrors.itens ? (
-            <Typography variant="caption" color="error" sx={{ mb: 1, display: 'block' }}>
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{ mb: 1, display: 'block' }}
+            >
               {localErrors.itens}
             </Typography>
           ) : null}
@@ -308,7 +366,9 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
                         idProduto: newValue?.id ?? '',
                       })
                     }
-                    helperText={index === 0 ? 'Pesquise por nome ou código.' : undefined}
+                    helperText={
+                      index === 0 ? 'Pesquise por nome ou código.' : undefined
+                    }
                   />
                 </Grid>
 
@@ -321,7 +381,8 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
                     value={item.quantidade}
                     onChange={(e) =>
                       setItem(index, {
-                        quantidade: e.target.value === '' ? '' : Number(e.target.value),
+                        quantidade:
+                          e.target.value === '' ? '' : Number(e.target.value),
                       })
                     }
                   />
@@ -333,11 +394,16 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
                     label="Observação"
                     placeholder="Opcional"
                     value={item.observacao}
-                    onChange={(e) => setItem(index, { observacao: e.target.value })}
+                    onChange={(e) =>
+                      setItem(index, { observacao: e.target.value })
+                    }
                   />
                 </Grid>
 
-                <Grid size={{ xs: 6, sm: 1 }} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Grid
+                  size={{ xs: 6, sm: 1 }}
+                  sx={{ display: 'flex', alignItems: 'center' }}
+                >
                   <IconButton
                     color="error"
                     onClick={() => removeItem(index)}

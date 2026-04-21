@@ -77,12 +77,21 @@ export default function EditWalletDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<WalletFormState, WalletFormErrors>({
-      open,
-      initialValues: initialWalletFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<WalletFormState, WalletFormErrors>({
+    open,
+    initialValues: initialWalletFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -164,11 +173,14 @@ export default function EditWalletDialog({
       const percentual = parsePercentualInput(form.percentualImpostoVenda);
 
       if (!Number.isFinite(percentual)) {
-        errors.percentualImpostoVenda = 'Informe um percentual de imposto válido.';
+        errors.percentualImpostoVenda =
+          'Informe um percentual de imposto válido.';
       } else if (percentual < 0) {
-        errors.percentualImpostoVenda = 'O percentual de imposto não pode ser negativo.';
+        errors.percentualImpostoVenda =
+          'O percentual de imposto não pode ser negativo.';
       } else if (percentual > 100) {
-        errors.percentualImpostoVenda = 'O percentual de imposto deve ser de no máximo 100.';
+        errors.percentualImpostoVenda =
+          'O percentual de imposto deve ser de no máximo 100.';
       }
     }
 
@@ -243,7 +255,9 @@ export default function EditWalletDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <AccountBalanceWallet color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar carteira
@@ -276,17 +290,28 @@ export default function EditWalletDialog({
                 placeholder="Ex: Nubank PIX"
                 value={form.nome}
                 onChange={(event) =>
-                  setForm((current) => ({ ...current, nome: event.target.value }))
+                  setForm((current) => ({
+                    ...current,
+                    nome: event.target.value,
+                  }))
                 }
-                error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
-                helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
+                error={Boolean(
+                  localErrors.nome || getFieldMessage(problem, 'nome'),
+                )}
+                helperText={
+                  localErrors.nome ?? getFieldMessage(problem, 'nome')
+                }
               />
             </Grid>
 
             <Grid size={{ xs: 12 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Meios de pagamento aceitos{' '}
-                <Typography component="span" variant="caption" color="text.disabled">
+                <Typography
+                  component="span"
+                  variant="caption"
+                  color="text.disabled"
+                >
                   (vazio = aceita todos)
                 </Typography>
               </Typography>
@@ -334,7 +359,9 @@ export default function EditWalletDialog({
                       setForm((current) => ({
                         ...current,
                         consideraImpostoVenda: checked,
-                        percentualImpostoVenda: checked ? current.percentualImpostoVenda : '',
+                        percentualImpostoVenda: checked
+                          ? current.percentualImpostoVenda
+                          : '',
                       }))
                     }
                   />
@@ -358,7 +385,7 @@ export default function EditWalletDialog({
                 }
                 error={Boolean(
                   localErrors.percentualImpostoVenda ||
-                    getFieldMessage(problem, 'percentualImpostoVenda'),
+                  getFieldMessage(problem, 'percentualImpostoVenda'),
                 )}
                 helperText={
                   localErrors.percentualImpostoVenda ??
@@ -377,15 +404,29 @@ export default function EditWalletDialog({
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -400,15 +441,24 @@ export default function EditWalletDialog({
           </Box>
         </DialogActions>
       </Dialog>
-      <Dialog open={confirmDeleteOpen} onClose={handleDialogClose} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir carteira</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir esta carteira? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir esta carteira? Essa ação não pode ser
+            desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

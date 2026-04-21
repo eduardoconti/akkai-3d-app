@@ -37,16 +37,21 @@ interface NewPlanDialogProps {
 }
 
 export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
-  const { clearSubmitError, criarPlano, fetchPlanos, isSubmitting, submitErrorMessage } =
-    useAssinaturaStore(
-      useShallow((state) => ({
-        clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
-        criarPlano: assinaturaStoreSelectors.criarPlano(state),
-        fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
-        isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
-        submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
-      })),
-    );
+  const {
+    clearSubmitError,
+    criarPlano,
+    fetchPlanos,
+    isSubmitting,
+    submitErrorMessage,
+  } = useAssinaturaStore(
+    useShallow((state) => ({
+      clearSubmitError: assinaturaStoreSelectors.clearSubmitError(state),
+      criarPlano: assinaturaStoreSelectors.criarPlano(state),
+      fetchPlanos: assinaturaStoreSelectors.fetchPlanos(state),
+      isSubmitting: assinaturaStoreSelectors.isSubmitting(state),
+      submitErrorMessage: assinaturaStoreSelectors.submitErrorMessage(state),
+    })),
+  );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const {
     form,
@@ -127,7 +132,9 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Loyalty color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Novo plano
@@ -137,7 +144,11 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
               Cadastre um plano de kit mensal para oferecer aos assinantes.
             </Typography>
           </Box>
-          <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+          <IconButton
+            onClick={handleDialogClose}
+            disabled={isBusy}
+            aria-label="Fechar"
+          >
             <Close />
           </IconButton>
         </Box>
@@ -154,7 +165,9 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
               placeholder="Ex: Kit Mensal Básico"
               value={form.nome}
               onChange={(e) => setForm((c) => ({ ...c, nome: e.target.value }))}
-              error={Boolean(localErrors.nome ?? getFieldMessage(problem, 'nome'))}
+              error={Boolean(
+                localErrors.nome ?? getFieldMessage(problem, 'nome'),
+              )}
               helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
             />
           </Grid>
@@ -163,9 +176,15 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
             <CurrencyField
               label="Valor (R$)"
               value={form.valor === '' ? 0 : form.valor}
-              onValueChange={(value) => setForm((c) => ({ ...c, valor: value }))}
-              error={Boolean(localErrors.valor ?? getFieldMessage(problem, 'valor'))}
-              helperText={localErrors.valor ?? getFieldMessage(problem, 'valor')}
+              onValueChange={(value) =>
+                setForm((c) => ({ ...c, valor: value }))
+              }
+              error={Boolean(
+                localErrors.valor ?? getFieldMessage(problem, 'valor'),
+              )}
+              helperText={
+                localErrors.valor ?? getFieldMessage(problem, 'valor')
+              }
             />
           </Grid>
 
@@ -177,7 +196,9 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
               label="Descrição"
               placeholder="Ex: Kit com 3 peças impressas em 3D"
               value={form.descricao}
-              onChange={(e) => setForm((c) => ({ ...c, descricao: e.target.value }))}
+              onChange={(e) =>
+                setForm((c) => ({ ...c, descricao: e.target.value }))
+              }
             />
           </Grid>
 
@@ -186,7 +207,9 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
               control={
                 <Switch
                   checked={form.ativo}
-                  onChange={(_e, checked) => setForm((c) => ({ ...c, ativo: checked }))}
+                  onChange={(_e, checked) =>
+                    setForm((c) => ({ ...c, ativo: checked }))
+                  }
                 />
               }
               label="Plano ativo"

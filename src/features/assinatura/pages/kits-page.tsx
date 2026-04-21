@@ -109,7 +109,9 @@ export default function KitsPage() {
       return;
     }
 
-    showSuccess('Nenhum ciclo criado. Todos os assinantes já possuem ciclo para este período.');
+    showSuccess(
+      'Nenhum ciclo criado. Todos os assinantes já possuem ciclo para este período.',
+    );
   };
 
   const currentYear = new Date().getFullYear();
@@ -132,7 +134,9 @@ export default function KitsPage() {
             label="Plano"
             value={idPlanoFiltro}
             onChange={(e) =>
-              setIdPlanoFiltro(e.target.value === '' ? '' : Number(e.target.value))
+              setIdPlanoFiltro(
+                e.target.value === '' ? '' : Number(e.target.value),
+              )
             }
           >
             <MenuItem value="">Todos</MenuItem>
@@ -150,7 +154,9 @@ export default function KitsPage() {
             fullWidth
             label="Mês"
             value={mesFiltro}
-            onChange={(e) => setMesFiltro(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setMesFiltro(e.target.value === '' ? '' : Number(e.target.value))
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {Object.entries(MESES_LABEL).map(([mes, label]) => (
@@ -167,7 +173,9 @@ export default function KitsPage() {
             fullWidth
             label="Ano"
             value={anoFiltro}
-            onChange={(e) => setAnoFiltro(e.target.value === '' ? '' : Number(e.target.value))}
+            onChange={(e) =>
+              setAnoFiltro(e.target.value === '' ? '' : Number(e.target.value))
+            }
           >
             <MenuItem value="">Todos</MenuItem>
             {ANOS.map((ano) => (
@@ -179,12 +187,19 @@ export default function KitsPage() {
         </Grid>
       </Grid>
 
-      {fetchErrorMessage ? <Alert severity="error">{fetchErrorMessage}</Alert> : null}
-      {submitErrorMessage ? <Alert severity="error">{submitErrorMessage}</Alert> : null}
+      {fetchErrorMessage ? (
+        <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
+      {submitErrorMessage ? (
+        <Alert severity="error">{submitErrorMessage}</Alert>
+      ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de kits mensais">
+          <Stack
+            divider={<Divider flexItem />}
+            aria-label="lista de kits mensais"
+          >
             {isFetching ? (
               <LoadingState />
             ) : kits.length > 0 ? (
@@ -194,7 +209,12 @@ export default function KitsPage() {
                   sx={{ px: 2, py: 2, cursor: 'pointer' }}
                   onClick={() => setEditingKitId(kit.id)}
                 >
-                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.5}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    spacing={1.5}
+                  >
                     <Box sx={{ minWidth: 0 }}>
                       <Typography variant="subtitle1" fontWeight={700} noWrap>
                         {kit.plano?.nome ?? `Plano #${kit.idPlano}`}
@@ -203,7 +223,8 @@ export default function KitsPage() {
                         {MESES_LABEL[kit.mesReferencia]} / {kit.anoReferencia}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {kit.itens?.length ?? 0} {kit.itens?.length === 1 ? 'item' : 'itens'}
+                        {kit.itens?.length ?? 0}{' '}
+                        {kit.itens?.length === 1 ? 'item' : 'itens'}
                       </Typography>
                     </Box>
                     <Stack alignItems="flex-end" spacing={1}>
@@ -274,9 +295,13 @@ export default function KitsPage() {
                         {MESES_LABEL[kit.mesReferencia]} / {kit.anoReferencia}
                       </TableCell>
                       <TableCell sx={{ color: 'text.secondary' }}>
-                        {kit.itens?.length ?? 0} {kit.itens?.length === 1 ? 'item' : 'itens'}
+                        {kit.itens?.length ?? 0}{' '}
+                        {kit.itens?.length === 1 ? 'item' : 'itens'}
                       </TableCell>
-                      <TableCell align="right" onClick={(event) => event.stopPropagation()}>
+                      <TableCell
+                        align="right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <Button
                           size="small"
                           variant="outlined"
@@ -311,12 +336,18 @@ export default function KitsPage() {
             void fetchKits({ pagina: newPage + 1 });
           }}
           onRowsPerPageChange={(event) => {
-            void fetchKits({ pagina: 1, tamanhoPagina: Number(event.target.value) });
+            void fetchKits({
+              pagina: 1,
+              tamanhoPagina: Number(event.target.value),
+            });
           }}
         />
       </Paper>
 
-      <NewKitDialog open={newDialogOpen} onClose={() => setNewDialogOpen(false)} />
+      <NewKitDialog
+        open={newDialogOpen}
+        onClose={() => setNewDialogOpen(false)}
+      />
       <EditKitDialog
         open={editingKitId !== null}
         kitId={editingKitId}

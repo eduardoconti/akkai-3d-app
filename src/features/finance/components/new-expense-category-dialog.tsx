@@ -44,19 +44,29 @@ export default function NewExpenseCategoryDialog({
   } = useFinanceStore(
     useShallow((state) => ({
       criarCategoriaDespesa: financeStoreSelectors.criarCategoriaDespesa(state),
-      fetchCategoriasDespesa: financeStoreSelectors.fetchCategoriasDespesa(state),
+      fetchCategoriasDespesa:
+        financeStoreSelectors.fetchCategoriasDespesa(state),
       isSubmitting: financeStoreSelectors.isSubmitting(state),
       clearSubmitError: financeStoreSelectors.clearSubmitError(state),
       submitErrorMessage: financeStoreSelectors.submitErrorMessage(state),
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<FormState, FormErrors>({
-      open,
-      initialValues: { nome: '' },
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<FormState, FormErrors>({
+    open,
+    initialValues: { nome: '' },
+    onReset: clearSubmitError,
+  });
 
   const handleClose = () => {
     resetForm();
@@ -117,7 +127,9 @@ export default function NewExpenseCategoryDialog({
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Label color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 Nova categoria
@@ -151,7 +163,9 @@ export default function NewExpenseCategoryDialog({
               onChange={(event) =>
                 setForm((current) => ({ ...current, nome: event.target.value }))
               }
-              error={Boolean(localErrors.nome || getFieldMessage(problem, 'nome'))}
+              error={Boolean(
+                localErrors.nome || getFieldMessage(problem, 'nome'),
+              )}
               helperText={localErrors.nome ?? getFieldMessage(problem, 'nome')}
             />
           </Grid>

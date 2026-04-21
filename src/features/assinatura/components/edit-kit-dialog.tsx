@@ -14,7 +14,14 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Add, AutoAwesome, Close, Delete, Inventory2, Save } from '@mui/icons-material';
+import {
+  Add,
+  AutoAwesome,
+  Close,
+  Delete,
+  Inventory2,
+  Save,
+} from '@mui/icons-material';
 import { listAllProducts } from '@/features/products/api/products-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
@@ -72,17 +79,27 @@ export default function EditKitDialog({
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving, resetForm } =
-    useFormDialog<KitFormState, KitFormErrors>({
-      open,
-      initialValues: initialKitFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+    resetForm,
+  } = useFormDialog<KitFormState, KitFormErrors>({
+    open,
+    initialValues: initialKitFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generateResult, setGenerateResult] = useState<GerarCiclosResult | null>(null);
+  const [generateResult, setGenerateResult] =
+    useState<GerarCiclosResult | null>(null);
   const [kitLabel, setKitLabel] = useState('');
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -170,7 +187,12 @@ export default function EditKitDialog({
   };
 
   const isBusy =
-    isSubmitting || isLoading || isSaving || isDeleting || isGenerating || isLoadingProducts;
+    isSubmitting ||
+    isLoading ||
+    isSaving ||
+    isDeleting ||
+    isGenerating ||
+    isLoadingProducts;
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -180,7 +202,9 @@ export default function EditKitDialog({
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
     setForm((c) => ({
       ...c,
-      itens: c.itens.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+      itens: c.itens.map((item, i) =>
+        i === index ? { ...item, ...patch } : item,
+      ),
     }));
   };
 
@@ -204,11 +228,15 @@ export default function EditKitDialog({
     const errors: KitFormErrors = {};
 
     const itensInvalidos = form.itens.some(
-      (item) => item.idProduto === '' || item.quantidade === '' || Number(item.quantidade) <= 0,
+      (item) =>
+        item.idProduto === '' ||
+        item.quantidade === '' ||
+        Number(item.quantidade) <= 0,
     );
 
     if (itensInvalidos) {
-      errors.itens = 'Todos os itens devem ter produto e quantidade maior que zero.';
+      errors.itens =
+        'Todos os itens devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -297,7 +325,9 @@ export default function EditKitDialog({
             }}
           >
             <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+              >
                 <Inventory2 color="primary" />
                 <Typography variant="h5" fontWeight={700}>
                   Alterar kit mensal
@@ -307,7 +337,11 @@ export default function EditKitDialog({
                 {kitLabel || 'Atualize os itens do kit selecionado.'}
               </Typography>
             </Box>
-            <IconButton onClick={handleDialogClose} disabled={isBusy} aria-label="Fechar">
+            <IconButton
+              onClick={handleDialogClose}
+              disabled={isBusy}
+              aria-label="Fechar"
+            >
               <Close />
             </IconButton>
           </Box>
@@ -325,7 +359,10 @@ export default function EditKitDialog({
               {generateResult.criados > 0 ? (
                 <>
                   <strong>{generateResult.criados}</strong>{' '}
-                  {generateResult.criados === 1 ? 'ciclo criado' : 'ciclos criados'}.
+                  {generateResult.criados === 1
+                    ? 'ciclo criado'
+                    : 'ciclos criados'}
+                  .
                   {generateResult.ignorados > 0
                     ? ` ${generateResult.ignorados} ${generateResult.ignorados === 1 ? 'assinante ignorado' : 'assinantes ignorados'} (ciclo já existente).`
                     : null}
@@ -338,22 +375,37 @@ export default function EditKitDialog({
 
           {produtos.length === 0 && !isLoadingProducts ? (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Nenhum produto cadastrado. Cadastre produtos antes de montar o kit mensal.
+              Nenhum produto cadastrado. Cadastre produtos antes de montar o kit
+              mensal.
             </Alert>
           ) : null}
 
           <Box sx={{ mt: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1.5 }}
+            >
               <Typography variant="subtitle1" fontWeight={700}>
                 Itens do kit
               </Typography>
-              <Button size="small" startIcon={<Add />} onClick={addItem} disabled={isBusy}>
+              <Button
+                size="small"
+                startIcon={<Add />}
+                onClick={addItem}
+                disabled={isBusy}
+              >
                 Adicionar item
               </Button>
             </Stack>
 
             {localErrors.itens ? (
-              <Typography variant="caption" color="error" sx={{ mb: 1, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ mb: 1, display: 'block' }}
+              >
                 {localErrors.itens}
               </Typography>
             ) : null}
@@ -366,13 +418,17 @@ export default function EditKitDialog({
                       products={produtos}
                       productId={item.idProduto}
                       loading={isLoadingProducts}
-                      disabled={isLoading || isLoadingProducts || produtos.length === 0}
+                      disabled={
+                        isLoading || isLoadingProducts || produtos.length === 0
+                      }
                       onChange={(newValue) =>
                         setItem(index, {
                           idProduto: newValue?.id ?? '',
                         })
                       }
-                      helperText={index === 0 ? 'Pesquise por nome ou código.' : undefined}
+                      helperText={
+                        index === 0 ? 'Pesquise por nome ou código.' : undefined
+                      }
                     />
                   </Grid>
 
@@ -386,7 +442,8 @@ export default function EditKitDialog({
                       value={item.quantidade}
                       onChange={(e) =>
                         setItem(index, {
-                          quantidade: e.target.value === '' ? '' : Number(e.target.value),
+                          quantidade:
+                            e.target.value === '' ? '' : Number(e.target.value),
                         })
                       }
                     />
@@ -399,11 +456,16 @@ export default function EditKitDialog({
                       label="Observação"
                       placeholder="Opcional"
                       value={item.observacao}
-                      onChange={(e) => setItem(index, { observacao: e.target.value })}
+                      onChange={(e) =>
+                        setItem(index, { observacao: e.target.value })
+                      }
                     />
                   </Grid>
 
-                  <Grid size={{ xs: 6, sm: 1 }} sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Grid
+                    size={{ xs: 6, sm: 1 }}
+                    sx={{ display: 'flex', alignItems: 'center' }}
+                  >
                     <IconButton
                       color="error"
                       onClick={() => removeItem(index)}
@@ -420,10 +482,20 @@ export default function EditKitDialog({
         </DialogContent>
 
         <DialogActions
-          sx={{ px: 3, py: 2, justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5 }}
+          sx={{
+            px: 3,
+            py: 2,
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
         >
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button color="error" onClick={() => setConfirmDeleteOpen(true)} disabled={isBusy}>
+            <Button
+              color="error"
+              onClick={() => setConfirmDeleteOpen(true)}
+              disabled={isBusy}
+            >
               Excluir
             </Button>
           </Box>
@@ -437,7 +509,11 @@ export default function EditKitDialog({
             >
               {isGenerating ? 'Gerando...' : 'Gerar ciclos'}
             </Button>
-            <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -453,15 +529,24 @@ export default function EditKitDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
         <DialogTitle>Excluir kit mensal</DialogTitle>
         <DialogContent dividers>
           <Typography>
-            Tem certeza que deseja excluir este kit mensal? Essa ação não pode ser desfeita.
+            Tem certeza que deseja excluir este kit mensal? Essa ação não pode
+            ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setConfirmDeleteOpen(false)} disabled={isDeleting}>
+          <Button
+            onClick={() => setConfirmDeleteOpen(false)}
+            disabled={isDeleting}
+          >
             Cancelar
           </Button>
           <Button

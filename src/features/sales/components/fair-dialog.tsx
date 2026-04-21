@@ -73,12 +73,20 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
       submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
     })),
   );
-  const { form, setForm, problem, setProblem, localErrors, setLocalErrors, isSaving, setIsSaving } =
-    useFormDialog<FairFormState, FairFormErrors>({
-      open,
-      initialValues: initialFairFormState,
-      onReset: clearSubmitError,
-    });
+  const {
+    form,
+    setForm,
+    problem,
+    setProblem,
+    localErrors,
+    setLocalErrors,
+    isSaving,
+    setIsSaving,
+  } = useFormDialog<FairFormState, FairFormErrors>({
+    open,
+    initialValues: initialFairFormState,
+    onReset: clearSubmitError,
+  });
   const [isLoading, setIsLoading] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
@@ -182,7 +190,9 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
 
       await Promise.all([fetchFeiras(), fetchFeirasPaginadas()]);
       showSuccess(
-        isEditMode ? 'Feira alterada com sucesso.' : 'Feira cadastrada com sucesso.',
+        isEditMode
+          ? 'Feira alterada com sucesso.'
+          : 'Feira cadastrada com sucesso.',
       );
       onClose();
     } finally {
@@ -205,7 +215,9 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
           }}
         >
           <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}
+            >
               <Storefront color="primary" />
               <Typography variant="h5" fontWeight={700}>
                 {isEditMode ? 'Alterar feira' : 'Nova feira'}
@@ -240,7 +252,10 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
               value={form.nome}
               disabled={isLoading}
               onChange={(event) => {
-                setForm((current) => ({ ...current, nome: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  nome: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('nome'))}
               helperText={getErrorMessage('nome')}
@@ -255,7 +270,10 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
               value={form.local}
               disabled={isLoading}
               onChange={(event) => {
-                setForm((current) => ({ ...current, local: event.target.value }));
+                setForm((current) => ({
+                  ...current,
+                  local: event.target.value,
+                }));
               }}
               error={Boolean(getErrorMessage('local'))}
               helperText={getErrorMessage('local') ?? 'Opcional'}
@@ -310,7 +328,11 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
           size="large"
           disabled={isBusy}
         >
-          {isBusy ? 'Salvando...' : isEditMode ? 'Salvar Feira' : 'Cadastrar Feira'}
+          {isBusy
+            ? 'Salvando...'
+            : isEditMode
+              ? 'Salvar Feira'
+              : 'Cadastrar Feira'}
         </Button>
       </DialogActions>
     </Dialog>

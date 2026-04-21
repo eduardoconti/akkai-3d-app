@@ -178,90 +178,88 @@ export default function ReportsSummaryPage() {
       </Box>
 
       <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 7 : 8 }}>
-              <DateRangePickerField
-                label="Período"
-                startValue={dataInicio}
-                endValue={dataFim}
-                onValueChange={({ startValue, endValue }) => {
-                  setDataInicio(startValue);
-                  setDataFim(endValue);
-                }}
-              />
-            </Grid>
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 7 : 8 }}>
+          <DateRangePickerField
+            label="Período"
+            startValue={dataInicio}
+            endValue={dataFim}
+            onValueChange={({ startValue, endValue }) => {
+              setDataInicio(startValue);
+              setDataFim(endValue);
+            }}
+          />
+        </Grid>
 
-            <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 6 }}>
-              <TextField
-                select
-                fullWidth
-                label="Tipo de venda"
-                value={tipoVenda}
-                onChange={(event) =>
-                  setTipoVenda(event.target.value as 'TODOS' | TipoVenda)
-                }
-              >
-                <MenuItem value="TODOS">Todos</MenuItem>
-                <MenuItem value="FEIRA">Feira</MenuItem>
-                <MenuItem value="LOJA">Loja</MenuItem>
-                <MenuItem value="ONLINE">Online</MenuItem>
-              </TextField>
-            </Grid>
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 6 }}>
+          <TextField
+            select
+            fullWidth
+            label="Tipo de venda"
+            value={tipoVenda}
+            onChange={(event) =>
+              setTipoVenda(event.target.value as 'TODOS' | TipoVenda)
+            }
+          >
+            <MenuItem value="TODOS">Todos</MenuItem>
+            <MenuItem value="FEIRA">Feira</MenuItem>
+            <MenuItem value="LOJA">Loja</MenuItem>
+            <MenuItem value="ONLINE">Online</MenuItem>
+          </TextField>
+        </Grid>
 
-            {tipoVenda === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 6, lg: 5 }}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Feira"
-                  value={idFeira}
-                  onChange={(event) =>
-                    setIdFeira(
-                      event.target.value === '' ? '' : Number(event.target.value),
-                    )
-                  }
-                  disabled={isLoadingFilters}
-                  helperText={
-                    feiras.length === 0 && !isLoadingFilters
-                      ? 'Nenhuma feira cadastrada.'
-                      : 'Disponível apenas para vendas do tipo feira.'
-                  }
-                >
-                  <MenuItem value="">Todas as feiras</MenuItem>
-                  {feiras.map((feira) => (
-                    <MenuItem key={feira.id} value={feira.id}>
-                      {feira.nome}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            ) : null}
-
-            <Grid
-              size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 3 : 6 }}
-              sx={{ display: 'flex', alignItems: 'flex-start' }}
+        {tipoVenda === 'FEIRA' ? (
+          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+            <TextField
+              select
+              fullWidth
+              label="Feira"
+              value={idFeira}
+              onChange={(event) =>
+                setIdFeira(
+                  event.target.value === '' ? '' : Number(event.target.value),
+                )
+              }
+              disabled={isLoadingFilters}
+              helperText={
+                feiras.length === 0 && !isLoadingFilters
+                  ? 'Nenhuma feira cadastrada.'
+                  : 'Disponível apenas para vendas do tipo feira.'
+              }
             >
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-                onClick={() => {
-                  void handleSubmit();
-                }}
-                disabled={isLoading}
-                sx={{ height: 56 }}
-              >
-                {isLoading ? 'Consultando...' : 'Pesquisar'}
-              </Button>
-            </Grid>
+              <MenuItem value="">Todas as feiras</MenuItem>
+              {feiras.map((feira) => (
+                <MenuItem key={feira.id} value={feira.id}>
+                  {feira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        ) : null}
+
+        <Grid
+          size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 3 : 6 }}
+          sx={{ display: 'flex', alignItems: 'flex-start' }}
+        >
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
+            onClick={() => {
+              void handleSubmit();
+            }}
+            disabled={isLoading}
+            sx={{ height: 56 }}
+          >
+            {isLoading ? 'Consultando...' : 'Pesquisar'}
+          </Button>
+        </Grid>
       </Grid>
 
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 
       {summary ? (
         <Stack spacing={2}>
-          {periodoLabel ? (
-            <Alert severity="info">{periodoLabel}</Alert>
-          ) : null}
+          {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
 
           <Grid container spacing={2}>
             <Grid size={{ xs: 12, md: 3 }}>
