@@ -875,6 +875,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Valor em estoque" />
               </ListItemButton>
             </ListItem>
+
+            <ListItem disablePadding sx={{ mt: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/relatorios/producao"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Produção" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Collapse>
       </List>

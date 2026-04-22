@@ -126,6 +126,40 @@ export interface StockValueReportResponse {
   totalValorTotal: number;
 }
 
+export interface ProductionReportFilter {
+  dataInicio: string;
+  dataFim?: string;
+  pagina?: number;
+  tamanhoPagina?: number;
+  ordenarPor?: 'codigo' | 'nome' | 'quantidadeProduzida' | 'valorEstimado';
+  direcao?: 'asc' | 'desc';
+}
+
+export interface ProductionReportItem {
+  codigo: string;
+  nome: string;
+  quantidadeProduzida: number;
+  valorUnitario: number;
+  valorEstimado: number;
+  mediaQuantidadePorDia: number;
+  mediaValorPorDia: number;
+}
+
+export interface ProductionReportResponse {
+  dataInicio: string;
+  dataFim: string;
+  diasNoPeriodo: number;
+  itens: ProductionReportItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+  totalQuantidadeProduzida: number;
+  totalValorEstimado: number;
+  mediaQuantidadePorDia: number;
+  mediaValorPorDia: number;
+}
+
 export function getSalesSummary(
   filtro: SalesSummaryPeriodFilter,
 ): Promise<SalesSummary> {
@@ -169,4 +203,10 @@ export function getStockValueReport(
     '/relatorio/estoque/valor-produtos',
     filtro,
   );
+}
+
+export function getProductionReport(
+  filtro: ProductionReportFilter,
+): Promise<ProductionReportResponse> {
+  return httpClient.get<ProductionReportResponse>('/relatorio/producao', filtro);
 }
