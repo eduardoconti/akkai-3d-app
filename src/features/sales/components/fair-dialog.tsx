@@ -13,7 +13,8 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Close, Save, Storefront } from '@mui/icons-material';
+import { Close, LocalOffer, Save, Storefront } from '@mui/icons-material';
+import FairProductPricesDialog from './fair-product-prices-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
   FormFeedbackAlert,
@@ -88,6 +89,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
     onReset: clearSubmitError,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [pricesDialogOpen, setPricesDialogOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   useEffect(() => {
@@ -317,24 +319,60 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
         </Grid>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
-          Cancelar
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          startIcon={<Save />}
-          size="large"
-          disabled={isBusy}
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          justifyContent: 'space-between',
+          gap: 1,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box>
+          {isEditMode ? (
+            <Button
+              variant="outlined"
+              startIcon={<LocalOffer />}
+              onClick={() => setPricesDialogOpen(true)}
+              disabled={isBusy}
+            >
+              Cadastrar preços
+            </Button>
+          ) : null}
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1,
+            flexDirection: { xs: 'column', sm: 'row' },
+            width: { xs: '100%', sm: 'auto' },
+          }}
         >
-          {isBusy
-            ? 'Salvando...'
-            : isEditMode
-              ? 'Salvar Feira'
-              : 'Cadastrar Feira'}
-        </Button>
+          <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            startIcon={<Save />}
+            size="large"
+            disabled={isBusy}
+          >
+            {isBusy
+              ? 'Salvando...'
+              : isEditMode
+                ? 'Salvar Feira'
+                : 'Cadastrar Feira'}
+          </Button>
+        </Box>
       </DialogActions>
+
+      <FairProductPricesDialog
+        open={pricesDialogOpen}
+        fairId={fairId ?? null}
+        fairName={form.nome}
+        onClose={() => setPricesDialogOpen(false)}
+      />
     </Dialog>
   );
 }

@@ -408,6 +408,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </IconButton>
               </ListItemButton>
             </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/vendas/precos-feira"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Preços por feira" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Collapse>
 

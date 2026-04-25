@@ -7,6 +7,9 @@ import { LoginPage, ProtectedRoute } from '@/features/auth';
 
 const SalesPage = lazy(() => import('@/features/sales/pages/sales-page'));
 const FairsPage = lazy(() => import('@/features/sales/pages/fairs-page'));
+const FairProductPricesPage = lazy(
+  () => import('@/features/sales/pages/fair-product-prices-page'),
+);
 const FinanceWalletsPage = lazy(
   () => import('@/features/finance/pages/finance-wallets-page'),
 );
@@ -128,6 +131,10 @@ function App() {
               element={<ReportsProductionPage />}
             />
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
+            <Route
+              path="/vendas/precos-feira"
+              element={<FairProductPricesPage />}
+            />
             <Route path="/vendas/feiras" element={<FairsPage />} />
             <Route path="/vendas" element={<SalesPage />} />
             <Route path="/assinatura/planos" element={<PlanosPage />} />

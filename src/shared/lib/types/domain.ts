@@ -76,6 +76,20 @@ export interface FeiraInput {
   ativa?: boolean;
 }
 
+export interface PrecoProdutoFeira {
+  id: number;
+  idFeira: number;
+  idProduto: number;
+  valor: number;
+  feira?: Feira | null;
+  produto?: Produto | null;
+}
+
+export interface PrecoProdutoFeiraInput {
+  idProduto: number;
+  valor: number;
+}
+
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
 export type StatusOrcamento =
@@ -94,6 +108,7 @@ export type OrdenacaoProduto =
   | 'quantidade'
   | 'nivelEstoque'
   | 'estoqueMinimo';
+export type OrdenacaoPrecoProdutoFeira = 'codigo' | 'nome' | 'valor' | 'feira';
 export type DirecaoOrdenacao = 'asc' | 'desc';
 
 export interface Carteira {
@@ -225,6 +240,15 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
 }
 
 export type PesquisaPaginadaFeiras = PesquisaPaginada;
+
+export interface PesquisaPaginadaPrecosProdutosFeira extends Omit<
+  PesquisaPaginada,
+  'ordenarPor'
+> {
+  idFeira?: number;
+  ordenarPor?: OrdenacaoPrecoProdutoFeira;
+  direcao?: DirecaoOrdenacao;
+}
 
 export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataInicio?: string;
