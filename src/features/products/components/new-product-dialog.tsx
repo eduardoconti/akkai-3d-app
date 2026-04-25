@@ -86,8 +86,12 @@ export default function NewProductDialog({
       errors.nome = 'Informe um nome com pelo menos 2 caracteres.';
     }
 
-    if (form.codigo.trim().length < 2) {
-      errors.codigo = 'Informe um código com pelo menos 2 caracteres.';
+    if (
+      form.codigo === '' ||
+      !Number.isInteger(form.codigo) ||
+      form.codigo < 1
+    ) {
+      errors.codigo = 'Informe um código numérico maior que zero.';
     }
 
     if (form.idCategoria === '') {
@@ -136,7 +140,7 @@ export default function NewProductDialog({
     try {
       const result = await criarProduto({
         nome: form.nome.trim().toUpperCase(),
-        codigo: form.codigo.trim().toUpperCase(),
+        codigo: Number(form.codigo),
         descricao: form.descricao.trim() || undefined,
         estoqueMinimo:
           form.estoqueMinimo === '' ? undefined : Number(form.estoqueMinimo),
@@ -224,17 +228,22 @@ export default function NewProductDialog({
           <Grid size={{ xs: 12, sm: 4 }}>
             <TextField
               fullWidth
-              label="Código/SKU"
-              placeholder="DINO02"
+              type="number"
+              label="Código"
+              placeholder="1002"
               value={form.codigo}
               onChange={(event) => {
                 setForm((current) => ({
                   ...current,
-                  codigo: event.target.value,
+                  codigo:
+                    event.target.value === ''
+                      ? ''
+                      : Number(event.target.value),
                 }));
               }}
               error={Boolean(getErrorMessage('codigo'))}
               helperText={getErrorMessage('codigo')}
+              inputProps={{ min: 1, step: 1 }}
             />
           </Grid>
 

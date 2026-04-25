@@ -1,6 +1,6 @@
 export type ProductFormState = {
   nome: string;
-  codigo: string;
+  codigo: number | '';
   descricao: string;
   estoqueMinimo: number | '';
   idCategoria: number | '';

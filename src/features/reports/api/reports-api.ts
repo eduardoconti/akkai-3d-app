@@ -33,7 +33,7 @@ export interface DashboardMonthlySummaryResponse {
 
 export interface DashboardTopProductItem {
   idProduto?: number | null;
-  codigo?: string | null;
+  codigo?: number | null;
   nomeProduto: string;
   categoria?: {
     id: number;
@@ -81,7 +81,7 @@ export interface BestSellingProductsFilter {
 
 export interface BestSellingProductItem {
   idProduto?: number | null;
-  codigo?: string | null;
+  codigo?: number | null;
   nomeProduto: string;
   categoria?: {
     id: number;
@@ -108,7 +108,7 @@ export interface StockValueReportFilter {
 }
 
 export interface StockValueProductItem {
-  codigo: string;
+  codigo: number;
   nome: string;
   quantidade: number;
   valor: number;
@@ -136,7 +136,7 @@ export interface ProductionReportFilter {
 }
 
 export interface ProductionReportItem {
-  codigo: string;
+  codigo: number;
   nome: string;
   quantidadeProduzida: number;
   valorUnitario: number;

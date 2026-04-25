@@ -7,7 +7,7 @@ export interface Categoria {
 export interface Produto {
   id: number;
   nome: string;
-  codigo: string;
+  codigo: number;
   descricao?: string;
   estoqueMinimo?: number;
   idCategoria: number;
@@ -19,7 +19,7 @@ export interface Produto {
 export interface EstoqueProduto {
   id: number;
   nome: string;
-  codigo: string;
+  codigo: number;
   descricao?: string;
   estoqueMinimo?: number;
   idCategoria: number;
@@ -30,7 +30,7 @@ export interface EstoqueProduto {
 export interface DetalheProduto {
   id: number;
   nome: string;
-  codigo: string;
+  codigo: number;
   descricao?: string;
   estoqueMinimo?: number;
   idCategoria: number;
@@ -177,7 +177,7 @@ export interface Orcamento {
 
 export interface ProdutoInput {
   nome: string;
-  codigo: string;
+  codigo: number;
   descricao?: string;
   estoqueMinimo?: number;
   idCategoria: number;
