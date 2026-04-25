@@ -25,6 +25,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { Add, Close, Delete, ShoppingCartCheckout } from '@mui/icons-material';
 import { listAllProducts } from '@/features/products/api/products-api';
+import { listFairProductPrices } from '@/features/sales/api/sales-api';
 import {
   saleStoreSelectors,
   useSaleStore,
@@ -52,6 +53,7 @@ import {
   useFeedbackStore,
   useOnlineStatus,
   type MeioPagamento,
+  type PrecoProdutoFeira,
   type ProblemDetails,
   type Produto,
   type TipoVenda,
@@ -68,7 +70,15 @@ interface NewSaleDialogProps {
 function getCatalogProductValue(
   item: SaleFormItem,
   produtos: Array<{ id: number; valor: number }>,
+  fairProductPrices: PrecoProdutoFeira[],
 ) {
+  const fairProductPrice = fairProductPrices.find(
+    (current) => current.idProduto === item.idProduto,
+  );
+  if (fairProductPrice) {
+    return fairProductPrice.valor;
+  }
+
   const product = produtos.find((current) => current.id === item.idProduto);
   return product?.valor ?? Math.round(item.valorUnitario * 100);
 }
@@ -177,7 +187,14 @@ export default function NewSaleDialog({
   const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(
     null,
   );
+  const [fairProductPrices, setFairProductPrices] = useState<
+    PrecoProdutoFeira[]
+  >([]);
+  const [fairProductPricesErrorMessage, setFairProductPricesErrorMessage] =
+    useState<string | null>(null);
   const [isLoadingCatalogProducts, setIsLoadingCatalogProducts] =
+    useState(false);
+  const [isLoadingFairProductPrices, setIsLoadingFairProductPrices] =
     useState(false);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
@@ -239,6 +256,8 @@ export default function NewSaleDialog({
     setForm(nextForm);
     setCatalogProducts([]);
     setCatalogErrorMessage(null);
+    setFairProductPrices([]);
+    setFairProductPricesErrorMessage(null);
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
@@ -259,6 +278,47 @@ export default function NewSaleDialog({
   useEffect(() => {
     window.__AKKAI_PRODUCTS__ = catalogProducts;
   }, [catalogProducts]);
+
+  useEffect(() => {
+    if (!open || form.tipo !== 'FEIRA' || form.idFeira === '') {
+      setFairProductPrices([]);
+      setFairProductPricesErrorMessage(null);
+      setIsLoadingFairProductPrices(false);
+      return;
+    }
+
+    let active = true;
+
+    const loadFairProductPrices = async () => {
+      setIsLoadingFairProductPrices(true);
+      setFairProductPricesErrorMessage(null);
+
+      try {
+        const nextPrices = await listFairProductPrices(form.idFeira as number);
+
+        if (active) {
+          setFairProductPrices(nextPrices);
+        }
+      } catch {
+        if (active) {
+          setFairProductPrices([]);
+          setFairProductPricesErrorMessage(
+            'Não foi possível carregar os preços da feira.',
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoadingFairProductPrices(false);
+        }
+      }
+    };
+
+    void loadFairProductPrices();
+
+    return () => {
+      active = false;
+    };
+  }, [form.idFeira, form.tipo, open]);
 
   const availableMeiosPagamento = useMemo(() => {
     const carteira = carteiras.find((c) => c.id === form.idCarteira);
@@ -287,7 +347,7 @@ export default function NewSaleDialog({
       const unitValue = item.brinde
         ? 0
         : item.tipoItem === 'CATALOGO'
-          ? getCatalogProductValue(item, catalogProducts)
+          ? getCatalogProductValue(item, catalogProducts, fairProductPrices)
           : Math.round(item.valorUnitario * 100);
 
       subtotal += unitValue * item.quantidade;
@@ -306,7 +366,7 @@ export default function NewSaleDialog({
       total: Math.max(0, subtotal - saleDiscount),
       totalQuantidadeItens,
     };
-  }, [form, catalogProducts]);
+  }, [form, catalogProducts, fairProductPrices]);
 
   const handleClose = () => {
     setForm(
@@ -444,6 +504,11 @@ export default function NewSaleDialog({
             idProduto: item.idProduto ?? undefined,
             quantidade: item.quantidade,
             brinde: item.brinde,
+            valorUnitario: getCatalogProductValue(
+              item,
+              catalogProducts,
+              fairProductPrices,
+            ),
           };
         }
 
@@ -493,13 +558,15 @@ export default function NewSaleDialog({
     }
   };
 
-  const isFetching = isLoadingCatalogProducts || isFetchingSales;
+  const isFetching =
+    isLoadingCatalogProducts || isLoadingFairProductPrices || isFetchingSales;
   const isBusy = isSubmitting || isFetching || isSaving;
   const globalMessage =
     problem?.detail ??
     submitErrorMessage ??
     saleFetchErrorMessage ??
-    catalogErrorMessage;
+    catalogErrorMessage ??
+    fairProductPricesErrorMessage;
 
   const discountHelperText =
     localErrors.desconto ??
@@ -827,6 +894,7 @@ export default function NewSaleDialog({
                                 : getCatalogProductValue(
                                     item,
                                     catalogProducts,
+                                    fairProductPrices,
                                   ) / 100
                             }
                             onValueChange={() => undefined}
@@ -1062,6 +1130,7 @@ export default function NewSaleDialog({
                                 : getCatalogProductValue(
                                     item,
                                     catalogProducts,
+                                    fairProductPrices,
                                   ) / 100
                             }
                             onValueChange={() => undefined}

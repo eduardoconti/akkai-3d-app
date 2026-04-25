@@ -5,7 +5,10 @@ import type {
   FeiraInput,
   InserirVendaInput,
   PesquisaPaginadaFeiras,
+  PesquisaPaginadaPrecosProdutosFeira,
   PesquisaPaginadaVendas,
+  PrecoProdutoFeira,
+  PrecoProdutoFeiraInput,
   ResultadoPaginado,
   ResultadoPaginadoVendas,
   Venda,
@@ -44,6 +47,42 @@ export function updateFair(id: number, input: FeiraInput): Promise<Feira> {
 
 export function deleteFair(id: number): Promise<void> {
   return httpClient.delete<void>(`/venda/feiras/${id}`);
+}
+
+export function listFairProductPrices(
+  idFeira: number,
+): Promise<PrecoProdutoFeira[]> {
+  return httpClient.get<PrecoProdutoFeira[]>(
+    `/venda/feiras/${idFeira}/precos-produtos`,
+  );
+}
+
+export function searchFairProductPrices(
+  query: PesquisaPaginadaPrecosProdutosFeira,
+): Promise<ResultadoPaginado<PrecoProdutoFeira>> {
+  return httpClient.get<ResultadoPaginado<PrecoProdutoFeira>>(
+    '/venda/precos-produtos-feira/paginado',
+    query,
+  );
+}
+
+export function upsertFairProductPrice(
+  idFeira: number,
+  input: PrecoProdutoFeiraInput,
+): Promise<PrecoProdutoFeira> {
+  return httpClient.put<PrecoProdutoFeira>(
+    `/venda/feiras/${idFeira}/precos-produtos`,
+    input,
+  );
+}
+
+export function deleteFairProductPrice(
+  idFeira: number,
+  idProduto: number,
+): Promise<void> {
+  return httpClient.delete<void>(
+    `/venda/feiras/${idFeira}/precos-produtos/${idProduto}`,
+  );
 }
 
 export function listWallets(): Promise<Carteira[]> {

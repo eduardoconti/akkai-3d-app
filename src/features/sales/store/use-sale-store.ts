@@ -53,6 +53,10 @@ function getCatalogProductValue(
   item: InserirVendaInput['itens'][number],
   produtos: Produto[],
 ) {
+  if (item.valorUnitario !== undefined) {
+    return item.valorUnitario;
+  }
+
   const product = produtos.find((current) => current.id === item.idProduto);
   return product?.valor ?? 0;
 }

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   Chip,
   Divider,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -12,11 +14,14 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { LocalOffer } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import FairDialog from '../components/fair-dialog';
+import FairProductPricesDialog from '../components/fair-product-prices-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
   AppTablePagination,
@@ -48,6 +53,7 @@ export default function FairsPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFairId, setEditingFairId] = useState<number | null>(null);
+  const [pricingFairId, setPricingFairId] = useState<number | null>(null);
 
   useEffect(() => {
     void fetchFeirasPaginadas();
@@ -99,6 +105,19 @@ export default function FairsPage() {
                         label={feira.ativa ? 'Ativa' : 'Inativa'}
                       />
                     </Box>
+                    <Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<LocalOffer />}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setPricingFairId(feira.id);
+                        }}
+                      >
+                        Preços
+                      </Button>
+                    </Box>
                   </Stack>
                 </Box>
               ))
@@ -123,12 +142,13 @@ export default function FairsPage() {
                   <TableCell>
                     <strong>Status</strong>
                   </TableCell>
+                  <TableCell width={72} />
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -151,11 +171,24 @@ export default function FairsPage() {
                           label={feira.ativa ? 'Ativa' : 'Inativa'}
                         />
                       </TableCell>
+                      <TableCell>
+                        <Tooltip title="Preços da feira">
+                          <IconButton
+                            aria-label={`Preços da feira ${feira.nome}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setPricingFairId(feira.id);
+                            }}
+                          >
+                            <LocalOffer />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <EmptyState message="Nenhuma feira cadastrada até o momento." />
                     </TableCell>
                   </TableRow>
@@ -186,6 +219,14 @@ export default function FairsPage() {
         open={editingFairId !== null}
         fairId={editingFairId}
         onClose={() => setEditingFairId(null)}
+      />
+      <FairProductPricesDialog
+        open={pricingFairId !== null}
+        fairId={pricingFairId}
+        fairName={
+          feirasPaginadas.find((feira) => feira.id === pricingFairId)?.nome
+        }
+        onClose={() => setPricingFairId(null)}
       />
     </Stack>
   );
