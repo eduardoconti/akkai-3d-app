@@ -308,6 +308,12 @@ export interface PlanoAssinatura {
   valor: number;
   ativo: boolean;
   dataInclusao: string;
+  slug?: string;
+  resumo?: string;
+  destaque?: boolean;
+  faixaEtaria?: string;
+  itensInclusos?: string[];
+  beneficios?: string[];
 }
 
 export interface PlanoAssinaturaInput {
@@ -315,6 +321,12 @@ export interface PlanoAssinaturaInput {
   descricao?: string;
   valor: number;
   ativo: boolean;
+  slug?: string;
+  resumo?: string;
+  destaque?: boolean;
+  faixaEtaria?: string;
+  itensInclusos?: string[];
+  beneficios?: string[];
 }
 
 export interface Assinante {
@@ -426,17 +438,32 @@ export interface KitMensal {
   anoReferencia: number;
   dataInclusao: string;
   itens: ItemKitMensal[];
+  titulo?: string;
+  descricao?: string;
+  chamada?: string;
+  ativo?: boolean;
+  itensVitrine?: string[];
 }
 
 export interface KitMensalInput {
   idPlano: number;
   mesReferencia: number;
   anoReferencia: number;
-  itens: ItemKitMensalInput[];
+  itens?: ItemKitMensalInput[];
+  titulo?: string;
+  descricao?: string;
+  chamada?: string;
+  ativo?: boolean;
+  itensVitrine?: string[];
 }
 
 export interface AlterarKitMensalInput {
-  itens: ItemKitMensalInput[];
+  itens?: ItemKitMensalInput[];
+  titulo?: string;
+  descricao?: string;
+  chamada?: string;
+  ativo?: boolean;
+  itensVitrine?: string[];
 }
 
 export interface GerarCiclosResult {

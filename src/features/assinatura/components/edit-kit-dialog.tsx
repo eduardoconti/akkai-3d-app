@@ -8,8 +8,10 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   IconButton,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -163,6 +165,11 @@ export default function EditKitDialog({
                   observacao: item.observacao ?? '',
                 }))
               : [{ ...initialItemCicloFormState }],
+          titulo: kit.titulo ?? '',
+          descricao: kit.descricao ?? '',
+          chamada: kit.chamada ?? '',
+          ativo: kit.ativo ?? false,
+          itensVitrine: kit.itensVitrine ?? [],
         });
       } catch (error) {
         if (!active) return;
@@ -222,12 +229,34 @@ export default function EditKitDialog({
     }));
   };
 
+  const addVitrineItem = () => {
+    setForm((c) => ({ ...c, itensVitrine: [...c.itensVitrine, ''] }));
+  };
+
+  const setVitrineItem = (index: number, value: string) => {
+    setForm((c) => ({
+      ...c,
+      itensVitrine: c.itensVitrine.map((v, i) => (i === index ? value : v)),
+    }));
+  };
+
+  const removeVitrineItem = (index: number) => {
+    setForm((c) => ({
+      ...c,
+      itensVitrine: c.itensVitrine.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = async () => {
     if (kitId === null) return;
 
     const errors: KitFormErrors = {};
 
-    const itensInvalidos = form.itens.some(
+    const itensPreenchidos = form.itens.filter(
+      (item) => item.idProduto !== '' || item.quantidade !== '',
+    );
+
+    const itensInvalidos = itensPreenchidos.some(
       (item) =>
         item.idProduto === '' ||
         item.quantidade === '' ||
@@ -236,7 +265,7 @@ export default function EditKitDialog({
 
     if (itensInvalidos) {
       errors.itens =
-        'Todos os itens devem ter produto e quantidade maior que zero.';
+        'Todos os itens preenchidos devem ter produto e quantidade maior que zero.';
     }
 
     setLocalErrors(errors);
@@ -247,12 +276,25 @@ export default function EditKitDialog({
     setIsSaving(true);
 
     try {
+      const itensValidos = form.itens.filter(
+        (item) => item.idProduto !== '' && item.quantidade !== '' && Number(item.quantidade) > 0,
+      );
+
       const result = await atualizarKit(kitId, {
-        itens: form.itens.map((item) => ({
-          idProduto: item.idProduto as number,
-          quantidade: item.quantidade as number,
-          observacao: item.observacao.trim() || undefined,
-        })),
+        itens: itensValidos.length
+          ? itensValidos.map((item) => ({
+              idProduto: item.idProduto as number,
+              quantidade: item.quantidade as number,
+              observacao: item.observacao.trim() || undefined,
+            }))
+          : undefined,
+        titulo: form.titulo.trim() || undefined,
+        descricao: form.descricao.trim() || undefined,
+        chamada: form.chamada.trim() || undefined,
+        ativo: form.ativo,
+        itensVitrine: form.itensVitrine.filter((v) => v.trim()).length
+          ? form.itensVitrine.map((v) => v.trim()).filter(Boolean)
+          : undefined,
       });
 
       if (!result.success) {
@@ -373,14 +415,122 @@ export default function EditKitDialog({
             </Alert>
           ) : null}
 
-          {produtos.length === 0 && !isLoadingProducts ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Nenhum produto cadastrado. Cadastre produtos antes de montar o kit
-              mensal.
-            </Alert>
-          ) : null}
+          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+            Vitrine
+          </Typography>
 
-          <Box sx={{ mt: 1 }}>
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                disabled={isLoading}
+                label="Título"
+                placeholder="Ex: Kit Dinossauros"
+                value={form.titulo}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, titulo: e.target.value }))
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                disabled={isLoading}
+                label="Chamada"
+                placeholder="Ex: Edição especial de julho!"
+                value={form.chamada}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, chamada: e.target.value }))
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                multiline
+                minRows={2}
+                disabled={isLoading}
+                label="Descrição"
+                placeholder="Descrição do kit para a vitrine"
+                value={form.descricao}
+                onChange={(e) =>
+                  setForm((c) => ({ ...c, descricao: e.target.value }))
+                }
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.ativo}
+                    disabled={isLoading}
+                    onChange={(_e, checked) =>
+                      setForm((c) => ({ ...c, ativo: checked }))
+                    }
+                  />
+                }
+                label="Ativar na vitrine (substitui o kit atual)"
+              />
+            </Grid>
+          </Grid>
+
+          <Box sx={{ mt: 2 }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 1.5 }}
+            >
+              <Typography variant="subtitle2" fontWeight={600}>
+                Itens da vitrine
+              </Typography>
+              <Button
+                size="small"
+                startIcon={<Add />}
+                onClick={addVitrineItem}
+                disabled={isBusy}
+              >
+                Adicionar
+              </Button>
+            </Stack>
+
+            {form.itensVitrine.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Nenhum item adicionado.
+              </Typography>
+            ) : (
+              <Stack spacing={1.5}>
+                {form.itensVitrine.map((value, index) => (
+                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Ex: T-Rex em miniatura"
+                      value={value}
+                      onChange={(e) => setVitrineItem(index, e.target.value)}
+                      disabled={isBusy}
+                    />
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => removeVitrineItem(index)}
+                      disabled={isBusy}
+                      aria-label="Remover"
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                ))}
+              </Stack>
+            )}
+          </Box>
+
+          <Divider sx={{ my: 3 }} />
+
+          <Box>
             <Stack
               direction="row"
               alignItems="center"
@@ -399,6 +549,13 @@ export default function EditKitDialog({
                 Adicionar item
               </Button>
             </Stack>
+
+            {produtos.length === 0 && !isLoadingProducts ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Nenhum produto cadastrado. Cadastre produtos antes de montar o kit
+                mensal.
+              </Alert>
+            ) : null}
 
             {localErrors.itens ? (
               <Typography
