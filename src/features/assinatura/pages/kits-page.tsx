@@ -268,6 +268,9 @@ export default function KitsPage() {
                   <TableCell>
                     <strong>Itens</strong>
                   </TableCell>
+                  <TableCell>
+                    <strong>Vitrine</strong>
+                  </TableCell>
                   <TableCell align="right">
                     <strong>Ações</strong>
                   </TableCell>
@@ -276,7 +279,7 @@ export default function KitsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -298,6 +301,22 @@ export default function KitsPage() {
                         {kit.itens?.length ?? 0}{' '}
                         {kit.itens?.length === 1 ? 'item' : 'itens'}
                       </TableCell>
+                      <TableCell>
+                        {kit.ativo ? (
+                          <Chip
+                            size="small"
+                            label="Ativo"
+                            color="success"
+                            variant="outlined"
+                          />
+                        ) : kit.titulo ? (
+                          <Chip
+                            size="small"
+                            label="Inativo"
+                            variant="outlined"
+                          />
+                        ) : null}
+                      </TableCell>
                       <TableCell
                         align="right"
                         onClick={(event) => event.stopPropagation()}
@@ -318,7 +337,7 @@ export default function KitsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum kit encontrado para os filtros informados." />
                     </TableCell>
                   </TableRow>

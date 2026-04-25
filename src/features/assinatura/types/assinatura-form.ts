@@ -7,6 +7,12 @@ export type PlanoFormState = {
   descricao: string;
   valor: number | '';
   ativo: boolean;
+  slug: string;
+  resumo: string;
+  destaque: boolean;
+  faixaEtaria: string;
+  itensInclusos: string[];
+  beneficios: string[];
 };
 
 export type PlanoFormErrors = {
@@ -19,6 +25,12 @@ export const initialPlanoFormState: PlanoFormState = {
   descricao: '',
   valor: '',
   ativo: true,
+  slug: '',
+  resumo: '',
+  destaque: false,
+  faixaEtaria: '',
+  itensInclusos: [],
+  beneficios: [],
 };
 
 // ── Assinante ────────────────────────────────────────────────────────────────
@@ -126,6 +138,11 @@ export type KitFormState = {
   mesReferencia: number;
   anoReferencia: number;
   itens: ItemCicloFormState[];
+  titulo: string;
+  descricao: string;
+  chamada: string;
+  ativo: boolean;
+  itensVitrine: string[];
 };
 
 export type KitFormErrors = {
@@ -138,6 +155,11 @@ export const initialKitFormState: KitFormState = {
   mesReferencia: new Date().getMonth() + 1,
   anoReferencia: new Date().getFullYear(),
   itens: [{ ...initialItemCicloFormState }],
+  titulo: '',
+  descricao: '',
+  chamada: '',
+  ativo: false,
+  itensVitrine: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
