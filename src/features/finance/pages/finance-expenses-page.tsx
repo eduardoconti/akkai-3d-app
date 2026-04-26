@@ -48,8 +48,10 @@ export default function FinanceExpensesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
+    carteiras,
     categoriasDespesa,
     despesas,
+    fetchCarteiras,
     fetchCategoriasDespesa,
     fetchDespesas,
     fetchFeiras,
@@ -62,8 +64,10 @@ export default function FinanceExpensesPage() {
     totalizadores,
   } = useFinanceStore(
     useShallow((state) => ({
+      carteiras: financeStoreSelectors.carteiras(state),
       categoriasDespesa: financeStoreSelectors.categoriasDespesa(state),
       despesas: financeStoreSelectors.despesas(state),
+      fetchCarteiras: financeStoreSelectors.fetchCarteiras(state),
       fetchCategoriasDespesa:
         financeStoreSelectors.fetchCategoriasDespesa(state),
       fetchDespesas: financeStoreSelectors.fetchDespesas(state),
@@ -82,6 +86,7 @@ export default function FinanceExpensesPage() {
   const [searchInput, setSearchInput] = useState('');
   const [dataInicio, setDataInicio] = useState(getMonthStartInput);
   const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [idCarteira, setIdCarteira] = useState<number | ''>('');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa
@@ -94,6 +99,7 @@ export default function FinanceExpensesPage() {
       dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
       dataFim: convertDateToApiDateFormat(dataFim) ?? '',
       idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+      idCarteira: idCarteira === '' ? undefined : idCarteira,
       idFeira: idFeira === '' ? undefined : idFeira,
     });
   };
@@ -104,9 +110,10 @@ export default function FinanceExpensesPage() {
   };
 
   useEffect(() => {
+    void fetchCarteiras();
     void fetchCategoriasDespesa();
     void fetchFeiras();
-  }, [fetchCategoriasDespesa, fetchFeiras]);
+  }, [fetchCarteiras, fetchCategoriasDespesa, fetchFeiras]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -116,6 +123,7 @@ export default function FinanceExpensesPage() {
         dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
         dataFim: convertDateToApiDateFormat(dataFim) ?? '',
         idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+        idCarteira: idCarteira === '' ? undefined : idCarteira,
         idFeira: idFeira === '' ? undefined : idFeira,
       });
     }, 300);
@@ -126,6 +134,7 @@ export default function FinanceExpensesPage() {
     dataFim,
     dataInicio,
     fetchDespesas,
+    idCarteira,
     idFeira,
     searchInput,
   ]);
@@ -140,7 +149,7 @@ export default function FinanceExpensesPage() {
         breakpoint="lg"
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
+      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 24 }}>
         <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <DateRangePickerField
             label="Período"
@@ -172,6 +181,28 @@ export default function FinanceExpensesPage() {
         </Grid>
 
         <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Carteira"
+            value={idCarteira}
+            onChange={(event) =>
+              setIdCarteira(
+                event.target.value === '' ? '' : Number(event.target.value),
+              )
+            }
+            helperText="Opcional"
+          >
+            <MenuItem value="">Todas</MenuItem>
+            {carteiras.map((carteira) => (
+              <MenuItem key={carteira.id} value={carteira.id}>
+                {carteira.nome}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth

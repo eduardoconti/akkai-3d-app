@@ -18,6 +18,7 @@ import {
   listFairProductPrices,
   upsertFairProductPrice,
 } from '@/features/sales/api/sales-api';
+import { saveCachedFairProductPrices } from '@/shared/lib/offline/indexed-db';
 import {
   CurrencyField,
   FormFeedbackAlert,
@@ -102,6 +103,9 @@ export default function FairProductPricesDialog({
         setPrices(nextPrices);
         setSelectedProductId(price?.idProduto ?? null);
         setValue((price?.valor ?? 0) / 100);
+        void saveCachedFairProductPrices(fairId, nextPrices).catch(
+          () => undefined,
+        );
       } catch (error) {
         if (active) {
           setErrorMessage(getProblemDetailsFromError(error).detail);
@@ -176,13 +180,17 @@ export default function FairProductPricesDialog({
         valor: valueInCents,
       });
 
-      setPrices((current) => {
-        const withoutProduct = current.filter(
-          (price) => price.idProduto !== savedPrice.idProduto,
-        );
+      const nextPrices = [
+        ...prices.filter(
+          (current) => current.idProduto !== savedPrice.idProduto,
+        ),
+        savedPrice,
+      ];
 
-        return [...withoutProduct, savedPrice];
-      });
+      setPrices(nextPrices);
+      void saveCachedFairProductPrices(fairId, nextPrices).catch(
+        () => undefined,
+      );
       setSelectedProductId(null);
       setValue(0);
       showSuccess(
@@ -209,6 +217,13 @@ export default function FairProductPricesDialog({
 
     try {
       await deleteFairProductPrice(fairId, price.idProduto);
+      const nextPrices = prices.filter(
+        (current) => current.idProduto !== price.idProduto,
+      );
+      setPrices(nextPrices);
+      void saveCachedFairProductPrices(fairId, nextPrices).catch(
+        () => undefined,
+      );
       showSuccess('Preço da feira excluído com sucesso.');
       await onChanged?.();
       handleClose();

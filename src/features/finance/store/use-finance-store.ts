@@ -44,6 +44,7 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
   dataInicio: '',
   dataFim: '',
   idsCategorias: [],
+  idCarteira: undefined,
   idFeira: undefined,
 };
 
@@ -174,6 +175,9 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       idsCategorias: hasQueryValue('idsCategorias')
         ? (query?.idsCategorias ?? paginacaoInicial.idsCategorias)
         : (currentPagination.idsCategorias ?? paginacaoInicial.idsCategorias),
+      idCarteira: hasQueryValue('idCarteira')
+        ? query?.idCarteira
+        : currentPagination.idCarteira,
       idFeira: hasQueryValue('idFeira')
         ? query?.idFeira
         : currentPagination.idFeira,
@@ -191,6 +195,7 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
           dataInicio: nextPagination.dataInicio,
           dataFim: nextPagination.dataFim,
           idsCategorias: nextPagination.idsCategorias,
+          idCarteira: nextPagination.idCarteira,
           idFeira: nextPagination.idFeira,
         },
         totalItens: response.totalItens,

@@ -41,7 +41,9 @@ import {
   type SaleItemType,
 } from '@/features/sales/types/sale-form';
 import {
+  getCachedFairProductPrices,
   getCachedProductCatalog,
+  saveCachedFairProductPrices,
   saveCachedProductCatalog,
 } from '@/shared/lib/offline/indexed-db';
 import {
@@ -290,16 +292,30 @@ export default function NewSaleDialog({
     let active = true;
 
     const loadFairProductPrices = async () => {
+      const fairId = form.idFeira as number;
       setIsLoadingFairProductPrices(true);
       setFairProductPricesErrorMessage(null);
 
       try {
-        const nextPrices = await listFairProductPrices(form.idFeira as number);
+        const nextPrices = await listFairProductPrices(fairId);
 
         if (active) {
           setFairProductPrices(nextPrices);
         }
+        void saveCachedFairProductPrices(fairId, nextPrices).catch(
+          () => undefined,
+        );
       } catch {
+        const cachedPrices = await getCachedFairProductPrices(fairId);
+
+        if (cachedPrices) {
+          if (active) {
+            setFairProductPrices(cachedPrices);
+            setFairProductPricesErrorMessage(null);
+          }
+          return;
+        }
+
         if (active) {
           setFairProductPrices([]);
           setFairProductPricesErrorMessage(

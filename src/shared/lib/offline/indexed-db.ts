@@ -2,6 +2,7 @@ import type {
   Carteira,
   Categoria,
   InserirVendaInput,
+  PrecoProdutoFeira,
   ResultadoPaginado,
   Produto,
   Venda,
@@ -19,7 +20,8 @@ type CacheKey =
   | 'categories'
   | 'fairs'
   | 'wallets'
-  | 'sales';
+  | 'sales'
+  | `fair-product-prices:${number}`;
 
 interface CacheRecord<TValue> {
   key: CacheKey;
@@ -122,6 +124,27 @@ export async function saveCachedProductCatalog(
 
 export async function getCachedProductCatalog(): Promise<Produto[] | null> {
   return getCachedValue<Produto[]>('products-catalog');
+}
+
+function getFairProductPricesCacheKey(
+  idFeira: number,
+): `fair-product-prices:${number}` {
+  return `fair-product-prices:${idFeira}`;
+}
+
+export async function saveCachedFairProductPrices(
+  idFeira: number,
+  precos: PrecoProdutoFeira[],
+): Promise<void> {
+  await saveCachedValue(getFairProductPricesCacheKey(idFeira), precos);
+}
+
+export async function getCachedFairProductPrices(
+  idFeira: number,
+): Promise<PrecoProdutoFeira[] | null> {
+  return getCachedValue<PrecoProdutoFeira[]>(
+    getFairProductPricesCacheKey(idFeira),
+  );
 }
 
 export async function saveCachedCategories(
