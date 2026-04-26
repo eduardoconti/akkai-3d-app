@@ -254,6 +254,7 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
   idsCategorias?: number[];
+  idCarteira?: number;
   idFeira?: number;
 }
 
