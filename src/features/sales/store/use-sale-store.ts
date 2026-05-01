@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
   addPendingSale,
+  getCachedFairProductPrices,
   getCachedFairs,
+  getCachedProductCatalog,
   getCachedSales,
   getCachedWallets,
   listPendingSales,
@@ -30,8 +32,10 @@ import type {
   Feira,
   FeiraInput,
   InserirVendaInput,
+  MeioPagamento,
   PesquisaPaginadaFeiras,
   PesquisaPaginadaVendas,
+  PrecoProdutoFeira,
   Produto,
   ResultadoPaginado,
   ResultadoPaginadoVendas,
@@ -49,6 +53,12 @@ const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   tamanhoPagina: 10,
 };
 
+type LegacyInserirVendaInput = Omit<InserirVendaInput, 'pagamentos'> & {
+  idCarteira?: number;
+  meioPagamento?: MeioPagamento;
+  pagamentos?: InserirVendaInput['pagamentos'];
+};
+
 function getCatalogProductValue(
   item: InserirVendaInput['itens'][number],
   produtos: Produto[],
@@ -61,6 +71,64 @@ function getCatalogProductValue(
   return product?.valor ?? 0;
 }
 
+function calculateSaleInputTotal(
+  dados: Pick<InserirVendaInput, 'desconto' | 'itens'>,
+  produtos: Produto[],
+  fairProductPrices: PrecoProdutoFeira[],
+) {
+  const subtotal = dados.itens.reduce((total, item) => {
+    const fairProductPrice = fairProductPrices.find(
+      (current) => current.idProduto === item.idProduto,
+    );
+    const product = produtos.find((current) => current.id === item.idProduto);
+    const valorUnitario = item.brinde
+      ? 0
+      : (item.valorUnitario ?? fairProductPrice?.valor ?? product?.valor ?? 0);
+
+    return total + valorUnitario * item.quantidade;
+  }, 0);
+
+  return Math.max(0, subtotal - (dados.desconto ?? 0));
+}
+
+async function normalizePendingSaleInput(
+  dados: LegacyInserirVendaInput,
+): Promise<InserirVendaInput> {
+  if (dados.pagamentos?.length) {
+    return {
+      ...dados,
+      pagamentos: dados.pagamentos,
+    };
+  }
+
+  const produtos = (await getCachedProductCatalog()) ?? [];
+  const fairProductPrices =
+    dados.tipo === 'FEIRA' && dados.idFeira
+      ? ((await getCachedFairProductPrices(dados.idFeira)) ?? [])
+      : [];
+
+  return {
+    tipo: dados.tipo,
+    idFeira: dados.idFeira,
+    desconto: dados.desconto,
+    itens: dados.itens,
+    pagamentos:
+      dados.idCarteira && dados.meioPagamento
+        ? [
+            {
+              idCarteira: dados.idCarteira,
+              meioPagamento: dados.meioPagamento,
+              valor: calculateSaleInputTotal(
+                dados,
+                produtos,
+                fairProductPrices,
+              ),
+            },
+          ]
+        : [],
+  };
+}
+
 function buildOfflineSale(
   dados: InserirVendaInput,
   produtos: Produto[],
@@ -70,8 +138,6 @@ function buildOfflineSale(
   const saleId = -Date.now();
   const createdAt = new Date().toISOString();
   const feira = feiras.find((current) => current.id === dados.idFeira) ?? null;
-  const carteira =
-    carteiras.find((current) => current.id === dados.idCarteira) ?? null;
 
   const itens = dados.itens.map((item, index) => {
     const produto =
@@ -98,19 +164,32 @@ function buildOfflineSale(
     (accumulator, item) => accumulator + item.valorTotal,
     0,
   );
+  const valorTotal = Math.max(0, totalItens - (dados.desconto ?? 0));
+  const pagamentos = dados.pagamentos.map((pagamento, index) => ({
+    id: saleId - itens.length - index - 1,
+    idVenda: saleId,
+    idCarteira: pagamento.idCarteira,
+    meioPagamento: pagamento.meioPagamento,
+    valor: pagamento.valor,
+    percentualTaxa: null,
+    valorTaxa: null,
+    percentualImposto: null,
+    valorImposto: null,
+    carteira:
+      carteiras.find((current) => current.id === pagamento.idCarteira) ?? null,
+  }));
 
   return {
     id: saleId,
     dataInclusao: createdAt,
-    valorTotal: Math.max(0, totalItens - (dados.desconto ?? 0)),
+    valorTotal,
+    valorLiquido: valorTotal,
     tipo: dados.tipo,
-    meioPagamento: dados.meioPagamento,
     desconto: dados.desconto ?? 0,
     idFeira: dados.idFeira,
-    idCarteira: dados.idCarteira,
     feira,
-    carteira,
     itens,
+    pagamentos,
   };
 }
 
@@ -459,7 +538,10 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
 
       const results = await Promise.allSettled(
         pendingSales.map(async (pendingSale) => {
-          await createSale(pendingSale.payload);
+          const payload = await normalizePendingSaleInput(
+            pendingSale.payload as LegacyInserirVendaInput,
+          );
+          await createSale(payload);
           await removePendingSale(pendingSale.id);
         }),
       );

@@ -67,6 +67,79 @@ function formatSaleValue(value: number, hideValues: boolean): string {
   return hideValues ? 'R$ ••••' : formatCurrency(value);
 }
 
+function getSalePayments(venda: Venda): Venda['pagamentos'] {
+  if (venda.pagamentos?.length > 0) {
+    return venda.pagamentos;
+  }
+
+  const legacySale = venda as Venda & {
+    meioPagamento?: MeioPagamento;
+    idCarteira?: number;
+    carteira?: Carteira | null;
+    valorTaxa?: number | null;
+    valorImposto?: number | null;
+    percentualTaxa?: number | null;
+    percentualImposto?: number | null;
+  };
+
+  if (!legacySale.meioPagamento) {
+    return [];
+  }
+
+  return [
+    {
+      id: -venda.id,
+      idVenda: venda.id,
+      idCarteira: legacySale.idCarteira ?? legacySale.carteira?.id ?? 0,
+      meioPagamento: legacySale.meioPagamento,
+      valor: venda.valorTotal,
+      percentualTaxa: legacySale.percentualTaxa ?? null,
+      valorTaxa: legacySale.valorTaxa ?? null,
+      percentualImposto: legacySale.percentualImposto ?? null,
+      valorImposto: legacySale.valorImposto ?? null,
+      carteira: legacySale.carteira ?? null,
+    },
+  ];
+}
+
+function formatUniqueLabels(labels: string[]): string {
+  const uniqueLabels = [...new Set(labels.filter(Boolean))];
+  return uniqueLabels.length > 0 ? uniqueLabels.join(' + ') : '-';
+}
+
+function getSaleWalletLabel(venda: Venda): string {
+  return formatUniqueLabels(
+    getSalePayments(venda).map(
+      (pagamento) =>
+        pagamento.carteira?.nome ?? `Carteira #${pagamento.idCarteira}`,
+    ),
+  );
+}
+
+function getSalePaymentMethodLabel(venda: Venda): string {
+  return formatUniqueLabels(
+    getSalePayments(venda).map((pagamento) =>
+      getPaymentMethodLabel(pagamento.meioPagamento),
+    ),
+  );
+}
+
+function getSalePaymentTotal(
+  venda: Venda,
+  key: 'valorTaxa' | 'valorImposto',
+): number | null {
+  const pagamentos = getSalePayments(venda);
+
+  if (!pagamentos.some((pagamento) => pagamento[key] != null)) {
+    return null;
+  }
+
+  return pagamentos.reduce(
+    (total, pagamento) => total + (pagamento[key] ?? 0),
+    0,
+  );
+}
+
 interface SaleRowProps {
   venda: Venda;
   hideValues: boolean;
@@ -78,6 +151,9 @@ interface SaleRowProps {
 
 function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
   const [open, setOpen] = useState(false);
+  const pagamentos = getSalePayments(venda);
+  const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
+  const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
 
   return (
     <>
@@ -105,21 +181,19 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
           />
         </TableCell>
         <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
-        <TableCell>{venda.carteira?.nome ?? '-'}</TableCell>
-        <TableCell>{getPaymentMethodLabel(venda.meioPagamento)}</TableCell>
+        <TableCell>{getSaleWalletLabel(venda)}</TableCell>
+        <TableCell>{getSalePaymentMethodLabel(venda)}</TableCell>
         <TableCell align="right">
           {venda.desconto > 0
             ? formatSaleValue(venda.desconto, hideValues)
             : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorTaxa != null
-            ? formatSaleValue(venda.valorTaxa, hideValues)
-            : '-'}
+          {valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-'}
         </TableCell>
         <TableCell align="right">
-          {venda.valorImposto != null
-            ? formatSaleValue(venda.valorImposto, hideValues)
+          {valorImposto != null
+            ? formatSaleValue(valorImposto, hideValues)
             : '-'}
         </TableCell>
         <TableCell align="right" sx={{ fontWeight: 700 }}>
@@ -171,14 +245,14 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
               >
                 <Typography variant="body2" color="text.secondary">
                   Taxa:{' '}
-                  {venda.valorTaxa != null
-                    ? formatSaleValue(venda.valorTaxa, hideValues)
+                  {valorTaxa != null
+                    ? formatSaleValue(valorTaxa, hideValues)
                     : '-'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Imposto:{' '}
-                  {venda.valorImposto != null
-                    ? formatSaleValue(venda.valorImposto, hideValues)
+                  {valorImposto != null
+                    ? formatSaleValue(valorImposto, hideValues)
                     : '-'}
                 </Typography>
                 <Typography
@@ -193,6 +267,31 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
                   )}
                 </Typography>
               </Stack>
+              <Table size="small" sx={{ mb: 2 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Carteira</TableCell>
+                    <TableCell>Meio</TableCell>
+                    <TableCell align="right">Valor</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pagamentos.map((pagamento) => (
+                    <TableRow key={pagamento.id}>
+                      <TableCell>
+                        {pagamento.carteira?.nome ??
+                          `Carteira #${pagamento.idCarteira}`}
+                      </TableCell>
+                      <TableCell>
+                        {getPaymentMethodLabel(pagamento.meioPagamento)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {formatSaleValue(pagamento.valor, hideValues)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -587,97 +686,110 @@ export default function SalesPage() {
                 <CircularProgress />
               </Box>
             ) : vendas.length > 0 ? (
-              vendas.map((venda) => (
-                <Box key={venda.id} sx={{ px: 2, py: 2 }}>
-                  <Stack spacing={1.25}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      spacing={1}
-                    >
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          Venda #{venda.id}
-                        </Typography>
-                        <Typography variant="body2">
-                          {new Date(venda.dataInclusao).toLocaleString('pt-BR')}
-                        </Typography>
-                      </Box>
-                      <Stack direction="row" spacing={0.5} alignItems="center">
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          {formatSaleValue(venda.valorTotal, hideValues)}
-                        </Typography>
-                        <IconButton
-                          size="small"
-                          aria-label={`Ações da venda ${venda.id}`}
-                          onClick={(event) => handleOpenActions(event, venda)}
+              vendas.map((venda) => {
+                const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
+                const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
+
+                return (
+                  <Box key={venda.id} sx={{ px: 2, py: 2 }}>
+                    <Stack spacing={1.25}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="flex-start"
+                        spacing={1}
+                      >
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Venda #{venda.id}
+                          </Typography>
+                          <Typography variant="body2">
+                            {new Date(venda.dataInclusao).toLocaleString(
+                              'pt-BR',
+                            )}
+                          </Typography>
+                        </Box>
+                        <Stack
+                          direction="row"
+                          spacing={0.5}
+                          alignItems="center"
                         >
-                          <MoreVert fontSize="small" />
-                        </IconButton>
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            {formatSaleValue(venda.valorTotal, hideValues)}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            aria-label={`Ações da venda ${venda.id}`}
+                            onClick={(event) => handleOpenActions(event, venda)}
+                          >
+                            <MoreVert fontSize="small" />
+                          </IconButton>
+                        </Stack>
                       </Stack>
-                    </Stack>
 
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      flexWrap="wrap"
-                      useFlexGap
-                    >
-                      <Chip
-                        label={getSaleTypeLabel(venda.tipo)}
-                        size="small"
-                        color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={getPaymentMethodLabel(venda.meioPagamento)}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </Stack>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        useFlexGap
+                      >
+                        <Chip
+                          label={getSaleTypeLabel(venda.tipo)}
+                          size="small"
+                          color={
+                            venda.tipo === 'FEIRA' ? 'secondary' : 'primary'
+                          }
+                          variant="outlined"
+                        />
+                        <Chip
+                          label={getSalePaymentMethodLabel(venda)}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </Stack>
 
-                    <Typography variant="body2" color="text.secondary">
-                      Feira: {venda.feira?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Carteira: {venda.carteira?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Desconto:{' '}
-                      {venda.desconto > 0
-                        ? formatSaleValue(venda.desconto, hideValues)
-                        : '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Taxa:{' '}
-                      {venda.valorTaxa != null
-                        ? formatSaleValue(venda.valorTaxa, hideValues)
-                        : '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Imposto:{' '}
-                      {venda.valorImposto != null
-                        ? formatSaleValue(venda.valorImposto, hideValues)
-                        : '-'}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      fontWeight={700}
-                      color="success.main"
-                    >
-                      Líquido:{' '}
-                      {formatSaleValue(
-                        venda.valorLiquido ?? venda.valorTotal,
-                        hideValues,
-                      )}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Itens: {venda.itens.map(getSaleItemName).join(', ')}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
+                      <Typography variant="body2" color="text.secondary">
+                        Feira: {venda.feira?.nome ?? '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Carteira: {getSaleWalletLabel(venda)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Desconto:{' '}
+                        {venda.desconto > 0
+                          ? formatSaleValue(venda.desconto, hideValues)
+                          : '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Taxa:{' '}
+                        {valorTaxa != null
+                          ? formatSaleValue(valorTaxa, hideValues)
+                          : '-'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Imposto:{' '}
+                        {valorImposto != null
+                          ? formatSaleValue(valorImposto, hideValues)
+                          : '-'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        fontWeight={700}
+                        color="success.main"
+                      >
+                        Líquido:{' '}
+                        {formatSaleValue(
+                          venda.valorLiquido ?? venda.valorTotal,
+                          hideValues,
+                        )}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Itens: {venda.itens.map(getSaleItemName).join(', ')}
+                      </Typography>
+                    </Stack>
+                  </Box>
+                );
+              })
             ) : (
               <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
                 Nenhuma venda encontrada para os filtros informados.

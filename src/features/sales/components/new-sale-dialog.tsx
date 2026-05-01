@@ -36,8 +36,10 @@ import {
   type DiscountMode,
   type SaleFormErrors,
   type SaleFormItem,
+  type SaleFormPayment,
   type SaleFormState,
   type SaleItemErrors,
+  type SalePaymentErrors,
   type SaleItemType,
 } from '@/features/sales/types/sale-form';
 import {
@@ -126,13 +128,32 @@ function getResetFormState(config: PersistedSaleConfig): SaleFormState {
 }
 
 function mapSaleToForm(sale: Venda): SaleFormState {
+  const legacySale = sale as Venda & {
+    meioPagamento?: MeioPagamento;
+    idCarteira?: number;
+    carteira?: { id: number } | null;
+  };
+  const pagamentos: SaleFormPayment[] =
+    sale.pagamentos?.length > 0
+      ? sale.pagamentos.map((pagamento) => ({
+          idCarteira: pagamento.idCarteira,
+          meioPagamento: pagamento.meioPagamento,
+          valor: pagamento.valor / 100,
+        }))
+      : [
+          {
+            idCarteira: legacySale.idCarteira ?? legacySale.carteira?.id ?? '',
+            meioPagamento: legacySale.meioPagamento ?? 'CRE',
+            valor: sale.valorTotal / 100,
+          },
+        ];
+
   return {
-    meioPagamento: sale.meioPagamento,
     tipo: sale.tipo,
     idFeira: sale.idFeira ?? '',
-    idCarteira: sale.idCarteira ?? sale.carteira?.id ?? '',
     desconto: sale.desconto / 100,
     descontoModo: 'VALOR',
+    pagamentos,
     itens: sale.itens.map((item) => ({
       tipoItem: item.idProduto ? 'CATALOGO' : 'AVULSO',
       idProduto: item.idProduto ?? null,
@@ -201,6 +222,7 @@ export default function NewSaleDialog({
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
+  const [paymentErrors, setPaymentErrors] = useState<SalePaymentErrors>([]);
   const [isSaving, setIsSaving] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isEditMode = sale !== null;
@@ -241,7 +263,6 @@ export default function NewSaleDialog({
           ? mapSaleToForm(sale)
           : getResetFormState(persistedConfigRef.current);
 
-      prevCarteira.current = nextForm.idCarteira;
       setForm(nextForm);
       void loadCatalogProducts();
       void fetchFeiras();
@@ -254,7 +275,6 @@ export default function NewSaleDialog({
         ? mapSaleToForm(sale)
         : getResetFormState(persistedConfigRef.current);
 
-    prevCarteira.current = nextForm.idCarteira;
     setForm(nextForm);
     setCatalogProducts([]);
     setCatalogErrorMessage(null);
@@ -263,19 +283,35 @@ export default function NewSaleDialog({
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
+    setPaymentErrors([]);
     clearSubmitError();
   }, [open, sale, isEditMode, fetchCarteiras, fetchFeiras, clearSubmitError]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
+    const primeiroPagamento = form.pagamentos[0];
 
-    if (open && !isEditMode && form.idCarteira === '' && carteiraPadrao) {
+    if (
+      open &&
+      !isEditMode &&
+      primeiroPagamento?.idCarteira === '' &&
+      carteiraPadrao
+    ) {
       setForm((current) => ({
         ...current,
-        idCarteira: carteiraPadrao.id,
+        pagamentos: current.pagamentos.map((pagamento, index) =>
+          index === 0
+            ? {
+                ...pagamento,
+                idCarteira: carteiraPadrao.id,
+                meioPagamento:
+                  carteiraPadrao.meiosPagamento[0] ?? pagamento.meioPagamento,
+              }
+            : pagamento,
+        ),
       }));
     }
-  }, [open, isEditMode, carteiras, form.idCarteira]);
+  }, [open, isEditMode, carteiras, form.pagamentos]);
 
   useEffect(() => {
     window.__AKKAI_PRODUCTS__ = catalogProducts;
@@ -336,25 +372,12 @@ export default function NewSaleDialog({
     };
   }, [form.idFeira, form.tipo, open]);
 
-  const availableMeiosPagamento = useMemo(() => {
-    const carteira = carteiras.find((c) => c.id === form.idCarteira);
+  const getAvailableMeiosPagamento = (idCarteira: number | '') => {
+    const carteira = carteiras.find((c) => c.id === idCarteira);
     if (!carteira?.meiosPagamento?.length)
       return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
     return carteira.meiosPagamento;
-  }, [carteiras, form.idCarteira]);
-
-  const prevCarteira = useRef(form.idCarteira);
-  useEffect(() => {
-    if (!open) return;
-    if (prevCarteira.current === form.idCarteira) return;
-    prevCarteira.current = form.idCarteira;
-    if (!availableMeiosPagamento.includes(form.meioPagamento)) {
-      setForm((current) => ({
-        ...current,
-        meioPagamento: availableMeiosPagamento[0]!,
-      }));
-    }
-  }, [open, form.idCarteira, form.meioPagamento, availableMeiosPagamento]);
+  };
 
   const totals = useMemo(() => {
     let subtotal = 0;
@@ -393,6 +416,7 @@ export default function NewSaleDialog({
     setProblem(null);
     setLocalErrors({});
     setItemErrors([]);
+    setPaymentErrors([]);
     clearSubmitError();
     onClose();
   };
@@ -424,6 +448,53 @@ export default function NewSaleDialog({
       };
       return { ...current, itens };
     });
+  };
+
+  const updatePayment = (index: number, partial: Partial<SaleFormPayment>) => {
+    setForm((current) => {
+      const pagamentos = [...current.pagamentos];
+      pagamentos[index] = {
+        ...pagamentos[index],
+        ...partial,
+      };
+      return { ...current, pagamentos };
+    });
+  };
+
+  const handleAddPayment = () => {
+    setForm((current) => {
+      if (current.pagamentos.length >= 2) {
+        return current;
+      }
+
+      return {
+        ...current,
+        pagamentos: [
+          {
+            ...current.pagamentos[0],
+            valor: totals.total / 100,
+          },
+          {
+            idCarteira: '',
+            meioPagamento: 'CRE',
+            valor: 0,
+          },
+        ],
+      };
+    });
+    setPaymentErrors((current) => [...current, {}]);
+  };
+
+  const handleRemovePayment = (index: number) => {
+    setForm((current) => ({
+      ...current,
+      pagamentos: current.pagamentos.filter(
+        (_, currentIndex) => currentIndex !== index,
+      ),
+    }));
+    setPaymentErrors((current) =>
+      current.filter((_, currentIndex) => currentIndex !== index),
+    );
   };
 
   const handleChangeItemType = (index: number, tipoItem: SaleItemType) => {
@@ -469,11 +540,6 @@ export default function NewSaleDialog({
       nextLocalErrors.idFeira = 'Selecione a feira em que a venda aconteceu.';
     }
 
-    if (form.idCarteira === '') {
-      nextLocalErrors.idCarteira =
-        'Selecione a carteira que recebeu essa venda.';
-    }
-
     if (form.desconto < 0) {
       nextLocalErrors.desconto = 'Informe um desconto válido.';
     }
@@ -491,29 +557,94 @@ export default function NewSaleDialog({
       nextLocalErrors.itens = 'Adicione ao menos um item na venda.';
     }
 
-    return { nextLocalErrors, nextItemErrors };
+    const nextPaymentErrors: SalePaymentErrors = form.pagamentos.map(
+      (pagamento, index) => {
+        const errors: SalePaymentErrors[number] = {};
+        const availableMethods = getAvailableMeiosPagamento(
+          pagamento.idCarteira,
+        );
+
+        if (pagamento.idCarteira === '') {
+          errors.idCarteira = 'Selecione a carteira do pagamento.';
+        }
+
+        if (!availableMethods.includes(pagamento.meioPagamento)) {
+          errors.meioPagamento =
+            'Selecione um meio aceito pela carteira informada.';
+        }
+
+        if (form.pagamentos.length > 1 && pagamento.valor <= 0) {
+          errors.valor = 'Informe um valor maior que zero.';
+        }
+
+        if (form.pagamentos.length === 1 && totals.total === 0 && index === 0) {
+          errors.valor = undefined;
+        }
+
+        return errors;
+      },
+    );
+
+    const totalPagamentos = form.pagamentos.reduce(
+      (total, pagamento) =>
+        total +
+        (form.pagamentos.length === 1
+          ? totals.total
+          : Math.round(pagamento.valor * 100)),
+      0,
+    );
+
+    if (form.pagamentos.length === 0) {
+      nextLocalErrors.pagamentos = 'Adicione ao menos um pagamento.';
+    }
+
+    if (form.pagamentos.length > 2) {
+      nextLocalErrors.pagamentos = 'Informe no máximo 2 pagamentos.';
+    }
+
+    if (totalPagamentos !== totals.total) {
+      nextLocalErrors.pagamentos =
+        'A soma dos pagamentos deve ser igual ao total da venda.';
+    }
+
+    return { nextLocalErrors, nextItemErrors, nextPaymentErrors };
   };
 
   const handleSubmit = async () => {
-    const { nextLocalErrors, nextItemErrors } = validateForm();
+    const { nextLocalErrors, nextItemErrors, nextPaymentErrors } =
+      validateForm();
     setLocalErrors(nextLocalErrors);
     setItemErrors(nextItemErrors);
+    setPaymentErrors(nextPaymentErrors);
     setProblem(null);
 
     const hasItemErrors = nextItemErrors.some(
       (item) => Object.keys(item).length > 0,
     );
+    const hasPaymentErrors = nextPaymentErrors.some((pagamento) =>
+      Object.values(pagamento).some(Boolean),
+    );
 
-    if (Object.keys(nextLocalErrors).length > 0 || hasItemErrors) {
+    if (
+      Object.keys(nextLocalErrors).length > 0 ||
+      hasItemErrors ||
+      hasPaymentErrors
+    ) {
       return;
     }
 
     const payload = {
-      meioPagamento: form.meioPagamento,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
-      idCarteira: form.idCarteira === '' ? 0 : form.idCarteira,
       desconto: totals.saleDiscount,
+      pagamentos: form.pagamentos.map((pagamento) => ({
+        idCarteira: pagamento.idCarteira === '' ? 0 : pagamento.idCarteira,
+        meioPagamento: pagamento.meioPagamento,
+        valor:
+          form.pagamentos.length === 1
+            ? totals.total
+            : Math.round(pagamento.valor * 100),
+      })),
       itens: form.itens.map((item) => {
         if (item.tipoItem === 'CATALOGO') {
           return {
@@ -729,70 +860,187 @@ export default function NewSaleDialog({
                 </TextField>
               </Grid>
             ) : null}
-
-            <Grid size={{ xs: 12, md: form.tipo === 'FEIRA' ? 3 : 4.5 }}>
-              <TextField
-                select
-                fullWidth
-                label="Carteira"
-                value={form.idCarteira}
-                onChange={(event) => {
-                  setForm((current) => ({
-                    ...current,
-                    idCarteira:
-                      event.target.value === ''
-                        ? ''
-                        : Number(event.target.value),
-                  }));
-                }}
-                error={Boolean(
-                  localErrors.idCarteira ||
-                  getFieldMessage(problem, 'idCarteira'),
-                )}
-                helperText={
-                  localErrors.idCarteira ??
-                  getFieldMessage(problem, 'idCarteira')
-                }
-              >
-                <MenuItem value="">Selecione uma carteira</MenuItem>
-                {carteiras
-                  .filter((carteira) => carteira.ativa)
-                  .map((carteira) => (
-                    <MenuItem key={carteira.id} value={carteira.id}>
-                      {carteira.nome}
-                    </MenuItem>
-                  ))}
-              </TextField>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: form.tipo === 'FEIRA' ? 3 : 4.5 }}>
-              <TextField
-                select
-                fullWidth
-                label="Pagamento"
-                value={form.meioPagamento}
-                onChange={(event) => {
-                  setForm((current) => ({
-                    ...current,
-                    meioPagamento: event.target.value as MeioPagamento,
-                  }));
-                }}
-              >
-                {availableMeiosPagamento.includes('DEB') && (
-                  <MenuItem value="DEB">Cartão débito</MenuItem>
-                )}
-                {availableMeiosPagamento.includes('CRE') && (
-                  <MenuItem value="CRE">Cartão crédito</MenuItem>
-                )}
-                {availableMeiosPagamento.includes('DIN') && (
-                  <MenuItem value="DIN">Dinheiro</MenuItem>
-                )}
-                {availableMeiosPagamento.includes('PIX') && (
-                  <MenuItem value="PIX">Pix</MenuItem>
-                )}
-              </TextField>
-            </Grid>
           </Grid>
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <SectionLabel>Pagamentos</SectionLabel>
+
+          {localErrors.pagamentos ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {localErrors.pagamentos}
+            </Alert>
+          ) : null}
+
+          <Stack spacing={1.5}>
+            {form.pagamentos.map((pagamento, index) => {
+              const availableMeiosPagamento = getAvailableMeiosPagamento(
+                pagamento.idCarteira,
+              );
+              const paymentValue =
+                form.pagamentos.length === 1
+                  ? totals.total / 100
+                  : pagamento.valor;
+
+              return (
+                <Box
+                  key={`pagamento-${index}`}
+                  sx={{
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    p: 1.5,
+                  }}
+                >
+                  <Grid container spacing={1.5} alignItems="flex-start">
+                    <Grid size={{ xs: 12, md: 4 }}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Carteira"
+                        value={pagamento.idCarteira}
+                        onChange={(event) => {
+                          const nextWalletId =
+                            event.target.value === ''
+                              ? ''
+                              : Number(event.target.value);
+                          const nextMethods =
+                            getAvailableMeiosPagamento(nextWalletId);
+
+                          updatePayment(index, {
+                            idCarteira: nextWalletId,
+                            meioPagamento: nextMethods.includes(
+                              pagamento.meioPagamento,
+                            )
+                              ? pagamento.meioPagamento
+                              : nextMethods[0]!,
+                          });
+                        }}
+                        error={Boolean(
+                          paymentErrors[index]?.idCarteira ||
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].idCarteira`,
+                          ),
+                        )}
+                        helperText={
+                          paymentErrors[index]?.idCarteira ??
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].idCarteira`,
+                          )
+                        }
+                      >
+                        <MenuItem value="">Selecione uma carteira</MenuItem>
+                        {carteiras
+                          .filter((carteira) => carteira.ativa)
+                          .map((carteira) => (
+                            <MenuItem key={carteira.id} value={carteira.id}>
+                              {carteira.nome}
+                            </MenuItem>
+                          ))}
+                      </TextField>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 3 }}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Meio"
+                        value={pagamento.meioPagamento}
+                        onChange={(event) => {
+                          updatePayment(index, {
+                            meioPagamento: event.target.value as MeioPagamento,
+                          });
+                        }}
+                        error={Boolean(
+                          paymentErrors[index]?.meioPagamento ||
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].meioPagamento`,
+                          ),
+                        )}
+                        helperText={
+                          paymentErrors[index]?.meioPagamento ??
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].meioPagamento`,
+                          )
+                        }
+                      >
+                        {availableMeiosPagamento.includes('DEB') && (
+                          <MenuItem value="DEB">Cartão débito</MenuItem>
+                        )}
+                        {availableMeiosPagamento.includes('CRE') && (
+                          <MenuItem value="CRE">Cartão crédito</MenuItem>
+                        )}
+                        {availableMeiosPagamento.includes('DIN') && (
+                          <MenuItem value="DIN">Dinheiro</MenuItem>
+                        )}
+                        {availableMeiosPagamento.includes('PIX') && (
+                          <MenuItem value="PIX">Pix</MenuItem>
+                        )}
+                      </TextField>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 3 }}>
+                      <CurrencyField
+                        fullWidth
+                        label="Valor"
+                        value={paymentValue}
+                        onValueChange={(valor) => {
+                          updatePayment(index, { valor });
+                        }}
+                        disabled={form.pagamentos.length === 1}
+                        error={Boolean(
+                          paymentErrors[index]?.valor ||
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].valor`,
+                          ),
+                        )}
+                        helperText={
+                          paymentErrors[index]?.valor ??
+                          getFieldMessage(
+                            problem,
+                            `pagamentos[${index}].valor`,
+                          ) ??
+                          (form.pagamentos.length === 1
+                            ? 'Preenchido pelo total da venda.'
+                            : undefined)
+                        }
+                      />
+                    </Grid>
+
+                    <Grid
+                      size={{ xs: 12, md: 2 }}
+                      sx={{ display: 'flex', justifyContent: 'flex-end' }}
+                    >
+                      <IconButton
+                        onClick={() => handleRemovePayment(index)}
+                        color="error"
+                        disabled={form.pagamentos.length === 1 || isBusy}
+                        aria-label={`Remover pagamento ${index + 1}`}
+                      >
+                        <Delete />
+                      </IconButton>
+                    </Grid>
+                  </Grid>
+                </Box>
+              );
+            })}
+
+            {form.pagamentos.length < 2 ? (
+              <Button
+                startIcon={<Add />}
+                onClick={handleAddPayment}
+                variant="text"
+                disabled={isBusy}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Adicionar pagamento
+              </Button>
+            ) : null}
+          </Stack>
         </Box>
 
         <Box sx={{ mb: 3 }}>
