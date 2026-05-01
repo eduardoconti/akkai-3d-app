@@ -12,22 +12,33 @@ export type SaleFormItem = {
   brinde: boolean;
 };
 
-export type SaleFormState = {
+export type SaleFormPayment = {
+  idCarteira: number | '';
   meioPagamento: MeioPagamento;
+  valor: number;
+};
+
+export type SaleFormState = {
   tipo: TipoVenda;
   idFeira: number | '';
-  idCarteira: number | '';
   desconto: number;
   descontoModo: DiscountMode;
   itens: SaleFormItem[];
+  pagamentos: SaleFormPayment[];
 };
 
 export type SaleFormErrors = {
   idFeira?: string;
-  idCarteira?: string;
   desconto?: string;
   itens?: string;
+  pagamentos?: string;
 };
+
+export type SalePaymentErrors = Array<{
+  idCarteira?: string;
+  meioPagamento?: string;
+  valor?: string;
+}>;
 
 export type SaleItemErrors = Array<{
   idProduto?: string;
@@ -46,11 +57,10 @@ export const emptySaleItem: SaleFormItem = {
 };
 
 export const initialSaleFormState: SaleFormState = {
-  meioPagamento: 'CRE',
   tipo: 'FEIRA',
   idFeira: '',
-  idCarteira: '',
   desconto: 0,
   descontoModo: 'VALOR',
   itens: [{ ...emptySaleItem }],
+  pagamentos: [{ idCarteira: '', meioPagamento: 'CRE', valor: 0 }],
 };

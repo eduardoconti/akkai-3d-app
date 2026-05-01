@@ -64,6 +64,7 @@ export type {
   OrigemSaidaEstoque,
   OrdenacaoPrecoProdutoFeira,
   OrdenacaoProduto,
+  PagamentoVenda,
   PesquisaPaginadaDespesas,
   PesquisaPaginadaOrcamentos,
   PesquisaPaginadaPrecosProdutosFeira,

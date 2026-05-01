@@ -156,23 +156,30 @@ export interface VendaItem {
   produto?: Produto | null;
 }
 
+export interface PagamentoVenda {
+  id: number;
+  idVenda: number;
+  idCarteira: number;
+  meioPagamento: MeioPagamento;
+  valor: number;
+  percentualTaxa?: number | null;
+  valorTaxa?: number | null;
+  percentualImposto?: number | null;
+  valorImposto?: number | null;
+  carteira?: Carteira | null;
+}
+
 export interface Venda {
   id: number;
   dataInclusao: string;
   valorTotal: number;
   valorLiquido?: number;
   tipo: TipoVenda;
-  meioPagamento: MeioPagamento;
   desconto: number;
-  percentualTaxa?: number | null;
-  valorTaxa?: number | null;
-  percentualImposto?: number | null;
-  valorImposto?: number | null;
   idFeira?: number;
-  idCarteira: number;
   feira?: Feira | null;
-  carteira?: Carteira | null;
   itens: VendaItem[];
+  pagamentos: PagamentoVenda[];
 }
 
 export interface Orcamento {
@@ -213,12 +220,15 @@ export interface InserirVendaItemInput {
 }
 
 export interface InserirVendaInput {
-  meioPagamento: MeioPagamento;
   tipo: TipoVenda;
   idFeira?: number;
-  idCarteira: number;
   desconto?: number;
   itens: InserirVendaItemInput[];
+  pagamentos: Array<{
+    idCarteira: number;
+    meioPagamento: MeioPagamento;
+    valor: number;
+  }>;
 }
 
 export interface PesquisaPaginada {
