@@ -3,27 +3,37 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
+  Chip,
   CircularProgress,
+  Collapse,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
   MenuItem,
+  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Add, Close, Delete, ShoppingCartCheckout } from '@mui/icons-material';
+import {
+  AccountBalanceWallet,
+  Add,
+  ArrowForward,
+  CardGiftcard,
+  Category,
+  Close,
+  CreditCard,
+  Delete,
+  Inventory2,
+  LocalAtm,
+  Pix,
+  Remove,
+} from '@mui/icons-material';
 import { listAllProducts } from '@/features/products/api/products-api';
 import { listFairProductPrices } from '@/features/sales/api/sales-api';
 import {
@@ -116,6 +126,88 @@ function SectionLabel({ children }: { children: string }) {
     </Typography>
   );
 }
+
+function WalletToggleGroup({
+  error,
+  onChange,
+  value,
+  wallets,
+}: {
+  error?: string;
+  onChange: (idCarteira: number) => void;
+  value: number | '';
+  wallets: Array<{ id: number; nome: string; ativa: boolean }>;
+}) {
+  const activeWallets = wallets.filter((wallet) => wallet.ativa);
+
+  return (
+    <Stack spacing={0.75}>
+      <Grid container spacing={1}>
+        {activeWallets.map((wallet) => {
+          const isSelected = wallet.id === value;
+
+          return (
+            <Grid
+              key={wallet.id}
+              size={{
+                xs:
+                  activeWallets.length === 1
+                    ? 12
+                    : activeWallets.length >= 3
+                      ? 4
+                      : 6,
+                sm:
+                  activeWallets.length === 1
+                    ? 12
+                    : activeWallets.length >= 3
+                      ? 4
+                      : 6,
+              }}
+            >
+              <Button
+                fullWidth
+                variant={isSelected ? 'contained' : 'outlined'}
+                color={isSelected ? 'primary' : 'inherit'}
+                onClick={() => onChange(wallet.id)}
+                sx={{
+                  minHeight: 44,
+                  justifyContent: 'center',
+                  textTransform: 'none',
+                  px: 1,
+                }}
+              >
+                {wallet.nome}
+              </Button>
+            </Grid>
+          );
+        })}
+      </Grid>
+
+      {error ? (
+        <Typography variant="caption" color="error">
+          {error}
+        </Typography>
+      ) : null}
+    </Stack>
+  );
+}
+
+const saleTypeLabels: Record<TipoVenda, string> = {
+  FEIRA: 'Feira',
+  LOJA: 'Loja',
+  ONLINE: 'Online',
+};
+
+const paymentOptions: Array<{
+  value: MeioPagamento;
+  label: string;
+  icon: typeof LocalAtm;
+}> = [
+  { value: 'DIN', label: 'Dinheiro', icon: LocalAtm },
+  { value: 'PIX', label: 'Pix', icon: Pix },
+  { value: 'CRE', label: 'Crédito', icon: CreditCard },
+  { value: 'DEB', label: 'Débito', icon: AccountBalanceWallet },
+];
 
 type PersistedSaleConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
 
@@ -224,9 +316,13 @@ export default function NewSaleDialog({
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
   const [paymentErrors, setPaymentErrors] = useState<SalePaymentErrors>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isEditMode = sale !== null;
   const persistedConfigRef = useRef(persistedConfig);
+  const preservedDraftRef = useRef(false);
+  const preservedDraftSaleIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     persistedConfigRef.current = persistedConfig;
@@ -258,32 +354,28 @@ export default function NewSaleDialog({
     }
 
     if (open) {
-      const nextForm =
-        isEditMode && sale
-          ? mapSaleToForm(sale)
-          : getResetFormState(persistedConfigRef.current);
+      const currentSaleId = sale?.id ?? null;
 
-      setForm(nextForm);
+      if (
+        preservedDraftRef.current &&
+        preservedDraftSaleIdRef.current === currentSaleId
+      ) {
+        preservedDraftRef.current = false;
+      } else {
+        const nextForm =
+          isEditMode && sale
+            ? mapSaleToForm(sale)
+            : getResetFormState(persistedConfigRef.current);
+
+        setForm(nextForm);
+      }
+
       void loadCatalogProducts();
       void fetchFeiras();
       void fetchCarteiras();
       return;
     }
 
-    const nextForm =
-      isEditMode && sale
-        ? mapSaleToForm(sale)
-        : getResetFormState(persistedConfigRef.current);
-
-    setForm(nextForm);
-    setCatalogProducts([]);
-    setCatalogErrorMessage(null);
-    setFairProductPrices([]);
-    setFairProductPricesErrorMessage(null);
-    setProblem(null);
-    setLocalErrors({});
-    setItemErrors([]);
-    setPaymentErrors([]);
     clearSubmitError();
   }, [open, sale, isEditMode, fetchCarteiras, fetchFeiras, clearSubmitError]);
 
@@ -407,7 +499,17 @@ export default function NewSaleDialog({
     };
   }, [form, catalogProducts, fairProductPrices]);
 
+  const hasFilledProduct = form.itens.some((item) => {
+    if (item.tipoItem === 'CATALOGO') {
+      return item.idProduto !== null;
+    }
+
+    return item.nomeProduto.trim().length > 0 || item.valorUnitario > 0;
+  });
+
   const handleClose = () => {
+    preservedDraftRef.current = false;
+    preservedDraftSaleIdRef.current = null;
     setForm(
       isEditMode && sale
         ? mapSaleToForm(sale)
@@ -417,8 +519,28 @@ export default function NewSaleDialog({
     setLocalErrors({});
     setItemErrors([]);
     setPaymentErrors([]);
+    setIsCancelConfirmOpen(false);
     clearSubmitError();
     onClose();
+  };
+
+  const handleDismissPreservingDraft = () => {
+    preservedDraftRef.current = true;
+    preservedDraftSaleIdRef.current = sale?.id ?? null;
+    onClose();
+  };
+
+  const handleAskCancel = () => {
+    if (isBusy) {
+      return;
+    }
+
+    if (hasFilledProduct) {
+      setIsCancelConfirmOpen(true);
+      return;
+    }
+
+    handleClose();
   };
 
   const handleAddItem = () => {
@@ -459,6 +581,48 @@ export default function NewSaleDialog({
       };
       return { ...current, pagamentos };
     });
+  };
+
+  const handleChangeSaleType = (type: TipoVenda) => {
+    setPersistedConfig((current) => ({
+      tipo: type,
+      idFeira: current.idFeira,
+    }));
+    setForm((current) => ({
+      ...current,
+      tipo: type,
+      idFeira: type === 'FEIRA' ? current.idFeira : '',
+    }));
+  };
+
+  const handleChangeFair = (nextFairId: number | '') => {
+    setPersistedConfig((current) => ({
+      ...current,
+      idFeira: nextFairId,
+    }));
+    setForm((current) => ({
+      ...current,
+      idFeira: nextFairId,
+    }));
+  };
+
+  const handleChangePaymentWallet = (
+    index: number,
+    nextWalletId: number | '',
+  ) => {
+    const nextMethods = getAvailableMeiosPagamento(nextWalletId);
+    const currentPayment = form.pagamentos[index];
+
+    updatePayment(index, {
+      idCarteira: nextWalletId,
+      meioPagamento: nextMethods.includes(currentPayment.meioPagamento)
+        ? currentPayment.meioPagamento
+        : nextMethods[0]!,
+    });
+  };
+
+  const handleChangeItemQuantity = (index: number, quantity: number) => {
+    updateItem(index, { quantidade: Math.max(1, quantity) });
   };
 
   const handleAddPayment = () => {
@@ -624,6 +788,13 @@ export default function NewSaleDialog({
     const hasPaymentErrors = nextPaymentErrors.some((pagamento) =>
       Object.values(pagamento).some(Boolean),
     );
+    const hasConfigErrors =
+      Boolean(nextLocalErrors.idFeira) ||
+      Boolean(nextPaymentErrors[0]?.idCarteira);
+
+    if (hasConfigErrors) {
+      setShowConfig(true);
+    }
 
     if (
       Object.keys(nextLocalErrors).length > 0 ||
@@ -724,517 +895,428 @@ export default function NewSaleDialog({
         : `${((totals.saleDiscount / totals.subtotal) * 100).toFixed(1)}% = ${formatCurrency(totals.saleDiscount)}`
       : undefined);
 
-  const handleDialogClose = () => {
+  const primaryPayment =
+    form.pagamentos[0] ?? initialSaleFormState.pagamentos[0];
+  const selectedWallet = carteiras.find(
+    (carteira) => carteira.id === primaryPayment.idCarteira,
+  );
+  const selectedFair =
+    form.idFeira === ''
+      ? null
+      : feiras.find((feira) => feira.id === form.idFeira);
+  const availablePrimaryMethods = getAvailableMeiosPagamento(
+    primaryPayment.idCarteira,
+  );
+  const configSummary = [
+    saleTypeLabels[form.tipo],
+    form.tipo === 'FEIRA' ? (selectedFair?.nome ?? 'sem feira') : null,
+    selectedWallet?.nome ?? 'sem carteira',
+  ]
+    .filter(Boolean)
+    .join(' • ');
+
+  const handleDialogClose = (
+    _event: object,
+    reason: 'backdropClick' | 'escapeKeyDown',
+  ) => {
     if (isBusy) {
       return;
     }
 
-    handleClose();
+    if (reason === 'backdropClick' || reason === 'escapeKeyDown') {
+      handleDismissPreservingDraft();
+    }
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="lg">
-      <DialogTitle sx={{ px: 3, py: 2.5 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography variant="h5" fontWeight={700}>
-              {isEditMode ? `Alterar venda #${sale?.id}` : 'Nova venda rápida'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {isEditMode
-                ? 'Atualize os dados da venda e dos itens.'
-                : 'Preencha os dados para registrar a venda.'}
-            </Typography>
-          </Box>
-
-          <IconButton
-            onClick={handleDialogClose}
-            aria-label="Fechar modal de venda"
-            disabled={isBusy}
-          >
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent dividers sx={{ px: 3, py: 3 }}>
-        <FormFeedbackAlert message={globalMessage} />
-
-        {!isOnline && !isEditMode ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Você está offline. As vendas serão salvas localmente e poderão ser
-            sincronizadas depois.
-          </Alert>
-        ) : null}
-
-        {!isOnline && isEditMode ? (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            A edição de vendas está disponível apenas quando houver conexão com
-            a internet.
-          </Alert>
-        ) : null}
-
-        {form.tipo === 'FEIRA' && feiras.length === 0 ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Nenhuma feira cadastrada até o momento. Cadastre uma feira no
-            backend antes de registrar vendas desse tipo.
-          </Alert>
-        ) : null}
-
-        {carteiras.length === 0 ? (
-          <Alert severity="info" sx={{ mb: 3 }}>
-            Nenhuma carteira cadastrada até o momento. Cadastre uma carteira
-            para registrar vendas.
-          </Alert>
-        ) : null}
-
-        <Box sx={{ mb: 3 }}>
-          <SectionLabel>Configuração</SectionLabel>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                select
-                fullWidth
-                label="Tipo de venda"
-                value={form.tipo}
-                onChange={(event) => {
-                  const type = event.target.value as TipoVenda;
-                  setPersistedConfig((current) => ({
-                    tipo: type,
-                    idFeira: current.idFeira,
-                  }));
-                  setForm((current) => ({
-                    ...current,
-                    tipo: type,
-                    idFeira: current.idFeira,
-                  }));
+    <>
+      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="h5" fontWeight={800}>
+                {isEditMode
+                  ? `Alterar venda #${sale?.id}`
+                  : 'Nova venda rápida'}
+              </Typography>
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => setShowConfig((current) => !current)}
+                sx={{
+                  justifyContent: 'flex-start',
+                  minWidth: 0,
+                  px: 0,
+                  mt: 0.25,
+                  color: 'text.secondary',
+                  textTransform: 'none',
                 }}
               >
-                <MenuItem value="FEIRA">Feira</MenuItem>
-                <MenuItem value="LOJA">Loja</MenuItem>
-                <MenuItem value="ONLINE">Online</MenuItem>
-              </TextField>
-            </Grid>
+                <Typography variant="body2" noWrap>
+                  {configSummary}
+                </Typography>
+              </Button>
+            </Box>
 
-            {form.tipo === 'FEIRA' ? (
-              <Grid size={{ xs: 12, md: 3 }}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Feira"
-                  value={form.idFeira}
-                  onChange={(event) => {
-                    const nextFairId =
-                      event.target.value === ''
-                        ? ''
-                        : Number(event.target.value);
-                    setPersistedConfig((current) => ({
-                      ...current,
-                      idFeira: nextFairId,
-                    }));
-                    setForm((current) => ({
-                      ...current,
-                      idFeira: nextFairId,
-                    }));
-                  }}
-                  error={Boolean(
-                    localErrors.idFeira || getFieldMessage(problem, 'idFeira'),
-                  )}
-                  helperText={
-                    localErrors.idFeira ?? getFieldMessage(problem, 'idFeira')
-                  }
-                >
-                  <MenuItem value="">Selecione uma feira</MenuItem>
-                  {feiras.map((feira) => (
-                    <MenuItem key={feira.id} value={feira.id}>
-                      {feira.nome}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+            <IconButton
+              onClick={handleAskCancel}
+              aria-label="Fechar modal de venda"
+              disabled={isBusy}
+            >
+              <Close />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ px: { xs: 2, sm: 3 }, py: 2.5 }}>
+          <Stack spacing={2.5}>
+            <FormFeedbackAlert message={globalMessage} />
+
+            {!isOnline && !isEditMode ? (
+              <Alert severity="info">
+                Você está offline. As vendas serão salvas localmente e poderão
+                ser sincronizadas depois.
+              </Alert>
             ) : null}
-          </Grid>
-        </Box>
 
-        <Box sx={{ mb: 3 }}>
-          <SectionLabel>Pagamentos</SectionLabel>
+            {!isOnline && isEditMode ? (
+              <Alert severity="warning">
+                A edição de vendas está disponível apenas quando houver conexão
+                com a internet.
+              </Alert>
+            ) : null}
 
-          {localErrors.pagamentos ? (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              {localErrors.pagamentos}
-            </Alert>
-          ) : null}
+            {form.tipo === 'FEIRA' && feiras.length === 0 ? (
+              <Alert severity="info">
+                Nenhuma feira cadastrada até o momento. Cadastre uma feira antes
+                de registrar vendas desse tipo.
+              </Alert>
+            ) : null}
 
-          <Stack spacing={1.5}>
-            {form.pagamentos.map((pagamento, index) => {
-              const availableMeiosPagamento = getAvailableMeiosPagamento(
-                pagamento.idCarteira,
-              );
-              const paymentValue =
-                form.pagamentos.length === 1
-                  ? totals.total / 100
-                  : pagamento.valor;
+            {carteiras.length === 0 ? (
+              <Alert severity="info">
+                Nenhuma carteira cadastrada até o momento. Cadastre uma carteira
+                para registrar vendas.
+              </Alert>
+            ) : null}
 
-              return (
-                <Box
-                  key={`pagamento-${index}`}
-                  sx={{
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
-                    borderRadius: 2,
-                    p: 1.5,
-                  }}
-                >
-                  <Grid container spacing={1.5} alignItems="flex-start">
-                    <Grid size={{ xs: 12, md: 4 }}>
+            <Collapse in={showConfig} unmountOnExit>
+              <Paper
+                elevation={2}
+                sx={{
+                  borderRadius: 2,
+                  p: 1.5,
+                }}
+              >
+                <Grid container spacing={1.5}>
+                  <Grid size={{ xs: form.tipo === 'FEIRA' ? 6 : 12, sm: 6 }}>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      label="Tipo"
+                      value={form.tipo}
+                      onChange={(event) =>
+                        handleChangeSaleType(event.target.value as TipoVenda)
+                      }
+                    >
+                      <MenuItem value="FEIRA">Feira</MenuItem>
+                      <MenuItem value="LOJA">Loja</MenuItem>
+                      <MenuItem value="ONLINE">Online</MenuItem>
+                    </TextField>
+                  </Grid>
+
+                  {form.tipo === 'FEIRA' ? (
+                    <Grid size={{ xs: 6, sm: 6 }}>
                       <TextField
                         select
                         fullWidth
-                        label="Carteira"
-                        value={pagamento.idCarteira}
+                        size="small"
+                        label="Feira"
+                        value={form.idFeira}
                         onChange={(event) => {
-                          const nextWalletId =
+                          handleChangeFair(
                             event.target.value === ''
                               ? ''
-                              : Number(event.target.value);
-                          const nextMethods =
-                            getAvailableMeiosPagamento(nextWalletId);
-
-                          updatePayment(index, {
-                            idCarteira: nextWalletId,
-                            meioPagamento: nextMethods.includes(
-                              pagamento.meioPagamento,
-                            )
-                              ? pagamento.meioPagamento
-                              : nextMethods[0]!,
-                          });
+                              : Number(event.target.value),
+                          );
                         }}
                         error={Boolean(
-                          paymentErrors[index]?.idCarteira ||
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].idCarteira`,
-                          ),
+                          localErrors.idFeira ||
+                          getFieldMessage(problem, 'idFeira'),
                         )}
                         helperText={
-                          paymentErrors[index]?.idCarteira ??
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].idCarteira`,
-                          )
+                          localErrors.idFeira ??
+                          getFieldMessage(problem, 'idFeira')
                         }
                       >
-                        <MenuItem value="">Selecione uma carteira</MenuItem>
-                        {carteiras
-                          .filter((carteira) => carteira.ativa)
-                          .map((carteira) => (
-                            <MenuItem key={carteira.id} value={carteira.id}>
-                              {carteira.nome}
-                            </MenuItem>
-                          ))}
+                        <MenuItem value="">Selecione uma feira</MenuItem>
+                        {feiras.map((feira) => (
+                          <MenuItem key={feira.id} value={feira.id}>
+                            {feira.nome}
+                          </MenuItem>
+                        ))}
                       </TextField>
                     </Grid>
+                  ) : null}
+                </Grid>
+              </Paper>
+            </Collapse>
 
-                    <Grid size={{ xs: 12, md: 3 }}>
-                      <TextField
-                        select
-                        fullWidth
-                        label="Meio"
-                        value={pagamento.meioPagamento}
-                        onChange={(event) => {
-                          updatePayment(index, {
-                            meioPagamento: event.target.value as MeioPagamento,
-                          });
-                        }}
-                        error={Boolean(
-                          paymentErrors[index]?.meioPagamento ||
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].meioPagamento`,
-                          ),
-                        )}
-                        helperText={
-                          paymentErrors[index]?.meioPagamento ??
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].meioPagamento`,
-                          )
-                        }
-                      >
-                        {availableMeiosPagamento.includes('DEB') && (
-                          <MenuItem value="DEB">Cartão débito</MenuItem>
-                        )}
-                        {availableMeiosPagamento.includes('CRE') && (
-                          <MenuItem value="CRE">Cartão crédito</MenuItem>
-                        )}
-                        {availableMeiosPagamento.includes('DIN') && (
-                          <MenuItem value="DIN">Dinheiro</MenuItem>
-                        )}
-                        {availableMeiosPagamento.includes('PIX') && (
-                          <MenuItem value="PIX">Pix</MenuItem>
-                        )}
-                      </TextField>
-                    </Grid>
+            <Box>
+              <SectionLabel>Itens da venda</SectionLabel>
 
-                    <Grid size={{ xs: 12, md: 3 }}>
-                      <CurrencyField
-                        fullWidth
-                        label="Valor"
-                        value={paymentValue}
-                        onValueChange={(valor) => {
-                          updatePayment(index, { valor });
-                        }}
-                        disabled={form.pagamentos.length === 1}
-                        error={Boolean(
-                          paymentErrors[index]?.valor ||
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].valor`,
-                          ),
-                        )}
-                        helperText={
-                          paymentErrors[index]?.valor ??
-                          getFieldMessage(
-                            problem,
-                            `pagamentos[${index}].valor`,
-                          ) ??
-                          (form.pagamentos.length === 1
-                            ? 'Preenchido pelo total da venda.'
-                            : undefined)
-                        }
-                      />
-                    </Grid>
+              {localErrors.itens ? (
+                <Alert severity="warning" sx={{ mb: 1.5 }}>
+                  {localErrors.itens}
+                </Alert>
+              ) : null}
 
-                    <Grid
-                      size={{ xs: 12, md: 2 }}
-                      sx={{ display: 'flex', justifyContent: 'flex-end' }}
+              <Stack spacing={1.5}>
+                {form.itens.map((item, index) => {
+                  const itemLabel =
+                    item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
+                  const unitValue = item.brinde
+                    ? 0
+                    : item.tipoItem === 'CATALOGO'
+                      ? getCatalogProductValue(
+                          item,
+                          catalogProducts,
+                          fairProductPrices,
+                        ) / 100
+                      : item.valorUnitario;
+                  const itemTotal =
+                    Math.round(unitValue * 100) * item.quantidade;
+
+                  return (
+                    <Paper
+                      key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
+                      elevation={2}
+                      sx={{
+                        borderRadius: 2,
+                        p: 1.5,
+                      }}
                     >
-                      <IconButton
-                        onClick={() => handleRemovePayment(index)}
-                        color="error"
-                        disabled={form.pagamentos.length === 1 || isBusy}
-                        aria-label={`Remover pagamento ${index + 1}`}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Grid>
-                  </Grid>
-                </Box>
-              );
-            })}
+                      <Stack spacing={1.5}>
+                        <Grid container spacing={1} alignItems="flex-start">
+                          <Grid
+                            size={{
+                              xs: 10,
+                              sm: item.tipoItem === 'CATALOGO' ? 11 : 7,
+                            }}
+                          >
+                            {item.tipoItem === 'CATALOGO' ? (
+                              <ProductAutocompleteField
+                                products={catalogProducts}
+                                productId={item.idProduto}
+                                loading={isFetching}
+                                size="small"
+                                onChange={(newValue) => {
+                                  updateItem(index, {
+                                    idProduto: newValue?.id ?? null,
+                                    nomeProduto: newValue?.nome ?? '',
+                                    valorUnitario: newValue
+                                      ? newValue.valor / 100
+                                      : 0,
+                                  });
+                                }}
+                                error={Boolean(
+                                  itemErrors[index]?.idProduto ||
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].idProduto`,
+                                  ),
+                                )}
+                                helperText={
+                                  itemErrors[index]?.idProduto ??
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].idProduto`,
+                                  )
+                                }
+                              />
+                            ) : (
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label="Nome do item"
+                                value={item.nomeProduto}
+                                onChange={(event) => {
+                                  updateItem(index, {
+                                    nomeProduto: event.target.value,
+                                  });
+                                }}
+                                error={Boolean(
+                                  itemErrors[index]?.nomeProduto ||
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].nomeProduto`,
+                                  ),
+                                )}
+                                helperText={
+                                  itemErrors[index]?.nomeProduto ??
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].nomeProduto`,
+                                  )
+                                }
+                              />
+                            )}
+                          </Grid>
 
-            {form.pagamentos.length < 2 ? (
-              <Button
-                startIcon={<Add />}
-                onClick={handleAddPayment}
-                variant="text"
-                disabled={isBusy}
-                sx={{ alignSelf: 'flex-start' }}
-              >
-                Adicionar pagamento
-              </Button>
-            ) : null}
-          </Stack>
-        </Box>
+                          {item.tipoItem === 'AVULSO' ? (
+                            <Grid size={{ xs: 12, sm: 4 }}>
+                              <CurrencyField
+                                fullWidth
+                                size="small"
+                                label="Valor unit."
+                                value={item.brinde ? 0 : item.valorUnitario}
+                                onValueChange={(valorUnitario) => {
+                                  updateItem(index, { valorUnitario });
+                                }}
+                                name={`valorUnitario-${index}`}
+                                disabled={item.brinde}
+                                error={Boolean(
+                                  itemErrors[index]?.valorUnitario ||
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].valorUnitario`,
+                                  ),
+                                )}
+                                helperText={
+                                  itemErrors[index]?.valorUnitario ??
+                                  getFieldMessage(
+                                    problem,
+                                    `itens[${index}].valorUnitario`,
+                                  )
+                                }
+                              />
+                            </Grid>
+                          ) : null}
 
-        <Box sx={{ mb: 3 }}>
-          <SectionLabel>Itens da venda</SectionLabel>
+                          <Grid size={{ xs: 2, sm: 1 }}>
+                            <IconButton
+                              onClick={() => handleRemoveItem(index)}
+                              color="error"
+                              disabled={form.itens.length === 1 || isBusy}
+                              aria-label={`Remover item ${itemLabel}`}
+                              sx={{ mt: 0.25 }}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Grid>
+                        </Grid>
 
-          {localErrors.itens ? (
-            <Alert severity="warning" sx={{ mb: 2 }}>
-              {localErrors.itens}
-            </Alert>
-          ) : null}
+                        {item.tipoItem === 'AVULSO' || item.brinde ? (
+                          <Stack direction="row" spacing={0.75} flexWrap="wrap">
+                            {item.tipoItem === 'AVULSO' ? (
+                              <Chip
+                                label="AVULSO"
+                                color="info"
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontWeight: 700 }}
+                              />
+                            ) : null}
+                            {item.brinde ? (
+                              <Chip
+                                label="BRINDE"
+                                color="warning"
+                                size="small"
+                                sx={{ fontWeight: 800 }}
+                              />
+                            ) : null}
+                          </Stack>
+                        ) : null}
 
-          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-            <Stack spacing={1.5}>
-              {form.itens.map((item, index) => {
-                const itemLabel =
-                  item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
-
-                return (
-                  <Box
-                    key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
-                    sx={{
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      borderRadius: 3,
-                      p: 1.5,
-                    }}
-                  >
-                    <Grid container spacing={1.5}>
-                      <Grid size={{ xs: 12 }}>
-                        <TextField
-                          select
-                          fullWidth
-                          size="small"
-                          label="Tipo"
-                          value={item.tipoItem}
-                          onChange={(event) =>
-                            handleChangeItemType(
-                              index,
-                              event.target.value as SaleItemType,
-                            )
-                          }
+                        <Stack
+                          direction={{ xs: 'column', sm: 'row' }}
+                          spacing={1.5}
+                          justifyContent="space-between"
+                          alignItems={{ xs: 'stretch', sm: 'center' }}
                         >
-                          <MenuItem value="CATALOGO">Catálogo</MenuItem>
-                          <MenuItem value="AVULSO">Avulso</MenuItem>
-                        </TextField>
-                      </Grid>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                          >
+                            <IconButton
+                              onClick={() =>
+                                handleChangeItemQuantity(
+                                  index,
+                                  item.quantidade - 1,
+                                )
+                              }
+                              disabled={item.quantidade <= 1 || isBusy}
+                              aria-label={`Diminuir quantidade do item ${itemLabel}`}
+                              sx={{
+                                border: (theme) =>
+                                  `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1,
+                              }}
+                            >
+                              <Remove fontSize="small" />
+                            </IconButton>
 
-                      <Grid size={{ xs: 12 }}>
-                        {item.tipoItem === 'CATALOGO' ? (
-                          <ProductAutocompleteField
-                            products={catalogProducts}
-                            productId={item.idProduto}
-                            loading={isFetching}
-                            size="small"
-                            onChange={(newValue) => {
-                              updateItem(index, {
-                                idProduto: newValue?.id ?? null,
-                                nomeProduto: newValue?.nome ?? '',
-                                valorUnitario: newValue
-                                  ? newValue.valor / 100
-                                  : 0,
-                              });
-                            }}
-                            error={Boolean(
-                              itemErrors[index]?.idProduto ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.idProduto ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              )
-                            }
-                          />
-                        ) : (
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Nome do item"
-                            value={item.nomeProduto}
-                            onChange={(event) => {
-                              updateItem(index, {
-                                nomeProduto: event.target.value,
-                              });
-                            }}
-                            error={Boolean(
-                              itemErrors[index]?.nomeProduto ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].nomeProduto`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.nomeProduto ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].nomeProduto`,
-                              )
-                            }
-                          />
-                        )}
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        {item.tipoItem === 'CATALOGO' ? (
-                          <CurrencyField
-                            fullWidth
-                            label="Valor unit."
-                            value={
-                              item.brinde
-                                ? 0
-                                : getCatalogProductValue(
-                                    item,
-                                    catalogProducts,
-                                    fairProductPrices,
-                                  ) / 100
-                            }
-                            onValueChange={() => undefined}
-                            name={`valorCatalogo-${index}`}
-                            disabled
-                          />
-                        ) : (
-                          <CurrencyField
-                            fullWidth
-                            label="Valor unit."
-                            value={item.brinde ? 0 : item.valorUnitario}
-                            onValueChange={(valorUnitario) => {
-                              updateItem(index, { valorUnitario });
-                            }}
-                            name={`valorUnitario-${index}`}
-                            disabled={item.brinde}
-                            error={Boolean(
-                              itemErrors[index]?.valorUnitario ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].valorUnitario`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.valorUnitario ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].valorUnitario`,
-                              )
-                            }
-                          />
-                        )}
-                      </Grid>
-
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Qtd"
-                          type="number"
-                          value={item.quantidade}
-                          onChange={(event) => {
-                            updateItem(index, {
-                              quantidade: Number(event.target.value),
-                            });
-                          }}
-                          error={Boolean(
-                            itemErrors[index]?.quantidade ||
-                            getFieldMessage(
-                              problem,
-                              `itens[${index}].quantidade`,
-                            ),
-                          )}
-                          helperText={
-                            itemErrors[index]?.quantidade ??
-                            getFieldMessage(
-                              problem,
-                              `itens[${index}].quantidade`,
-                            )
-                          }
-                        />
-                      </Grid>
-
-                      <Grid size={{ xs: 12 }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Checkbox
-                              checked={item.brinde}
+                            <TextField
+                              size="small"
+                              type="number"
+                              value={item.quantidade}
                               onChange={(event) => {
-                                const checked = event.target.checked;
+                                handleChangeItemQuantity(
+                                  index,
+                                  Number(event.target.value),
+                                );
+                              }}
+                              error={Boolean(
+                                itemErrors[index]?.quantidade ||
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].quantidade`,
+                                ),
+                              )}
+                              helperText={
+                                itemErrors[index]?.quantidade ??
+                                getFieldMessage(
+                                  problem,
+                                  `itens[${index}].quantidade`,
+                                )
+                              }
+                              inputProps={{
+                                min: 1,
+                                'aria-label': `Quantidade do item ${itemLabel}`,
+                              }}
+                              sx={{
+                                width: 72,
+                                '& input': { textAlign: 'center' },
+                              }}
+                            />
+
+                            <IconButton
+                              onClick={() =>
+                                handleChangeItemQuantity(
+                                  index,
+                                  item.quantidade + 1,
+                                )
+                              }
+                              disabled={isBusy}
+                              aria-label={`Aumentar quantidade do item ${itemLabel}`}
+                              sx={{
+                                border: (theme) =>
+                                  `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1,
+                              }}
+                            >
+                              <Add fontSize="small" />
+                            </IconButton>
+
+                            <Button
+                              size="small"
+                              variant={item.brinde ? 'contained' : 'outlined'}
+                              color={item.brinde ? 'warning' : 'inherit'}
+                              startIcon={<CardGiftcard />}
+                              onClick={() => {
+                                const checked = !item.brinde;
                                 updateItem(index, {
                                   brinde: checked,
                                   valorUnitario:
@@ -1243,480 +1325,464 @@ export default function NewSaleDialog({
                                       : item.valorUnitario,
                                 });
                               }}
-                              inputProps={{
-                                'aria-label': `Brinde do item ${itemLabel}`,
-                              }}
-                            />
-                            <Typography variant="body2">Brinde</Typography>
+                            >
+                              Brinde
+                            </Button>
+
+                            <Button
+                              size="small"
+                              variant="text"
+                              startIcon={
+                                item.tipoItem === 'CATALOGO' ? (
+                                  <Category />
+                                ) : (
+                                  <Inventory2 />
+                                )
+                              }
+                              onClick={() =>
+                                handleChangeItemType(
+                                  index,
+                                  item.tipoItem === 'CATALOGO'
+                                    ? 'AVULSO'
+                                    : 'CATALOGO',
+                                )
+                              }
+                              sx={{ textTransform: 'none' }}
+                            >
+                              {item.tipoItem === 'CATALOGO'
+                                ? 'Item avulso'
+                                : 'Usar catálogo'}
+                            </Button>
+                          </Stack>
+
+                          <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Total do item
+                            </Typography>
+                            <Typography variant="subtitle1" fontWeight={800}>
+                              {formatCurrency(itemTotal)}
+                            </Typography>
                           </Box>
-
-                          <IconButton
-                            onClick={() => handleRemoveItem(index)}
-                            color="error"
-                            disabled={form.itens.length === 1 || isBusy}
-                            aria-label={`Remover item ${itemLabel}`}
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                );
-              })}
-
-              <Button
-                startIcon={<Add />}
-                onClick={handleAddItem}
-                variant="text"
-                disabled={isBusy}
-              >
-                Adicionar item
-              </Button>
-            </Stack>
-          </Box>
-
-          <TableContainer
-            sx={{
-              display: { xs: 'none', md: 'block' },
-              border: (theme) => `1px solid ${theme.palette.divider}`,
-              borderRadius: 3,
-              overflowX: 'auto',
-            }}
-          >
-            <Table sx={{ minWidth: 920 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Tipo</TableCell>
-                  <TableCell>Produto / Item</TableCell>
-                  <TableCell>Valor unit.</TableCell>
-                  <TableCell>Qtd</TableCell>
-                  <TableCell>Brinde</TableCell>
-                  <TableCell width={56} />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {form.itens.map((item, index) => {
-                  const itemLabel =
-                    item.tipoItem === 'CATALOGO' ? 'catalogo' : 'avulso';
-
-                  return (
-                    <TableRow
-                      key={`${index}-${item.tipoItem}-${item.idProduto ?? 'novo'}`}
-                    >
-                      <TableCell sx={{ verticalAlign: 'top', minWidth: 150 }}>
-                        <TextField
-                          select
-                          fullWidth
-                          size="small"
-                          label="Tipo"
-                          value={item.tipoItem}
-                          onChange={(event) =>
-                            handleChangeItemType(
-                              index,
-                              event.target.value as SaleItemType,
-                            )
-                          }
-                        >
-                          <MenuItem value="CATALOGO">Catálogo</MenuItem>
-                          <MenuItem value="AVULSO">Avulso</MenuItem>
-                        </TextField>
-                      </TableCell>
-
-                      <TableCell sx={{ verticalAlign: 'top', minWidth: 300 }}>
-                        {item.tipoItem === 'CATALOGO' ? (
-                          <ProductAutocompleteField
-                            products={catalogProducts}
-                            productId={item.idProduto}
-                            loading={isFetching}
-                            size="small"
-                            onChange={(newValue) => {
-                              updateItem(index, {
-                                idProduto: newValue?.id ?? null,
-                                nomeProduto: newValue?.nome ?? '',
-                                valorUnitario: newValue
-                                  ? newValue.valor / 100
-                                  : 0,
-                              });
-                            }}
-                            error={Boolean(
-                              itemErrors[index]?.idProduto ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.idProduto ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].idProduto`,
-                              )
-                            }
-                          />
-                        ) : (
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Nome do item"
-                            value={item.nomeProduto}
-                            onChange={(event) => {
-                              updateItem(index, {
-                                nomeProduto: event.target.value,
-                              });
-                            }}
-                            error={Boolean(
-                              itemErrors[index]?.nomeProduto ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].nomeProduto`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.nomeProduto ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].nomeProduto`,
-                              )
-                            }
-                          />
-                        )}
-                      </TableCell>
-
-                      <TableCell sx={{ verticalAlign: 'top', minWidth: 170 }}>
-                        {item.tipoItem === 'CATALOGO' ? (
-                          <CurrencyField
-                            fullWidth
-                            label="Valor unit."
-                            value={
-                              item.brinde
-                                ? 0
-                                : getCatalogProductValue(
-                                    item,
-                                    catalogProducts,
-                                    fairProductPrices,
-                                  ) / 100
-                            }
-                            onValueChange={() => undefined}
-                            name={`valorCatalogo-${index}`}
-                            disabled
-                          />
-                        ) : (
-                          <CurrencyField
-                            fullWidth
-                            label="Valor unit."
-                            value={item.brinde ? 0 : item.valorUnitario}
-                            onValueChange={(valorUnitario) => {
-                              updateItem(index, { valorUnitario });
-                            }}
-                            name={`valorUnitario-${index}`}
-                            disabled={item.brinde}
-                            error={Boolean(
-                              itemErrors[index]?.valorUnitario ||
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].valorUnitario`,
-                              ),
-                            )}
-                            helperText={
-                              itemErrors[index]?.valorUnitario ??
-                              getFieldMessage(
-                                problem,
-                                `itens[${index}].valorUnitario`,
-                              )
-                            }
-                          />
-                        )}
-                      </TableCell>
-
-                      <TableCell sx={{ verticalAlign: 'top', minWidth: 100 }}>
-                        <TextField
-                          fullWidth
-                          size="small"
-                          label="Qtd"
-                          type="number"
-                          value={item.quantidade}
-                          onChange={(event) => {
-                            updateItem(index, {
-                              quantidade: Number(event.target.value),
-                            });
-                          }}
-                          error={Boolean(
-                            itemErrors[index]?.quantidade ||
-                            getFieldMessage(
-                              problem,
-                              `itens[${index}].quantidade`,
-                            ),
-                          )}
-                          helperText={
-                            itemErrors[index]?.quantidade ??
-                            getFieldMessage(
-                              problem,
-                              `itens[${index}].quantidade`,
-                            )
-                          }
-                        />
-                      </TableCell>
-
-                      <TableCell sx={{ verticalAlign: 'top', minWidth: 100 }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            pt: 1.25,
-                          }}
-                        >
-                          <Checkbox
-                            checked={item.brinde}
-                            onChange={(event) => {
-                              const checked = event.target.checked;
-                              updateItem(index, {
-                                brinde: checked,
-                                valorUnitario:
-                                  checked && item.tipoItem === 'AVULSO'
-                                    ? 0
-                                    : item.valorUnitario,
-                              });
-                            }}
-                            inputProps={{
-                              'aria-label': `Brinde do item ${itemLabel}`,
-                            }}
-                          />
-                        </Box>
-                      </TableCell>
-
-                      <TableCell sx={{ verticalAlign: 'top' }}>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            pt: 0.75,
-                          }}
-                        >
-                          <IconButton
-                            onClick={() => handleRemoveItem(index)}
-                            color="error"
-                            disabled={form.itens.length === 1 || isBusy}
-                            aria-label={`Remover item ${itemLabel}`}
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                        </Stack>
+                      </Stack>
+                    </Paper>
                   );
                 })}
 
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <Button
-                      startIcon={<Add />}
-                      onClick={handleAddItem}
-                      variant="text"
-                      disabled={isBusy}
-                    >
-                      Adicionar item
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
-
-        <Box>
-          <SectionLabel>Desconto</SectionLabel>
-          <Stack spacing={0.75} sx={{ maxWidth: { xs: '100%', md: 440 } }}>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 600, pl: 0.5 }}
-            >
-              Desconto
-            </Typography>
-
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 1,
-              }}
-            >
-              <ToggleButtonGroup
-                exclusive
-                value={form.descontoModo}
-                size="small"
-                onChange={(_event, newValue: DiscountMode | null) => {
-                  if (!newValue) {
-                    return;
-                  }
-                  setForm((current) => ({
-                    ...current,
-                    descontoModo: newValue,
-                    desconto:
-                      current.descontoModo === newValue ? current.desconto : 0,
-                  }));
-                }}
-                sx={{
-                  flexShrink: 0,
-                  '& .MuiToggleButton-root': {
-                    minWidth: { xs: 28, sm: 36 },
-                    px: { xs: 1, sm: 1.25 },
-                    height: 40,
-                  },
-                }}
-              >
-                <ToggleButton value="VALOR">R$</ToggleButton>
-                <ToggleButton value="PERCENTUAL">%</ToggleButton>
-              </ToggleButtonGroup>
-
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                {form.descontoModo === 'VALOR' ? (
-                  <CurrencyField
-                    fullWidth
-                    size="small"
-                    placeholder="0,00"
-                    value={form.desconto}
-                    onValueChange={(desconto) => {
-                      setForm((current) => ({
-                        ...current,
-                        desconto: Math.min(desconto, 999.99),
-                      }));
-                    }}
-                    name="desconto"
-                    error={Boolean(
-                      localErrors.desconto ||
-                      getFieldMessage(problem, 'desconto'),
-                    )}
-                    inputProps={{
-                      'aria-label': 'Desconto em reais',
-                    }}
-                  />
-                ) : (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="number"
-                    placeholder="0"
-                    value={form.desconto}
-                    onChange={(event) => {
-                      const desconto = Number(event.target.value);
-                      setForm((current) => ({
-                        ...current,
-                        desconto: Number.isNaN(desconto)
-                          ? 0
-                          : Math.min(desconto, 99),
-                      }));
-                    }}
-                    inputProps={{
-                      min: 0,
-                      max: 99,
-                      step: 1,
-                      'aria-label': 'Desconto em percentual',
-                    }}
-                    error={Boolean(
-                      localErrors.desconto ||
-                      getFieldMessage(problem, 'desconto'),
-                    )}
-                  />
-                )}
-              </Box>
+                <Button
+                  startIcon={<Add />}
+                  onClick={handleAddItem}
+                  variant="outlined"
+                  disabled={isBusy}
+                  sx={{
+                    borderStyle: 'dashed',
+                    py: 1.1,
+                    justifyContent: 'center',
+                  }}
+                >
+                  Adicionar item
+                </Button>
+              </Stack>
             </Box>
 
-            {discountHelperText ? (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ pl: 0.5 }}
-              >
-                {discountHelperText}
-              </Typography>
-            ) : null}
+            <Box>
+              <SectionLabel>Desconto</SectionLabel>
+              <Stack spacing={0.75}>
+                <Stack direction="row" spacing={1} alignItems="flex-start">
+                  <ToggleButtonGroup
+                    exclusive
+                    value={form.descontoModo}
+                    size="small"
+                    onChange={(_event, newValue: DiscountMode | null) => {
+                      if (!newValue) {
+                        return;
+                      }
+                      setForm((current) => ({
+                        ...current,
+                        descontoModo: newValue,
+                        desconto:
+                          current.descontoModo === newValue
+                            ? current.desconto
+                            : 0,
+                      }));
+                    }}
+                    sx={{
+                      flexShrink: 0,
+                      '& .MuiToggleButton-root': {
+                        width: 48,
+                        height: 40,
+                        fontWeight: 800,
+                      },
+                    }}
+                  >
+                    <ToggleButton value="VALOR">R$</ToggleButton>
+                    <ToggleButton value="PERCENTUAL">%</ToggleButton>
+                  </ToggleButtonGroup>
 
-            <Typography variant="body2" color="text.secondary" sx={{ pl: 0.5 }}>
-              {totals.saleDiscount > 0
-                ? `Desconto aplicado: ${formatCurrency(totals.saleDiscount)}`
-                : 'Sem desconto aplicado'}
-            </Typography>
+                  {form.descontoModo === 'VALOR' ? (
+                    <CurrencyField
+                      fullWidth
+                      size="small"
+                      placeholder="0,00"
+                      value={form.desconto}
+                      onValueChange={(desconto) => {
+                        setForm((current) => ({
+                          ...current,
+                          desconto: Math.min(desconto, 999.99),
+                        }));
+                      }}
+                      name="desconto"
+                      error={Boolean(
+                        localErrors.desconto ||
+                        getFieldMessage(problem, 'desconto'),
+                      )}
+                      inputProps={{
+                        'aria-label': 'Desconto em reais',
+                      }}
+                    />
+                  ) : (
+                    <TextField
+                      fullWidth
+                      size="small"
+                      type="number"
+                      placeholder="0"
+                      value={form.desconto}
+                      onChange={(event) => {
+                        const desconto = Number(event.target.value);
+                        setForm((current) => ({
+                          ...current,
+                          desconto: Number.isNaN(desconto)
+                            ? 0
+                            : Math.min(desconto, 99),
+                        }));
+                      }}
+                      inputProps={{
+                        min: 0,
+                        max: 99,
+                        step: 1,
+                        'aria-label': 'Desconto em percentual',
+                      }}
+                      error={Boolean(
+                        localErrors.desconto ||
+                        getFieldMessage(problem, 'desconto'),
+                      )}
+                    />
+                  )}
+                </Stack>
+
+                {discountHelperText ? (
+                  <Typography variant="caption" color="text.secondary">
+                    {discountHelperText}
+                  </Typography>
+                ) : null}
+              </Stack>
+            </Box>
+
+            <Box>
+              <SectionLabel>Forma de pagamento</SectionLabel>
+
+              {localErrors.pagamentos ? (
+                <Alert severity="warning" sx={{ mb: 1.5 }}>
+                  {localErrors.pagamentos}
+                </Alert>
+              ) : null}
+
+              {form.pagamentos.length === 1 ? (
+                <>
+                  <Stack spacing={1.25} sx={{ mb: 1.5 }}>
+                    <WalletToggleGroup
+                      value={primaryPayment.idCarteira}
+                      wallets={carteiras}
+                      onChange={(idCarteira) =>
+                        handleChangePaymentWallet(0, idCarteira)
+                      }
+                      error={
+                        paymentErrors[0]?.idCarteira ??
+                        getFieldMessage(problem, 'pagamentos[0].idCarteira')
+                      }
+                    />
+                  </Stack>
+
+                  <Grid container spacing={1}>
+                    {paymentOptions.map((option) => {
+                      const Icon = option.icon;
+                      const isSelected =
+                        primaryPayment.meioPagamento === option.value;
+                      const isAvailable = availablePrimaryMethods.includes(
+                        option.value,
+                      );
+
+                      return (
+                        <Grid key={option.value} size={{ xs: 6 }}>
+                          <Button
+                            fullWidth
+                            variant={isSelected ? 'contained' : 'outlined'}
+                            color={isSelected ? 'success' : 'inherit'}
+                            disabled={!isAvailable || isBusy}
+                            onClick={() =>
+                              updatePayment(0, { meioPagamento: option.value })
+                            }
+                            sx={{
+                              height: 64,
+                              flexDirection: 'column',
+                              gap: 0.5,
+                              textTransform: 'none',
+                            }}
+                          >
+                            <Icon fontSize="small" />
+                            {option.label}
+                          </Button>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                </>
+              ) : null}
+
+              {form.pagamentos.length < 2 ? (
+                <Button
+                  onClick={handleAddPayment}
+                  variant="text"
+                  disabled={isBusy}
+                  sx={{ mt: 1.5, textTransform: 'none' }}
+                >
+                  Dividir em mais formas de pagamento
+                </Button>
+              ) : null}
+
+              <Collapse in={form.pagamentos.length > 1} unmountOnExit>
+                <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+                  {form.pagamentos.map((pagamento, index) => {
+                    const availableMeiosPagamento = getAvailableMeiosPagamento(
+                      pagamento.idCarteira,
+                    );
+                    const paymentValue =
+                      form.pagamentos.length === 1
+                        ? totals.total / 100
+                        : pagamento.valor;
+
+                    return (
+                      <Paper
+                        key={`pagamento-${index}`}
+                        elevation={2}
+                        sx={{
+                          borderRadius: 2,
+                          p: 1.25,
+                        }}
+                      >
+                        <Stack spacing={1.25}>
+                          <WalletToggleGroup
+                            value={pagamento.idCarteira}
+                            wallets={carteiras}
+                            onChange={(idCarteira) =>
+                              handleChangePaymentWallet(index, idCarteira)
+                            }
+                            error={
+                              paymentErrors[index]?.idCarteira ??
+                              getFieldMessage(
+                                problem,
+                                `pagamentos[${index}].idCarteira`,
+                              )
+                            }
+                          />
+
+                          <Grid
+                            container
+                            spacing={1.25}
+                            alignItems="flex-start"
+                          >
+                            <Grid size={{ xs: 4, sm: 3 }}>
+                              <TextField
+                                select
+                                fullWidth
+                                size="small"
+                                label="Meio"
+                                value={pagamento.meioPagamento}
+                                onChange={(event) => {
+                                  updatePayment(index, {
+                                    meioPagamento: event.target
+                                      .value as MeioPagamento,
+                                  });
+                                }}
+                                error={Boolean(
+                                  paymentErrors[index]?.meioPagamento ||
+                                  getFieldMessage(
+                                    problem,
+                                    `pagamentos[${index}].meioPagamento`,
+                                  ),
+                                )}
+                                helperText={
+                                  paymentErrors[index]?.meioPagamento ??
+                                  getFieldMessage(
+                                    problem,
+                                    `pagamentos[${index}].meioPagamento`,
+                                  )
+                                }
+                              >
+                                {availableMeiosPagamento.includes('DEB') && (
+                                  <MenuItem value="DEB">Débito</MenuItem>
+                                )}
+                                {availableMeiosPagamento.includes('CRE') && (
+                                  <MenuItem value="CRE">Crédito</MenuItem>
+                                )}
+                                {availableMeiosPagamento.includes('DIN') && (
+                                  <MenuItem value="DIN">Dinheiro</MenuItem>
+                                )}
+                                {availableMeiosPagamento.includes('PIX') && (
+                                  <MenuItem value="PIX">Pix</MenuItem>
+                                )}
+                              </TextField>
+                            </Grid>
+
+                            <Grid size={{ xs: 6, sm: 8 }}>
+                              <CurrencyField
+                                fullWidth
+                                size="small"
+                                label="Valor"
+                                value={paymentValue}
+                                onValueChange={(valor) => {
+                                  updatePayment(index, { valor });
+                                }}
+                                disabled={form.pagamentos.length === 1}
+                                error={Boolean(
+                                  paymentErrors[index]?.valor ||
+                                  getFieldMessage(
+                                    problem,
+                                    `pagamentos[${index}].valor`,
+                                  ),
+                                )}
+                                helperText={
+                                  paymentErrors[index]?.valor ??
+                                  getFieldMessage(
+                                    problem,
+                                    `pagamentos[${index}].valor`,
+                                  )
+                                }
+                              />
+                            </Grid>
+
+                            <Grid
+                              size={{ xs: 2, sm: 1 }}
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                              }}
+                            >
+                              <IconButton
+                                onClick={() => handleRemovePayment(index)}
+                                color="error"
+                                disabled={
+                                  form.pagamentos.length === 1 || isBusy
+                                }
+                                aria-label={`Remover pagamento ${index + 1}`}
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Grid>
+                          </Grid>
+                        </Stack>
+                      </Paper>
+                    );
+                  })}
+                </Stack>
+              </Collapse>
+            </Box>
           </Stack>
-        </Box>
-      </DialogContent>
-
-      <Box
-        sx={{
-          px: 3,
-          py: 2,
-          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-          bgcolor: 'background.default',
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', md: 'center' },
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="body2" color="text.secondary">
-            Total ({totals.totalQuantidadeItens}{' '}
-            {totals.totalQuantidadeItens === 1 ? 'unidade' : 'unidades'})
-          </Typography>
-          {totals.saleDiscount > 0 ? (
-            <>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ textDecoration: 'line-through' }}
-              >
-                {formatCurrency(totals.subtotal)}
-              </Typography>
-              <Typography variant="h4" fontWeight={800} color="success.main">
-                {formatCurrency(totals.total)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {formatCurrency(totals.saleDiscount)} de desconto
-              </Typography>
-            </>
-          ) : (
-            <Typography variant="h4" fontWeight={800} color="success.main">
-              {formatCurrency(totals.total)}
-            </Typography>
-          )}
-        </Box>
+        </DialogContent>
 
         <Box
           sx={{
+            px: { xs: 2, sm: 3 },
+            py: 2,
+            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+            bgcolor: 'background.default',
             display: 'flex',
-            justifyContent: { xs: 'stretch', md: 'flex-end' },
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 1,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 2,
           }}
         >
-          <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
-            Cancelar
-          </Button>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" color="text.secondary">
+              Total • {totals.totalQuantidadeItens}{' '}
+              {totals.totalQuantidadeItens === 1 ? 'item' : 'itens'}
+              {totals.saleDiscount > 0 ? (
+                <>
+                  {' '}
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textDecoration: 'line-through' }}
+                  >
+                    {formatCurrency(totals.subtotal)}
+                  </Typography>
+                </>
+              ) : null}
+            </Typography>
+            <Typography variant="h4" fontWeight={900} color="success.main">
+              {formatCurrency(totals.total)}
+            </Typography>
+          </Box>
+
           <Button
             onClick={handleSubmit}
             variant="contained"
             size="large"
-            startIcon={<ShoppingCartCheckout />}
+            endIcon={<ArrowForward />}
             disabled={isBusy || (isEditMode && !isOnline)}
+            sx={{ minWidth: { xs: 132, sm: 160 }, height: 56 }}
           >
             {isBusy
               ? 'Salvando...'
               : isEditMode
-                ? 'Salvar alterações'
+                ? 'Salvar'
                 : isOnline
-                  ? 'Finalizar e salvar'
+                  ? 'Finalizar'
                   : 'Salvar offline'}
           </Button>
         </Box>
-      </Box>
 
-      {isFetching ? (
-        <Box sx={{ position: 'absolute', top: 18, right: 64 }}>
-          <CircularProgress size={20} />
-        </Box>
-      ) : null}
-    </Dialog>
+        {isFetching ? (
+          <Box sx={{ position: 'absolute', top: 22, right: 64 }}>
+            <CircularProgress size={20} />
+          </Box>
+        ) : null}
+      </Dialog>
+
+      <Dialog
+        open={isCancelConfirmOpen}
+        onClose={() => {
+          if (!isBusy) {
+            setIsCancelConfirmOpen(false);
+          }
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Cancelar venda?</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            Os itens preenchidos serão descartados. Para apenas sair e continuar
+            depois, clique fora do modal de venda.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            color="inherit"
+            onClick={() => setIsCancelConfirmOpen(false)}
+            disabled={isBusy}
+          >
+            Continuar editando
+          </Button>
+          <Button color="error" onClick={handleClose} disabled={isBusy}>
+            Descartar
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
