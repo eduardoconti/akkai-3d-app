@@ -33,7 +33,6 @@ import {
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
-  Search,
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
@@ -46,12 +45,11 @@ import {
 } from '../utils/format-sale-labels';
 import {
   DateRangePickerField,
+  SearchFilterPanel,
   formatCurrency,
-  getMonthEndInput,
-  getMonthStartInput,
+  getMonthRangeInput,
   useFeedbackStore,
   useOnlineStatus,
-  type Carteira,
   type MeioPagamento,
   type Feira,
   type TipoVenda,
@@ -68,38 +66,7 @@ function formatSaleValue(value: number, hideValues: boolean): string {
 }
 
 function getSalePayments(venda: Venda): Venda['pagamentos'] {
-  if (venda.pagamentos?.length > 0) {
-    return venda.pagamentos;
-  }
-
-  const legacySale = venda as Venda & {
-    meioPagamento?: MeioPagamento;
-    idCarteira?: number;
-    carteira?: Carteira | null;
-    valorTaxa?: number | null;
-    valorImposto?: number | null;
-    percentualTaxa?: number | null;
-    percentualImposto?: number | null;
-  };
-
-  if (!legacySale.meioPagamento) {
-    return [];
-  }
-
-  return [
-    {
-      id: -venda.id,
-      idVenda: venda.id,
-      idCarteira: legacySale.idCarteira ?? legacySale.carteira?.id ?? 0,
-      meioPagamento: legacySale.meioPagamento,
-      valor: venda.valorTotal,
-      percentualTaxa: legacySale.percentualTaxa ?? null,
-      valorTaxa: legacySale.valorTaxa ?? null,
-      percentualImposto: legacySale.percentualImposto ?? null,
-      valorImposto: legacySale.valorImposto ?? null,
-      carteira: legacySale.carteira ?? null,
-    },
-  ];
+  return venda.pagamentos ?? [];
 }
 
 function formatUniqueLabels(labels: string[]): string {
@@ -364,8 +331,7 @@ export default function SalesPage() {
       vendas: saleStoreSelectors.vendas(state),
     })),
   );
-  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
-  const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
@@ -382,12 +348,29 @@ export default function SalesPage() {
   const handleSearch = () => {
     void fetchVendas({
       pagina: 1,
-      dataInicio,
-      dataFim,
+      dataInicio: dateRange.startValue,
+      dataFim: dateRange.endValue,
       tipo: type === 'TODOS' ? undefined : type,
       idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
       idCarteira: idCarteira === '' ? undefined : idCarteira,
       meioPagamento: meioPagamento === '' ? undefined : meioPagamento,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setDateRange({ startValue: '', endValue: '' });
+    setType('TODOS');
+    setIdFeira('');
+    setIdCarteira('');
+    setMeioPagamento('');
+    void fetchVendas({
+      pagina: 1,
+      dataInicio: '',
+      dataFim: '',
+      tipo: undefined,
+      idFeira: undefined,
+      idCarteira: undefined,
+      meioPagamento: undefined,
     });
   };
 
@@ -406,8 +389,8 @@ export default function SalesPage() {
     const timeout = window.setTimeout(() => {
       void fetchVendas({
         pagina: 1,
-        dataInicio,
-        dataFim,
+        dataInicio: dateRange.startValue,
+        dataFim: dateRange.endValue,
         tipo: type === 'TODOS' ? undefined : type,
         idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
         idCarteira: idCarteira === '' ? undefined : idCarteira,
@@ -419,8 +402,8 @@ export default function SalesPage() {
       window.clearTimeout(timeout);
     };
   }, [
-    dataFim,
-    dataInicio,
+    dateRange.endValue,
+    dateRange.startValue,
     fetchVendas,
     idCarteira,
     idFeira,
@@ -519,20 +502,17 @@ export default function SalesPage() {
       </Stack>
 
       <Box>
-        <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+        <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+          <Grid size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 5 : 6 }}>
             <DateRangePickerField
               label="Período"
-              startValue={dataInicio}
-              endValue={dataFim}
-              onValueChange={({ startValue, endValue }) => {
-                setDataInicio(startValue);
-                setDataFim(endValue);
-              }}
+              startValue={dateRange.startValue}
+              endValue={dateRange.endValue}
+              onValueChange={setDateRange}
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
             <TextField
               select
               fullWidth
@@ -546,51 +526,6 @@ export default function SalesPage() {
               <MenuItem value="FEIRA">Feira</MenuItem>
               <MenuItem value="LOJA">Loja</MenuItem>
               <MenuItem value="ONLINE">Online</MenuItem>
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-            <TextField
-              select
-              fullWidth
-              label="Carteira"
-              value={idCarteira}
-              onChange={(event) =>
-                setIdCarteira(
-                  event.target.value === '' ? '' : Number(event.target.value),
-                )
-              }
-              helperText="Opcional"
-            >
-              <MenuItem value="">Todas</MenuItem>
-              {carteiras.map((carteira: Carteira) => (
-                <MenuItem key={carteira.id} value={carteira.id}>
-                  {carteira.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
-            <TextField
-              select
-              fullWidth
-              label="Pagamento"
-              value={meioPagamento}
-              onChange={(event) =>
-                setMeioPagamento(
-                  event.target.value === ''
-                    ? ''
-                    : (event.target.value as MeioPagamento),
-                )
-              }
-              helperText="Opcional"
-            >
-              <MenuItem value="">Todos</MenuItem>
-              <MenuItem value="DIN">Dinheiro</MenuItem>
-              <MenuItem value="DEB">Cartão débito</MenuItem>
-              <MenuItem value="CRE">Cartão crédito</MenuItem>
-              <MenuItem value="PIX">Pix</MenuItem>
             </TextField>
           </Grid>
 
@@ -620,21 +555,51 @@ export default function SalesPage() {
             </Grid>
           ) : null}
 
-          <Grid
-            size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 3 : 6 }}
-            sx={{ display: 'flex', alignItems: 'flex-start' }}
-          >
-            <Button
+          <Grid size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 4 : 5 }}>
+            <TextField
+              select
               fullWidth
-              variant="outlined"
-              startIcon={<Search />}
-              onClick={handleSearch}
-              sx={{ height: 56 }}
+              label="Carteira"
+              value={idCarteira}
+              onChange={(event) =>
+                setIdCarteira(
+                  event.target.value === '' ? '' : Number(event.target.value),
+                )
+              }
+              helperText="Opcional"
             >
-              Pesquisar
-            </Button>
+              <MenuItem value="">Todas</MenuItem>
+              {carteiras.map((carteira) => (
+                <MenuItem key={carteira.id} value={carteira.id}>
+                  {carteira.nome}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
-        </Grid>
+
+          <Grid size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 4 : 5 }}>
+            <TextField
+              select
+              fullWidth
+              label="Pagamento"
+              value={meioPagamento}
+              onChange={(event) =>
+                setMeioPagamento(
+                  event.target.value === ''
+                    ? ''
+                    : (event.target.value as MeioPagamento),
+                )
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Todos</MenuItem>
+              <MenuItem value="DIN">Dinheiro</MenuItem>
+              <MenuItem value="DEB">Cartão débito</MenuItem>
+              <MenuItem value="CRE">Cartão crédito</MenuItem>
+              <MenuItem value="PIX">Pix</MenuItem>
+            </TextField>
+          </Grid>
+        </SearchFilterPanel>
       </Box>
 
       <Grid container spacing={2}>

@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  CircularProgress,
   MenuItem,
   Paper,
   Stack,
@@ -11,7 +9,6 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import {
   getSalesSummary,
   type SalesSummary,
@@ -20,10 +17,10 @@ import { listFairs } from '@/features/sales/api/sales-api';
 import {
   DateRangePickerField,
   FormFeedbackAlert,
+  SearchFilterPanel,
   formatCurrency,
   getProblemDetailsFromError,
-  getMonthEndInput,
-  getMonthStartInput,
+  getMonthRangeInput,
   type Feira,
   type ProblemDetails,
   type TipoVenda,
@@ -42,8 +39,7 @@ function formatApiDateToDisplay(value: string): string {
 }
 
 export default function ReportsSummaryPage() {
-  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
-  const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [feiras, setFeiras] = useState<Feira[]>([]);
@@ -132,7 +128,7 @@ export default function ReportsSummaryPage() {
     setLocalError(null);
     setIsLoading(true);
 
-    if (!dataInicio || !dataFim) {
+    if (!dateRange.startValue || !dateRange.endValue) {
       setLocalError('Selecione as datas inicial e final.');
       setSummary(null);
       setIsLoading(false);
@@ -141,8 +137,8 @@ export default function ReportsSummaryPage() {
 
     try {
       const result = await getSalesSummary({
-        dataInicio,
-        dataFim,
+        dataInicio: dateRange.startValue,
+        dataFim: dateRange.endValue,
         tipoVenda: tipoVenda === 'TODOS' ? undefined : tipoVenda,
         idFeira: tipoVenda === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
       });
@@ -155,6 +151,15 @@ export default function ReportsSummaryPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setDateRange({ startValue: '', endValue: '' });
+    setTipoVenda('TODOS');
+    setIdFeira('');
+    setProblem(null);
+    setLocalError(null);
+    setSummary(null);
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void handleSubmit();
@@ -163,7 +168,7 @@ export default function ReportsSummaryPage() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [dataFim, dataInicio, idFeira, tipoVenda]);
+  }, [dateRange.endValue, dateRange.startValue, idFeira, tipoVenda]);
 
   return (
     <Stack spacing={3}>
@@ -177,20 +182,23 @@ export default function ReportsSummaryPage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 7 : 8 }}>
+      <SearchFilterPanel
+        onSearch={() => {
+          void handleSubmit();
+        }}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      >
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 8 : 10 }}>
           <DateRangePickerField
             label="Período"
-            startValue={dataInicio}
-            endValue={dataFim}
-            onValueChange={({ startValue, endValue }) => {
-              setDataInicio(startValue);
-              setDataFim(endValue);
-            }}
+            startValue={dateRange.startValue}
+            endValue={dateRange.endValue}
+            onValueChange={setDateRange}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 6 }}>
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 6 : 10 }}>
           <TextField
             select
             fullWidth
@@ -208,7 +216,7 @@ export default function ReportsSummaryPage() {
         </Grid>
 
         {tipoVenda === 'FEIRA' ? (
-          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 6 }}>
             <TextField
               select
               fullWidth
@@ -235,25 +243,7 @@ export default function ReportsSummaryPage() {
             </TextField>
           </Grid>
         ) : null}
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 3 : 6 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-            onClick={() => {
-              void handleSubmit();
-            }}
-            disabled={isLoading}
-            sx={{ height: 56 }}
-          >
-            {isLoading ? 'Consultando...' : 'Pesquisar'}
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 

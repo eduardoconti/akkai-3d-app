@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Chip,
   CircularProgress,
   Collapse,
@@ -23,11 +22,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import {
-  KeyboardArrowDown,
-  KeyboardArrowUp,
-  Search,
-} from '@mui/icons-material';
+import { KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import StockMovementForm from '../components/stock-movement-form';
 import { listStockMovements } from '../api/products-api';
@@ -40,6 +35,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   getProblemDetailsFromError,
   type DirecaoOrdenacao,
   type EstoqueProduto,
@@ -569,6 +565,11 @@ export default function ProductsStockPage() {
     void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    void fetchEstoque({ pagina: 1, termo: '' });
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
@@ -586,8 +587,8 @@ export default function ProductsStockPage() {
         description="Consulte o saldo, registre movimentações e acompanhe o histórico por produto."
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -607,7 +608,7 @@ export default function ProductsStockPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -625,7 +626,7 @@ export default function ProductsStockPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 9 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 10 }}>
           <TextField
             fullWidth
             label="Pesquisar estoque"
@@ -634,22 +635,7 @@ export default function ProductsStockPage() {
             onChange={(event) => setSearchInput(event.target.value)}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            sx={{ height: 56 }}
-          >
-            Pesquisar
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

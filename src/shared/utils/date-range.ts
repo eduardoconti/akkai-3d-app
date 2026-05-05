@@ -1,3 +1,8 @@
+export interface DateRangeValue {
+  startValue: string;
+  endValue: string;
+}
+
 export function getMonthStartInput(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -13,4 +18,11 @@ export function getMonthEndInput(): string {
     new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
   ).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function getMonthRangeInput(): DateRangeValue {
+  return {
+    startValue: getMonthStartInput(),
+    endValue: getMonthEndInput(),
+  };
 }

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Divider,
   Paper,
   Stack,
@@ -17,7 +16,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
 import NewCategoryDialog from '../components/new-category-dialog';
@@ -30,6 +28,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   type Categoria,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -80,6 +79,11 @@ export default function ProductCategoriesPage() {
     void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    void fetchCategoriasPaginadas({ pagina: 1, termo: '' });
+  };
+
   useEffect(() => {
     void fetchCategorias();
   }, [fetchCategorias]);
@@ -103,8 +107,8 @@ export default function ProductCategoriesPage() {
         onAction={() => setDialogOpen(true)}
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 17 }}>
+      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+        <Grid size={{ xs: 12, md: 12, lg: 20 }}>
           <TextField
             fullWidth
             label="Pesquisar categoria"
@@ -113,22 +117,7 @@ export default function ProductCategoriesPage() {
             onChange={(event) => setSearchInput(event.target.value)}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            sx={{ height: 56 }}
-          >
-            Pesquisar
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

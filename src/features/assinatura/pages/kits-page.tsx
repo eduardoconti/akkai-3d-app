@@ -32,6 +32,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   useFeedbackStore,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -94,6 +95,27 @@ export default function KitsPage() {
     await fetchKits({ pagina: 1 });
   };
 
+  const handleSearch = () => {
+    void fetchKits({
+      pagina: 1,
+      idPlano: idPlanoFiltro || undefined,
+      mes: mesFiltro || undefined,
+      ano: anoFiltro || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setIdPlanoFiltro('');
+    setMesFiltro('');
+    setAnoFiltro('');
+    void fetchKits({
+      pagina: 1,
+      idPlano: undefined,
+      mes: undefined,
+      ano: undefined,
+    });
+  };
+
   const handleGerarCiclos = async (idKit: number) => {
     const result = await gerarCiclosMensais(idKit);
 
@@ -126,8 +148,12 @@ export default function KitsPage() {
         onAction={() => setNewDialogOpen(true)}
       />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <SearchFilterPanel
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isFetching}
+      >
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 7 }}>
           <TextField
             select
             fullWidth
@@ -148,7 +174,7 @@ export default function KitsPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 6 }}>
           <TextField
             select
             fullWidth
@@ -167,7 +193,7 @@ export default function KitsPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 7 }}>
           <TextField
             select
             fullWidth
@@ -185,7 +211,7 @@ export default function KitsPage() {
             ))}
           </TextField>
         </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

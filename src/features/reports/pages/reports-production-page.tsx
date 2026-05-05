@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   MenuItem,
   Paper,
@@ -20,7 +18,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   getProductionReport,
@@ -30,9 +27,9 @@ import {
 import {
   DateRangePickerField,
   FormFeedbackAlert,
+  SearchFilterPanel,
   formatCurrency,
-  getMonthEndInput,
-  getMonthStartInput,
+  getMonthRangeInput,
   getProblemDetailsFromError,
   type ProblemDetails,
 } from '@/shared';
@@ -46,8 +43,7 @@ function formatQuantity(value: number): string {
 export default function ReportsProductionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
-  const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(10);
   const [ordenarPor, setOrdenarPor] = useState<
@@ -67,7 +63,7 @@ export default function ReportsProductionPage() {
     setLocalError(null);
     setIsLoading(true);
 
-    if (!dataInicio || !dataFim) {
+    if (!dateRange.startValue || !dateRange.endValue) {
       setLocalError('Selecione as datas inicial e final.');
       setResult(null);
       setIsLoading(false);
@@ -76,8 +72,8 @@ export default function ReportsProductionPage() {
 
     try {
       const response = await getProductionReport({
-        dataInicio,
-        dataFim,
+        dataInicio: dateRange.startValue,
+        dataFim: dateRange.endValue,
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
         ordenarPor,
@@ -94,6 +90,15 @@ export default function ReportsProductionPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setDateRange({ startValue: '', endValue: '' });
+    setOrdenarPor('quantidadeProduzida');
+    setDirecao('desc');
+    setProblem(null);
+    setLocalError(null);
+    setResult(null);
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void handleSubmit(1, tamanhoPagina);
@@ -102,7 +107,13 @@ export default function ReportsProductionPage() {
     return () => {
       window.clearTimeout(timeout);
     };
-  }, [dataFim, dataInicio, direcao, ordenarPor, tamanhoPagina]);
+  }, [
+    dateRange.endValue,
+    dateRange.startValue,
+    direcao,
+    ordenarPor,
+    tamanhoPagina,
+  ]);
 
   const renderCard = (item: ProductionReportItem) => (
     <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
@@ -151,7 +162,9 @@ export default function ReportsProductionPage() {
             <Typography variant="caption" color="text.secondary">
               Media de pecas por dia
             </Typography>
-            <Typography>{formatQuantity(item.mediaQuantidadePorDia)}</Typography>
+            <Typography>
+              {formatQuantity(item.mediaQuantidadePorDia)}
+            </Typography>
           </Grid>
 
           <Grid size={{ xs: 6 }}>
@@ -177,20 +190,23 @@ export default function ReportsProductionPage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+      <SearchFilterPanel
+        onSearch={() => {
+          void handleSubmit(1, tamanhoPagina);
+        }}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      >
+        <Grid size={{ xs: 12, md: 6, lg: 8 }}>
           <DateRangePickerField
             label="Período"
-            startValue={dataInicio}
-            endValue={dataFim}
-            onValueChange={({ startValue, endValue }) => {
-              setDataInicio(startValue);
-              setDataFim(endValue);
-            }}
+            startValue={dateRange.startValue}
+            endValue={dateRange.endValue}
+            onValueChange={setDateRange}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <TextField
             select
             fullWidth
@@ -206,14 +222,16 @@ export default function ReportsProductionPage() {
               )
             }
           >
-            <MenuItem value="quantidadeProduzida">Quantidade produzida</MenuItem>
+            <MenuItem value="quantidadeProduzida">
+              Quantidade produzida
+            </MenuItem>
             <MenuItem value="valorEstimado">Valor estimado</MenuItem>
             <MenuItem value="codigo">Codigo</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <TextField
             select
             fullWidth
@@ -227,32 +245,17 @@ export default function ReportsProductionPage() {
             <MenuItem value="asc">Crescente</MenuItem>
           </TextField>
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 5 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-            onClick={() => {
-              void handleSubmit(1, tamanhoPagina);
-            }}
-            disabled={isLoading}
-            sx={{ height: 56 }}
-          >
-            {isLoading ? 'Consultando...' : 'Pesquisar'}
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 
       {result ? (
         <Stack spacing={2}>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip label={`Periodo: ${result.diasNoPeriodo} dia(s)`} size="small" />
+            <Chip
+              label={`Periodo: ${result.diasNoPeriodo} dia(s)`}
+              size="small"
+            />
             <Chip
               label={`Pecas produzidas: ${formatQuantity(result.totalQuantidadeProduzida)}`}
               size="small"
@@ -337,7 +340,8 @@ export default function ReportsProductionPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                          Nenhuma produção foi encontrada no período selecionado.
+                          Nenhuma produção foi encontrada no período
+                          selecionado.
                         </TableCell>
                       </TableRow>
                     )}

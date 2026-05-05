@@ -220,25 +220,11 @@ function getResetFormState(config: PersistedSaleConfig): SaleFormState {
 }
 
 function mapSaleToForm(sale: Venda): SaleFormState {
-  const legacySale = sale as Venda & {
-    meioPagamento?: MeioPagamento;
-    idCarteira?: number;
-    carteira?: { id: number } | null;
-  };
-  const pagamentos: SaleFormPayment[] =
-    sale.pagamentos?.length > 0
-      ? sale.pagamentos.map((pagamento) => ({
-          idCarteira: pagamento.idCarteira,
-          meioPagamento: pagamento.meioPagamento,
-          valor: pagamento.valor / 100,
-        }))
-      : [
-          {
-            idCarteira: legacySale.idCarteira ?? legacySale.carteira?.id ?? '',
-            meioPagamento: legacySale.meioPagamento ?? 'CRE',
-            valor: sale.valorTotal / 100,
-          },
-        ];
+  const pagamentos: SaleFormPayment[] = sale.pagamentos.map((pagamento) => ({
+    idCarteira: pagamento.idCarteira,
+    meioPagamento: pagamento.meioPagamento,
+    valor: pagamento.valor / 100,
+  }));
 
   return {
     tipo: sale.tipo,

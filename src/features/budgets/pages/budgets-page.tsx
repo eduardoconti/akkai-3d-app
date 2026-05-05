@@ -20,6 +20,7 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import {
@@ -35,6 +36,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
 } from '@/shared';
 import type {
   Orcamento,
@@ -70,6 +72,10 @@ const TIPO_LABEL: Record<TipoVenda, string> = {
   LOJA: 'Loja',
   ONLINE: 'Online',
 };
+
+const STATUS_PADRAO_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
+  (status) => status !== 'FINALIZADO',
+);
 
 interface StatusChipProps {
   orcamento: Orcamento;
@@ -146,9 +152,7 @@ export default function BudgetsPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
-  const statusSelecionados =
-    paginacao.status ??
-    ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO');
+  const statusSelecionados = paginacao.status ?? STATUS_PADRAO_ORCAMENTO;
 
   useEffect(() => {
     void fetchOrcamentos();
@@ -177,6 +181,20 @@ export default function BudgetsPage() {
     setSelectedBudget(null);
   };
 
+  const handleClearFilters = () => {
+    void fetchOrcamentos({
+      pagina: 1,
+      status: STATUS_PADRAO_ORCAMENTO,
+    });
+  };
+
+  const handleSearch = () => {
+    void fetchOrcamentos({
+      pagina: 1,
+      status: statusSelecionados,
+    });
+  };
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -190,26 +208,35 @@ export default function BudgetsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Autocomplete
-        multiple
-        options={ALL_STATUSES_ORCAMENTO}
-        value={statusSelecionados}
-        onChange={(_event, value) => {
-          void fetchOrcamentos({
-            pagina: 1,
-            status: value,
-          });
-        }}
-        getOptionLabel={(option) => STATUS_ORCAMENTO_LABEL[option]}
-        disableCloseOnSelect
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Status"
-            placeholder="Selecione um ou mais status"
+      <SearchFilterPanel
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isFetching}
+      >
+        <Grid size={{ xs: 12, md: 12, lg: 20 }}>
+          <Autocomplete
+            multiple
+            fullWidth
+            options={ALL_STATUSES_ORCAMENTO}
+            value={statusSelecionados}
+            onChange={(_event, value) => {
+              void fetchOrcamentos({
+                pagina: 1,
+                status: value,
+              });
+            }}
+            getOptionLabel={(option) => STATUS_ORCAMENTO_LABEL[option]}
+            disableCloseOnSelect
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Status"
+                placeholder="Selecione um ou mais status"
+              />
+            )}
           />
-        )}
-      />
+        </Grid>
+      </SearchFilterPanel>
 
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (

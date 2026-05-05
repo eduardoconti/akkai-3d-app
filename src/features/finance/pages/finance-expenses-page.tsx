@@ -3,7 +3,6 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
   Divider,
   MenuItem,
   Paper,
@@ -19,7 +18,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import {
@@ -36,9 +34,9 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   formatCurrency,
-  getMonthEndInput,
-  getMonthStartInput,
+  getMonthRangeInput,
   type Despesa,
 } from '@/shared';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
@@ -84,8 +82,7 @@ export default function FinanceExpensesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchInput, setSearchInput] = useState('');
-  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
-  const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
@@ -96,11 +93,28 @@ export default function FinanceExpensesPage() {
     void fetchDespesas({
       pagina: 1,
       termo: searchInput.trim(),
-      dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
-      dataFim: convertDateToApiDateFormat(dataFim) ?? '',
+      dataInicio: convertDateToApiDateFormat(dateRange.startValue) ?? '',
+      dataFim: convertDateToApiDateFormat(dateRange.endValue) ?? '',
       idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
       idCarteira: idCarteira === '' ? undefined : idCarteira,
       idFeira: idFeira === '' ? undefined : idFeira,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setDateRange({ startValue: '', endValue: '' });
+    setSearchInput('');
+    setCategoriasSelecionadas([]);
+    setIdCarteira('');
+    setIdFeira('');
+    void fetchDespesas({
+      pagina: 1,
+      termo: '',
+      dataInicio: '',
+      dataFim: '',
+      idsCategorias: [],
+      idCarteira: undefined,
+      idFeira: undefined,
     });
   };
 
@@ -120,8 +134,8 @@ export default function FinanceExpensesPage() {
       void fetchDespesas({
         pagina: 1,
         termo: searchInput.trim(),
-        dataInicio: convertDateToApiDateFormat(dataInicio) ?? '',
-        dataFim: convertDateToApiDateFormat(dataFim) ?? '',
+        dataInicio: convertDateToApiDateFormat(dateRange.startValue) ?? '',
+        dataFim: convertDateToApiDateFormat(dateRange.endValue) ?? '',
         idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
         idCarteira: idCarteira === '' ? undefined : idCarteira,
         idFeira: idFeira === '' ? undefined : idFeira,
@@ -131,8 +145,8 @@ export default function FinanceExpensesPage() {
     return () => window.clearTimeout(timeout);
   }, [
     categoriasSelecionadas,
-    dataFim,
-    dataInicio,
+    dateRange.endValue,
+    dateRange.startValue,
     fetchDespesas,
     idCarteira,
     idFeira,
@@ -149,16 +163,13 @@ export default function FinanceExpensesPage() {
         breakpoint="lg"
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 24 }}>
+      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
         <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <DateRangePickerField
             label="Período"
-            startValue={dataInicio}
-            endValue={dataFim}
-            onValueChange={({ startValue, endValue }) => {
-              setDataInicio(startValue);
-              setDataFim(endValue);
-            }}
+            startValue={dateRange.startValue}
+            endValue={dateRange.endValue}
+            onValueChange={setDateRange}
           />
         </Grid>
 
@@ -224,7 +235,7 @@ export default function FinanceExpensesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <TextField
             fullWidth
             label="Pesquisar despesa"
@@ -233,22 +244,7 @@ export default function FinanceExpensesPage() {
             onChange={(event) => setSearchInput(event.target.value)}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            sx={{ height: 56 }}
-          >
-            Pesquisar
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Typography variant="body2" color="text.secondary">

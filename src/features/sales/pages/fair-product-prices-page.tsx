@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
   Divider,
   MenuItem,
   Paper,
@@ -18,7 +17,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
 import {
@@ -30,6 +28,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   formatCurrency,
   getProblemDetailsFromError,
   type DirecaoOrdenacao,
@@ -147,6 +146,16 @@ export default function FairProductPricesPage() {
     }));
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setPagination((current) => ({
+      ...current,
+      pagina: 1,
+      termo: '',
+      idFeira: undefined,
+    }));
+  };
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -154,8 +163,12 @@ export default function FairProductPricesPage() {
         description="Consulte os preços específicos cadastrados por feira e produto."
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+      <SearchFilterPanel
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      >
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -181,7 +194,7 @@ export default function FairProductPricesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -202,7 +215,7 @@ export default function FairProductPricesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -230,22 +243,7 @@ export default function FairProductPricesPage() {
             onChange={(event) => setSearchInput(event.target.value)}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            sx={{ height: 56 }}
-          >
-            Pesquisar
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 

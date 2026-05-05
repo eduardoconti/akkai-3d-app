@@ -3,7 +3,6 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
   Divider,
   MenuItem,
   Paper,
@@ -19,7 +18,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
@@ -32,6 +30,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   formatCurrency,
   type Categoria,
   type DirecaoOrdenacao,
@@ -78,6 +77,16 @@ export default function ProductsPage() {
     });
   };
 
+  const handleClearFilters = () => {
+    setSearchInput('');
+    setCategoriasSelecionadas([]);
+    void fetchProdutos({
+      pagina: 1,
+      termo: '',
+      idsCategorias: [],
+    });
+  };
+
   useEffect(() => {
     void fetchCategorias();
   }, [fetchCategorias]);
@@ -105,8 +114,8 @@ export default function ProductsPage() {
         onAction={() => setDialogOpen(true)}
       />
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -125,7 +134,7 @@ export default function ProductsPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -143,7 +152,7 @@ export default function ProductsPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <Autocomplete
             multiple
             options={categorias}
@@ -170,22 +179,7 @@ export default function ProductsPage() {
             onChange={(event) => setSearchInput(event.target.value)}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<Search />}
-            onClick={handleSearch}
-            sx={{ height: 56 }}
-          >
-            Pesquisar
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

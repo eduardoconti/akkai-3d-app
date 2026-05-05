@@ -33,6 +33,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   type StatusAssinante,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -90,6 +91,27 @@ export default function AssinantesPage() {
     await fetchAssinantes({ pagina: 1 });
   };
 
+  const handleSearch = () => {
+    void fetchAssinantes({
+      pagina: 1,
+      termo: termo.trim(),
+      status: statusFiltro || undefined,
+      idPlano: idPlanoFiltro || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setTermo('');
+    setStatusFiltro('');
+    setIdPlanoFiltro('');
+    void fetchAssinantes({
+      pagina: 1,
+      termo: '',
+      status: undefined,
+      idPlano: undefined,
+    });
+  };
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -99,8 +121,12 @@ export default function AssinantesPage() {
         onAction={() => setNewDialogOpen(true)}
       />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 4 }}>
+      <SearchFilterPanel
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isFetching}
+      >
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 7 }}>
           <TextField
             fullWidth
             label="Pesquisar"
@@ -110,7 +136,7 @@ export default function AssinantesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 6 }}>
           <TextField
             select
             fullWidth
@@ -131,7 +157,7 @@ export default function AssinantesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 4, lg: 7 }}>
           <TextField
             select
             fullWidth
@@ -151,7 +177,7 @@ export default function AssinantesPage() {
             ))}
           </TextField>
         </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

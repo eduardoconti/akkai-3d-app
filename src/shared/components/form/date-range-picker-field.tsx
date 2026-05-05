@@ -1,6 +1,10 @@
 import { useId, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
+import type { PickersCalendarHeaderProps } from '@mui/x-date-pickers/PickersCalendarHeader';
+import { PickersDay } from '@mui/x-date-pickers/PickersDay';
+import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import {
   Box,
   Button,
@@ -8,6 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  IconButton,
   Popover,
   Stack,
   TextField,
@@ -15,16 +20,20 @@ import {
   useMediaQuery,
   type TextFieldProps,
 } from '@mui/material';
-import Grid from '@mui/material/Grid';
-import { CalendarMonth } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import {
+  CalendarMonth,
+  KeyboardArrowLeft,
+  KeyboardArrowRight,
+} from '@mui/icons-material';
+import { alpha, useTheme } from '@mui/material/styles';
+import type { DateRangeValue } from '@/shared/utils/date-range';
 
 interface DateRangePickerFieldProps {
   id?: string;
   label: string;
   startValue: string;
   endValue: string;
-  onValueChange: (value: { startValue: string; endValue: string }) => void;
+  onValueChange: (value: DateRangeValue) => void;
   slotProps?: {
     textField?: TextFieldProps;
   };
@@ -57,6 +66,48 @@ function getMonthRange() {
   };
 }
 
+const weekDayLabels = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+function RangeCalendarHeader({
+  currentMonth,
+  disabled,
+  onMonthChange,
+}: PickersCalendarHeaderProps) {
+  const currentMonthValue = dayjs(currentMonth).locale('pt-br');
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      sx={{ px: 2, pt: 1.5, pb: 1 }}
+    >
+      <Typography variant="subtitle1" fontWeight={500}>
+        {currentMonthValue.format('MMMM YYYY')}
+      </Typography>
+
+      <Stack direction="row" spacing={0.5}>
+        <IconButton
+          size="small"
+          disabled={disabled}
+          onClick={() => onMonthChange(currentMonthValue.subtract(1, 'month'))}
+          aria-label="Mês anterior"
+        >
+          <KeyboardArrowLeft />
+        </IconButton>
+        <IconButton
+          size="small"
+          disabled={disabled}
+          onClick={() => onMonthChange(currentMonthValue.add(1, 'month'))}
+          aria-label="Próximo mês"
+        >
+          <KeyboardArrowRight />
+        </IconButton>
+      </Stack>
+    </Stack>
+  );
+}
+
 export default function DateRangePickerField({
   id,
   label,
@@ -69,6 +120,7 @@ export default function DateRangePickerField({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [selectionStep, setSelectionStep] = useState<'start' | 'end'>('start');
 
   const formattedValue = useMemo(() => {
     if (!startValue && !endValue) {
@@ -90,55 +142,128 @@ export default function DateRangePickerField({
     setAnchorEl(null);
   };
 
-  const handleStartChange = (value: string) => {
+  const handleCalendarChange = (value: string) => {
     if (!value) {
       return;
     }
 
-    if (!endValue || dayjs(value).isAfter(dayjs(endValue), 'day')) {
+    if (selectionStep === 'start' || !startValue) {
       onValueChange({
         startValue: value,
         endValue: value,
       });
+      setSelectionStep('end');
       return;
     }
 
-    onValueChange({
-      startValue: value,
-      endValue,
-    });
-  };
-
-  const handleEndChange = (value: string) => {
-    if (!value) {
-      return;
-    }
-
-    if (!startValue || dayjs(value).isBefore(dayjs(startValue), 'day')) {
+    if (dayjs(value).isBefore(dayjs(startValue), 'day')) {
       onValueChange({
         startValue: value,
+        endValue: startValue,
+      });
+    } else {
+      onValueChange({
+        startValue,
         endValue: value,
       });
-      return;
     }
 
-    onValueChange({
-      startValue,
-      endValue: value,
-    });
+    setSelectionStep('start');
   };
 
-  const handleQuickSelect = (range: {
-    startValue: string;
-    endValue: string;
-  }) => {
+  const handleQuickSelect = (range: DateRangeValue) => {
     onValueChange(range);
+    setSelectionStep('start');
+  };
+
+  const handleClear = () => {
+    onValueChange({
+      startValue: '',
+      endValue: '',
+    });
+    setSelectionStep('start');
+  };
+
+  const selectedCalendarValue = useMemo(() => {
+    if (selectionStep === 'end' && endValue) {
+      return dayjs(endValue);
+    }
+
+    return startValue ? dayjs(startValue) : dayjs();
+  }, [endValue, selectionStep, startValue]);
+
+  const RangeDay = (props: PickersDayProps) => {
+    const { day, outsideCurrentMonth, ...other } = props;
+    const currentDay = dayjs(day);
+    const startDay = startValue ? dayjs(startValue) : null;
+    const endDay = endValue ? dayjs(endValue) : null;
+    const isStart = Boolean(startDay) && currentDay.isSame(startDay, 'day');
+    const isEnd = Boolean(endDay) && currentDay.isSame(endDay, 'day');
+    const isBetween =
+      Boolean(startDay) &&
+      Boolean(endDay) &&
+      currentDay.isAfter(startDay, 'day') &&
+      currentDay.isBefore(endDay, 'day');
+    const isHighlighted =
+      !outsideCurrentMonth && (isStart || isEnd || isBetween);
+    const isSingleDayRange = isStart && isEnd;
+    const hasRangeFill = isHighlighted && !isSingleDayRange;
+
+    return (
+      <Box
+        sx={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 40,
+          height: 36,
+          mx: 0,
+          ...(hasRangeFill
+            ? {
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '50%',
+                  left: isStart ? '50%' : 0,
+                  right: isEnd ? '50%' : 0,
+                  height: 30,
+                  transform: 'translateY(-50%)',
+                  bgcolor: alpha(theme.palette.primary.main, 0.18),
+                },
+              }
+            : {}),
+        }}
+      >
+        <PickersDay
+          {...other}
+          day={day}
+          outsideCurrentMonth={outsideCurrentMonth}
+          disableMargin
+          selected={!outsideCurrentMonth && (isStart || isEnd)}
+          sx={{
+            position: 'relative',
+            zIndex: 1,
+            borderRadius: '50%',
+            ...(isBetween
+              ? {
+                  bgcolor: 'transparent',
+                  color: 'text.primary',
+                  '&:hover, &:focus': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.28),
+                  },
+                }
+              : {}),
+          }}
+        />
+      </Box>
+    );
   };
 
   const content = (
     <Stack
-      spacing={2.5}
-      sx={{ p: isMobile ? 0 : 2, width: { xs: '100%', md: 760 } }}
+      spacing={2}
+      sx={{ p: isMobile ? 0 : 2, width: { xs: '100%', sm: 360 } }}
     >
       <Stack spacing={1}>
         <Typography variant="subtitle2" fontWeight={700}>
@@ -171,57 +296,73 @@ export default function DateRangePickerField({
 
       <Divider />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Stack spacing={1}>
-            <Typography variant="subtitle2" fontWeight={700}>
-              Data inicial
-            </Typography>
-            <Box
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                display: 'flex',
-                justifyContent: 'center',
-                py: 1,
-              }}
-            >
-              <DateCalendar
-                value={startValue ? dayjs(startValue) : dayjs()}
-                onChange={(nextValue) => {
-                  handleStartChange(nextValue?.format('YYYY-MM-DD') ?? '');
-                }}
-              />
-            </Box>
-          </Stack>
-        </Grid>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="center"
+        spacing={2}
+        sx={{ minHeight: 54 }}
+      >
+        <Box sx={{ minWidth: 0, textAlign: 'center' }}>
+          <Typography
+            variant="caption"
+            color={
+              selectionStep === 'start' ? 'primary.main' : 'text.secondary'
+            }
+          >
+            Início
+          </Typography>
+          <Typography variant="subtitle1" fontWeight={600} noWrap>
+            {formatDate(startValue) || 'DD/MM/AAAA'}
+          </Typography>
+        </Box>
 
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Stack spacing={1}>
-            <Typography variant="subtitle2" fontWeight={700}>
-              Data final
-            </Typography>
-            <Box
-              sx={{
-                border: 1,
-                borderColor: 'divider',
-                borderRadius: 2,
-                display: 'flex',
-                justifyContent: 'center',
-                py: 1,
-              }}
-            >
-              <DateCalendar
-                value={endValue ? dayjs(endValue) : dayjs()}
-                onChange={(nextValue) => {
-                  handleEndChange(nextValue?.format('YYYY-MM-DD') ?? '');
-                }}
-              />
-            </Box>
-          </Stack>
-        </Grid>
-      </Grid>
+        <Typography variant="h6" color="text.secondary" sx={{ pb: 0.25 }}>
+          –
+        </Typography>
+
+        <Box sx={{ minWidth: 0, textAlign: 'center' }}>
+          <Typography
+            variant="caption"
+            color={selectionStep === 'end' ? 'primary.main' : 'text.secondary'}
+          >
+            Fim
+          </Typography>
+          <Typography variant="subtitle1" fontWeight={600} noWrap>
+            {formatDate(endValue) || 'DD/MM/AAAA'}
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        <DateCalendar
+          value={selectedCalendarValue}
+          dayOfWeekFormatter={(date) => weekDayLabels[dayjs(date).day()]}
+          onChange={(nextValue) => {
+            handleCalendarChange(nextValue?.format('YYYY-MM-DD') ?? '');
+          }}
+          slots={{
+            calendarHeader: RangeCalendarHeader,
+            day: RangeDay,
+          }}
+          sx={{
+            width: 320,
+            maxHeight: 'none',
+            '& .MuiDayCalendar-weekDayLabel': {
+              mx: 0,
+              width: 40,
+            },
+            '& .MuiDayCalendar-slideTransition': {
+              minHeight: 230,
+            },
+          }}
+        />
+      </Box>
 
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -233,9 +374,14 @@ export default function DateRangePickerField({
           {formattedValue || 'Selecione o período'}
         </Typography>
 
-        <Button variant="contained" onClick={handleClose}>
-          Concluir
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button variant="text" onClick={handleClear}>
+            Limpar
+          </Button>
+          <Button variant="contained" onClick={handleClose}>
+            Concluir
+          </Button>
+        </Stack>
       </Stack>
     </Stack>
   );
