@@ -3,9 +3,7 @@ import {
   Alert,
   Autocomplete,
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   MenuItem,
   Paper,
@@ -22,7 +20,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   getBestSellingProducts,
@@ -34,9 +31,9 @@ import { listFairs } from '@/features/sales/api/sales-api';
 import {
   DateRangePickerField,
   FormFeedbackAlert,
+  SearchFilterPanel,
   getProblemDetailsFromError,
-  getMonthEndInput,
-  getMonthStartInput,
+  getMonthRangeInput,
   type Categoria,
   type Feira,
   type ProblemDetails,
@@ -58,8 +55,7 @@ function formatApiDateToDisplay(value: string): string {
 export default function ReportsBestSellingProductsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [dataInicio, setDataInicio] = useState(getMonthStartInput);
-  const [dataFim, setDataFim] = useState(getMonthEndInput);
+  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -178,7 +174,7 @@ export default function ReportsBestSellingProductsPage() {
     setLocalError(null);
     setIsLoading(true);
 
-    if (!dataInicio || !dataFim) {
+    if (!dateRange.startValue || !dateRange.endValue) {
       setLocalError('Selecione as datas inicial e final.');
       setResult(null);
       setIsLoading(false);
@@ -187,8 +183,8 @@ export default function ReportsBestSellingProductsPage() {
 
     try {
       const response = await getBestSellingProducts({
-        dataInicio,
-        dataFim,
+        dataInicio: dateRange.startValue,
+        dataFim: dateRange.endValue,
         tipoVenda: tipoVenda === 'TODOS' ? undefined : tipoVenda,
         idFeira: tipoVenda === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
         idsCategorias:
@@ -209,6 +205,16 @@ export default function ReportsBestSellingProductsPage() {
     }
   };
 
+  const handleClearFilters = () => {
+    setDateRange({ startValue: '', endValue: '' });
+    setTipoVenda('TODOS');
+    setIdFeira('');
+    setCategoriasSelecionadas([]);
+    setProblem(null);
+    setLocalError(null);
+    setResult(null);
+  };
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       void handleSubmit(1, tamanhoPagina);
@@ -219,8 +225,8 @@ export default function ReportsBestSellingProductsPage() {
     };
   }, [
     categoriasSelecionadas,
-    dataFim,
-    dataInicio,
+    dateRange.endValue,
+    dateRange.startValue,
     idFeira,
     tamanhoPagina,
     tipoVenda,
@@ -267,20 +273,23 @@ export default function ReportsBestSellingProductsPage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+      <SearchFilterPanel
+        onSearch={() => {
+          void handleSubmit(1, tamanhoPagina);
+        }}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      >
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <DateRangePickerField
             label="Período"
-            startValue={dataInicio}
-            endValue={dataFim}
-            onValueChange={({ startValue, endValue }) => {
-              setDataInicio(startValue);
-              setDataFim(endValue);
-            }}
+            startValue={dateRange.startValue}
+            endValue={dateRange.endValue}
+            onValueChange={setDateRange}
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -298,7 +307,7 @@ export default function ReportsBestSellingProductsPage() {
         </Grid>
 
         {tipoVenda === 'FEIRA' ? (
-          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
             <TextField
               select
               fullWidth
@@ -326,7 +335,7 @@ export default function ReportsBestSellingProductsPage() {
           </Grid>
         ) : null}
 
-        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 6 : 9 }}>
+        <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 10 }}>
           <Autocomplete
             multiple
             options={categorias}
@@ -344,25 +353,7 @@ export default function ReportsBestSellingProductsPage() {
             )}
           />
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 3 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-            onClick={() => {
-              void handleSubmit(1, tamanhoPagina);
-            }}
-            disabled={isLoading}
-            sx={{ height: 56 }}
-          >
-            {isLoading ? 'Consultando...' : 'Pesquisar'}
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       <FormFeedbackAlert message={localError ?? problem?.detail} />
 

@@ -34,6 +34,7 @@ import {
   EmptyState,
   LoadingState,
   PageHeader,
+  SearchFilterPanel,
   type StatusCiclo,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -91,6 +92,30 @@ export default function CiclosPage() {
     await fetchCiclos({ pagina: 1 });
   };
 
+  const handleSearch = () => {
+    void fetchCiclos({
+      pagina: 1,
+      status: statusFiltro || undefined,
+      idAssinante: idAssinanteFiltro || undefined,
+      mes: mesFiltro || undefined,
+      ano: anoFiltro || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setStatusFiltro('');
+    setIdAssinanteFiltro('');
+    setMesFiltro('');
+    setAnoFiltro('');
+    void fetchCiclos({
+      pagina: 1,
+      status: undefined,
+      idAssinante: undefined,
+      mes: undefined,
+      ano: undefined,
+    });
+  };
+
   const currentYear = new Date().getFullYear();
   const ANOS = Array.from({ length: 6 }, (_, i) => currentYear - 2 + i);
 
@@ -103,8 +128,12 @@ export default function CiclosPage() {
         onAction={() => setNewDialogOpen(true)}
       />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <SearchFilterPanel
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+        isLoading={isFetching}
+      >
+        <Grid size={{ xs: 12, sm: 6, md: 3, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -125,7 +154,7 @@ export default function CiclosPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -144,7 +173,7 @@ export default function CiclosPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -163,7 +192,7 @@ export default function CiclosPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 3, lg: 5 }}>
           <TextField
             select
             fullWidth
@@ -181,7 +210,7 @@ export default function CiclosPage() {
             ))}
           </TextField>
         </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

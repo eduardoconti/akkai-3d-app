@@ -2,9 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   MenuItem,
   Box,
-  Button,
   Chip,
-  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -20,7 +18,6 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { Search } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   getStockValueReport,
@@ -29,6 +26,7 @@ import {
 } from '@/features/reports/api/reports-api';
 import {
   FormFeedbackAlert,
+  SearchFilterPanel,
   formatCurrency,
   getProblemDetailsFromError,
   type ProblemDetails,
@@ -74,6 +72,12 @@ export default function ReportsStockValuePage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleClearFilters = () => {
+    setOrdenarPor('codigo');
+    setDirecao('asc');
+    setProblem(null);
   };
 
   useEffect(() => {
@@ -142,8 +146,14 @@ export default function ReportsStockValuePage() {
         </Typography>
       </Box>
 
-      <Grid container spacing={2} columns={{ xs: 12, md: 12, lg: 20 }}>
-        <Grid size={{ xs: 12, md: 6, lg: 7 }}>
+      <SearchFilterPanel
+        onSearch={() => {
+          void handleSubmit(1, tamanhoPagina);
+        }}
+        onClear={handleClearFilters}
+        isLoading={isLoading}
+      >
+        <Grid size={{ xs: 12, md: 6, lg: 10 }}>
           <TextField
             select
             fullWidth
@@ -168,7 +178,7 @@ export default function ReportsStockValuePage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 7 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 10 }}>
           <TextField
             select
             fullWidth
@@ -182,25 +192,7 @@ export default function ReportsStockValuePage() {
             <MenuItem value="desc">Decrescente</MenuItem>
           </TextField>
         </Grid>
-
-        <Grid
-          size={{ xs: 12, md: 6, lg: 6 }}
-          sx={{ display: 'flex', alignItems: 'flex-start' }}
-        >
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={isLoading ? <CircularProgress size={18} /> : <Search />}
-            onClick={() => {
-              void handleSubmit(1, tamanhoPagina);
-            }}
-            disabled={isLoading}
-            sx={{ height: 56 }}
-          >
-            {isLoading ? 'Consultando...' : 'Pesquisar'}
-          </Button>
-        </Grid>
-      </Grid>
+      </SearchFilterPanel>
 
       <FormFeedbackAlert message={problem?.detail} />
 

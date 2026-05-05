@@ -3,6 +3,7 @@ export { default as EmptyState } from './components/feedback/empty-state';
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
 export { default as LoadingState } from './components/feedback/loading-state';
 export { default as PageHeader } from './components/page-header';
+export { default as SearchFilterPanel } from './components/search-filter-panel';
 export { default as DatePickerField } from './components/form/date-picker-field';
 export { default as DateRangePickerField } from './components/form/date-range-picker-field';
 export { default as CurrencyField } from './components/form/currency-field';
@@ -86,5 +87,10 @@ export type {
 } from './lib/types/problem-details';
 export { getFieldMessage, getFieldMessages } from './lib/utils/problem';
 export { formatCurrency } from './utils/format-currency';
-export { getMonthStartInput, getMonthEndInput } from './utils/date-range';
+export {
+  getMonthStartInput,
+  getMonthEndInput,
+  getMonthRangeInput,
+  type DateRangeValue,
+} from './utils/date-range';
 export { useFormDialog } from './hooks/use-form-dialog';

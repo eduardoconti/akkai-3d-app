@@ -28,11 +28,18 @@ export default function DatePickerField({
       {...props}
       label={label}
       format="DD/MM/YYYY"
+      localeText={{
+        clearButtonLabel: 'Limpar',
+      }}
       value={value ? dayjs(value) : null}
       onChange={(nextValue) => {
         onValueChange(nextValue?.format('YYYY-MM-DD') ?? '');
       }}
       slotProps={{
+        field: {
+          clearable: Boolean(value),
+          onClear: () => onValueChange(''),
+        },
         textField: {
           id: id ?? generatedId,
           fullWidth: true,
