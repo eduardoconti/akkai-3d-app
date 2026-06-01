@@ -8,6 +8,8 @@ export function getSaleTypeLabel(type: TipoVenda | 'TODOS'): string {
       return 'Loja';
     case 'ONLINE':
       return 'Online';
+    case 'CONSIGNACAO':
+      return 'Consignação';
     default:
       return 'Todos';
   }

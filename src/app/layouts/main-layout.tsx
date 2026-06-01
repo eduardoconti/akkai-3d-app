@@ -33,6 +33,7 @@ import {
   Add,
   AddShoppingCart,
   Assessment,
+  AssignmentTurnedIn,
   Balance,
   DarkMode,
   ExpandLess,
@@ -148,6 +149,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
   const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
   const [salesMenuOpen, setSalesMenuOpen] = useState(true);
+  const [consignacaoMenuOpen, setConsignacaoMenuOpen] = useState(true);
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
@@ -167,6 +169,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
   const salesSectionActive = useMemo(
     () => location.pathname.startsWith('/vendas'),
+    [location.pathname],
+  );
+  const consignacaoSectionActive = useMemo(
+    () => location.pathname.startsWith('/consignacao'),
     [location.pathname],
   );
   const reportsSectionActive = useMemo(
@@ -192,6 +198,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
     if (location.pathname.startsWith('/vendas')) {
       return 'Vendas';
+    }
+
+    if (location.pathname.startsWith('/consignacao')) {
+      return 'Consignação';
     }
 
     if (location.pathname.startsWith('/produtos')) {
@@ -903,6 +913,60 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 })}
               >
                 <ListItemText primary="Produção" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Collapse>
+
+        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+          <ListItemButton
+            onClick={() => setConsignacaoMenuOpen((current) => !current)}
+            sx={(theme: Theme) => ({
+              ...MENU_ITEM_COMPACT_SX,
+              borderRadius: 2,
+              ...(consignacaoSectionActive ? getActiveMenuStyles(theme) : {}),
+            })}
+          >
+            <ListItemIcon sx={MENU_ITEM_ICON_SX}>
+              <AssignmentTurnedIn />
+            </ListItemIcon>
+            <ListItemText
+              primary="Consignação"
+              primaryTypographyProps={{ noWrap: true }}
+            />
+            {consignacaoMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={consignacaoMenuOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/consignacao"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Consignações" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/consignacao/revendedores"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Revendedores" />
               </ListItemButton>
             </ListItem>
           </List>

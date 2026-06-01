@@ -212,6 +212,7 @@ export default function ReportsSummaryPage() {
             <MenuItem value="FEIRA">Feira</MenuItem>
             <MenuItem value="LOJA">Loja</MenuItem>
             <MenuItem value="ONLINE">Online</MenuItem>
+            <MenuItem value="CONSIGNACAO">Consignação</MenuItem>
           </TextField>
         </Grid>
 

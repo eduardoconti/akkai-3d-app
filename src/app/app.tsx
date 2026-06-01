@@ -58,6 +58,12 @@ const CiclosPage = lazy(
   () => import('@/features/assinatura/pages/ciclos-page'),
 );
 const KitsPage = lazy(() => import('@/features/assinatura/pages/kits-page'));
+const ConsignacoesPage = lazy(
+  () => import('@/features/consignacao/pages/consignacoes-page'),
+);
+const RevendedoresPage = lazy(
+  () => import('@/features/consignacao/pages/revendedores-page'),
+);
 
 function RouteFallback() {
   return (
@@ -137,6 +143,11 @@ function App() {
             />
             <Route path="/vendas/feiras" element={<FairsPage />} />
             <Route path="/vendas" element={<SalesPage />} />
+            <Route path="/consignacao" element={<ConsignacoesPage />} />
+            <Route
+              path="/consignacao/revendedores"
+              element={<RevendedoresPage />}
+            />
             <Route path="/assinatura/planos" element={<PlanosPage />} />
             <Route path="/assinatura/assinantes" element={<AssinantesPage />} />
             <Route path="/assinatura/ciclos" element={<CiclosPage />} />

@@ -48,7 +48,8 @@ export type TipoMovimentacaoEstoque = 'E' | 'S';
 export type OrigemMovimentacaoEstoque =
   | OrigemEntradaEstoque
   | OrigemSaidaEstoque
-  | 'VENDA';
+  | 'VENDA'
+  | 'CONSIGNACAO';
 
 export interface MovimentacaoEstoque {
   id: number;
@@ -91,7 +92,7 @@ export interface PrecoProdutoFeiraInput {
 }
 
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
-export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE';
+export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE' | 'CONSIGNACAO';
 export type StatusOrcamento =
   | 'PENDENTE'
   | 'AGUARDANDO_APROVACAO'
@@ -324,6 +325,99 @@ export interface AtualizarOrcamentoInput {
   idFeira?: number;
   valor?: number;
   quantidade?: number;
+}
+
+// ── Consignação ──────────────────────────────────────────────────────────────
+
+export type StatusRevendedor = 'ATIVO' | 'INATIVO';
+export type StatusConsignacao = 'ABERTA' | 'FECHADA' | 'CANCELADA';
+
+export interface Revendedor {
+  id: number;
+  nome: string;
+  telefone: string;
+  status: StatusRevendedor;
+  dataInclusao: string;
+}
+
+export interface RevendedorInput {
+  nome: string;
+  telefone: string;
+  status?: StatusRevendedor;
+}
+
+export interface RevendedorResumo {
+  id: number;
+  nome: string;
+  telefone: string;
+  status: StatusRevendedor;
+}
+
+export interface ItemConsignacao {
+  id: number;
+  idProduto: number;
+  nomeProduto: string;
+  codigoProduto: number;
+  quantidadeEnviada: number;
+  quantidadeVendida: number;
+  quantidadeDevolvida: number;
+  quantidadeDisponivel: number;
+  valorUnitario: number;
+}
+
+export interface Consignacao {
+  id: number;
+  revendedor: RevendedorResumo;
+  status: StatusConsignacao;
+  dataInclusao: string;
+  quantidadeEnviada: number;
+  quantidadeVendida: number;
+  quantidadeDevolvida: number;
+  quantidadeDisponivel: number;
+  itens?: ItemConsignacao[];
+}
+
+export interface ItemConsignacaoInput {
+  idProduto: number;
+  quantidade: number;
+  valorUnitario?: number;
+}
+
+export interface InserirConsignacaoInput {
+  idRevendedor: number;
+  itens: ItemConsignacaoInput[];
+}
+
+export interface ItemVendaConsignadaInput {
+  idProduto: number;
+  quantidade: number;
+}
+
+export interface RegistrarVendasConsignadasInput {
+  idCarteira: number;
+  meioPagamento: MeioPagamento;
+  itens: ItemVendaConsignadaInput[];
+}
+
+export interface RegistrarDevolucaoConsignadaInput {
+  quantidade: number;
+}
+
+export interface PesquisaPaginadaRevendedores extends Omit<
+  PesquisaPaginada,
+  'ordenarPor' | 'idsCategorias'
+> {
+  status?: StatusRevendedor;
+  ordenarPor?: 'nome' | 'dataInclusao';
+}
+
+export interface PesquisaPaginadaConsignacoes extends Omit<
+  PesquisaPaginada,
+  'ordenarPor' | 'idsCategorias'
+> {
+  idRevendedor?: number;
+  status?: StatusConsignacao;
+  ordenarPor?: 'dataInclusao' | 'revendedor';
 }
 
 // ── Assinatura ───────────────────────────────────────────────────────────────
