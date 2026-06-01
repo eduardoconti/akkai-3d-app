@@ -196,6 +196,7 @@ const saleTypeLabels: Record<TipoVenda, string> = {
   FEIRA: 'Feira',
   LOJA: 'Loja',
   ONLINE: 'Online',
+  CONSIGNACAO: 'Consignação',
 };
 
 const paymentOptions: Array<{
@@ -1009,6 +1010,9 @@ export default function NewSaleDialog({
                       <MenuItem value="FEIRA">Feira</MenuItem>
                       <MenuItem value="LOJA">Loja</MenuItem>
                       <MenuItem value="ONLINE">Online</MenuItem>
+                      <MenuItem value="CONSIGNACAO" disabled>
+                        Consignação
+                      </MenuItem>
                     </TextField>
                   </Grid>
 

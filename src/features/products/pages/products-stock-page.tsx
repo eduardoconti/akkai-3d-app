@@ -121,6 +121,8 @@ function getMovementOriginLabel(origem: string) {
       return 'Perda';
     case 'PRODUCAO':
       return 'Producao';
+    case 'CONSIGNACAO':
+      return 'Consignacao';
     default:
       return origem;
   }

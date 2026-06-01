@@ -71,6 +71,7 @@ const TIPO_LABEL: Record<TipoVenda, string> = {
   FEIRA: 'Feira',
   LOJA: 'Loja',
   ONLINE: 'Online',
+  CONSIGNACAO: 'Consignação',
 };
 
 const STATUS_PADRAO_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
