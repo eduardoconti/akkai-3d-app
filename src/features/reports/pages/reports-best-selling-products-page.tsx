@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Autocomplete,
@@ -21,25 +21,27 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
+import { listAllCategories } from '@/features/products/api/products-api';
 import {
   getBestSellingProducts,
   type BestSellingProductItem,
   type BestSellingProductsResponse,
 } from '@/features/reports/api/reports-api';
-import { listAllCategories } from '@/features/products/api/products-api';
 import { listFairs } from '@/features/sales/api/sales-api';
+import { getSaleTypeLabel } from '@/features/sales/utils/format-sale-labels';
 import {
   DateRangePickerField,
   FormFeedbackAlert,
   SearchFilterPanel,
-  getProblemDetailsFromError,
   getMonthRangeInput,
+  getProblemDetailsFromError,
   type Categoria,
   type Feira,
   type ProblemDetails,
   type TipoVenda,
 } from '@/shared';
-import { getSaleTypeLabel } from '@/features/sales/utils/format-sale-labels';
+
+const TAMANHO_PAGINA_INICIAL = 10;
 
 function formatApiDateToDisplay(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -50,6 +52,33 @@ function formatApiDateToDisplay(value: string): string {
 
   const [, year, month, day] = match;
   return `${day}/${month}/${year}`;
+}
+
+function getPeriodoLabel(result: BestSellingProductsResponse | null) {
+  if (!result) {
+    return null;
+  }
+
+  if (result.dataInicio === result.dataFim) {
+    return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)}`;
+  }
+
+  return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)} até ${formatApiDateToDisplay(result.dataFim)}`;
+}
+
+function getProductRowKey(
+  item: BestSellingProductItem,
+  index: number,
+  pagina: number,
+): string {
+  return [
+    pagina,
+    index,
+    item.idProduto ?? 'avulso',
+    item.codigo ?? 'sem-codigo',
+    item.nomeProduto,
+    item.categoria?.id ?? 'sem-categoria',
+  ].join('-');
 }
 
 export default function ReportsBestSellingProductsPage() {
@@ -66,43 +95,36 @@ export default function ReportsBestSellingProductsPage() {
   const [result, setResult] = useState<BestSellingProductsResponse | null>(
     null,
   );
-  const [pagina, setPagina] = useState(1);
-  const [tamanhoPagina, setTamanhoPagina] = useState(10);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
   const [isLoadingFeiras, setIsLoadingFeiras] = useState(false);
-  const [hasLoadedFeiras, setHasLoadedFeiras] = useState(false);
 
   useEffect(() => {
     let active = true;
 
-    const loadFilters = async () => {
+    async function carregarCategorias() {
       setIsLoadingFilters(true);
 
       try {
         const categoriasResponse = await listAllCategories();
 
-        if (!active) {
-          return;
+        if (active) {
+          setCategorias(categoriasResponse);
         }
-
-        setCategorias(categoriasResponse);
       } catch (error) {
-        if (!active) {
-          return;
+        if (active) {
+          setProblem(getProblemDetailsFromError(error));
         }
-
-        setProblem(getProblemDetailsFromError(error));
       } finally {
         if (active) {
           setIsLoadingFilters(false);
         }
       }
-    };
+    }
 
-    void loadFilters();
+    void carregarCategorias();
 
     return () => {
       active = false;
@@ -112,74 +134,56 @@ export default function ReportsBestSellingProductsPage() {
   useEffect(() => {
     if (tipoVenda !== 'FEIRA') {
       setIdFeira('');
+      return;
     }
-  }, [tipoVenda]);
 
-  useEffect(() => {
-    if (tipoVenda !== 'FEIRA' || hasLoadedFeiras) {
+    if (feiras.length > 0) {
       return;
     }
 
     let active = true;
 
-    const loadFeiras = async () => {
+    async function carregarFeiras() {
       setIsLoadingFeiras(true);
 
       try {
         const feirasResponse = await listFairs();
 
-        if (!active) {
-          return;
+        if (active) {
+          setFeiras(feirasResponse);
         }
-
-        setFeiras(feirasResponse);
-        setHasLoadedFeiras(true);
       } catch (error) {
-        if (!active) {
-          return;
+        if (active) {
+          setProblem(getProblemDetailsFromError(error));
         }
-
-        setProblem(getProblemDetailsFromError(error));
       } finally {
         if (active) {
           setIsLoadingFeiras(false);
         }
       }
-    };
+    }
 
-    void loadFeiras();
+    void carregarFeiras();
 
     return () => {
       active = false;
     };
-  }, [hasLoadedFeiras, tipoVenda]);
+  }, [feiras.length, tipoVenda]);
 
-  const periodoLabel = useMemo(() => {
-    if (!result) {
-      return null;
-    }
-
-    if (result.dataInicio === result.dataFim) {
-      return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)}`;
-    }
-
-    return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)} até ${formatApiDateToDisplay(result.dataFim)}`;
-  }, [result]);
-
-  const handleSubmit = async (
-    nextPage = pagina,
-    nextPageSize = tamanhoPagina,
+  const buscarRelatorio = async (
+    pagina = 1,
+    tamanhoPagina = result?.tamanhoPagina ?? TAMANHO_PAGINA_INICIAL,
   ) => {
     setProblem(null);
     setLocalError(null);
-    setIsLoading(true);
 
     if (!dateRange.startValue || !dateRange.endValue) {
       setLocalError('Selecione as datas inicial e final.');
       setResult(null);
-      setIsLoading(false);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const response = await getBestSellingProducts({
@@ -191,11 +195,10 @@ export default function ReportsBestSellingProductsPage() {
           categoriasSelecionadas.length > 0
             ? categoriasSelecionadas.map((categoria) => categoria.id)
             : undefined,
-        pagina: nextPage,
-        tamanhoPagina: nextPageSize,
+        pagina,
+        tamanhoPagina,
       });
-      setPagina(response.pagina);
-      setTamanhoPagina(response.tamanhoPagina);
+
       setResult(response);
     } catch (error) {
       setProblem(getProblemDetailsFromError(error));
@@ -215,25 +218,16 @@ export default function ReportsBestSellingProductsPage() {
     setResult(null);
   };
 
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void handleSubmit(1, tamanhoPagina);
-    }, 300);
+  const periodoLabel = getPeriodoLabel(result);
 
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [
-    categoriasSelecionadas,
-    dateRange.endValue,
-    dateRange.startValue,
-    idFeira,
-    tamanhoPagina,
-    tipoVenda,
-  ]);
-
-  const renderProductCard = (item: BestSellingProductItem) => (
-    <Box key={`${item.idProduto ?? item.nomeProduto}`} sx={{ px: 2, py: 2 }}>
+  const renderProductCard = (
+    item: BestSellingProductItem,
+    index: number,
+  ) => (
+    <Box
+      key={getProductRowKey(item, index, result?.pagina ?? 1)}
+      sx={{ px: 2, py: 2 }}
+    >
       <Stack spacing={1.25}>
         <Stack
           direction="row"
@@ -275,7 +269,7 @@ export default function ReportsBestSellingProductsPage() {
 
       <SearchFilterPanel
         onSearch={() => {
-          void handleSubmit(1, tamanhoPagina);
+          void buscarRelatorio(1);
         }}
         onClear={handleClearFilters}
         isLoading={isLoading}
@@ -408,9 +402,9 @@ export default function ReportsBestSellingProductsPage() {
                   </TableHead>
                   <TableBody>
                     {result.itens.length > 0 ? (
-                      result.itens.map((item) => (
+                      result.itens.map((item, index) => (
                         <TableRow
-                          key={`${item.idProduto ?? item.nomeProduto}-${item.categoria?.id ?? 'sem-categoria'}`}
+                          key={getProductRowKey(item, index, result.pagina)}
                         >
                           <TableCell>{item.codigo ?? '-'}</TableCell>
                           <TableCell>{item.nomeProduto}</TableCell>
@@ -437,11 +431,11 @@ export default function ReportsBestSellingProductsPage() {
               count={result.totalItens}
               page={Math.max(0, result.pagina - 1)}
               onPageChange={(_event, newPage) => {
-                void handleSubmit(newPage + 1, tamanhoPagina);
+                void buscarRelatorio(newPage + 1, result.tamanhoPagina);
               }}
               rowsPerPage={result.tamanhoPagina}
               onRowsPerPageChange={(event) => {
-                void handleSubmit(1, Number(event.target.value));
+                void buscarRelatorio(1, Number(event.target.value));
               }}
               rowsPerPageOptions={[10, 25, 50]}
               labelRowsPerPage="Itens por página"
