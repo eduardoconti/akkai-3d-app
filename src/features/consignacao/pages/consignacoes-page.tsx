@@ -26,14 +26,17 @@ import { useTheme } from '@mui/material/styles';
 import {
   AddCircleOutline,
   AssignmentReturn,
+  FileDownload,
   KeyboardArrowDown,
   KeyboardArrowUp,
   PointOfSale,
 } from '@mui/icons-material';
-import { listarTodosRevendedoresAtivos } from '@/features/consignacao/api/consignacao-api';
+import {
+  baixarRelatorioConsignacaoPdf,
+  listarTodosRevendedoresAtivos,
+} from '@/features/consignacao/api/consignacao-api';
 import ConsignacaoDialog from '@/features/consignacao/components/consignacao-dialog';
 import RegistrarDevolucaoConsignadaDialog from '@/features/consignacao/components/registrar-devolucao-consignada-dialog';
-import RegistrarVendasConsignadasDialog from '@/features/consignacao/components/registrar-vendas-consignadas-dialog';
 import RegistrarVendasRevendedorDialog from '@/features/consignacao/components/registrar-vendas-revendedor-dialog';
 import {
   consignacaoStoreSelectors,
@@ -46,6 +49,8 @@ import {
   PageHeader,
   SearchFilterPanel,
   formatCurrency,
+  getProblemDetailsFromError,
+  useFeedbackStore,
   type Consignacao,
   type ItemConsignacao,
   type Revendedor,
@@ -132,27 +137,13 @@ function DetalheItens({
         <TableHead>
           <TableRow>
             <TableCell>ID Produto</TableCell>
-            <TableCell>
-              Nome
-            </TableCell>
-            <TableCell align="right">
-              Enviado
-            </TableCell>
-            <TableCell align="right">
-              Vendido
-            </TableCell>
-            <TableCell align="right">
-              Devolvido
-            </TableCell>
-            <TableCell align="right">
-              Disponível
-            </TableCell>
-            <TableCell align="right">
-              Unitário
-            </TableCell>
-            <TableCell align="right">
-              Ações
-            </TableCell>
+            <TableCell>Nome</TableCell>
+            <TableCell align="right">Enviado</TableCell>
+            <TableCell align="right">Vendido</TableCell>
+            <TableCell align="right">Devolvido</TableCell>
+            <TableCell align="right">Disponível</TableCell>
+            <TableCell align="right">Unitário</TableCell>
+            <TableCell align="right">Ações</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -219,12 +210,18 @@ export default function ConsignacoesPage() {
   const [vendasRevendedorDialogOpen, setVendasRevendedorDialogOpen] =
     useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [relatorioErrorMessage, setRelatorioErrorMessage] = useState<
+    string | null
+  >(null);
+  const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [revendedores, setRevendedores] = useState<Revendedor[]>([]);
   const [revendedorSelecionado, setRevendedorSelecionado] =
     useState<Revendedor | null>(null);
+  const [statusFiltro, setStatusFiltro] = useState<StatusConsignacao | ''>('');
+  const [ordenarPor, setOrdenarPor] = useState<'dataInclusao' | 'revendedor'>(
+    'dataInclusao',
+  );
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [vendasDialogConsignacao, setVendasDialogConsignacao] =
-    useState<Consignacao | null>(null);
   const [devolucaoItem, setDevolucaoItem] = useState<ItemConsignacao | null>(
     null,
   );
@@ -232,7 +229,13 @@ export default function ConsignacoesPage() {
     useState<Consignacao | null>(null);
 
   useEffect(() => {
-    void fetchConsignacoes();
+    void fetchConsignacoes({
+      pagina: 1,
+      termo: '',
+      idRevendedor: undefined,
+      status: undefined,
+      ordenarPor: 'dataInclusao',
+    });
   }, [fetchConsignacoes]);
 
   useEffect(() => {
@@ -268,12 +271,16 @@ export default function ConsignacoesPage() {
       pagina: 1,
       termo: searchInput.trim(),
       idRevendedor: revendedorSelecionado?.id,
+      status: statusFiltro === '' ? undefined : statusFiltro,
+      ordenarPor,
     });
   };
 
   const handleClearFilters = () => {
     setSearchInput('');
     setRevendedorSelecionado(null);
+    setStatusFiltro('');
+    setOrdenarPor('dataInclusao');
     void fetchConsignacoes({
       pagina: 1,
       termo: '',
@@ -308,12 +315,24 @@ export default function ConsignacoesPage() {
     setDevolucaoItem(item);
   };
 
-  const handleOpenVendas = async (consignacao: Consignacao) => {
-    const detalhe = consignacao.itens
-      ? consignacao
-      : await obterConsignacaoPorId(consignacao.id);
+  const handleDownloadRelatorio = async (id: number) => {
+    setRelatorioErrorMessage(null);
 
-    setVendasDialogConsignacao(detalhe);
+    try {
+      const relatorio = await baixarRelatorioConsignacaoPdf(id);
+      const url = URL.createObjectURL(relatorio.blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = relatorio.filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      showSuccess('Relatório da consignação baixado com sucesso.');
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      setRelatorioErrorMessage(problem.detail);
+    }
   };
 
   return (
@@ -366,13 +385,7 @@ export default function ConsignacoesPage() {
           <Autocomplete
             options={revendedores}
             value={revendedorSelecionado}
-            onChange={(_event, value) => {
-              setRevendedorSelecionado(value);
-              void fetchConsignacoes({
-                pagina: 1,
-                idRevendedor: value?.id,
-              });
-            }}
+            onChange={(_event, value) => setRevendedorSelecionado(value)}
             getOptionLabel={(option) => option.nome}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => (
@@ -386,15 +399,9 @@ export default function ConsignacoesPage() {
             select
             fullWidth
             label="Status"
-            value={paginacao.status ?? ''}
+            value={statusFiltro}
             onChange={(event) =>
-              void fetchConsignacoes({
-                pagina: 1,
-                status:
-                  event.target.value === ''
-                    ? undefined
-                    : (event.target.value as StatusConsignacao),
-              })
+              setStatusFiltro(event.target.value as StatusConsignacao | '')
             }
           >
             <MenuItem value="">Todos</MenuItem>
@@ -409,12 +416,9 @@ export default function ConsignacoesPage() {
             select
             fullWidth
             label="Ordenar por"
-            value={paginacao.ordenarPor ?? 'dataInclusao'}
+            value={ordenarPor}
             onChange={(event) =>
-              void fetchConsignacoes({
-                pagina: 1,
-                ordenarPor: event.target.value as 'dataInclusao' | 'revendedor',
-              })
+              setOrdenarPor(event.target.value as 'dataInclusao' | 'revendedor')
             }
           >
             <MenuItem value="dataInclusao">Data inclusão</MenuItem>
@@ -425,6 +429,10 @@ export default function ConsignacoesPage() {
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>
+      ) : null}
+
+      {relatorioErrorMessage ? (
+        <Alert severity="error">{relatorioErrorMessage}</Alert>
       ) : null}
 
       <Paper sx={{ overflow: 'hidden' }}>
@@ -499,11 +507,12 @@ export default function ConsignacoesPage() {
                         </Button>
                         <Button
                           size="small"
-                          startIcon={<PointOfSale />}
-                          onClick={() => void handleOpenVendas(detalhe)}
-                          disabled={consignacao.status !== 'ABERTA'}
+                          startIcon={<FileDownload />}
+                          onClick={() =>
+                            void handleDownloadRelatorio(consignacao.id)
+                          }
                         >
-                          Vendas
+                          PDF
                         </Button>
                       </Stack>
 
@@ -636,11 +645,12 @@ export default function ConsignacoesPage() {
                           <TableCell align="right">
                             <Button
                               size="small"
-                              startIcon={<PointOfSale />}
-                              onClick={() => void handleOpenVendas(detalhe)}
-                              disabled={consignacao.status !== 'ABERTA'}
+                              startIcon={<FileDownload />}
+                              onClick={() =>
+                                void handleDownloadRelatorio(consignacao.id)
+                              }
                             >
-                              Vendas
+                              PDF
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -694,12 +704,6 @@ export default function ConsignacoesPage() {
       <ConsignacaoDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSaved={handleRefresh}
-      />
-      <RegistrarVendasConsignadasDialog
-        open={vendasDialogConsignacao !== null}
-        consignacao={vendasDialogConsignacao}
-        onClose={() => setVendasDialogConsignacao(null)}
         onSaved={handleRefresh}
       />
       <RegistrarVendasRevendedorDialog

@@ -72,21 +72,14 @@ export default function CiclosPage() {
 
   useEffect(() => {
     void fetchAssinantes({ tamanhoPagina: 50 });
-  }, [fetchAssinantes]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchCiclos({
-        pagina: 1,
-        status: statusFiltro || undefined,
-        idAssinante: idAssinanteFiltro || undefined,
-        mes: mesFiltro || undefined,
-        ano: anoFiltro || undefined,
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [fetchCiclos, statusFiltro, idAssinanteFiltro, mesFiltro, anoFiltro]);
+    void fetchCiclos({
+      pagina: 1,
+      status: undefined,
+      idAssinante: undefined,
+      mes: undefined,
+      ano: undefined,
+    });
+  }, [fetchAssinantes, fetchCiclos]);
 
   const handleUpdated = async () => {
     await fetchCiclos({ pagina: 1 });

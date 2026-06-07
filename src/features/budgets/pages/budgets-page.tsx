@@ -153,7 +153,9 @@ export default function BudgetsPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
-  const statusSelecionados = paginacao.status ?? STATUS_PADRAO_ORCAMENTO;
+  const [statusSelecionados, setStatusSelecionados] = useState<
+    StatusOrcamento[]
+  >(STATUS_PADRAO_ORCAMENTO);
 
   useEffect(() => {
     void fetchOrcamentos();
@@ -183,6 +185,7 @@ export default function BudgetsPage() {
   };
 
   const handleClearFilters = () => {
+    setStatusSelecionados(STATUS_PADRAO_ORCAMENTO);
     void fetchOrcamentos({
       pagina: 1,
       status: STATUS_PADRAO_ORCAMENTO,
@@ -220,12 +223,7 @@ export default function BudgetsPage() {
             fullWidth
             options={ALL_STATUSES_ORCAMENTO}
             value={statusSelecionados}
-            onChange={(_event, value) => {
-              void fetchOrcamentos({
-                pagina: 1,
-                status: value,
-              });
-            }}
+            onChange={(_event, value) => setStatusSelecionados(value)}
             getOptionLabel={(option) => STATUS_ORCAMENTO_LABEL[option]}
             disableCloseOnSelect
             renderInput={(params) => (

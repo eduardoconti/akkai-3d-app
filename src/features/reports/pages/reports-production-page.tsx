@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Chip,
@@ -40,54 +40,84 @@ function formatQuantity(value: number): string {
   }).format(value);
 }
 
+type ProductionOrderBy =
+  | 'codigo'
+  | 'nome'
+  | 'quantidadeProduzida'
+  | 'valorEstimado';
+type SortDirection = 'asc' | 'desc';
+
+interface AppliedFilters {
+  dataInicio: string;
+  dataFim: string;
+  ordenarPor: ProductionOrderBy;
+  direcao: SortDirection;
+}
+
 export default function ReportsProductionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
-  const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(10);
-  const [ordenarPor, setOrdenarPor] = useState<
-    'codigo' | 'nome' | 'quantidadeProduzida' | 'valorEstimado'
-  >('quantidadeProduzida');
-  const [direcao, setDirecao] = useState<'asc' | 'desc'>('desc');
+  const [ordenarPor, setOrdenarPor] = useState<ProductionOrderBy>(
+    'quantidadeProduzida',
+  );
+  const [direcao, setDirecao] = useState<SortDirection>('desc');
   const [result, setResult] = useState<ProductionReportResponse | null>(null);
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(
+    null,
+  );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (
-    nextPage = pagina,
-    nextPageSize = tamanhoPagina,
+  const fetchReport = async (
+    nextPage: number,
+    nextPageSize: number,
+    filters: AppliedFilters,
   ) => {
     setProblem(null);
     setLocalError(null);
     setIsLoading(true);
 
-    if (!dateRange.startValue || !dateRange.endValue) {
-      setLocalError('Selecione as datas inicial e final.');
-      setResult(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const response = await getProductionReport({
-        dataInicio: dateRange.startValue,
-        dataFim: dateRange.endValue,
+        dataInicio: filters.dataInicio,
+        dataFim: filters.dataFim,
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
-        ordenarPor,
-        direcao,
+        ordenarPor: filters.ordenarPor,
+        direcao: filters.direcao,
       });
-      setPagina(response.pagina);
       setTamanhoPagina(response.tamanhoPagina);
       setResult(response);
+      setAppliedFilters(filters);
     } catch (error) {
       setProblem(getProblemDetailsFromError(error));
       setResult(null);
+      setAppliedFilters(null);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    setProblem(null);
+    setLocalError(null);
+
+    if (!dateRange.startValue || !dateRange.endValue) {
+      setLocalError('Selecione as datas inicial e final.');
+      setResult(null);
+      setAppliedFilters(null);
+      return;
+    }
+
+    await fetchReport(1, tamanhoPagina, {
+      dataInicio: dateRange.startValue,
+      dataFim: dateRange.endValue,
+      ordenarPor,
+      direcao,
+    });
   };
 
   const handleClearFilters = () => {
@@ -97,23 +127,8 @@ export default function ReportsProductionPage() {
     setProblem(null);
     setLocalError(null);
     setResult(null);
+    setAppliedFilters(null);
   };
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void handleSubmit(1, tamanhoPagina);
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [
-    dateRange.endValue,
-    dateRange.startValue,
-    direcao,
-    ordenarPor,
-    tamanhoPagina,
-  ]);
 
   const renderCard = (item: ProductionReportItem) => (
     <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
@@ -192,7 +207,7 @@ export default function ReportsProductionPage() {
 
       <SearchFilterPanel
         onSearch={() => {
-          void handleSubmit(1, tamanhoPagina);
+          void handleSubmit();
         }}
         onClear={handleClearFilters}
         isLoading={isLoading}
@@ -213,13 +228,7 @@ export default function ReportsProductionPage() {
             label="Ordenar por"
             value={ordenarPor}
             onChange={(event) =>
-              setOrdenarPor(
-                event.target.value as
-                  | 'codigo'
-                  | 'nome'
-                  | 'quantidadeProduzida'
-                  | 'valorEstimado',
-              )
+              setOrdenarPor(event.target.value as ProductionOrderBy)
             }
           >
             <MenuItem value="quantidadeProduzida">
@@ -238,7 +247,7 @@ export default function ReportsProductionPage() {
             label="Direção"
             value={direcao}
             onChange={(event) =>
-              setDirecao(event.target.value as 'asc' | 'desc')
+              setDirecao(event.target.value as SortDirection)
             }
           >
             <MenuItem value="desc">Decrescente</MenuItem>
@@ -355,11 +364,23 @@ export default function ReportsProductionPage() {
               count={result.totalItens}
               page={Math.max(0, result.pagina - 1)}
               onPageChange={(_event, newPage) => {
-                void handleSubmit(newPage + 1, tamanhoPagina);
+                if (appliedFilters) {
+                  void fetchReport(
+                    newPage + 1,
+                    result.tamanhoPagina,
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPage={result.tamanhoPagina}
               onRowsPerPageChange={(event) => {
-                void handleSubmit(1, Number(event.target.value));
+                if (appliedFilters) {
+                  void fetchReport(
+                    1,
+                    Number(event.target.value),
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPageOptions={[10, 25, 50]}
               labelRowsPerPage="Itens por pagina"

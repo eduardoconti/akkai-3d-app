@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { formatLocalDate } from '@/shared/utils/date';
 import {
   addPendingSale,
   getCachedFairs,
@@ -113,6 +114,7 @@ function buildOfflineSale(
 
   return {
     id: saleId,
+    dataVenda: dados.dataVenda,
     dataInclusao: createdAt,
     valorTotal,
     valorLiquido: valorTotal,
@@ -470,7 +472,12 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
 
       const results = await Promise.allSettled(
         pendingSales.map(async (pendingSale) => {
-          await createSale(pendingSale.payload);
+          await createSale({
+            ...pendingSale.payload,
+            dataVenda:
+              pendingSale.payload.dataVenda ??
+              formatLocalDate(new Date(pendingSale.createdAt), 'api-date-time'),
+          });
           await removePendingSale(pendingSale.id);
         }),
       );

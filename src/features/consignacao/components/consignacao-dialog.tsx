@@ -118,6 +118,9 @@ export default function ConsignacaoDialog({
   });
 
   const isBusy = isSubmitting || isSaving;
+  const revendedorSelecionado =
+    revendedores.find((revendedor) => revendedor.id === form.idRevendedor) ??
+    null;
 
   useEffect(() => {
     if (!open) {
@@ -165,6 +168,13 @@ export default function ConsignacaoDialog({
       itens: current.itens.map((item, itemIndex) =>
         itemIndex === index ? { ...item, ...changes } : item,
       ),
+    }));
+  };
+
+  const handleChangeRevendedor = (value: Revendedor | null) => {
+    setForm((current) => ({
+      ...current,
+      idRevendedor: value?.id ?? null,
     }));
   };
 
@@ -320,21 +330,12 @@ export default function ConsignacaoDialog({
             <Grid size={{ xs: 12, md: 7 }}>
               <Autocomplete
                 options={revendedores}
-                value={
-                  revendedores.find(
-                    (revendedor) => revendedor.id === form.idRevendedor,
-                  ) ?? null
-                }
+                value={revendedorSelecionado}
                 loading={isLoadingOptions}
                 disabled={isBusy}
                 getOptionLabel={(option) => option.nome}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
-                onChange={(_event, value) =>
-                  setForm((current) => ({
-                    ...current,
-                    idRevendedor: value?.id ?? null,
-                  }))
-                }
+                onChange={(_event, value) => handleChangeRevendedor(value)}
                 renderInput={(params) => (
                   <TextField
                     {...params}

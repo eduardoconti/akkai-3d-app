@@ -184,6 +184,89 @@ async function request<T>(
   return body as T;
 }
 
+async function download(
+  path: string,
+  hasRetried = false,
+): Promise<{ blob: Blob; filename: string }> {
+  let response: Response;
+  const accessToken = getAccessToken();
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'GET',
+      headers: {
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    });
+  } catch {
+    throw new ApiProblemError(fallbackProblems.network);
+  }
+
+  if (response.status === 401 && !hasRetried) {
+    const storedRefreshToken = getRefreshToken();
+
+    if (storedRefreshToken) {
+      try {
+        if (!refreshRequestPromise) {
+          refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          })
+            .then(async (refreshResponse) => {
+              if (refreshResponse.ok) {
+                const data = (await refreshResponse.json()) as {
+                  accessToken: string;
+                  refreshToken: string;
+                };
+                setAccessToken(data.accessToken);
+                setRefreshToken(data.refreshToken);
+                return true;
+              }
+              clearTokens();
+              notifyAuthFailure();
+              return false;
+            })
+            .catch(() => {
+              clearTokens();
+              notifyAuthFailure();
+              return false;
+            })
+            .finally(() => {
+              refreshRequestPromise = null;
+            });
+        }
+
+        const refreshSucceeded = await refreshRequestPromise;
+
+        if (refreshSucceeded) {
+          return download(path, true);
+        }
+      } catch {
+        throw new ApiProblemError(fallbackProblems.network);
+      }
+    }
+  }
+
+  if (!response.ok) {
+    const body = await parseResponse(response);
+    throw new ApiProblemError(
+      buildProblemFromResponse(response.status, path, body),
+    );
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: obterNomeArquivo(response) ?? 'download.pdf',
+  };
+}
+
+function obterNomeArquivo(response: Response): string | null {
+  const contentDisposition = response.headers.get('content-disposition');
+  const match = contentDisposition?.match(/filename="?([^"]+)"?/i);
+  return match?.[1] ?? null;
+}
+
 function buildQueryString(query?: object): string {
   if (!query) {
     return '';
@@ -254,4 +337,5 @@ export const httpClient = {
     request<T>(path, {
       method: 'DELETE',
     }),
+  download,
 };

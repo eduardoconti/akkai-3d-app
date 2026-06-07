@@ -81,6 +81,14 @@ function getProductRowKey(
   ].join('-');
 }
 
+interface AppliedFilters {
+  dataInicio: string;
+  dataFim: string;
+  tipoVenda: 'TODOS' | TipoVenda;
+  idFeira: number | '';
+  categoriasSelecionadas: Categoria[];
+}
+
 export default function ReportsBestSellingProductsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -93,6 +101,9 @@ export default function ReportsBestSellingProductsPage() {
   >([]);
   const [feiras, setFeiras] = useState<Feira[]>([]);
   const [result, setResult] = useState<BestSellingProductsResponse | null>(
+    null,
+  );
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(
     null,
   );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
@@ -170,16 +181,26 @@ export default function ReportsBestSellingProductsPage() {
     };
   }, [feiras.length, tipoVenda]);
 
+  const getCurrentFilters = (): AppliedFilters => ({
+    dataInicio: dateRange.startValue,
+    dataFim: dateRange.endValue,
+    tipoVenda,
+    idFeira,
+    categoriasSelecionadas,
+  });
+
   const buscarRelatorio = async (
     pagina = 1,
     tamanhoPagina = result?.tamanhoPagina ?? TAMANHO_PAGINA_INICIAL,
+    filters = getCurrentFilters(),
   ) => {
     setProblem(null);
     setLocalError(null);
 
-    if (!dateRange.startValue || !dateRange.endValue) {
+    if (!filters.dataInicio || !filters.dataFim) {
       setLocalError('Selecione as datas inicial e final.');
       setResult(null);
+      setAppliedFilters(null);
       return;
     }
 
@@ -187,22 +208,28 @@ export default function ReportsBestSellingProductsPage() {
 
     try {
       const response = await getBestSellingProducts({
-        dataInicio: dateRange.startValue,
-        dataFim: dateRange.endValue,
-        tipoVenda: tipoVenda === 'TODOS' ? undefined : tipoVenda,
-        idFeira: tipoVenda === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
+        dataInicio: filters.dataInicio,
+        dataFim: filters.dataFim,
+        tipoVenda:
+          filters.tipoVenda === 'TODOS' ? undefined : filters.tipoVenda,
+        idFeira:
+          filters.tipoVenda === 'FEIRA' && filters.idFeira !== ''
+            ? filters.idFeira
+            : undefined,
         idsCategorias:
-          categoriasSelecionadas.length > 0
-            ? categoriasSelecionadas.map((categoria) => categoria.id)
+          filters.categoriasSelecionadas.length > 0
+            ? filters.categoriasSelecionadas.map((categoria) => categoria.id)
             : undefined,
         pagina,
         tamanhoPagina,
       });
 
       setResult(response);
+      setAppliedFilters(filters);
     } catch (error) {
       setProblem(getProblemDetailsFromError(error));
       setResult(null);
+      setAppliedFilters(null);
     } finally {
       setIsLoading(false);
     }
@@ -216,14 +243,13 @@ export default function ReportsBestSellingProductsPage() {
     setProblem(null);
     setLocalError(null);
     setResult(null);
+    setAppliedFilters(null);
   };
 
   const periodoLabel = getPeriodoLabel(result);
+  const visibleFilters = appliedFilters ?? getCurrentFilters();
 
-  const renderProductCard = (
-    item: BestSellingProductItem,
-    index: number,
-  ) => (
+  const renderProductCard = (item: BestSellingProductItem, index: number) => (
     <Box
       key={getProductRowKey(item, index, result?.pagina ?? 1)}
       sx={{ px: 2, py: 2 }}
@@ -357,14 +383,18 @@ export default function ReportsBestSellingProductsPage() {
           {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
 
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip label={`Tipo: ${getSaleTypeLabel(tipoVenda)}`} size="small" />
             <Chip
-              label={`Categorias: ${categoriasSelecionadas.length}`}
+              label={`Tipo: ${getSaleTypeLabel(visibleFilters.tipoVenda)}`}
               size="small"
             />
-            {tipoVenda === 'FEIRA' && idFeira !== '' ? (
+            <Chip
+              label={`Categorias: ${visibleFilters.categoriasSelecionadas.length}`}
+              size="small"
+            />
+            {visibleFilters.tipoVenda === 'FEIRA' &&
+            visibleFilters.idFeira !== '' ? (
               <Chip
-                label={`Feira: ${feiras.find((feira) => feira.id === idFeira)?.nome ?? idFeira}`}
+                label={`Feira: ${feiras.find((feira) => feira.id === visibleFilters.idFeira)?.nome ?? visibleFilters.idFeira}`}
                 size="small"
               />
             ) : null}
@@ -431,11 +461,23 @@ export default function ReportsBestSellingProductsPage() {
               count={result.totalItens}
               page={Math.max(0, result.pagina - 1)}
               onPageChange={(_event, newPage) => {
-                void buscarRelatorio(newPage + 1, result.tamanhoPagina);
+                if (appliedFilters) {
+                  void buscarRelatorio(
+                    newPage + 1,
+                    result.tamanhoPagina,
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPage={result.tamanhoPagina}
               onRowsPerPageChange={(event) => {
-                void buscarRelatorio(1, Number(event.target.value));
+                if (appliedFilters) {
+                  void buscarRelatorio(
+                    1,
+                    Number(event.target.value),
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPageOptions={[10, 25, 50]}
               labelRowsPerPage="Itens por página"

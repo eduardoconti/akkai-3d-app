@@ -42,6 +42,8 @@ import {
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import { useShallow } from 'zustand/react/shallow';
 
+const initialExpensesDateRange = getMonthRangeInput();
+
 export default function FinanceExpensesPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -82,7 +84,7 @@ export default function FinanceExpensesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchInput, setSearchInput] = useState('');
-  const [dateRange, setDateRange] = useState(getMonthRangeInput);
+  const [dateRange, setDateRange] = useState(initialExpensesDateRange);
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
@@ -126,32 +128,19 @@ export default function FinanceExpensesPage() {
   useEffect(() => {
     void fetchCarteiras();
     void fetchCategoriasDespesa();
+    void fetchDespesas({
+      pagina: 1,
+      termo: '',
+      dataInicio:
+        convertDateToApiDateFormat(initialExpensesDateRange.startValue) ?? '',
+      dataFim:
+        convertDateToApiDateFormat(initialExpensesDateRange.endValue) ?? '',
+      idsCategorias: [],
+      idCarteira: undefined,
+      idFeira: undefined,
+    });
     void fetchFeiras();
-  }, [fetchCarteiras, fetchCategoriasDespesa, fetchFeiras]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchDespesas({
-        pagina: 1,
-        termo: searchInput.trim(),
-        dataInicio: convertDateToApiDateFormat(dateRange.startValue) ?? '',
-        dataFim: convertDateToApiDateFormat(dateRange.endValue) ?? '',
-        idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
-        idCarteira: idCarteira === '' ? undefined : idCarteira,
-        idFeira: idFeira === '' ? undefined : idFeira,
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [
-    categoriasSelecionadas,
-    dateRange.endValue,
-    dateRange.startValue,
-    fetchDespesas,
-    idCarteira,
-    idFeira,
-    searchInput,
-  ]);
+  }, [fetchCarteiras, fetchCategoriasDespesa, fetchDespesas, fetchFeiras]);
 
   return (
     <Stack spacing={3}>

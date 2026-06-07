@@ -86,17 +86,8 @@ export default function ProductCategoriesPage() {
 
   useEffect(() => {
     void fetchCategorias();
-  }, [fetchCategorias]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [fetchCategoriasPaginadas, searchInput]);
+    void fetchCategoriasPaginadas({ pagina: 1, termo: '' });
+  }, [fetchCategorias, fetchCategoriasPaginadas]);
 
   return (
     <Stack spacing={3}>

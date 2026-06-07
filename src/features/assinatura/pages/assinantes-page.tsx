@@ -72,20 +72,13 @@ export default function AssinantesPage() {
 
   useEffect(() => {
     void fetchPlanos();
-  }, [fetchPlanos]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchAssinantes({
-        pagina: 1,
-        termo: termo.trim(),
-        status: statusFiltro || undefined,
-        idPlano: idPlanoFiltro || undefined,
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [fetchAssinantes, termo, statusFiltro, idPlanoFiltro]);
+    void fetchAssinantes({
+      pagina: 1,
+      termo: '',
+      status: undefined,
+      idPlano: undefined,
+    });
+  }, [fetchAssinantes, fetchPlanos]);
 
   const handleUpdated = async () => {
     await fetchAssinantes({ pagina: 1 });

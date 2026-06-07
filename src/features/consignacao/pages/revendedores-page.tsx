@@ -41,6 +41,12 @@ function formatDateTime(value: string): string {
   }).format(new Date(value));
 }
 
+function formatPercentual(value?: number | null): string {
+  return `${(value ?? 0).toLocaleString('pt-BR', {
+    maximumFractionDigits: 2,
+  })}%`;
+}
+
 export default function RevendedoresPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -66,17 +72,31 @@ export default function RevendedoresPage() {
     null,
   );
   const [searchInput, setSearchInput] = useState('');
+  const [statusFiltro, setStatusFiltro] = useState<StatusRevendedor | ''>('');
+  const [ordenarPor, setOrdenarPor] = useState<'nome' | 'dataInclusao'>('nome');
 
   useEffect(() => {
-    void fetchRevendedores();
+    void fetchRevendedores({
+      pagina: 1,
+      termo: '',
+      status: undefined,
+      ordenarPor: 'nome',
+    });
   }, [fetchRevendedores]);
 
   const handleSearch = () => {
-    void fetchRevendedores({ pagina: 1, termo: searchInput.trim() });
+    void fetchRevendedores({
+      pagina: 1,
+      termo: searchInput.trim(),
+      status: statusFiltro === '' ? undefined : statusFiltro,
+      ordenarPor,
+    });
   };
 
   const handleClearFilters = () => {
     setSearchInput('');
+    setStatusFiltro('');
+    setOrdenarPor('nome');
     void fetchRevendedores({
       pagina: 1,
       termo: '',
@@ -119,15 +139,9 @@ export default function RevendedoresPage() {
             select
             fullWidth
             label="Status"
-            value={paginacao.status ?? ''}
+            value={statusFiltro}
             onChange={(event) =>
-              void fetchRevendedores({
-                pagina: 1,
-                status:
-                  event.target.value === ''
-                    ? undefined
-                    : (event.target.value as StatusRevendedor),
-              })
+              setStatusFiltro(event.target.value as StatusRevendedor | '')
             }
           >
             <MenuItem value="">Todos</MenuItem>
@@ -141,12 +155,9 @@ export default function RevendedoresPage() {
             select
             fullWidth
             label="Ordenar por"
-            value={paginacao.ordenarPor ?? 'nome'}
+            value={ordenarPor}
             onChange={(event) =>
-              void fetchRevendedores({
-                pagina: 1,
-                ordenarPor: event.target.value as 'nome' | 'dataInclusao',
-              })
+              setOrdenarPor(event.target.value as 'nome' | 'dataInclusao')
             }
           >
             <MenuItem value="nome">Nome</MenuItem>
@@ -200,6 +211,10 @@ export default function RevendedoresPage() {
                         variant="outlined"
                       />
                     </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                      Desconto:{' '}
+                      {formatPercentual(revendedor.percentualDesconto)}
+                    </Typography>
                     <Typography variant="caption" color="text.secondary">
                       Incluído em {formatDateTime(revendedor.dataInclusao)}
                     </Typography>
@@ -224,6 +239,9 @@ export default function RevendedoresPage() {
                   <TableCell>
                     <strong>Status</strong>
                   </TableCell>
+                  <TableCell align="right">
+                    <strong>Desconto</strong>
+                  </TableCell>
                   <TableCell>
                     <strong>Data inclusão</strong>
                   </TableCell>
@@ -232,7 +250,7 @@ export default function RevendedoresPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -260,6 +278,9 @@ export default function RevendedoresPage() {
                           variant="outlined"
                         />
                       </TableCell>
+                      <TableCell align="right">
+                        {formatPercentual(revendedor.percentualDesconto)}
+                      </TableCell>
                       <TableCell>
                         {formatDateTime(revendedor.dataInclusao)}
                       </TableCell>
@@ -267,7 +288,7 @@ export default function RevendedoresPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
+                    <TableCell colSpan={5} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum revendedor cadastrado até o momento." />
                     </TableCell>
                   </TableRow>

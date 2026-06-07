@@ -1,4 +1,5 @@
 import type { MeioPagamento, TipoVenda } from '@/shared/lib/types/domain';
+import { formatLocalDate } from '@/shared/utils/date';
 
 export type SaleItemType = 'CATALOGO' | 'AVULSO';
 export type DiscountMode = 'VALOR' | 'PERCENTUAL';
@@ -19,6 +20,7 @@ export type SaleFormPayment = {
 };
 
 export type SaleFormState = {
+  dataVenda: string;
   tipo: TipoVenda;
   idFeira: number | '';
   desconto: number;
@@ -28,6 +30,7 @@ export type SaleFormState = {
 };
 
 export type SaleFormErrors = {
+  dataVenda?: string;
   idFeira?: string;
   desconto?: string;
   itens?: string;
@@ -57,6 +60,7 @@ export const emptySaleItem: SaleFormItem = {
 };
 
 export const initialSaleFormState: SaleFormState = {
+  dataVenda: formatLocalDate(),
   tipo: 'FEIRA',
   idFeira: '',
   desconto: 0,
