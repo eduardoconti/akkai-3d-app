@@ -37,6 +37,7 @@ interface RevendedorFormState {
   nome: string;
   telefone: string;
   status: StatusRevendedor;
+  percentualDesconto: number;
 }
 
 type RevendedorFormErrors = Partial<Record<keyof RevendedorFormState, string>>;
@@ -45,6 +46,7 @@ const initialFormState: RevendedorFormState = {
   nome: '',
   telefone: '',
   status: 'ATIVO',
+  percentualDesconto: 0,
 };
 
 export default function RevendedorDialog({
@@ -109,6 +111,7 @@ export default function RevendedorDialog({
           nome: revendedor.nome,
           telefone: revendedor.telefone ?? '',
           status: revendedor.status,
+          percentualDesconto: revendedor.percentualDesconto ?? 0,
         });
       })
       .finally(() => {
@@ -142,6 +145,14 @@ export default function RevendedorDialog({
       errors.telefone = 'Informe um telefone com pelo menos 8 caracteres.';
     }
 
+    if (
+      !Number.isFinite(form.percentualDesconto) ||
+      form.percentualDesconto < 0 ||
+      form.percentualDesconto > 100
+    ) {
+      errors.percentualDesconto = 'Informe um desconto entre 0 e 100%.';
+    }
+
     setLocalErrors(errors);
     setProblem(null);
 
@@ -156,6 +167,7 @@ export default function RevendedorDialog({
         nome: form.nome.trim(),
         telefone: form.telefone.trim(),
         status: form.status,
+        percentualDesconto: form.percentualDesconto,
       };
       const result =
         isEditing && revendedorId
@@ -273,6 +285,31 @@ export default function RevendedorDialog({
               <MenuItem value="ATIVO">Ativo</MenuItem>
               <MenuItem value="INATIVO">Inativo</MenuItem>
             </TextField>
+          </Grid>
+
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              fullWidth
+              label="Desconto (%)"
+              type="number"
+              value={form.percentualDesconto}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  percentualDesconto: Number(event.target.value),
+                }))
+              }
+              error={Boolean(
+                localErrors.percentualDesconto ||
+                getFieldMessage(problem, 'percentualDesconto'),
+              )}
+              helperText={
+                localErrors.percentualDesconto ??
+                getFieldMessage(problem, 'percentualDesconto')
+              }
+              disabled={isSaving}
+              inputProps={{ min: 0, max: 100, step: 0.01 }}
+            />
           </Grid>
         </Grid>
       </DialogContent>

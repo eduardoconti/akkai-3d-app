@@ -47,6 +47,7 @@ import {
   DateRangePickerField,
   SearchFilterPanel,
   formatCurrency,
+  formatLocalDate,
   getMonthRangeInput,
   useFeedbackStore,
   useOnlineStatus,
@@ -116,6 +117,8 @@ interface SaleRowProps {
   ) => void;
 }
 
+const initialSalesDateRange = getMonthRangeInput();
+
 function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
   const [open, setOpen] = useState(false);
   const pagamentos = getSalePayments(venda);
@@ -137,7 +140,10 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
           #{venda.id}
         </TableCell>
         <TableCell>
-          {new Date(venda.dataInclusao).toLocaleString('pt-BR')}
+          {formatLocalDate(
+            venda.dataVenda ?? venda.dataInclusao,
+            'display-date',
+          )}
         </TableCell>
         <TableCell>
           <Chip
@@ -331,7 +337,7 @@ export default function SalesPage() {
       vendas: saleStoreSelectors.vendas(state),
     })),
   );
-  const [dateRange, setDateRange] = useState(getMonthRangeInput);
+  const [dateRange, setDateRange] = useState(initialSalesDateRange);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
@@ -377,39 +383,22 @@ export default function SalesPage() {
   useEffect(() => {
     void fetchFeiras();
     void fetchCarteiras();
-  }, [fetchCarteiras, fetchFeiras]);
+    void fetchVendas({
+      pagina: 1,
+      dataInicio: initialSalesDateRange.startValue,
+      dataFim: initialSalesDateRange.endValue,
+      tipo: undefined,
+      idFeira: undefined,
+      idCarteira: undefined,
+      meioPagamento: undefined,
+    });
+  }, [fetchCarteiras, fetchFeiras, fetchVendas]);
 
   useEffect(() => {
     if (type !== 'FEIRA') {
       setIdFeira('');
     }
   }, [type]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchVendas({
-        pagina: 1,
-        dataInicio: dateRange.startValue,
-        dataFim: dateRange.endValue,
-        tipo: type === 'TODOS' ? undefined : type,
-        idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
-        idCarteira: idCarteira === '' ? undefined : idCarteira,
-        meioPagamento: meioPagamento === '' ? undefined : meioPagamento,
-      });
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [
-    dateRange.endValue,
-    dateRange.startValue,
-    fetchVendas,
-    idCarteira,
-    idFeira,
-    meioPagamento,
-    type,
-  ]);
 
   const handleOpenActions = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -670,8 +659,9 @@ export default function SalesPage() {
                             Venda #{venda.id}
                           </Typography>
                           <Typography variant="body2">
-                            {new Date(venda.dataInclusao).toLocaleString(
-                              'pt-BR',
+                            {formatLocalDate(
+                              venda.dataVenda ?? venda.dataInclusao,
+                              'display-date',
                             )}
                           </Typography>
                         </Box>

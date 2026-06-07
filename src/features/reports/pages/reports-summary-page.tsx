@@ -38,20 +38,27 @@ function formatApiDateToDisplay(value: string): string {
   return `${day}/${month}/${year}`;
 }
 
+interface AppliedFilters {
+  tipoVenda: 'TODOS' | TipoVenda;
+  idFeira: number | '';
+}
+
 export default function ReportsSummaryPage() {
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
   const [feiras, setFeiras] = useState<Feira[]>([]);
   const [summary, setSummary] = useState<SalesSummary | null>(null);
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(
+    null,
+  );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
-  const [hasLoadedFeiras, setHasLoadedFeiras] = useState(false);
 
   useEffect(() => {
-    if (tipoVenda !== 'FEIRA' || hasLoadedFeiras) {
+    if (tipoVenda !== 'FEIRA' || feiras.length > 0) {
       return;
     }
 
@@ -68,7 +75,6 @@ export default function ReportsSummaryPage() {
         }
 
         setFeiras(feirasResponse);
-        setHasLoadedFeiras(true);
       } catch (error) {
         if (!active) {
           return;
@@ -87,7 +93,7 @@ export default function ReportsSummaryPage() {
     return () => {
       active = false;
     };
-  }, [hasLoadedFeiras, tipoVenda]);
+  }, [feiras.length, tipoVenda]);
 
   useEffect(() => {
     if (tipoVenda !== 'FEIRA') {
@@ -102,12 +108,18 @@ export default function ReportsSummaryPage() {
 
     const filtros: string[] = [];
 
-    if (tipoVenda !== 'TODOS') {
-      filtros.push(`Tipo: ${getSaleTypeLabel(tipoVenda)}`);
+    if (!appliedFilters) {
+      return null;
     }
 
-    if (tipoVenda === 'FEIRA' && idFeira !== '') {
-      const feiraSelecionada = feiras.find((feira) => feira.id === idFeira);
+    if (appliedFilters.tipoVenda !== 'TODOS') {
+      filtros.push(`Tipo: ${getSaleTypeLabel(appliedFilters.tipoVenda)}`);
+    }
+
+    if (appliedFilters.tipoVenda === 'FEIRA' && appliedFilters.idFeira !== '') {
+      const feiraSelecionada = feiras.find(
+        (feira) => feira.id === appliedFilters.idFeira,
+      );
 
       if (feiraSelecionada) {
         filtros.push(`Feira: ${feiraSelecionada.nome}`);
@@ -121,19 +133,20 @@ export default function ReportsSummaryPage() {
 
     const base = `Período consultado: ${formatApiDateToDisplay(summary.dataInicio)} até ${formatApiDateToDisplay(summary.dataFim)}`;
     return filtros.length > 0 ? `${base} | ${filtros.join(' | ')}` : base;
-  }, [summary, tipoVenda, idFeira, feiras]);
+  }, [summary, appliedFilters, feiras]);
 
   const handleSubmit = async () => {
     setProblem(null);
     setLocalError(null);
-    setIsLoading(true);
 
     if (!dateRange.startValue || !dateRange.endValue) {
       setLocalError('Selecione as datas inicial e final.');
       setSummary(null);
-      setIsLoading(false);
+      setAppliedFilters(null);
       return;
     }
+
+    setIsLoading(true);
 
     try {
       const result = await getSalesSummary({
@@ -143,9 +156,11 @@ export default function ReportsSummaryPage() {
         idFeira: tipoVenda === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
       });
       setSummary(result);
+      setAppliedFilters({ tipoVenda, idFeira });
     } catch (error) {
       setProblem(getProblemDetailsFromError(error));
       setSummary(null);
+      setAppliedFilters(null);
     } finally {
       setIsLoading(false);
     }
@@ -158,17 +173,8 @@ export default function ReportsSummaryPage() {
     setProblem(null);
     setLocalError(null);
     setSummary(null);
+    setAppliedFilters(null);
   };
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void handleSubmit();
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [dateRange.endValue, dateRange.startValue, idFeira, tipoVenda]);
 
   return (
     <Stack spacing={3}>

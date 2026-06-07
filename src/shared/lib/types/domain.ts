@@ -172,6 +172,7 @@ export interface PagamentoVenda {
 
 export interface Venda {
   id: number;
+  dataVenda: string;
   dataInclusao: string;
   valorTotal: number;
   valorLiquido?: number;
@@ -221,6 +222,7 @@ export interface InserirVendaItemInput {
 }
 
 export interface InserirVendaInput {
+  dataVenda: string;
   tipo: TipoVenda;
   idFeira?: number;
   desconto?: number;
@@ -337,6 +339,7 @@ export interface Revendedor {
   nome: string;
   telefone: string;
   status: StatusRevendedor;
+  percentualDesconto: number;
   dataInclusao: string;
 }
 
@@ -344,6 +347,7 @@ export interface RevendedorInput {
   nome: string;
   telefone: string;
   status?: StatusRevendedor;
+  percentualDesconto?: number;
 }
 
 export interface RevendedorResumo {
@@ -351,6 +355,7 @@ export interface RevendedorResumo {
   nome: string;
   telefone: string;
   status: StatusRevendedor;
+  percentualDesconto: number;
 }
 
 export interface ItemConsignacao {
@@ -370,6 +375,7 @@ export interface Consignacao {
   revendedor: RevendedorResumo;
   status: StatusConsignacao;
   dataInclusao: string;
+  percentualDesconto: number;
   quantidadeEnviada: number;
   quantidadeVendida: number;
   quantidadeDevolvida: number;

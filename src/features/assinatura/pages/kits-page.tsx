@@ -76,20 +76,13 @@ export default function KitsPage() {
 
   useEffect(() => {
     void fetchPlanos();
-  }, [fetchPlanos]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchKits({
-        pagina: 1,
-        idPlano: idPlanoFiltro || undefined,
-        mes: mesFiltro || undefined,
-        ano: anoFiltro || undefined,
-      });
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [fetchKits, idPlanoFiltro, mesFiltro, anoFiltro]);
+    void fetchKits({
+      pagina: 1,
+      idPlano: undefined,
+      mes: undefined,
+      ano: undefined,
+    });
+  }, [fetchKits, fetchPlanos]);
 
   const handleUpdated = async () => {
     await fetchKits({ pagina: 1 });

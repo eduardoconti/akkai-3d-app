@@ -60,8 +60,10 @@ import {
 } from '@/shared/lib/offline/indexed-db';
 import {
   CurrencyField,
+  DatePickerField,
   FormFeedbackAlert,
   formatCurrency,
+  formatLocalDate,
   getFieldMessage,
   ProductAutocompleteField,
   useFeedbackStore,
@@ -215,6 +217,7 @@ type PersistedSaleConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
 function getResetFormState(config: PersistedSaleConfig): SaleFormState {
   return {
     ...initialSaleFormState,
+    dataVenda: formatLocalDate(),
     tipo: config.tipo,
     idFeira: config.tipo === 'FEIRA' ? config.idFeira : '',
   };
@@ -228,6 +231,7 @@ function mapSaleToForm(sale: Venda): SaleFormState {
   }));
 
   return {
+    dataVenda: formatLocalDate(sale.dataVenda ?? sale.dataInclusao),
     tipo: sale.tipo,
     idFeira: sale.idFeira ?? '',
     desconto: sale.desconto / 100,
@@ -691,6 +695,10 @@ export default function NewSaleDialog({
       nextLocalErrors.idFeira = 'Selecione a feira em que a venda aconteceu.';
     }
 
+    if (!form.dataVenda) {
+      nextLocalErrors.dataVenda = 'Informe a data da venda.';
+    }
+
     if (form.desconto < 0) {
       nextLocalErrors.desconto = 'Informe um desconto válido.';
     }
@@ -776,6 +784,7 @@ export default function NewSaleDialog({
       Object.values(pagamento).some(Boolean),
     );
     const hasConfigErrors =
+      Boolean(nextLocalErrors.dataVenda) ||
       Boolean(nextLocalErrors.idFeira) ||
       Boolean(nextPaymentErrors[0]?.idCarteira);
 
@@ -792,6 +801,7 @@ export default function NewSaleDialog({
     }
 
     const payload = {
+      dataVenda: formatLocalDate(form.dataVenda, 'api-date-time'),
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
       desconto: totals.saleDiscount,
@@ -895,6 +905,7 @@ export default function NewSaleDialog({
     primaryPayment.idCarteira,
   );
   const configSummary = [
+    formatLocalDate(form.dataVenda, 'display-date'),
     saleTypeLabels[form.tipo],
     form.tipo === 'FEIRA' ? (selectedFair?.nome ?? 'sem feira') : null,
     selectedWallet?.nome ?? 'sem carteira',
@@ -996,7 +1007,37 @@ export default function NewSaleDialog({
                 }}
               >
                 <Grid container spacing={1.5}>
-                  <Grid size={{ xs: form.tipo === 'FEIRA' ? 6 : 12, sm: 6 }}>
+                  <Grid size={{ xs: 12, sm: 5 }}>
+                    <DatePickerField
+                      label="Data da venda"
+                      value={form.dataVenda}
+                      onValueChange={(dataVenda) =>
+                        setForm((current) => ({
+                          ...current,
+                          dataVenda,
+                        }))
+                      }
+                      slotProps={{
+                        textField: {
+                          size: 'small',
+                          error: Boolean(
+                            localErrors.dataVenda ||
+                            getFieldMessage(problem, 'dataVenda'),
+                          ),
+                          helperText:
+                            localErrors.dataVenda ??
+                            getFieldMessage(problem, 'dataVenda'),
+                        },
+                      }}
+                    />
+                  </Grid>
+
+                  <Grid
+                    size={{
+                      xs: form.tipo === 'FEIRA' ? 6 : 12,
+                      sm: form.tipo === 'FEIRA' ? 3 : 7,
+                    }}
+                  >
                     <TextField
                       select
                       fullWidth
@@ -1017,7 +1058,7 @@ export default function NewSaleDialog({
                   </Grid>
 
                   {form.tipo === 'FEIRA' ? (
-                    <Grid size={{ xs: 6, sm: 6 }}>
+                    <Grid size={{ xs: 6, sm: 4 }}>
                       <TextField
                         select
                         fullWidth

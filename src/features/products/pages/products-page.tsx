@@ -68,42 +68,43 @@ export default function ProductsPage() {
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     Categoria[]
   >([]);
+  const [ordenarPor, setOrdenarPor] = useState<OrdenacaoProduto>('codigo');
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('desc');
 
   const handleSearch = () => {
     void fetchProdutos({
       pagina: 1,
       termo: searchInput.trim(),
       idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
+      ordenarPor,
+      direcao,
     });
   };
 
   const handleClearFilters = () => {
     setSearchInput('');
     setCategoriasSelecionadas([]);
+    setOrdenarPor('codigo');
+    setDirecao('desc');
     void fetchProdutos({
       pagina: 1,
       termo: '',
       idsCategorias: [],
+      ordenarPor: 'codigo',
+      direcao: 'desc',
     });
   };
 
   useEffect(() => {
     void fetchCategorias();
-  }, [fetchCategorias]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchProdutos({
-        pagina: 1,
-        termo: searchInput.trim(),
-        idsCategorias: categoriasSelecionadas.map((categoria) => categoria.id),
-      });
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [categoriasSelecionadas, fetchProdutos, searchInput]);
+    void fetchProdutos({
+      pagina: 1,
+      termo: '',
+      idsCategorias: [],
+      ordenarPor: 'codigo',
+      direcao: 'desc',
+    });
+  }, [fetchCategorias, fetchProdutos]);
 
   return (
     <Stack spacing={3}>
@@ -120,13 +121,10 @@ export default function ProductsPage() {
             select
             fullWidth
             label="Ordenar por"
-            value={paginacao.ordenarPor ?? 'codigo'}
-            onChange={(event) => {
-              void fetchProdutos({
-                pagina: 1,
-                ordenarPor: event.target.value as OrdenacaoProduto,
-              });
-            }}
+            value={ordenarPor}
+            onChange={(event) =>
+              setOrdenarPor(event.target.value as OrdenacaoProduto)
+            }
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
@@ -139,13 +137,10 @@ export default function ProductsPage() {
             select
             fullWidth
             label="Direção"
-            value={paginacao.direcao ?? 'desc'}
-            onChange={(event) => {
-              void fetchProdutos({
-                pagina: 1,
-                direcao: event.target.value as DirecaoOrdenacao,
-              });
-            }}
+            value={direcao}
+            onChange={(event) =>
+              setDirecao(event.target.value as DirecaoOrdenacao)
+            }
           >
             <MenuItem value="asc">Crescente</MenuItem>
             <MenuItem value="desc">Decrescente</MenuItem>

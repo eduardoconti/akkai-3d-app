@@ -101,6 +101,7 @@ export type {
 } from './lib/types/problem-details';
 export { getFieldMessage, getFieldMessages } from './lib/utils/problem';
 export { formatCurrency } from './utils/format-currency';
+export { formatLocalDate, type LocalDateFormat } from './utils/date';
 export {
   getMonthStartInput,
   getMonthEndInput,

@@ -78,17 +78,16 @@ export function obterConsignacaoPorId(id: number): Promise<Consignacao> {
   return httpClient.get<Consignacao>(`/consignacao/${id}`);
 }
 
+export function baixarRelatorioConsignacaoPdf(
+  id: number,
+): Promise<{ blob: Blob; filename: string }> {
+  return httpClient.download(`/consignacao/${id}/pdf`);
+}
+
 export function criarConsignacao(
   dados: InserirConsignacaoInput,
 ): Promise<Consignacao> {
   return httpClient.post<Consignacao>('/consignacao', dados);
-}
-
-export function registrarVendasConsignadas(
-  id: number,
-  dados: RegistrarVendasConsignadasInput,
-): Promise<Consignacao> {
-  return httpClient.post<Consignacao>(`/consignacao/${id}/vendas`, dados);
 }
 
 export function registrarVendasRevendedorConsignado(

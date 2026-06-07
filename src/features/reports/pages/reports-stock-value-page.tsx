@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   MenuItem,
   Box,
@@ -36,22 +36,31 @@ function formatQuantity(value: number): string {
   return new Intl.NumberFormat('pt-BR').format(value);
 }
 
+type StockOrderBy = 'codigo' | 'nome' | 'quantidade' | 'valor' | 'valorTotal';
+type SortDirection = 'asc' | 'desc';
+
+interface AppliedFilters {
+  ordenarPor: StockOrderBy;
+  direcao: SortDirection;
+}
+
 export default function ReportsStockValuePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
-  const [pagina, setPagina] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(10);
-  const [ordenarPor, setOrdenarPor] = useState<
-    'codigo' | 'nome' | 'quantidade' | 'valor' | 'valorTotal'
-  >('codigo');
-  const [direcao, setDirecao] = useState<'asc' | 'desc'>('asc');
+  const [ordenarPor, setOrdenarPor] = useState<StockOrderBy>('codigo');
+  const [direcao, setDirecao] = useState<SortDirection>('asc');
+  const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(
+    null,
+  );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (
-    nextPage = pagina,
-    nextPageSize = tamanhoPagina,
+  const fetchReport = async (
+    nextPage: number,
+    nextPageSize: number,
+    filters: AppliedFilters,
   ) => {
     setProblem(null);
     setIsLoading(true);
@@ -60,35 +69,32 @@ export default function ReportsStockValuePage() {
       const response = await getStockValueReport({
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
-        ordenarPor,
-        direcao,
+        ordenarPor: filters.ordenarPor,
+        direcao: filters.direcao,
       });
-      setPagina(response.pagina);
       setTamanhoPagina(response.tamanhoPagina);
       setResult(response);
+      setAppliedFilters(filters);
     } catch (error) {
       setProblem(getProblemDetailsFromError(error));
       setResult(null);
+      setAppliedFilters(null);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    await fetchReport(1, tamanhoPagina, { ordenarPor, direcao });
   };
 
   const handleClearFilters = () => {
     setOrdenarPor('codigo');
     setDirecao('asc');
     setProblem(null);
+    setResult(null);
+    setAppliedFilters(null);
   };
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void handleSubmit(1, tamanhoPagina);
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [direcao, ordenarPor, tamanhoPagina]);
 
   const renderProductCard = (item: StockValueProductItem) => (
     <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
@@ -148,7 +154,7 @@ export default function ReportsStockValuePage() {
 
       <SearchFilterPanel
         onSearch={() => {
-          void handleSubmit(1, tamanhoPagina);
+          void handleSubmit();
         }}
         onClear={handleClearFilters}
         isLoading={isLoading}
@@ -160,14 +166,7 @@ export default function ReportsStockValuePage() {
             label="Ordenar por"
             value={ordenarPor}
             onChange={(event) =>
-              setOrdenarPor(
-                event.target.value as
-                  | 'codigo'
-                  | 'nome'
-                  | 'quantidade'
-                  | 'valor'
-                  | 'valorTotal',
-              )
+              setOrdenarPor(event.target.value as StockOrderBy)
             }
           >
             <MenuItem value="codigo">Codigo</MenuItem>
@@ -185,7 +184,7 @@ export default function ReportsStockValuePage() {
             label="Direção"
             value={direcao}
             onChange={(event) =>
-              setDirecao(event.target.value as 'asc' | 'desc')
+              setDirecao(event.target.value as SortDirection)
             }
           >
             <MenuItem value="asc">Crescente</MenuItem>
@@ -282,11 +281,23 @@ export default function ReportsStockValuePage() {
               count={result.totalItens}
               page={Math.max(0, result.pagina - 1)}
               onPageChange={(_event, newPage) => {
-                void handleSubmit(newPage + 1, tamanhoPagina);
+                if (appliedFilters) {
+                  void fetchReport(
+                    newPage + 1,
+                    result.tamanhoPagina,
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPage={result.tamanhoPagina}
               onRowsPerPageChange={(event) => {
-                void handleSubmit(1, Number(event.target.value));
+                if (appliedFilters) {
+                  void fetchReport(
+                    1,
+                    Number(event.target.value),
+                    appliedFilters,
+                  );
+                }
               }}
               rowsPerPageOptions={[10, 25, 50]}
               labelRowsPerPage="Itens por pagina"

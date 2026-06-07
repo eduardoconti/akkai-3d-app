@@ -62,6 +62,10 @@ export default function FairProductPricesPage() {
   const [pagination, setPagination] =
     useState<PesquisaPaginadaPrecosProdutosFeira>(initialPagination);
   const [searchInput, setSearchInput] = useState('');
+  const [idFeira, setIdFeira] = useState<number | ''>('');
+  const [ordenarPor, setOrdenarPor] =
+    useState<OrdenacaoPrecoProdutoFeira>('codigo');
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('asc');
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,17 +96,6 @@ export default function FairProductPricesPage() {
       active = false;
     };
   }, []);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      const termo = searchInput.trim();
-      setPagination((current) =>
-        current.termo === termo ? current : { ...current, pagina: 1, termo },
-      );
-    }, 300);
-
-    return () => window.clearTimeout(timeout);
-  }, [searchInput]);
 
   useEffect(() => {
     let active = true;
@@ -143,16 +136,24 @@ export default function FairProductPricesPage() {
       ...current,
       pagina: 1,
       termo: searchInput.trim(),
+      idFeira: idFeira === '' ? undefined : idFeira,
+      ordenarPor,
+      direcao,
     }));
   };
 
   const handleClearFilters = () => {
     setSearchInput('');
+    setIdFeira('');
+    setOrdenarPor('codigo');
+    setDirecao('asc');
     setPagination((current) => ({
       ...current,
       pagina: 1,
       termo: '',
       idFeira: undefined,
+      ordenarPor: 'codigo',
+      direcao: 'asc',
     }));
   };
 
@@ -173,17 +174,12 @@ export default function FairProductPricesPage() {
             select
             fullWidth
             label="Feira"
-            value={pagination.idFeira ?? ''}
-            onChange={(event) => {
-              setPagination((current) => ({
-                ...current,
-                pagina: 1,
-                idFeira:
-                  event.target.value === ''
-                    ? undefined
-                    : Number(event.target.value),
-              }));
-            }}
+            value={idFeira}
+            onChange={(event) =>
+              setIdFeira(
+                event.target.value === '' ? '' : Number(event.target.value),
+              )
+            }
           >
             <MenuItem value="">Todas as feiras</MenuItem>
             {fairs.map((fair) => (
@@ -199,14 +195,10 @@ export default function FairProductPricesPage() {
             select
             fullWidth
             label="Ordenar por"
-            value={pagination.ordenarPor ?? 'codigo'}
-            onChange={(event) => {
-              setPagination((current) => ({
-                ...current,
-                pagina: 1,
-                ordenarPor: event.target.value as OrdenacaoPrecoProdutoFeira,
-              }));
-            }}
+            value={ordenarPor}
+            onChange={(event) =>
+              setOrdenarPor(event.target.value as OrdenacaoPrecoProdutoFeira)
+            }
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Produto</MenuItem>
@@ -220,14 +212,10 @@ export default function FairProductPricesPage() {
             select
             fullWidth
             label="Direção"
-            value={pagination.direcao ?? 'asc'}
-            onChange={(event) => {
-              setPagination((current) => ({
-                ...current,
-                pagina: 1,
-                direcao: event.target.value as DirecaoOrdenacao,
-              }));
-            }}
+            value={direcao}
+            onChange={(event) =>
+              setDirecao(event.target.value as DirecaoOrdenacao)
+            }
           >
             <MenuItem value="asc">Crescente</MenuItem>
             <MenuItem value="desc">Decrescente</MenuItem>

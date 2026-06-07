@@ -562,25 +562,39 @@ export default function ProductsStockPage() {
     })),
   );
   const [searchInput, setSearchInput] = useState('');
+  const [ordenarPor, setOrdenarPor] =
+    useState<OrdenacaoProduto>('nivelEstoque');
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('asc');
 
   const handleSearch = () => {
-    void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
+    void fetchEstoque({
+      pagina: 1,
+      termo: searchInput.trim(),
+      ordenarPor,
+      direcao,
+    });
   };
 
   const handleClearFilters = () => {
     setSearchInput('');
-    void fetchEstoque({ pagina: 1, termo: '' });
+    setOrdenarPor('nivelEstoque');
+    setDirecao('asc');
+    void fetchEstoque({
+      pagina: 1,
+      termo: '',
+      ordenarPor: 'nivelEstoque',
+      direcao: 'asc',
+    });
   };
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void fetchEstoque({ pagina: 1, termo: searchInput.trim() });
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [fetchEstoque, searchInput]);
+    void fetchEstoque({
+      pagina: 1,
+      termo: '',
+      ordenarPor: 'nivelEstoque',
+      direcao: 'asc',
+    });
+  }, [fetchEstoque]);
 
   return (
     <Stack spacing={3}>
@@ -595,13 +609,10 @@ export default function ProductsStockPage() {
             select
             fullWidth
             label="Ordenar por"
-            value={paginacaoEstoque.ordenarPor ?? 'nivelEstoque'}
-            onChange={(event) => {
-              void fetchEstoque({
-                pagina: 1,
-                ordenarPor: event.target.value as OrdenacaoProduto,
-              });
-            }}
+            value={ordenarPor}
+            onChange={(event) =>
+              setOrdenarPor(event.target.value as OrdenacaoProduto)
+            }
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
@@ -615,13 +626,10 @@ export default function ProductsStockPage() {
             select
             fullWidth
             label="Direção"
-            value={paginacaoEstoque.direcao ?? 'asc'}
-            onChange={(event) => {
-              void fetchEstoque({
-                pagina: 1,
-                direcao: event.target.value as DirecaoOrdenacao,
-              });
-            }}
+            value={direcao}
+            onChange={(event) =>
+              setDirecao(event.target.value as DirecaoOrdenacao)
+            }
           >
             <MenuItem value="asc">Crescente</MenuItem>
             <MenuItem value="desc">Decrescente</MenuItem>

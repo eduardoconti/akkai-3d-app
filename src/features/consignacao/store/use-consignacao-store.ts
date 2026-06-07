@@ -9,7 +9,6 @@ import {
   obterRevendedorPorId,
   registrarDevolucaoConsignada,
   registrarVendasRevendedorConsignado,
-  registrarVendasConsignadas,
 } from '@/features/consignacao/api/consignacao-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
@@ -115,10 +114,6 @@ interface ConsignacaoStoreState {
   obterConsignacaoPorId: (id: number) => Promise<Consignacao>;
   criarConsignacao: (
     dados: InserirConsignacaoInput,
-  ) => Promise<ActionResult<Consignacao>>;
-  registrarVendas: (
-    id: number,
-    dados: RegistrarVendasConsignadasInput,
   ) => Promise<ActionResult<Consignacao>>;
   registrarVendasRevendedor: (
     idRevendedor: number,
@@ -246,20 +241,6 @@ export const useConsignacaoStore = create<ConsignacaoStoreState>(
         set({ isSubmitting: false });
       }
     },
-    registrarVendas: async (id, dados) => {
-      set({ isSubmitting: true, submitErrorMessage: null });
-      try {
-        const consignacao = await registrarVendasConsignadas(id, dados);
-        set({ detalheConsignacao: consignacao });
-        return { success: true, data: consignacao };
-      } catch (error) {
-        const problem = getProblemDetailsFromError(error);
-        set({ submitErrorMessage: problem.detail });
-        return { success: false, problem };
-      } finally {
-        set({ isSubmitting: false });
-      }
-    },
     registrarVendasRevendedor: async (idRevendedor, dados) => {
       set({ isSubmitting: true, submitErrorMessage: null });
       try {
@@ -325,7 +306,6 @@ export const consignacaoStoreSelectors = {
   obterConsignacaoPorId: (state: ConsignacaoStoreState) =>
     state.obterConsignacaoPorId,
   criarConsignacao: (state: ConsignacaoStoreState) => state.criarConsignacao,
-  registrarVendas: (state: ConsignacaoStoreState) => state.registrarVendas,
   registrarVendasRevendedor: (state: ConsignacaoStoreState) =>
     state.registrarVendasRevendedor,
   registrarDevolucao: (state: ConsignacaoStoreState) =>
