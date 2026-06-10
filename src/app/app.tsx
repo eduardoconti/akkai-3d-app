@@ -42,6 +42,9 @@ const ReportsStockValuePage = lazy(
 const ReportsProductionPage = lazy(
   () => import('@/features/reports/pages/reports-production-page'),
 );
+const ReportsProductionSuggestionPage = lazy(
+  () => import('@/features/reports/pages/reports-production-suggestion-page'),
+);
 const ReportsSummaryPage = lazy(
   () => import('@/features/reports/pages/reports-summary-page'),
 );
@@ -135,6 +138,10 @@ function App() {
             <Route
               path="/relatorios/producao"
               element={<ReportsProductionPage />}
+            />
+            <Route
+              path="/relatorios/sugestao-producao"
+              element={<ReportsProductionSuggestionPage />}
             />
             <Route path="/relatorios/resumo" element={<ReportsSummaryPage />} />
             <Route

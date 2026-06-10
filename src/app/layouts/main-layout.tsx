@@ -13,6 +13,10 @@ import {
   Box,
   Button,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Drawer,
   IconButton,
@@ -35,6 +39,7 @@ import {
   Assessment,
   AssignmentTurnedIn,
   Balance,
+  Close,
   DarkMode,
   ExpandLess,
   ExpandMore,
@@ -67,6 +72,12 @@ import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
 import { saleStoreSelectors } from '@/features/sales/store/use-sale-store';
 import {
+  initialSaleFormState,
+  type SaleFormState,
+} from '@/features/sales/types/sale-form';
+import {
+  formatCurrency,
+  formatLocalDate,
   GlobalFeedbackSnackbar,
   useFeedbackStore,
   useOnlineStatus,
@@ -102,6 +113,69 @@ const MENU_ACTION_BUTTON_SX = {
   },
 };
 
+type QuickSaleDraft = {
+  id: string;
+  label: string;
+  form: SaleFormState;
+};
+
+type QuickSaleDefaultConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
+
+function cloneSaleFormState(form: SaleFormState): SaleFormState {
+  return {
+    ...form,
+    itens: form.itens.map((item) => ({ ...item })),
+    pagamentos: form.pagamentos.map((pagamento) => ({ ...pagamento })),
+  };
+}
+
+function createQuickSaleForm(config: QuickSaleDefaultConfig): SaleFormState {
+  return {
+    ...cloneSaleFormState(initialSaleFormState),
+    dataVenda: formatLocalDate(),
+    tipo: config.tipo,
+    idFeira: config.tipo === 'FEIRA' ? config.idFeira : '',
+  };
+}
+
+function calculateDraftDiscount(form: SaleFormState, subtotal: number) {
+  if (form.descontoModo === 'PERCENTUAL') {
+    const normalizedDiscount = Math.min(Math.max(form.desconto, 0), 99);
+    return Math.round((subtotal * normalizedDiscount) / 100);
+  }
+
+  return Math.round(Math.min(Math.max(form.desconto, 0), 999.99) * 100);
+}
+
+function getQuickSaleDraftSummary(form: SaleFormState) {
+  const filledItems = form.itens.filter((item) => {
+    if (item.tipoItem === 'CATALOGO') {
+      return item.idProduto !== null;
+    }
+
+    return item.nomeProduto.trim().length > 0 || item.valorUnitario > 0;
+  });
+  const totalQuantidadeItens = filledItems.reduce(
+    (total, item) => total + item.quantidade,
+    0,
+  );
+  const subtotal = filledItems.reduce((total, item) => {
+    const valorUnitario = item.brinde
+      ? 0
+      : Math.round(item.valorUnitario * 100);
+    return total + valorUnitario * item.quantidade;
+  }, 0);
+  const total = Math.max(0, subtotal - calculateDraftDiscount(form, subtotal));
+
+  return {
+    itemLabel:
+      totalQuantidadeItens === 0
+        ? 'sem itens'
+        : `${totalQuantidadeItens} ${totalQuantidadeItens === 1 ? 'item' : 'itens'}`,
+    total,
+  };
+}
+
 interface MainLayoutProps {
   children: ReactNode;
 }
@@ -132,7 +206,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
-  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
+  const [quickSaleDrafts, setQuickSaleDrafts] = useState<QuickSaleDraft[]>([]);
+  const [activeQuickSaleDraftId, setActiveQuickSaleDraftId] = useState<
+    string | null
+  >(null);
+  const [quickSaleDraftToDiscardId, setQuickSaleDraftToDiscardId] = useState<
+    string | null
+  >(null);
+  const [quickSaleDefaultConfig, setQuickSaleDefaultConfig] =
+    useState<QuickSaleDefaultConfig>({
+      tipo: initialSaleFormState.tipo,
+      idFeira: initialSaleFormState.idFeira,
+    });
   const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [
@@ -154,6 +239,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
   );
+  const quickSaleDraftSequenceRef = useRef(0);
 
   useEffect(() => {
     void hydrateOfflineState();
@@ -253,6 +339,98 @@ export default function MainLayout({ children }: MainLayoutProps) {
       );
     }
   }, [sincronizarVendasPendentes, showSuccess]);
+
+  const activeQuickSaleDraft = useMemo(
+    () =>
+      quickSaleDrafts.find((draft) => draft.id === activeQuickSaleDraftId) ??
+      null,
+    [activeQuickSaleDraftId, quickSaleDrafts],
+  );
+  const quickSaleDraftToDiscard = useMemo(
+    () =>
+      quickSaleDrafts.find((draft) => draft.id === quickSaleDraftToDiscardId) ??
+      null,
+    [quickSaleDraftToDiscardId, quickSaleDrafts],
+  );
+
+  const handleOpenNewQuickSaleDraft = useCallback(() => {
+    const now = Date.now();
+    const nextDraftNumber = quickSaleDraftSequenceRef.current + 1;
+    quickSaleDraftSequenceRef.current = nextDraftNumber;
+    const id = `quick-sale-${now}-${nextDraftNumber}`;
+
+    setQuickSaleDrafts((current) => [
+      ...current,
+      {
+        id,
+        label: `Venda ${nextDraftNumber}`,
+        form: createQuickSaleForm(quickSaleDefaultConfig),
+      },
+    ]);
+    setActiveQuickSaleDraftId(id);
+  }, [quickSaleDefaultConfig]);
+
+  const handleQuickSaleDraftChange = useCallback(
+    (form: SaleFormState) => {
+      if (!activeQuickSaleDraftId) {
+        return;
+      }
+
+      setQuickSaleDefaultConfig({
+        tipo: form.tipo,
+        idFeira: form.idFeira,
+      });
+      setQuickSaleDrafts((current) =>
+        current.map((draft) =>
+          draft.id === activeQuickSaleDraftId
+            ? {
+                ...draft,
+                form: cloneSaleFormState(form),
+              }
+            : draft,
+        ),
+      );
+    },
+    [activeQuickSaleDraftId],
+  );
+
+  const handleMinimizeQuickSaleDraft = useCallback(() => {
+    setActiveQuickSaleDraftId(null);
+  }, []);
+
+  const handleCloseQuickSaleDraft = useCallback(() => {
+    if (!activeQuickSaleDraftId) {
+      return;
+    }
+
+    setQuickSaleDrafts((current) =>
+      current.filter((draft) => draft.id !== activeQuickSaleDraftId),
+    );
+    setActiveQuickSaleDraftId(null);
+  }, [activeQuickSaleDraftId]);
+
+  const handleRestoreQuickSaleDraft = useCallback((draftId: string) => {
+    setActiveQuickSaleDraftId(draftId);
+  }, []);
+
+  const handleAskDiscardQuickSaleDraft = useCallback((draftId: string) => {
+    setQuickSaleDraftToDiscardId(draftId);
+  }, []);
+
+  const handleDiscardQuickSaleDraft = useCallback(
+    (draftId: string) => {
+      setQuickSaleDrafts((current) =>
+        current.filter((draft) => draft.id !== draftId),
+      );
+
+      if (activeQuickSaleDraftId === draftId) {
+        setActiveQuickSaleDraftId(null);
+      }
+
+      setQuickSaleDraftToDiscardId(null);
+    },
+    [activeQuickSaleDraftId],
+  );
 
   const prevIsOnlineRef = useRef(isOnline);
   const pendingSalesCountRef = useRef(pendingSalesCount);
@@ -361,7 +539,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                openDialog(() => setSaleDialogOpen(true));
+                openDialog(handleOpenNewQuickSaleDraft);
               }}
               sx={{
                 mr: 0.5,
@@ -915,6 +1093,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Produção" />
               </ListItemButton>
             </ListItem>
+
+            <ListItem disablePadding sx={{ mt: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/relatorios/sugestao-producao"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Sugestão produção" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Collapse>
 
@@ -1039,7 +1232,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Divider orientation="vertical" flexItem />
 
             <IconButton
-              onClick={() => openDialog(() => setSaleDialogOpen(true))}
+              onClick={() => openDialog(handleOpenNewQuickSaleDraft)}
               aria-label="Nova venda"
               sx={{
                 flexShrink: 0,
@@ -1121,7 +1314,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <Button
             variant="contained"
             startIcon={<AddShoppingCart />}
-            onClick={() => openDialog(() => setSaleDialogOpen(true))}
+            onClick={() => openDialog(handleOpenNewQuickSaleDraft)}
           >
             Nova venda
           </Button>
@@ -1282,10 +1475,166 @@ export default function MainLayout({ children }: MainLayoutProps) {
         open={budgetDialogOpen}
         onClose={() => setBudgetDialogOpen(false)}
       />
-      <NewSaleDialog
-        open={saleDialogOpen}
-        onClose={() => setSaleDialogOpen(false)}
-      />
+      {activeQuickSaleDraft ? (
+        <NewSaleDialog
+          key={activeQuickSaleDraft.id}
+          draftKey={activeQuickSaleDraft.id}
+          initialForm={activeQuickSaleDraft.form}
+          open
+          onClose={handleCloseQuickSaleDraft}
+          onDraftChange={handleQuickSaleDraftChange}
+          onMinimize={handleMinimizeQuickSaleDraft}
+        />
+      ) : null}
+
+      {quickSaleDrafts.length > 0 && !activeQuickSaleDraft ? (
+        <Box
+          sx={{
+            position: 'fixed',
+            right: { xs: 12, md: 24 },
+            bottom: { xs: 12, md: 24 },
+            left: { xs: 12, md: DRAWER_WIDTH + 24 },
+            zIndex: (theme) => theme.zIndex.drawer + 2,
+            pointerEvents: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: { xs: 'stretch', md: 'flex-end' },
+            }}
+          >
+            <Box
+              sx={{
+                maxWidth: { xs: '100%', md: 760 },
+                width: { xs: '100%', md: 'auto' },
+                borderRadius: 2,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                bgcolor: 'background.paper',
+                boxShadow: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? '0 16px 36px rgba(0,0,0,0.42)'
+                    : '0 18px 44px rgba(15, 23, 42, 0.18)',
+                p: 1,
+                pointerEvents: 'auto',
+              }}
+            >
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ overflowX: 'auto', pb: 0.25 }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={800}
+                  sx={{ flexShrink: 0, px: 0.5 }}
+                >
+                  Atendimentos
+                </Typography>
+
+                {quickSaleDrafts.map((draft) => {
+                  const summary = getQuickSaleDraftSummary(draft.form);
+
+                  return (
+                    <Box
+                      key={draft.id}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        maxWidth: 230,
+                        border: (theme) => `1px solid ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        bgcolor: 'background.default',
+                      }}
+                    >
+                      <Button
+                        color="inherit"
+                        onClick={() => handleRestoreQuickSaleDraft(draft.id)}
+                        sx={{
+                          justifyContent: 'flex-start',
+                          minWidth: 0,
+                          px: 1.25,
+                          py: 0.75,
+                          textTransform: 'none',
+                        }}
+                      >
+                        <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            noWrap
+                            sx={{ display: 'block' }}
+                          >
+                            {draft.label}
+                          </Typography>
+                          <Typography variant="body2" fontWeight={800} noWrap>
+                            {summary.itemLabel} •{' '}
+                            {formatCurrency(summary.total)}
+                          </Typography>
+                        </Box>
+                      </Button>
+
+                      <IconButton
+                        size="small"
+                        aria-label={`Descartar ${draft.label}`}
+                        onClick={() => handleAskDiscardQuickSaleDraft(draft.id)}
+                        sx={{ mr: 0.25 }}
+                      >
+                        <Close fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  );
+                })}
+
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<AddShoppingCart />}
+                  onClick={handleOpenNewQuickSaleDraft}
+                  sx={{ flexShrink: 0 }}
+                >
+                  Nova
+                </Button>
+              </Stack>
+            </Box>
+          </Box>
+        </Box>
+      ) : null}
+
+      <Dialog
+        open={Boolean(quickSaleDraftToDiscard)}
+        onClose={() => setQuickSaleDraftToDiscardId(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Descartar atendimento?</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            O rascunho {quickSaleDraftToDiscard?.label.toLowerCase()} será
+            removido da lista de atendimentos.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            color="inherit"
+            onClick={() => setQuickSaleDraftToDiscardId(null)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            onClick={() => {
+              if (quickSaleDraftToDiscard) {
+                handleDiscardQuickSaleDraft(quickSaleDraftToDiscard.id);
+              }
+            }}
+          >
+            Descartar
+          </Button>
+        </DialogActions>
+      </Dialog>
       <FairDialog
         open={fairDialogOpen}
         onClose={() => setFairDialogOpen(false)}

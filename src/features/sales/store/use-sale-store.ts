@@ -208,6 +208,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       idFeira: hasQueryValue('idFeira')
         ? query?.idFeira
         : currentPagination.idFeira,
+      idProduto: hasQueryValue('idProduto')
+        ? query?.idProduto
+        : currentPagination.idProduto,
       idCarteira: hasQueryValue('idCarteira')
         ? query?.idCarteira
         : currentPagination.idCarteira,
@@ -232,6 +235,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
           tamanhoPagina: response.tamanhoPagina,
           tipo: nextPagination.tipo,
           idFeira: nextPagination.idFeira,
+          idProduto: nextPagination.idProduto,
           idCarteira: nextPagination.idCarteira,
           meioPagamento: nextPagination.meioPagamento,
           dataInicio: nextPagination.dataInicio,
@@ -257,6 +261,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
               tamanhoPagina: cachedResponse.tamanhoPagina,
               tipo: nextPagination.tipo,
               idFeira: nextPagination.idFeira,
+              idProduto: nextPagination.idProduto,
               idCarteira: nextPagination.idCarteira,
               meioPagamento: nextPagination.meioPagamento,
               dataInicio: nextPagination.dataInicio,
