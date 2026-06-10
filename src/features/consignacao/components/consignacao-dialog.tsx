@@ -355,24 +355,11 @@ export default function ConsignacaoDialog({
           </Grid>
 
           <Box>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              justifyContent="space-between"
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-              spacing={1}
-              sx={{ mb: 1.5 }}
-            >
+            <Box sx={{ mb: 1.5 }}>
               <Typography variant="subtitle2" fontWeight={700}>
                 Itens consignados
               </Typography>
-              <Button
-                startIcon={<Add />}
-                onClick={handleAddItem}
-                disabled={isBusy}
-              >
-                Adicionar item
-              </Button>
-            </Stack>
+            </Box>
 
             <Stack spacing={1.5}>
               {form.itens.map((item, index) => (
@@ -436,6 +423,20 @@ export default function ConsignacaoDialog({
                   </Grid>
                 </Grid>
               ))}
+
+              <Button
+                startIcon={<Add />}
+                onClick={handleAddItem}
+                variant="outlined"
+                disabled={isBusy}
+                sx={{
+                  borderStyle: 'dashed',
+                  py: 1.1,
+                  justifyContent: 'center',
+                }}
+              >
+                Adicionar item
+              </Button>
             </Stack>
 
             {localErrors.itens ? (

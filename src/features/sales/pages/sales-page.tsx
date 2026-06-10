@@ -43,8 +43,10 @@ import {
   getPaymentMethodLabel,
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
+import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
+  ProductAutocompleteField,
   SearchFilterPanel,
   formatCurrency,
   formatLocalDate,
@@ -53,6 +55,7 @@ import {
   useOnlineStatus,
   type MeioPagamento,
   type Feira,
+  type Produto,
   type TipoVenda,
   type Venda,
 } from '@/shared';
@@ -340,8 +343,11 @@ export default function SalesPage() {
   const [dateRange, setDateRange] = useState(initialSalesDateRange);
   const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
+  const [idProduto, setIdProduto] = useState<number | ''>('');
   const [idCarteira, setIdCarteira] = useState<number | ''>('');
   const [meioPagamento, setMeioPagamento] = useState<MeioPagamento | ''>('');
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
@@ -358,6 +364,7 @@ export default function SalesPage() {
       dataFim: dateRange.endValue,
       tipo: type === 'TODOS' ? undefined : type,
       idFeira: type === 'FEIRA' && idFeira !== '' ? idFeira : undefined,
+      idProduto: idProduto === '' ? undefined : idProduto,
       idCarteira: idCarteira === '' ? undefined : idCarteira,
       meioPagamento: meioPagamento === '' ? undefined : meioPagamento,
     });
@@ -367,6 +374,7 @@ export default function SalesPage() {
     setDateRange({ startValue: '', endValue: '' });
     setType('TODOS');
     setIdFeira('');
+    setIdProduto('');
     setIdCarteira('');
     setMeioPagamento('');
     void fetchVendas({
@@ -375,6 +383,7 @@ export default function SalesPage() {
       dataFim: '',
       tipo: undefined,
       idFeira: undefined,
+      idProduto: undefined,
       idCarteira: undefined,
       meioPagamento: undefined,
     });
@@ -389,10 +398,37 @@ export default function SalesPage() {
       dataFim: initialSalesDateRange.endValue,
       tipo: undefined,
       idFeira: undefined,
+      idProduto: undefined,
       idCarteira: undefined,
       meioPagamento: undefined,
     });
   }, [fetchCarteiras, fetchFeiras, fetchVendas]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    setIsLoadingProducts(true);
+    listAllProducts()
+      .then((items) => {
+        if (isMounted) {
+          setProdutos(items);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setProdutos([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingProducts(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (type !== 'FEIRA') {
@@ -491,7 +527,11 @@ export default function SalesPage() {
       </Stack>
 
       <Box>
-        <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+        <SearchFilterPanel
+          onSearch={handleSearch}
+          onClear={handleClearFilters}
+          columns={{ xs: 12, md: 12, lg: 24 }}
+        >
           <Grid size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 5 : 6 }}>
             <DateRangePickerField
               label="Período"
@@ -501,7 +541,7 @@ export default function SalesPage() {
             />
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+          <Grid size={{ xs: 12, md: 6, lg: 3 }}>
             <TextField
               select
               fullWidth
@@ -544,6 +584,24 @@ export default function SalesPage() {
               </TextField>
             </Grid>
           ) : null}
+
+          <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+            <ProductAutocompleteField
+              products={produtos}
+              productId={idProduto}
+              onChange={(produto) => setIdProduto(produto?.id ?? '')}
+              label="Produto"
+              helperText={
+                isLoadingProducts
+                  ? 'Carregando produtos...'
+                  : produtos.length === 0
+                    ? 'Nenhum produto cadastrado.'
+                    : 'Opcional'
+              }
+              loading={isLoadingProducts}
+              disabled={isLoadingProducts || produtos.length === 0}
+            />
+          </Grid>
 
           <Grid size={{ xs: 12, md: 6, lg: type === 'FEIRA' ? 4 : 5 }}>
             <TextField

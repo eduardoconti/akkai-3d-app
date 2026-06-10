@@ -160,6 +160,59 @@ export interface ProductionReportResponse {
   mediaValorPorDia: number;
 }
 
+export interface ProductionSuggestionReportFilter {
+  dataInicio?: string;
+  dataFim?: string;
+  diasHistorico?: number;
+  diasPlanejamento?: number;
+  diasEstoqueSeguranca?: number;
+  pagina?: number;
+  tamanhoPagina?: number;
+  ordenarPor?:
+    | 'codigo'
+    | 'nome'
+    | 'estoqueAtual'
+    | 'quantidadeVendida'
+    | 'mediaVendaDiaria'
+    | 'diasCobertura'
+    | 'sugestaoProducao';
+  direcao?: 'asc' | 'desc';
+}
+
+export interface ProductionSuggestionReportItem {
+  idProduto: number;
+  codigo: number;
+  nome: string;
+  categoria?: {
+    id: number;
+    nome: string;
+  } | null;
+  estoqueAtual: number;
+  estoqueMinimo: number;
+  quantidadeVendida: number;
+  mediaVendaDiaria: number;
+  demandaPlanejada: number;
+  estoqueSeguranca: number;
+  estoqueAlvo: number;
+  diasCobertura: number | null;
+  sugestaoProducao: number;
+  prioridade: 'CRITICO' | 'PRODUZIR';
+}
+
+export interface ProductionSuggestionReportResponse {
+  dataInicio: string;
+  dataFim: string;
+  diasHistorico: number;
+  diasPlanejamento: number;
+  diasEstoqueSeguranca: number;
+  itens: ProductionSuggestionReportItem[];
+  pagina: number;
+  tamanhoPagina: number;
+  totalItens: number;
+  totalPaginas: number;
+  totalQuantidadeSugerida: number;
+}
+
 export function getSalesSummary(
   filtro: SalesSummaryPeriodFilter,
 ): Promise<SalesSummary> {
@@ -208,5 +261,17 @@ export function getStockValueReport(
 export function getProductionReport(
   filtro: ProductionReportFilter,
 ): Promise<ProductionReportResponse> {
-  return httpClient.get<ProductionReportResponse>('/relatorio/producao', filtro);
+  return httpClient.get<ProductionReportResponse>(
+    '/relatorio/producao',
+    filtro,
+  );
+}
+
+export function getProductionSuggestionReport(
+  filtro: ProductionSuggestionReportFilter,
+): Promise<ProductionSuggestionReportResponse> {
+  return httpClient.get<ProductionSuggestionReportResponse>(
+    '/relatorio/producao/sugestao',
+    filtro,
+  );
 }

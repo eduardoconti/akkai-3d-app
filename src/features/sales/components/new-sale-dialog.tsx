@@ -15,6 +15,7 @@ import {
   Paper,
   Stack,
   TextField,
+  Tooltip,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -31,6 +32,7 @@ import {
   Delete,
   Inventory2,
   LocalAtm,
+  Minimize,
   Pix,
   Remove,
 } from '@mui/icons-material';
@@ -80,6 +82,10 @@ import { useShallow } from 'zustand/react/shallow';
 interface NewSaleDialogProps {
   open: boolean;
   onClose: () => void;
+  draftKey?: string;
+  initialForm?: SaleFormState;
+  onDraftChange?: (form: SaleFormState) => void;
+  onMinimize?: () => void;
   sale?: Venda | null;
 }
 
@@ -223,6 +229,14 @@ function getResetFormState(config: PersistedSaleConfig): SaleFormState {
   };
 }
 
+function cloneSaleFormState(form: SaleFormState): SaleFormState {
+  return {
+    ...form,
+    itens: form.itens.map((item) => ({ ...item })),
+    pagamentos: form.pagamentos.map((pagamento) => ({ ...pagamento })),
+  };
+}
+
 function mapSaleToForm(sale: Venda): SaleFormState {
   const pagamentos: SaleFormPayment[] = sale.pagamentos.map((pagamento) => ({
     idCarteira: pagamento.idCarteira,
@@ -249,8 +263,12 @@ function mapSaleToForm(sale: Venda): SaleFormState {
 }
 
 export default function NewSaleDialog({
+  draftKey,
+  initialForm,
+  onDraftChange,
   open,
   onClose,
+  onMinimize,
   sale = null,
 }: NewSaleDialogProps) {
   const isOnline = useOnlineStatus();
@@ -284,7 +302,8 @@ export default function NewSaleDialog({
     })),
   );
 
-  const [form, setForm] = useState<SaleFormState>(initialSaleFormState);
+  const [form, setInternalForm] =
+    useState<SaleFormState>(initialSaleFormState);
   const [persistedConfig, setPersistedConfig] = useState<PersistedSaleConfig>({
     tipo: initialSaleFormState.tipo,
     idFeira: initialSaleFormState.idFeira,
@@ -314,10 +333,30 @@ export default function NewSaleDialog({
   const persistedConfigRef = useRef(persistedConfig);
   const preservedDraftRef = useRef(false);
   const preservedDraftSaleIdRef = useRef<number | null>(null);
+  const canEmitDraftChangeRef = useRef(false);
+  const initialFormRef = useRef(initialForm);
+
+  initialFormRef.current = initialForm;
+
+  const setForm = (
+    nextForm:
+      | SaleFormState
+      | ((currentForm: SaleFormState) => SaleFormState),
+  ) => {
+    setInternalForm((currentForm) =>
+      typeof nextForm === 'function' ? nextForm(currentForm) : nextForm,
+    );
+  };
 
   useEffect(() => {
     persistedConfigRef.current = persistedConfig;
   }, [persistedConfig]);
+
+  useEffect(() => {
+    if (open && !isEditMode && canEmitDraftChangeRef.current) {
+      onDraftChange?.(cloneSaleFormState(form));
+    }
+  }, [form, isEditMode, onDraftChange, open]);
 
   useEffect(() => {
     async function loadCatalogProducts() {
@@ -346,6 +385,7 @@ export default function NewSaleDialog({
 
     if (open) {
       const currentSaleId = sale?.id ?? null;
+      canEmitDraftChangeRef.current = false;
 
       if (
         preservedDraftRef.current &&
@@ -356,6 +396,8 @@ export default function NewSaleDialog({
         const nextForm =
           isEditMode && sale
             ? mapSaleToForm(sale)
+            : initialFormRef.current
+              ? cloneSaleFormState(initialFormRef.current)
             : getResetFormState(persistedConfigRef.current);
 
         setForm(nextForm);
@@ -364,11 +406,21 @@ export default function NewSaleDialog({
       void loadCatalogProducts();
       void fetchFeiras();
       void fetchCarteiras();
+      canEmitDraftChangeRef.current = true;
       return;
     }
 
+    canEmitDraftChangeRef.current = false;
     clearSubmitError();
-  }, [open, sale, isEditMode, fetchCarteiras, fetchFeiras, clearSubmitError]);
+  }, [
+    open,
+    sale,
+    draftKey,
+    isEditMode,
+    fetchCarteiras,
+    fetchFeiras,
+    clearSubmitError,
+  ]);
 
   useEffect(() => {
     const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
@@ -516,6 +568,11 @@ export default function NewSaleDialog({
   };
 
   const handleDismissPreservingDraft = () => {
+    if (onMinimize && !isEditMode) {
+      onMinimize();
+      return;
+    }
+
     preservedDraftRef.current = true;
     preservedDraftSaleIdRef.current = sale?.id ?? null;
     onClose();
@@ -955,6 +1012,20 @@ export default function NewSaleDialog({
                 </Typography>
               </Button>
             </Box>
+
+            {onMinimize && !isEditMode ? (
+              <Tooltip title="Minimizar venda">
+                <span>
+                  <IconButton
+                    onClick={onMinimize}
+                    aria-label="Minimizar venda"
+                    disabled={isBusy}
+                  >
+                    <Minimize />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : null}
 
             <IconButton
               onClick={handleAskCancel}
@@ -1798,7 +1869,7 @@ export default function NewSaleDialog({
         <DialogContent>
           <Typography color="text.secondary">
             Os itens preenchidos serão descartados. Para apenas sair e continuar
-            depois, clique fora do modal de venda.
+            depois, minimize a venda ou clique fora do modal.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
