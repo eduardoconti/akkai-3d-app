@@ -161,8 +161,6 @@ export interface ProductionReportResponse {
 }
 
 export interface ProductionSuggestionReportFilter {
-  dataInicio?: string;
-  dataFim?: string;
   diasHistorico?: number;
   diasPlanejamento?: number;
   diasEstoqueSeguranca?: number;

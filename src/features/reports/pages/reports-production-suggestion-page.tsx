@@ -25,10 +25,8 @@ import {
   type ProductionSuggestionReportResponse,
 } from '@/features/reports/api/reports-api';
 import {
-  DateRangePickerField,
   FormFeedbackAlert,
   SearchFilterPanel,
-  getMonthRangeInput,
   getProblemDetailsFromError,
   type ProblemDetails,
 } from '@/shared';
@@ -54,8 +52,6 @@ type SuggestionOrderBy =
 type SortDirection = 'asc' | 'desc';
 
 interface AppliedFilters {
-  dataInicio: string;
-  dataFim: string;
   diasHistorico: number;
   diasPlanejamento: number;
   diasEstoqueSeguranca: number;
@@ -66,7 +62,6 @@ interface AppliedFilters {
 export default function ReportsProductionSuggestionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [diasHistorico, setDiasHistorico] = useState(28);
   const [diasPlanejamento, setDiasPlanejamento] = useState(7);
   const [diasEstoqueSeguranca, setDiasEstoqueSeguranca] = useState(2);
@@ -80,7 +75,6 @@ export default function ReportsProductionSuggestionPage() {
     null,
   );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchReport = async (
@@ -89,13 +83,10 @@ export default function ReportsProductionSuggestionPage() {
     filters: AppliedFilters,
   ) => {
     setProblem(null);
-    setLocalError(null);
     setIsLoading(true);
 
     try {
       const response = await getProductionSuggestionReport({
-        dataInicio: filters.dataInicio,
-        dataFim: filters.dataFim,
         diasHistorico: filters.diasHistorico,
         diasPlanejamento: filters.diasPlanejamento,
         diasEstoqueSeguranca: filters.diasEstoqueSeguranca,
@@ -118,18 +109,8 @@ export default function ReportsProductionSuggestionPage() {
 
   const handleSubmit = async () => {
     setProblem(null);
-    setLocalError(null);
-
-    if (!dateRange.startValue || !dateRange.endValue) {
-      setLocalError('Selecione as datas inicial e final.');
-      setResult(null);
-      setAppliedFilters(null);
-      return;
-    }
 
     await fetchReport(1, tamanhoPagina, {
-      dataInicio: dateRange.startValue,
-      dataFim: dateRange.endValue,
       diasHistorico,
       diasPlanejamento,
       diasEstoqueSeguranca,
@@ -139,14 +120,12 @@ export default function ReportsProductionSuggestionPage() {
   };
 
   const handleClearFilters = () => {
-    setDateRange({ startValue: '', endValue: '' });
     setDiasHistorico(28);
     setDiasPlanejamento(7);
     setDiasEstoqueSeguranca(2);
     setOrdenarPor('sugestaoProducao');
     setDirecao('desc');
     setProblem(null);
-    setLocalError(null);
     setResult(null);
     setAppliedFilters(null);
   };
@@ -246,19 +225,10 @@ export default function ReportsProductionSuggestionPage() {
         onClear={handleClearFilters}
         isLoading={isLoading}
       >
-        <Grid size={{ xs: 12, md: 6, lg: 8 }}>
-          <DateRangePickerField
-            label="Histórico de vendas"
-            startValue={dateRange.startValue}
-            endValue={dateRange.endValue}
-            onValueChange={setDateRange}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 4, lg: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <TextField
             fullWidth
-            label="Dias histórico"
+            label="Últimos dias"
             type="number"
             value={diasHistorico}
             slotProps={{
@@ -270,7 +240,7 @@ export default function ReportsProductionSuggestionPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 4, lg: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <TextField
             fullWidth
             label="Dias planejamento"
@@ -285,7 +255,7 @@ export default function ReportsProductionSuggestionPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 4, lg: 4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <TextField
             fullWidth
             label="Dias segurança"
@@ -300,7 +270,7 @@ export default function ReportsProductionSuggestionPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <TextField
             select
             fullWidth
@@ -320,7 +290,7 @@ export default function ReportsProductionSuggestionPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
           <TextField
             select
             fullWidth
@@ -336,7 +306,7 @@ export default function ReportsProductionSuggestionPage() {
         </Grid>
       </SearchFilterPanel>
 
-      <FormFeedbackAlert message={localError ?? problem?.detail} />
+      <FormFeedbackAlert message={problem?.detail} />
 
       {result ? (
         <Stack spacing={2}>
