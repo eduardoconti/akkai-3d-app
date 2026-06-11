@@ -23,6 +23,7 @@ import {
   updatePlano,
 } from '@/features/assinatura/api/assinatura-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   AlterarCicloAssinaturaInput,
@@ -44,7 +45,7 @@ import type {
 
 const paginacaoAssinantesInicial: PesquisarAssinantesInput = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   status: undefined,
   idPlano: undefined,
@@ -52,7 +53,7 @@ const paginacaoAssinantesInicial: PesquisarAssinantesInput = {
 
 const paginacaoCiclosInicial: PesquisarCiclosInput = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   idAssinante: undefined,
   status: undefined,
   mes: undefined,
@@ -61,7 +62,7 @@ const paginacaoCiclosInicial: PesquisarCiclosInput = {
 
 const paginacaoKitsInicial: PesquisarKitsInput = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   idPlano: undefined,
   mes: undefined,
   ano: undefined,

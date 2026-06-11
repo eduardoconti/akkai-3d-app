@@ -23,6 +23,7 @@ import {
 } from '@/features/finance/api/finance-api';
 import { listFairs } from '@/features/sales/api/sales-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   AjusteCarteira,
@@ -43,7 +44,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaDespesas = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   dataInicio: '',
   dataFim: '',

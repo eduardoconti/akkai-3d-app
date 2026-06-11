@@ -30,6 +30,7 @@ import {
 } from '@/features/assinatura/types/assinatura-form';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -305,7 +306,7 @@ export default function AssinantesPage() {
         <AppTablePagination
           count={totalAssinantes}
           page={Math.max(0, (paginacaoAssinantes.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoAssinantes.tamanhoPagina ?? 50}
+          rowsPerPage={paginacaoAssinantes.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
           onPageChange={(_event, newPage) => {
             void fetchAssinantes({ pagina: newPage + 1 });
           }}

@@ -24,6 +24,7 @@ import {
 import { Close } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useProductStore } from '../store/use-product-store';
+import { PAGINATED_SEARCH_PAGE_SIZE_OPTIONS } from '@/shared';
 
 interface StockHistoryDialogProps {
   open: boolean;
@@ -302,7 +303,7 @@ export default function StockHistoryDialog({
                   tamanhoPagina: Number(event.target.value),
                 });
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por página"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

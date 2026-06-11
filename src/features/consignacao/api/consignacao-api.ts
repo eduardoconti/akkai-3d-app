@@ -1,4 +1,5 @@
 import { httpClient } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type {
   Consignacao,
   InserirConsignacaoInput,
@@ -30,7 +31,7 @@ export async function listarTodosRevendedoresAtivos(): Promise<Revendedor[]> {
   do {
     const resposta = await listarRevendedores({
       pagina,
-      tamanhoPagina: 50,
+      tamanhoPagina: DEFAULT_PAGE_SIZE,
       termo: '',
       status: 'ATIVO',
       ordenarPor: 'nome',

@@ -11,6 +11,7 @@ import {
   registrarVendasRevendedorConsignado,
 } from '@/features/consignacao/api/consignacao-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Consignacao,
@@ -26,7 +27,7 @@ import type {
 
 const paginacaoRevendedoresInicial: PesquisaPaginadaRevendedores = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   status: undefined,
   ordenarPor: 'nome',
@@ -34,7 +35,7 @@ const paginacaoRevendedoresInicial: PesquisaPaginadaRevendedores = {
 
 const paginacaoConsignacoesInicial: PesquisaPaginadaConsignacoes = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   idRevendedor: undefined,
   status: undefined,

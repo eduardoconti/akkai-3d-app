@@ -7,6 +7,7 @@ import {
 } from '@/features/budgets/api/budgets-api';
 import { ALL_STATUSES_ORCAMENTO } from '@/features/budgets/types/budget-form';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   AtualizarOrcamentoInput,
@@ -18,7 +19,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaOrcamentos = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   status: ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO'),
 };
 

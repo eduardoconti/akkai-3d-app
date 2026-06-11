@@ -1,4 +1,5 @@
 import { httpClient } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type {
   Categoria,
   DetalheProduto,
@@ -51,7 +52,7 @@ export async function listAllProducts(): Promise<Produto[]> {
   do {
     const resposta = await listProducts({
       pagina,
-      tamanhoPagina: 50,
+      tamanhoPagina: DEFAULT_PAGE_SIZE,
       termo: '',
       ordenarPor: 'nome',
       direcao: 'asc',
@@ -79,7 +80,10 @@ export async function listAllCategories(): Promise<Categoria[]> {
   let totalPaginas = 1;
 
   do {
-    const resposta = await listCategories({ pagina, tamanhoPagina: 50 });
+    const resposta = await listCategories({
+      pagina,
+      tamanhoPagina: DEFAULT_PAGE_SIZE,
+    });
     categorias.push(...resposta.itens);
     totalPaginas = resposta.totalPaginas;
     pagina += 1;

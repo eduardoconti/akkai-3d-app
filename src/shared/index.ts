@@ -1,4 +1,8 @@
 export { default as AppTablePagination } from './components/app-table-pagination';
+export {
+  DEFAULT_PAGE_SIZE,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+} from './lib/constants/pagination';
 export { default as EmptyState } from './components/feedback/empty-state';
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
 export { default as LoadingState } from './components/feedback/loading-state';

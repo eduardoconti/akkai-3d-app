@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import {
   getCachedCategories,
   getCachedProducts,
@@ -31,7 +32,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   ordenarPor: 'codigo',
   direcao: 'desc',
@@ -40,13 +41,13 @@ const paginacaoInicial: PesquisaPaginada = {
 
 const paginacaoCategoriasInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
 };
 
 const paginacaoEstoqueInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   ordenarPor: 'nivelEstoque',
   direcao: 'asc',
@@ -54,7 +55,7 @@ const paginacaoEstoqueInicial: PesquisaPaginada = {
 
 const paginacaoMovimentacoesInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
 };
 
 function paginarCategoriasEmMemoria(

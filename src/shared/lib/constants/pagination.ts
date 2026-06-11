@@ -1,0 +1,3 @@
+export const DEFAULT_PAGE_SIZE = 50;
+
+export const PAGINATED_SEARCH_PAGE_SIZE_OPTIONS = [25, 50, 100];

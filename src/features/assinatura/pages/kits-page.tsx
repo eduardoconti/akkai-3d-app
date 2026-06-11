@@ -29,6 +29,7 @@ import {
 import { MESES_LABEL } from '@/features/assinatura/types/assinatura-form';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -369,7 +370,7 @@ export default function KitsPage() {
         <AppTablePagination
           count={totalKits}
           page={Math.max(0, (paginacaoKits.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoKits.tamanhoPagina ?? 50}
+          rowsPerPage={paginacaoKits.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
           onPageChange={(_event, newPage) => {
             void fetchKits({ pagina: newPage + 1 });
           }}

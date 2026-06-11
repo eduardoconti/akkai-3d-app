@@ -31,6 +31,7 @@ import {
   type ItemCicloFormState,
 } from '@/features/assinatura/types/assinatura-form';
 import {
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
   getFieldMessage,
   ProductAutocompleteField,
@@ -90,7 +91,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
 
   useEffect(() => {
     if (!open) return;
-    void fetchAssinantes({ tamanhoPagina: 50 });
+    void fetchAssinantes({ tamanhoPagina: DEFAULT_PAGE_SIZE });
   }, [open, fetchAssinantes]);
 
   useEffect(() => {
