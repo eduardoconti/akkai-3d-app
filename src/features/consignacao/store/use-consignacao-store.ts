@@ -26,7 +26,7 @@ import type {
 
 const paginacaoRevendedoresInicial: PesquisaPaginadaRevendedores = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   status: undefined,
   ordenarPor: 'nome',
@@ -34,7 +34,7 @@ const paginacaoRevendedoresInicial: PesquisaPaginadaRevendedores = {
 
 const paginacaoConsignacoesInicial: PesquisaPaginadaConsignacoes = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   idRevendedor: undefined,
   status: undefined,

@@ -131,6 +131,19 @@ export interface TaxaMeioPagamentoCarteira {
   carteira?: Carteira;
 }
 
+export type TipoAjusteCarteira = 'CREDITO' | 'DEBITO';
+
+export interface AjusteCarteira {
+  id: number;
+  dataInclusao: string;
+  dataAjuste: string;
+  idCarteira: number;
+  tipo: TipoAjusteCarteira;
+  valor: number;
+  motivo: string;
+  observacao?: string;
+}
+
 export interface Despesa {
   id: number;
   dataLancamento: string;
@@ -289,6 +302,14 @@ export interface TaxaMeioPagamentoCarteiraInput {
   meioPagamento: MeioPagamento;
   percentual: number;
   ativa?: boolean;
+}
+
+export interface AjusteCarteiraInput {
+  dataAjuste: string;
+  tipo: TipoAjusteCarteira;
+  valor: number;
+  motivo: string;
+  observacao?: string;
 }
 
 export interface CategoriaDespesaInput {

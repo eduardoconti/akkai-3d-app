@@ -42,6 +42,8 @@ export type {
   StatusCiclo,
 } from './lib/types/domain';
 export type {
+  AjusteCarteira,
+  AjusteCarteiraInput,
   Carteira,
   CarteiraInput,
   CategoriaDespesa,
@@ -91,6 +93,7 @@ export type {
   StatusConsignacao,
   StatusRevendedor,
   TipoVenda,
+  TipoAjusteCarteira,
   TipoMovimentacaoEstoque,
   Venda,
   VendaItem,

@@ -44,7 +44,7 @@ import type {
 
 const paginacaoAssinantesInicial: PesquisarAssinantesInput = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   status: undefined,
   idPlano: undefined,
@@ -52,7 +52,7 @@ const paginacaoAssinantesInicial: PesquisarAssinantesInput = {
 
 const paginacaoCiclosInicial: PesquisarCiclosInput = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   idAssinante: undefined,
   status: undefined,
   mes: undefined,
@@ -61,7 +61,7 @@ const paginacaoCiclosInicial: PesquisarCiclosInput = {
 
 const paginacaoKitsInicial: PesquisarKitsInput = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   idPlano: undefined,
   mes: undefined,
   ano: undefined,

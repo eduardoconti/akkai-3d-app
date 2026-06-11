@@ -45,7 +45,7 @@ export default function PlanosPage() {
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   useEffect(() => {
     void fetchPlanos();

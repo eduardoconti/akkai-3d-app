@@ -53,7 +53,7 @@ export default function FinancePaymentMethodWalletFeesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   useEffect(() => {
     void Promise.all([fetchCarteiras(), fetchTaxasMeioPagamentoCarteira()]);

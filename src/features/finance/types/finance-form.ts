@@ -1,4 +1,7 @@
-import type { MeioPagamento } from '@/shared/lib/types/domain';
+import type {
+  MeioPagamento,
+  TipoAjusteCarteira,
+} from '@/shared/lib/types/domain';
 
 export type WalletFormState = {
   nome: string;
@@ -56,6 +59,22 @@ export type ExpenseFormErrors = {
   observacao?: string;
 };
 
+export type WalletAdjustmentFormState = {
+  dataAjuste: string;
+  tipo: TipoAjusteCarteira;
+  valor: number;
+  motivo: string;
+  observacao: string;
+};
+
+export type WalletAdjustmentFormErrors = {
+  dataAjuste?: string;
+  tipo?: string;
+  valor?: string;
+  motivo?: string;
+  observacao?: string;
+};
+
 function getCurrentDateInput(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -72,6 +91,14 @@ export const initialExpenseFormState: ExpenseFormState = {
   meioPagamento: 'PIX',
   idCarteira: '',
   idFeira: '',
+  observacao: '',
+};
+
+export const initialWalletAdjustmentFormState: WalletAdjustmentFormState = {
+  dataAjuste: getCurrentDateInput(),
+  tipo: 'CREDITO',
+  valor: 0,
+  motivo: '',
   observacao: '',
 };
 

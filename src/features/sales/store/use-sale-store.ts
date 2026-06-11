@@ -42,12 +42,12 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaVendas = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
 };
 
 const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
 };
 
 function getCatalogProductValue(
