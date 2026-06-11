@@ -333,7 +333,7 @@ export default function CiclosPage() {
         <AppTablePagination
           count={totalCiclos}
           page={Math.max(0, (paginacaoCiclos.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoCiclos.tamanhoPagina ?? 10}
+          rowsPerPage={paginacaoCiclos.tamanhoPagina ?? 50}
           onPageChange={(_event, newPage) => {
             void fetchCiclos({ pagina: newPage + 1 });
           }}

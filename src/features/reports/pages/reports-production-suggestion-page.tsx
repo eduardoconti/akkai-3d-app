@@ -65,7 +65,7 @@ export default function ReportsProductionSuggestionPage() {
   const [diasHistorico, setDiasHistorico] = useState(28);
   const [diasPlanejamento, setDiasPlanejamento] = useState(7);
   const [diasEstoqueSeguranca, setDiasEstoqueSeguranca] = useState(2);
-  const [tamanhoPagina, setTamanhoPagina] = useState(10);
+  const [tamanhoPagina, setTamanhoPagina] = useState(50);
   const [ordenarPor, setOrdenarPor] =
     useState<SuggestionOrderBy>('sugestaoProducao');
   const [direcao, setDirecao] = useState<SortDirection>('desc');

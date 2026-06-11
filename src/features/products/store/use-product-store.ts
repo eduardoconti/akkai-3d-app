@@ -31,7 +31,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   ordenarPor: 'codigo',
   direcao: 'desc',
@@ -40,13 +40,13 @@ const paginacaoInicial: PesquisaPaginada = {
 
 const paginacaoCategoriasInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
 };
 
 const paginacaoEstoqueInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   ordenarPor: 'nivelEstoque',
   direcao: 'asc',
@@ -54,7 +54,7 @@ const paginacaoEstoqueInicial: PesquisaPaginada = {
 
 const paginacaoMovimentacoesInicial: PesquisaPaginada = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
 };
 
 function paginarCategoriasEmMemoria(

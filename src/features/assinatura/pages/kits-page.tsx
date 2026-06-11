@@ -369,7 +369,7 @@ export default function KitsPage() {
         <AppTablePagination
           count={totalKits}
           page={Math.max(0, (paginacaoKits.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoKits.tamanhoPagina ?? 10}
+          rowsPerPage={paginacaoKits.tamanhoPagina ?? 50}
           onPageChange={(_event, newPage) => {
             void fetchKits({ pagina: newPage + 1 });
           }}

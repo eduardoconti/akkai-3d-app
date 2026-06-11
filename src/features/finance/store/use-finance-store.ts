@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  createWalletAdjustment,
   createExpense,
   createExpenseCategory,
   createPaymentMethodWalletFee,
@@ -10,6 +11,7 @@ import {
   deleteExpense,
   getPaymentMethodWalletFeeById,
   getWalletById,
+  listWalletAdjustments,
   listExpenseCategories,
   listExpenses,
   listPaymentMethodWalletFees,
@@ -23,6 +25,8 @@ import { listFairs } from '@/features/sales/api/sales-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
+  AjusteCarteira,
+  AjusteCarteiraInput,
   Carteira,
   CarteiraInput,
   CategoriaDespesa,
@@ -39,7 +43,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaDespesas = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   dataInicio: '',
   dataFim: '',
@@ -68,6 +72,7 @@ interface FinanceStoreState {
     id: number,
   ) => Promise<TaxaMeioPagamentoCarteira>;
   obterCarteiraPorId: (id: number) => Promise<Carteira>;
+  listarAjustesCarteira: (idCarteira: number) => Promise<AjusteCarteira[]>;
   fetchDespesas: (
     query?: Partial<PesquisaPaginadaDespesas>,
   ) => Promise<ResultadoPaginado<Despesa> | void>;
@@ -79,6 +84,10 @@ interface FinanceStoreState {
     dados: CarteiraInput,
   ) => Promise<ActionResult<Carteira>>;
   excluirCarteira: (id: number) => Promise<ActionResult<void>>;
+  criarAjusteCarteira: (
+    idCarteira: number,
+    dados: AjusteCarteiraInput,
+  ) => Promise<ActionResult<AjusteCarteira>>;
   criarTaxaMeioPagamentoCarteira: (
     dados: TaxaMeioPagamentoCarteiraInput,
   ) => Promise<ActionResult<TaxaMeioPagamentoCarteira>>;
@@ -149,6 +158,9 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   },
   obterCarteiraPorId: async (id) => {
     return getWalletById(id);
+  },
+  listarAjustesCarteira: async (idCarteira) => {
+    return listWalletAdjustments(idCarteira);
   },
   fetchDespesas: async (query) => {
     const currentPagination = get().paginacao;
@@ -257,6 +269,19 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     try {
       await deleteWallet(id);
       return { success: true, data: undefined };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  criarAjusteCarteira: async (idCarteira, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const ajuste = await createWalletAdjustment(idCarteira, dados);
+      return { success: true, data: ajuste };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });
@@ -412,6 +437,8 @@ export const financeStoreSelectors = {
   obterTaxaMeioPagamentoCarteiraPorId: (state: FinanceStoreState) =>
     state.obterTaxaMeioPagamentoCarteiraPorId,
   obterCarteiraPorId: (state: FinanceStoreState) => state.obterCarteiraPorId,
+  listarAjustesCarteira: (state: FinanceStoreState) =>
+    state.listarAjustesCarteira,
   fetchDespesas: (state: FinanceStoreState) => state.fetchDespesas,
   fetchCategoriasDespesa: (state: FinanceStoreState) =>
     state.fetchCategoriasDespesa,
@@ -419,6 +446,7 @@ export const financeStoreSelectors = {
   criarCarteira: (state: FinanceStoreState) => state.criarCarteira,
   atualizarCarteira: (state: FinanceStoreState) => state.atualizarCarteira,
   excluirCarteira: (state: FinanceStoreState) => state.excluirCarteira,
+  criarAjusteCarteira: (state: FinanceStoreState) => state.criarAjusteCarteira,
   criarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>
     state.criarTaxaMeioPagamentoCarteira,
   atualizarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>

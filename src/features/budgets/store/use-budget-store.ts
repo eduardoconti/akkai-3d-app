@@ -18,7 +18,7 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaOrcamentos = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   status: ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO'),
 };
 

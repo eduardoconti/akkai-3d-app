@@ -48,7 +48,7 @@ export default function ReportsStockValuePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
-  const [tamanhoPagina, setTamanhoPagina] = useState(10);
+  const [tamanhoPagina, setTamanhoPagina] = useState(50);
   const [ordenarPor, setOrdenarPor] = useState<StockOrderBy>('codigo');
   const [direcao, setDirecao] = useState<SortDirection>('asc');
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(

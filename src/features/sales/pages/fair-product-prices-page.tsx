@@ -40,7 +40,7 @@ import {
 
 const initialPagination: PesquisaPaginadaPrecosProdutosFeira = {
   pagina: 1,
-  tamanhoPagina: 10,
+  tamanhoPagina: 50,
   termo: '',
   ordenarPor: 'codigo',
   direcao: 'asc',

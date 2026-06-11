@@ -305,7 +305,7 @@ export default function AssinantesPage() {
         <AppTablePagination
           count={totalAssinantes}
           page={Math.max(0, (paginacaoAssinantes.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoAssinantes.tamanhoPagina ?? 10}
+          rowsPerPage={paginacaoAssinantes.tamanhoPagina ?? 50}
           onPageChange={(_event, newPage) => {
             void fetchAssinantes({ pagina: newPage + 1 });
           }}

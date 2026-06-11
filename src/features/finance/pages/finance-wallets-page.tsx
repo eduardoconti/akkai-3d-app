@@ -4,6 +4,7 @@ import {
   Box,
   Chip,
   Divider,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -12,11 +13,17 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { AccountBalanceWallet, Edit } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { EditWalletDialog, NewWalletDialog } from '@/features/finance';
+import {
+  EditWalletDialog,
+  NewWalletDialog,
+  WalletAdjustmentDialog,
+} from '@/features/finance';
 import {
   financeStoreSelectors,
   useFinanceStore,
@@ -44,8 +51,11 @@ export default function FinanceWalletsPage() {
     );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingWalletId, setEditingWalletId] = useState<number | null>(null);
+  const [adjustingWalletId, setAdjustingWalletId] = useState<number | null>(
+    null,
+  );
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
 
   useEffect(() => {
     void fetchCarteiras();
@@ -58,6 +68,14 @@ export default function FinanceWalletsPage() {
   const paginatedWallets = useMemo(
     () => wallets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
     [page, rowsPerPage, wallets],
+  );
+  const adjustingWallet = useMemo(
+    () =>
+      adjustingWalletId === null
+        ? null
+        : (wallets.find((carteira) => carteira.id === adjustingWalletId) ??
+          null),
+    [adjustingWalletId, wallets],
   );
 
   useEffect(() => {
@@ -126,6 +144,38 @@ export default function FinanceWalletsPage() {
                       >
                         {formatCurrency(carteira.saldoAtual)}
                       </Typography>
+                      <Stack
+                        direction="row"
+                        justifyContent="flex-end"
+                        spacing={0.5}
+                        sx={{ mt: 1 }}
+                      >
+                        <Tooltip title="Editar carteira">
+                          <IconButton
+                            size="small"
+                            aria-label={`Editar carteira ${carteira.nome}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setEditingWalletId(carteira.id);
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Ajustar saldo">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            aria-label={`Ajustar saldo da carteira ${carteira.nome}`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setAdjustingWalletId(carteira.id);
+                            }}
+                          >
+                            <AccountBalanceWallet fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Box>
                   </Stack>
                 </Box>
@@ -148,12 +198,15 @@ export default function FinanceWalletsPage() {
                   <TableCell align="right">
                     <strong>Saldo Atual</strong>
                   </TableCell>
+                  <TableCell align="right">
+                    <strong>Ações</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -186,11 +239,44 @@ export default function FinanceWalletsPage() {
                       >
                         {formatCurrency(carteira.saldoAtual)}
                       </TableCell>
+                      <TableCell align="right">
+                        <Stack
+                          direction="row"
+                          justifyContent="flex-end"
+                          spacing={0.5}
+                        >
+                          <Tooltip title="Editar carteira">
+                            <IconButton
+                              size="small"
+                              aria-label={`Editar carteira ${carteira.nome}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setEditingWalletId(carteira.id);
+                              }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Ajustar saldo">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              aria-label={`Ajustar saldo da carteira ${carteira.nome}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setAdjustingWalletId(carteira.id);
+                              }}
+                            >
+                              <AccountBalanceWallet fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} sx={{ p: 0 }}>
+                    <TableCell colSpan={4} sx={{ p: 0 }}>
                       <EmptyState message="Nenhuma carteira cadastrada até o momento." />
                     </TableCell>
                   </TableRow>
@@ -220,6 +306,12 @@ export default function FinanceWalletsPage() {
         walletId={editingWalletId}
         onClose={() => setEditingWalletId(null)}
         onUpdated={fetchCarteiras}
+      />
+      <WalletAdjustmentDialog
+        open={adjustingWalletId !== null}
+        carteira={adjustingWallet}
+        onClose={() => setAdjustingWalletId(null)}
+        onSaved={fetchCarteiras}
       />
     </Stack>
   );

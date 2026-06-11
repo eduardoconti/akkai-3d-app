@@ -58,7 +58,7 @@ export default function ReportsProductionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
-  const [tamanhoPagina, setTamanhoPagina] = useState(10);
+  const [tamanhoPagina, setTamanhoPagina] = useState(50);
   const [ordenarPor, setOrdenarPor] = useState<ProductionOrderBy>(
     'quantidadeProduzida',
   );

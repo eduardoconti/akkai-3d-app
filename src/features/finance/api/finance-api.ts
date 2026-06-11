@@ -1,5 +1,7 @@
 import { httpClient } from '@/shared/lib/api/http-client';
 import type {
+  AjusteCarteira,
+  AjusteCarteiraInput,
   Carteira,
   CarteiraInput,
   CategoriaDespesa,
@@ -33,6 +35,24 @@ export function updateWallet(
 
 export function deleteWallet(id: number): Promise<void> {
   return httpClient.delete<void>(`/financeiro/carteiras/${id}`);
+}
+
+export function listWalletAdjustments(
+  idCarteira: number,
+): Promise<AjusteCarteira[]> {
+  return httpClient.get<AjusteCarteira[]>(
+    `/financeiro/carteiras/${idCarteira}/ajustes`,
+  );
+}
+
+export function createWalletAdjustment(
+  idCarteira: number,
+  input: AjusteCarteiraInput,
+): Promise<AjusteCarteira> {
+  return httpClient.post<AjusteCarteira>(
+    `/financeiro/carteiras/${idCarteira}/ajustes`,
+    input,
+  );
 }
 
 export function listPaymentMethodWalletFees(): Promise<

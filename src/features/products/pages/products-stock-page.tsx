@@ -161,7 +161,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
   const [movements, setMovements] = useState<MovimentacaoEstoque[]>([]);
   const [pagination, setPagination] = useState<PesquisaPaginada>({
     pagina: 1,
-    tamanhoPagina: 10,
+    tamanhoPagina: 50,
   });
   const [totalItems, setTotalItems] = useState(0);
 
@@ -198,7 +198,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
   };
 
   useEffect(() => {
-    void fetchMovements({ pagina: 1, tamanhoPagina: 10 });
+    void fetchMovements({ pagina: 1, tamanhoPagina: 50 });
   }, [fetchMovements]);
 
   return (
