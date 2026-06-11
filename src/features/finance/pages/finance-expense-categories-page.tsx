@@ -23,6 +23,7 @@ import EditExpenseCategoryDialog from '../components/edit-expense-category-dialo
 import NewExpenseCategoryDialog from '../components/new-expense-category-dialog';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -51,7 +52,7 @@ export default function FinanceExpenseCategoriesPage() {
     null,
   );
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
 
   useEffect(() => {
     void fetchCategoriasDespesa();

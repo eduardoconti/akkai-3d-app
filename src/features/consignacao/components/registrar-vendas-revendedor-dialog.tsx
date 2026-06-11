@@ -37,6 +37,7 @@ import { listWallets } from '@/features/finance/api/finance-api';
 import { listAllProducts } from '@/features/products/api/products-api';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import {
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
   ProductAutocompleteField,
   formatCurrency,
@@ -169,7 +170,7 @@ async function listarIdsProdutosDisponiveisRevendedor(
   do {
     const resposta = await listarConsignacoes({
       pagina,
-      tamanhoPagina: 50,
+      tamanhoPagina: DEFAULT_PAGE_SIZE,
       termo: '',
       idRevendedor,
       status: 'ABERTA',
@@ -560,7 +561,9 @@ export default function RegistrarVendasRevendedorDialog({
                   value={revendedor}
                   onChange={(_event, value) => handleChangeRevendedor(value)}
                   getOptionLabel={(option) => option.nome}
-                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                  isOptionEqualToValue={(option, value) =>
+                    option.id === value.id
+                  }
                   loading={isLoadingDados}
                   disabled={isBusy || isLoadingDados}
                   renderInput={(params) => (
@@ -636,7 +639,9 @@ export default function RegistrarVendasRevendedorDialog({
                               })
                             }
                             label="Produto"
-                            disabled={isBusy || isLoadingProdutos || !revendedor}
+                            disabled={
+                              isBusy || isLoadingProdutos || !revendedor
+                            }
                             loading={isLoadingProdutos}
                             size="small"
                           />
@@ -669,7 +674,9 @@ export default function RegistrarVendasRevendedorDialog({
                                 Number(item.quantidade || 1) - 1,
                               )
                             }
-                            disabled={Number(item.quantidade || 0) <= 1 || isBusy}
+                            disabled={
+                              Number(item.quantidade || 0) <= 1 || isBusy
+                            }
                             aria-label="Diminuir quantidade vendida"
                             sx={{
                               border: (theme) =>

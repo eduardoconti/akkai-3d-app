@@ -25,6 +25,7 @@ import {
 } from '@/features/sales/api/sales-api';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -40,7 +41,7 @@ import {
 
 const initialPagination: PesquisaPaginadaPrecosProdutosFeira = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
   ordenarPor: 'codigo',
   direcao: 'asc',

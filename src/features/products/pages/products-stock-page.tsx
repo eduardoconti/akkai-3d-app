@@ -32,9 +32,11 @@ import {
 } from '../store/use-product-store';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
   getProblemDetailsFromError,
   type DirecaoOrdenacao,
@@ -161,7 +163,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
   const [movements, setMovements] = useState<MovimentacaoEstoque[]>([]);
   const [pagination, setPagination] = useState<PesquisaPaginada>({
     pagina: 1,
-    tamanhoPagina: 50,
+    tamanhoPagina: DEFAULT_PAGE_SIZE,
   });
   const [totalItems, setTotalItems] = useState(0);
 
@@ -198,7 +200,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
   };
 
   useEffect(() => {
-    void fetchMovements({ pagina: 1, tamanhoPagina: 50 });
+    void fetchMovements({ pagina: 1, tamanhoPagina: DEFAULT_PAGE_SIZE });
   }, [fetchMovements]);
 
   return (
@@ -394,7 +396,7 @@ function StockExpansion({ produto, isMobile = false }: StockExpansionProps) {
                   tamanhoPagina: Number(event.target.value),
                 });
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por página"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

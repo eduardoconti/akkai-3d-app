@@ -31,7 +31,9 @@ import { listFairs } from '@/features/sales/api/sales-api';
 import { getSaleTypeLabel } from '@/features/sales/utils/format-sale-labels';
 import {
   DateRangePickerField,
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
   getMonthRangeInput,
   getProblemDetailsFromError,
@@ -40,8 +42,6 @@ import {
   type ProblemDetails,
   type TipoVenda,
 } from '@/shared';
-
-const TAMANHO_PAGINA_INICIAL = 50;
 
 function formatApiDateToDisplay(value: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -191,7 +191,7 @@ export default function ReportsBestSellingProductsPage() {
 
   const buscarRelatorio = async (
     pagina = 1,
-    tamanhoPagina = result?.tamanhoPagina ?? TAMANHO_PAGINA_INICIAL,
+    tamanhoPagina = result?.tamanhoPagina ?? DEFAULT_PAGE_SIZE,
     filters = getCurrentFilters(),
   ) => {
     setProblem(null);
@@ -479,7 +479,7 @@ export default function ReportsBestSellingProductsPage() {
                   );
                 }
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por página"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

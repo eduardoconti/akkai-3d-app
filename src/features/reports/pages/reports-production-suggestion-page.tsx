@@ -25,7 +25,9 @@ import {
   type ProductionSuggestionReportResponse,
 } from '@/features/reports/api/reports-api';
 import {
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
   getProblemDetailsFromError,
   type ProblemDetails,
@@ -65,7 +67,7 @@ export default function ReportsProductionSuggestionPage() {
   const [diasHistorico, setDiasHistorico] = useState(28);
   const [diasPlanejamento, setDiasPlanejamento] = useState(7);
   const [diasEstoqueSeguranca, setDiasEstoqueSeguranca] = useState(2);
-  const [tamanhoPagina, setTamanhoPagina] = useState(50);
+  const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] =
     useState<SuggestionOrderBy>('sugestaoProducao');
   const [direcao, setDirecao] = useState<SortDirection>('desc');
@@ -443,7 +445,7 @@ export default function ReportsProductionSuggestionPage() {
                   );
                 }
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por pagina"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

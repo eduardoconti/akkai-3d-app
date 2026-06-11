@@ -30,6 +30,7 @@ import {
 } from '@/features/finance/store/use-finance-store';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -55,7 +56,7 @@ export default function FinanceWalletsPage() {
     null,
   );
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
 
   useEffect(() => {
     void fetchCarteiras();

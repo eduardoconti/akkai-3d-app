@@ -25,7 +25,9 @@ import {
   type StockValueReportResponse,
 } from '@/features/reports/api/reports-api';
 import {
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
   formatCurrency,
   getProblemDetailsFromError,
@@ -48,7 +50,7 @@ export default function ReportsStockValuePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
-  const [tamanhoPagina, setTamanhoPagina] = useState(50);
+  const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] = useState<StockOrderBy>('codigo');
   const [direcao, setDirecao] = useState<SortDirection>('asc');
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilters | null>(
@@ -299,7 +301,7 @@ export default function ReportsStockValuePage() {
                   );
                 }
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por pagina"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

@@ -26,7 +26,9 @@ import {
 } from '@/features/reports/api/reports-api';
 import {
   DateRangePickerField,
+  DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
   formatCurrency,
   getMonthRangeInput,
@@ -58,7 +60,7 @@ export default function ReportsProductionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
-  const [tamanhoPagina, setTamanhoPagina] = useState(50);
+  const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] = useState<ProductionOrderBy>(
     'quantidadeProduzida',
   );
@@ -382,7 +384,7 @@ export default function ReportsProductionPage() {
                   );
                 }
               }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
               labelRowsPerPage="Itens por pagina"
               labelDisplayedRows={({ from, to, count }) =>
                 `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

@@ -1,4 +1,5 @@
 import { TablePagination } from '@mui/material';
+import { PAGINATED_SEARCH_PAGE_SIZE_OPTIONS } from '@/shared/lib/constants/pagination';
 
 interface AppTablePaginationProps {
   count: number;
@@ -28,7 +29,7 @@ export default function AppTablePagination({
       onPageChange={onPageChange}
       rowsPerPage={rowsPerPage}
       onRowsPerPageChange={onRowsPerPageChange}
-      rowsPerPageOptions={[10, 25, 50]}
+      rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
       labelRowsPerPage="Itens por página"
       labelDisplayedRows={({ from, to, count: total }) =>
         `${from}-${to} de ${total !== -1 ? total : `mais de ${to}`}`

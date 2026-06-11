@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import { formatLocalDate } from '@/shared/utils/date';
 import {
   addPendingSale,
@@ -42,12 +43,12 @@ import type {
 
 const paginacaoInicial: PesquisaPaginadaVendas = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
 };
 
 const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   pagina: 1,
-  tamanhoPagina: 50,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
 };
 
 function getCatalogProductValue(

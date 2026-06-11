@@ -31,6 +31,7 @@ import {
 } from '@/features/assinatura/types/assinatura-form';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -71,7 +72,7 @@ export default function CiclosPage() {
   const [anoFiltro, setAnoFiltro] = useState<number | ''>('');
 
   useEffect(() => {
-    void fetchAssinantes({ tamanhoPagina: 50 });
+    void fetchAssinantes({ tamanhoPagina: DEFAULT_PAGE_SIZE });
     void fetchCiclos({
       pagina: 1,
       status: undefined,
@@ -333,7 +334,7 @@ export default function CiclosPage() {
         <AppTablePagination
           count={totalCiclos}
           page={Math.max(0, (paginacaoCiclos.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoCiclos.tamanhoPagina ?? 50}
+          rowsPerPage={paginacaoCiclos.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
           onPageChange={(_event, newPage) => {
             void fetchCiclos({ pagina: newPage + 1 });
           }}

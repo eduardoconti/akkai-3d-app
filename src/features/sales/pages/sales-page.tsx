@@ -46,6 +46,7 @@ import {
 import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   ProductAutocompleteField,
   SearchFilterPanel,
   formatCurrency,
@@ -896,7 +897,7 @@ export default function SalesPage() {
               tamanhoPagina: Number(event.target.value),
             });
           }}
-          rowsPerPageOptions={[10, 25, 50]}
+          rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
           labelRowsPerPage="Itens por página"
           labelDisplayedRows={({ from, to, count }) =>
             `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`

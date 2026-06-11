@@ -24,6 +24,7 @@ import {
 import { MEIO_PAGAMENTO_LABEL } from '@/features/finance/types/finance-form';
 import {
   AppTablePagination,
+  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -53,7 +54,7 @@ export default function FinancePaymentMethodWalletFeesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
 
   useEffect(() => {
     void Promise.all([fetchCarteiras(), fetchTaxasMeioPagamentoCarteira()]);
