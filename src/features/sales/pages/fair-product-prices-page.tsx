@@ -19,13 +19,13 @@ import {
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
+import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
   listFairs,
   searchFairProductPrices,
 } from '@/features/sales/api/sales-api';
 import {
   AppTablePagination,
-  DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -35,17 +35,9 @@ import {
   type DirecaoOrdenacao,
   type Feira,
   type OrdenacaoPrecoProdutoFeira,
-  type PesquisaPaginadaPrecosProdutosFeira,
   type PrecoProdutoFeira,
 } from '@/shared';
-
-const initialPagination: PesquisaPaginadaPrecosProdutosFeira = {
-  pagina: 1,
-  tamanhoPagina: DEFAULT_PAGE_SIZE,
-  termo: '',
-  ordenarPor: 'codigo',
-  direcao: 'asc',
-};
+import { useShallow } from 'zustand/react/shallow';
 
 function getProductName(price: PrecoProdutoFeira) {
   return price.produto?.nome ?? `Produto #${price.idProduto}`;
@@ -60,13 +52,20 @@ export default function FairProductPricesPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [prices, setPrices] = useState<PrecoProdutoFeira[]>([]);
   const [fairs, setFairs] = useState<Feira[]>([]);
-  const [pagination, setPagination] =
-    useState<PesquisaPaginadaPrecosProdutosFeira>(initialPagination);
-  const [searchInput, setSearchInput] = useState('');
-  const [idFeira, setIdFeira] = useState<number | ''>('');
-  const [ordenarPor, setOrdenarPor] =
-    useState<OrdenacaoPrecoProdutoFeira>('codigo');
-  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('asc');
+  const { pagination, setPagination } = useSaleStore(
+    useShallow((state) => ({
+      pagination: saleStoreSelectors.paginacaoPrecosProdutosFeira(state),
+      setPagination: saleStoreSelectors.setPaginacaoPrecosProdutosFeira(state),
+    })),
+  );
+  const [searchInput, setSearchInput] = useState(pagination.termo ?? '');
+  const [idFeira, setIdFeira] = useState<number | ''>(pagination.idFeira ?? '');
+  const [ordenarPor, setOrdenarPor] = useState<OrdenacaoPrecoProdutoFeira>(
+    pagination.ordenarPor ?? 'codigo',
+  );
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>(
+    pagination.direcao ?? 'asc',
+  );
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -133,14 +132,13 @@ export default function FairProductPricesPage() {
   }, [pagination, reloadToken]);
 
   const handleSearch = () => {
-    setPagination((current) => ({
-      ...current,
+    setPagination({
       pagina: 1,
       termo: searchInput.trim(),
       idFeira: idFeira === '' ? undefined : idFeira,
       ordenarPor,
       direcao,
-    }));
+    });
   };
 
   const handleClearFilters = () => {
@@ -148,14 +146,13 @@ export default function FairProductPricesPage() {
     setIdFeira('');
     setOrdenarPor('codigo');
     setDirecao('asc');
-    setPagination((current) => ({
-      ...current,
+    setPagination({
       pagina: 1,
       termo: '',
       idFeira: undefined,
       ordenarPor: 'codigo',
       direcao: 'asc',
-    }));
+    });
   };
 
   return (
@@ -349,14 +346,13 @@ export default function FairProductPricesPage() {
           page={Math.max(0, pagination.pagina - 1)}
           rowsPerPage={pagination.tamanhoPagina}
           onPageChange={(_event, newPage) => {
-            setPagination((current) => ({ ...current, pagina: newPage + 1 }));
+            setPagination({ pagina: newPage + 1 });
           }}
           onRowsPerPageChange={(event) => {
-            setPagination((current) => ({
-              ...current,
+            setPagination({
               pagina: 1,
               tamanhoPagina: Number(event.target.value),
-            }));
+            });
           }}
         />
       </Paper>

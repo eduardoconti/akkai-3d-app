@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import { formatLocalDate } from '@/shared/utils/date';
+import { getMonthRangeInput } from '@/shared/utils/date-range';
 import {
   addPendingSale,
   getCachedFairs,
@@ -33,6 +34,7 @@ import type {
   FeiraInput,
   InserirVendaInput,
   PesquisaPaginadaFeiras,
+  PesquisaPaginadaPrecosProdutosFeira,
   PesquisaPaginadaVendas,
   Produto,
   ResultadoPaginado,
@@ -41,15 +43,59 @@ import type {
   Venda,
 } from '@/shared/lib/types/domain';
 
+const paginacaoInicialPeriodo = getMonthRangeInput();
+
 const paginacaoInicial: PesquisaPaginadaVendas = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
+  dataInicio: paginacaoInicialPeriodo.startValue,
+  dataFim: paginacaoInicialPeriodo.endValue,
 };
 
 const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
 };
+
+const paginacaoPrecosProdutosFeiraInicial: PesquisaPaginadaPrecosProdutosFeira =
+  {
+    pagina: 1,
+    tamanhoPagina: DEFAULT_PAGE_SIZE,
+    termo: '',
+    ordenarPor: 'codigo',
+    direcao: 'asc',
+  };
+
+function resolverPaginacaoPrecosProdutosFeira(
+  atual: PesquisaPaginadaPrecosProdutosFeira,
+  query?: Partial<PesquisaPaginadaPrecosProdutosFeira>,
+): PesquisaPaginadaPrecosProdutosFeira {
+  const hasQueryValue = <
+    TKey extends keyof PesquisaPaginadaPrecosProdutosFeira,
+  >(
+    key: TKey,
+  ) => (query ? Object.prototype.hasOwnProperty.call(query, key) : false);
+
+  return {
+    pagina: hasQueryValue('pagina')
+      ? (query?.pagina ?? paginacaoPrecosProdutosFeiraInicial.pagina)
+      : atual.pagina,
+    tamanhoPagina: hasQueryValue('tamanhoPagina')
+      ? (query?.tamanhoPagina ??
+        paginacaoPrecosProdutosFeiraInicial.tamanhoPagina)
+      : atual.tamanhoPagina,
+    termo: hasQueryValue('termo')
+      ? (query?.termo ?? paginacaoPrecosProdutosFeiraInicial.termo)
+      : (atual.termo ?? paginacaoPrecosProdutosFeiraInicial.termo),
+    idFeira: hasQueryValue('idFeira') ? query?.idFeira : atual.idFeira,
+    ordenarPor: hasQueryValue('ordenarPor')
+      ? (query?.ordenarPor ?? paginacaoPrecosProdutosFeiraInicial.ordenarPor)
+      : (atual.ordenarPor ?? paginacaoPrecosProdutosFeiraInicial.ordenarPor),
+    direcao: hasQueryValue('direcao')
+      ? (query?.direcao ?? paginacaoPrecosProdutosFeiraInicial.direcao)
+      : (atual.direcao ?? paginacaoPrecosProdutosFeiraInicial.direcao),
+  };
+}
 
 function getCatalogProductValue(
   item: InserirVendaInput['itens'][number],
@@ -135,6 +181,7 @@ interface SaleStoreState {
   carteiras: Carteira[];
   paginacao: PesquisaPaginadaVendas;
   paginacaoFeiras: PesquisaPaginadaFeiras;
+  paginacaoPrecosProdutosFeira: PesquisaPaginadaPrecosProdutosFeira;
   totalItens: number;
   totalPaginas: number;
   totalFeiras: number;
@@ -152,6 +199,9 @@ interface SaleStoreState {
   fetchFeirasPaginadas: (
     query?: Partial<PesquisaPaginadaFeiras>,
   ) => Promise<ResultadoPaginado<Feira> | void>;
+  setPaginacaoPrecosProdutosFeira: (
+    query?: Partial<PesquisaPaginadaPrecosProdutosFeira>,
+  ) => void;
   obterFeiraPorId: (id: number) => Promise<Feira>;
   fetchCarteiras: () => Promise<void>;
   criarFeira: (dados: FeiraInput) => Promise<ActionResult<Feira>>;
@@ -178,6 +228,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   carteiras: [],
   paginacao: paginacaoInicial,
   paginacaoFeiras: paginacaoFeirasInicial,
+  paginacaoPrecosProdutosFeira: paginacaoPrecosProdutosFeiraInicial,
   totalItens: 0,
   totalPaginas: 1,
   totalFeiras: 0,
@@ -337,6 +388,14 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     } finally {
       set({ isFetching: false });
     }
+  },
+  setPaginacaoPrecosProdutosFeira: (query) => {
+    set((state) => ({
+      paginacaoPrecosProdutosFeira: resolverPaginacaoPrecosProdutosFeira(
+        state.paginacaoPrecosProdutosFeira,
+        query,
+      ),
+    }));
   },
   obterFeiraPorId: async (id) => {
     return getFairById(id);
@@ -523,6 +582,8 @@ export const saleStoreSelectors = {
   carteiras: (state: SaleStoreState) => state.carteiras,
   paginacao: (state: SaleStoreState) => state.paginacao,
   paginacaoFeiras: (state: SaleStoreState) => state.paginacaoFeiras,
+  paginacaoPrecosProdutosFeira: (state: SaleStoreState) =>
+    state.paginacaoPrecosProdutosFeira,
   totalItens: (state: SaleStoreState) => state.totalItens,
   totalPaginas: (state: SaleStoreState) => state.totalPaginas,
   totalFeiras: (state: SaleStoreState) => state.totalFeiras,
@@ -536,6 +597,8 @@ export const saleStoreSelectors = {
   fetchVendas: (state: SaleStoreState) => state.fetchVendas,
   fetchFeiras: (state: SaleStoreState) => state.fetchFeiras,
   fetchFeirasPaginadas: (state: SaleStoreState) => state.fetchFeirasPaginadas,
+  setPaginacaoPrecosProdutosFeira: (state: SaleStoreState) =>
+    state.setPaginacaoPrecosProdutosFeira,
   obterFeiraPorId: (state: SaleStoreState) => state.obterFeiraPorId,
   fetchCarteiras: (state: SaleStoreState) => state.fetchCarteiras,
   criarFeira: (state: SaleStoreState) => state.criarFeira,

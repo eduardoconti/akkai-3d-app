@@ -155,7 +155,7 @@ export default function BudgetsPage() {
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
   const [statusSelecionados, setStatusSelecionados] = useState<
     StatusOrcamento[]
-  >(STATUS_PADRAO_ORCAMENTO);
+  >(paginacao.status ?? STATUS_PADRAO_ORCAMENTO);
 
   useEffect(() => {
     void fetchOrcamentos();

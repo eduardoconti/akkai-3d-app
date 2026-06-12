@@ -51,7 +51,6 @@ import {
   SearchFilterPanel,
   formatCurrency,
   formatLocalDate,
-  getMonthRangeInput,
   useFeedbackStore,
   useOnlineStatus,
   type MeioPagamento,
@@ -120,8 +119,6 @@ interface SaleRowProps {
     venda: Venda,
   ) => void;
 }
-
-const initialSalesDateRange = getMonthRangeInput();
 
 function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
   const [open, setOpen] = useState(false);
@@ -341,12 +338,25 @@ export default function SalesPage() {
       vendas: saleStoreSelectors.vendas(state),
     })),
   );
-  const [dateRange, setDateRange] = useState(initialSalesDateRange);
-  const [type, setType] = useState<'TODOS' | TipoVenda>('TODOS');
-  const [idFeira, setIdFeira] = useState<number | ''>('');
-  const [idProduto, setIdProduto] = useState<number | ''>('');
-  const [idCarteira, setIdCarteira] = useState<number | ''>('');
-  const [meioPagamento, setMeioPagamento] = useState<MeioPagamento | ''>('');
+  const [dateRange, setDateRange] = useState({
+    startValue: paginacao.dataInicio ?? '',
+    endValue: paginacao.dataFim ?? '',
+  });
+  const [type, setType] = useState<'TODOS' | TipoVenda>(
+    paginacao.tipo ?? 'TODOS',
+  );
+  const [idFeira, setIdFeira] = useState<number | ''>(
+    paginacao.idFeira ?? '',
+  );
+  const [idProduto, setIdProduto] = useState<number | ''>(
+    paginacao.idProduto ?? '',
+  );
+  const [idCarteira, setIdCarteira] = useState<number | ''>(
+    paginacao.idCarteira ?? '',
+  );
+  const [meioPagamento, setMeioPagamento] = useState<MeioPagamento | ''>(
+    paginacao.meioPagamento ?? '',
+  );
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
@@ -393,16 +403,7 @@ export default function SalesPage() {
   useEffect(() => {
     void fetchFeiras();
     void fetchCarteiras();
-    void fetchVendas({
-      pagina: 1,
-      dataInicio: initialSalesDateRange.startValue,
-      dataFim: initialSalesDateRange.endValue,
-      tipo: undefined,
-      idFeira: undefined,
-      idProduto: undefined,
-      idCarteira: undefined,
-      meioPagamento: undefined,
-    });
+    void fetchVendas();
   }, [fetchCarteiras, fetchFeiras, fetchVendas]);
 
   useEffect(() => {

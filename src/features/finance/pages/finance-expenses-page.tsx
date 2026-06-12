@@ -36,13 +36,10 @@ import {
   PageHeader,
   SearchFilterPanel,
   formatCurrency,
-  getMonthRangeInput,
   type Despesa,
 } from '@/shared';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import { useShallow } from 'zustand/react/shallow';
-
-const initialExpensesDateRange = getMonthRangeInput();
 
 export default function FinanceExpensesPage() {
   const theme = useTheme();
@@ -83,10 +80,17 @@ export default function FinanceExpensesPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
-  const [searchInput, setSearchInput] = useState('');
-  const [dateRange, setDateRange] = useState(initialExpensesDateRange);
-  const [idCarteira, setIdCarteira] = useState<number | ''>('');
-  const [idFeira, setIdFeira] = useState<number | ''>('');
+  const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
+  const [dateRange, setDateRange] = useState({
+    startValue: paginacao.dataInicio ?? '',
+    endValue: paginacao.dataFim ?? '',
+  });
+  const [idCarteira, setIdCarteira] = useState<number | ''>(
+    paginacao.idCarteira ?? '',
+  );
+  const [idFeira, setIdFeira] = useState<number | ''>(
+    paginacao.idFeira ?? '',
+  );
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa
   >([]);
@@ -128,19 +132,18 @@ export default function FinanceExpensesPage() {
   useEffect(() => {
     void fetchCarteiras();
     void fetchCategoriasDespesa();
-    void fetchDespesas({
-      pagina: 1,
-      termo: '',
-      dataInicio:
-        convertDateToApiDateFormat(initialExpensesDateRange.startValue) ?? '',
-      dataFim:
-        convertDateToApiDateFormat(initialExpensesDateRange.endValue) ?? '',
-      idsCategorias: [],
-      idCarteira: undefined,
-      idFeira: undefined,
-    });
+    void fetchDespesas();
     void fetchFeiras();
   }, [fetchCarteiras, fetchCategoriasDespesa, fetchDespesas, fetchFeiras]);
+
+  useEffect(() => {
+    const idsCategoriasSelecionadas = paginacao.idsCategorias ?? [];
+    setCategoriasSelecionadas(
+      categoriasDespesa.filter((categoria) =>
+        idsCategoriasSelecionadas.includes(categoria.id),
+      ),
+    );
+  }, [categoriasDespesa, paginacao.idsCategorias]);
 
   return (
     <Stack spacing={3}>

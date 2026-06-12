@@ -73,7 +73,9 @@ export default function ProductCategoriesPage() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
     null,
   );
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState(
+    paginacaoCategorias.termo ?? '',
+  );
 
   const handleSearch = () => {
     void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
@@ -86,7 +88,7 @@ export default function ProductCategoriesPage() {
 
   useEffect(() => {
     void fetchCategorias();
-    void fetchCategoriasPaginadas({ pagina: 1, termo: '' });
+    void fetchCategoriasPaginadas();
   }, [fetchCategorias, fetchCategoriasPaginadas]);
 
   return (

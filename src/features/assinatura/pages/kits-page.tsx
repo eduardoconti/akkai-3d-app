@@ -71,18 +71,19 @@ export default function KitsPage() {
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingKitId, setEditingKitId] = useState<number | null>(null);
-  const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>('');
-  const [mesFiltro, setMesFiltro] = useState<number | ''>('');
-  const [anoFiltro, setAnoFiltro] = useState<number | ''>('');
+  const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>(
+    paginacaoKits.idPlano ?? '',
+  );
+  const [mesFiltro, setMesFiltro] = useState<number | ''>(
+    paginacaoKits.mes ?? '',
+  );
+  const [anoFiltro, setAnoFiltro] = useState<number | ''>(
+    paginacaoKits.ano ?? '',
+  );
 
   useEffect(() => {
     void fetchPlanos();
-    void fetchKits({
-      pagina: 1,
-      idPlano: undefined,
-      mes: undefined,
-      ano: undefined,
-    });
+    void fetchKits();
   }, [fetchKits, fetchPlanos]);
 
   const handleUpdated = async () => {

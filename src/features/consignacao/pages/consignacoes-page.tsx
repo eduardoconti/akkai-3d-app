@@ -209,7 +209,7 @@ export default function ConsignacoesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [vendasRevendedorDialogOpen, setVendasRevendedorDialogOpen] =
     useState(false);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
   const [relatorioErrorMessage, setRelatorioErrorMessage] = useState<
     string | null
   >(null);
@@ -217,9 +217,11 @@ export default function ConsignacoesPage() {
   const [revendedores, setRevendedores] = useState<Revendedor[]>([]);
   const [revendedorSelecionado, setRevendedorSelecionado] =
     useState<Revendedor | null>(null);
-  const [statusFiltro, setStatusFiltro] = useState<StatusConsignacao | ''>('');
+  const [statusFiltro, setStatusFiltro] = useState<StatusConsignacao | ''>(
+    paginacao.status ?? '',
+  );
   const [ordenarPor, setOrdenarPor] = useState<'dataInclusao' | 'revendedor'>(
-    'dataInclusao',
+    paginacao.ordenarPor ?? 'dataInclusao',
   );
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [devolucaoItem, setDevolucaoItem] = useState<ItemConsignacao | null>(
@@ -229,13 +231,7 @@ export default function ConsignacoesPage() {
     useState<Consignacao | null>(null);
 
   useEffect(() => {
-    void fetchConsignacoes({
-      pagina: 1,
-      termo: '',
-      idRevendedor: undefined,
-      status: undefined,
-      ordenarPor: 'dataInclusao',
-    });
+    void fetchConsignacoes();
   }, [fetchConsignacoes]);
 
   useEffect(() => {
@@ -251,6 +247,14 @@ export default function ConsignacoesPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    setRevendedorSelecionado(
+      revendedores.find(
+        (revendedor) => revendedor.id === paginacao.idRevendedor,
+      ) ?? null,
+    );
+  }, [paginacao.idRevendedor, revendedores]);
 
   const consignacaoExpandida = useMemo(() => {
     if (!expandedId) {
