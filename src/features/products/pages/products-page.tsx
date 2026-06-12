@@ -63,13 +63,17 @@ export default function ProductsPage() {
     })),
   );
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     Categoria[]
   >([]);
-  const [ordenarPor, setOrdenarPor] = useState<OrdenacaoProduto>('codigo');
-  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('desc');
+  const [ordenarPor, setOrdenarPor] = useState<OrdenacaoProduto>(
+    paginacao.ordenarPor ?? 'codigo',
+  );
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>(
+    paginacao.direcao ?? 'desc',
+  );
 
   const handleSearch = () => {
     void fetchProdutos({
@@ -97,14 +101,17 @@ export default function ProductsPage() {
 
   useEffect(() => {
     void fetchCategorias();
-    void fetchProdutos({
-      pagina: 1,
-      termo: '',
-      idsCategorias: [],
-      ordenarPor: 'codigo',
-      direcao: 'desc',
-    });
+    void fetchProdutos();
   }, [fetchCategorias, fetchProdutos]);
+
+  useEffect(() => {
+    const idsCategoriasSelecionadas = paginacao.idsCategorias ?? [];
+    setCategoriasSelecionadas(
+      categorias.filter((categoria) =>
+        idsCategoriasSelecionadas.includes(categoria.id),
+      ),
+    );
+  }, [categorias, paginacao.idsCategorias]);
 
   return (
     <Stack spacing={3}>

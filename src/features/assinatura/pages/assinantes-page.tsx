@@ -67,18 +67,17 @@ export default function AssinantesPage() {
   const [editingAssinanteId, setEditingAssinanteId] = useState<number | null>(
     null,
   );
-  const [termo, setTermo] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState<StatusAssinante | ''>('');
-  const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>('');
+  const [termo, setTermo] = useState(paginacaoAssinantes.termo ?? '');
+  const [statusFiltro, setStatusFiltro] = useState<StatusAssinante | ''>(
+    paginacaoAssinantes.status ?? '',
+  );
+  const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>(
+    paginacaoAssinantes.idPlano ?? '',
+  );
 
   useEffect(() => {
     void fetchPlanos();
-    void fetchAssinantes({
-      pagina: 1,
-      termo: '',
-      status: undefined,
-      idPlano: undefined,
-    });
+    void fetchAssinantes();
   }, [fetchAssinantes, fetchPlanos]);
 
   const handleUpdated = async () => {

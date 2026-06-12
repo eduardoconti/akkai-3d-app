@@ -24,6 +24,7 @@ import {
 import { listFairs } from '@/features/sales/api/sales-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
+import { getMonthRangeInput } from '@/shared/utils/date-range';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   AjusteCarteira,
@@ -42,12 +43,14 @@ import type {
   TotalizadoresDespesas,
 } from '@/shared/lib/types/domain';
 
+const paginacaoInicialPeriodo = getMonthRangeInput();
+
 const paginacaoInicial: PesquisaPaginadaDespesas = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
-  dataInicio: '',
-  dataFim: '',
+  dataInicio: paginacaoInicialPeriodo.startValue,
+  dataFim: paginacaoInicialPeriodo.endValue,
   idsCategorias: [],
   idCarteira: undefined,
   idFeira: undefined,

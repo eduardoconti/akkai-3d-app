@@ -71,17 +71,16 @@ export default function RevendedoresPage() {
   const [editingRevendedorId, setEditingRevendedorId] = useState<number | null>(
     null,
   );
-  const [searchInput, setSearchInput] = useState('');
-  const [statusFiltro, setStatusFiltro] = useState<StatusRevendedor | ''>('');
-  const [ordenarPor, setOrdenarPor] = useState<'nome' | 'dataInclusao'>('nome');
+  const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
+  const [statusFiltro, setStatusFiltro] = useState<StatusRevendedor | ''>(
+    paginacao.status ?? '',
+  );
+  const [ordenarPor, setOrdenarPor] = useState<'nome' | 'dataInclusao'>(
+    paginacao.ordenarPor ?? 'nome',
+  );
 
   useEffect(() => {
-    void fetchRevendedores({
-      pagina: 1,
-      termo: '',
-      status: undefined,
-      ordenarPor: 'nome',
-    });
+    void fetchRevendedores();
   }, [fetchRevendedores]);
 
   const handleSearch = () => {

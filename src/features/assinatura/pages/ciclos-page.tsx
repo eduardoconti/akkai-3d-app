@@ -66,20 +66,22 @@ export default function CiclosPage() {
   );
   const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingCicloId, setEditingCicloId] = useState<number | null>(null);
-  const [statusFiltro, setStatusFiltro] = useState<StatusCiclo | ''>('');
-  const [idAssinanteFiltro, setIdAssinanteFiltro] = useState<number | ''>('');
-  const [mesFiltro, setMesFiltro] = useState<number | ''>('');
-  const [anoFiltro, setAnoFiltro] = useState<number | ''>('');
+  const [statusFiltro, setStatusFiltro] = useState<StatusCiclo | ''>(
+    paginacaoCiclos.status ?? '',
+  );
+  const [idAssinanteFiltro, setIdAssinanteFiltro] = useState<number | ''>(
+    paginacaoCiclos.idAssinante ?? '',
+  );
+  const [mesFiltro, setMesFiltro] = useState<number | ''>(
+    paginacaoCiclos.mes ?? '',
+  );
+  const [anoFiltro, setAnoFiltro] = useState<number | ''>(
+    paginacaoCiclos.ano ?? '',
+  );
 
   useEffect(() => {
     void fetchAssinantes({ tamanhoPagina: DEFAULT_PAGE_SIZE });
-    void fetchCiclos({
-      pagina: 1,
-      status: undefined,
-      idAssinante: undefined,
-      mes: undefined,
-      ano: undefined,
-    });
+    void fetchCiclos();
   }, [fetchAssinantes, fetchCiclos]);
 
   const handleUpdated = async () => {

@@ -563,10 +563,15 @@ export default function ProductsStockPage() {
       totalItensEstoque: productStoreSelectors.totalItensEstoque(state),
     })),
   );
-  const [searchInput, setSearchInput] = useState('');
-  const [ordenarPor, setOrdenarPor] =
-    useState<OrdenacaoProduto>('nivelEstoque');
-  const [direcao, setDirecao] = useState<DirecaoOrdenacao>('asc');
+  const [searchInput, setSearchInput] = useState(
+    paginacaoEstoque.termo ?? '',
+  );
+  const [ordenarPor, setOrdenarPor] = useState<OrdenacaoProduto>(
+    paginacaoEstoque.ordenarPor ?? 'nivelEstoque',
+  );
+  const [direcao, setDirecao] = useState<DirecaoOrdenacao>(
+    paginacaoEstoque.direcao ?? 'asc',
+  );
 
   const handleSearch = () => {
     void fetchEstoque({
@@ -590,12 +595,7 @@ export default function ProductsStockPage() {
   };
 
   useEffect(() => {
-    void fetchEstoque({
-      pagina: 1,
-      termo: '',
-      ordenarPor: 'nivelEstoque',
-      direcao: 'asc',
-    });
+    void fetchEstoque();
   }, [fetchEstoque]);
 
   return (
