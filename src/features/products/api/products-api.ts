@@ -3,7 +3,6 @@ import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type {
   Categoria,
   DetalheProduto,
-  EstoqueProduto,
   EstoqueInput,
   MovimentacaoEstoque,
   OrigemEntradaEstoque,
@@ -23,15 +22,6 @@ export function listProducts(
   query: PesquisaPaginada,
 ): Promise<ResultadoPaginado<Produto>> {
   return httpClient.get<ResultadoPaginado<Produto>>('/produto', query);
-}
-
-export function listStock(
-  query: PesquisaPaginada,
-): Promise<ResultadoPaginado<EstoqueProduto>> {
-  return httpClient.get<ResultadoPaginado<EstoqueProduto>>(
-    '/produto/estoque',
-    query,
-  );
 }
 
 export function listStockMovements(
