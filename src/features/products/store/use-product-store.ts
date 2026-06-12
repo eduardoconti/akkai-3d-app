@@ -14,7 +14,6 @@ import {
   listAllCategories,
   listCategories,
   listProducts,
-  listStock,
   listStockMovements,
   updateCategory,
   type CategoriaInput,
@@ -22,7 +21,6 @@ import {
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   Categoria,
-  EstoqueProduto,
   MovimentacaoEstoque,
   PesquisaPaginada,
   Produto,
@@ -43,14 +41,6 @@ const paginacaoCategoriasInicial: PesquisaPaginada = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
-};
-
-const paginacaoEstoqueInicial: PesquisaPaginada = {
-  pagina: 1,
-  tamanhoPagina: DEFAULT_PAGE_SIZE,
-  termo: '',
-  ordenarPor: 'nivelEstoque',
-  direcao: 'asc',
 };
 
 const paginacaoMovimentacoesInicial: PesquisaPaginada = {
@@ -88,24 +78,19 @@ interface ProductStoreState {
   produtos: Produto[];
   categorias: Categoria[];
   categoriasPaginadas: Categoria[];
-  estoqueProdutos: EstoqueProduto[];
   movimentacoesEstoque: MovimentacaoEstoque[];
   paginacao: PesquisaPaginada;
   paginacaoCategorias: PesquisaPaginada;
-  paginacaoEstoque: PesquisaPaginada;
   paginacaoMovimentacoesEstoque: PesquisaPaginada;
   totalItens: number;
   totalPaginas: number;
   totalCategorias: number;
   totalPaginasCategorias: number;
-  totalItensEstoque: number;
-  totalPaginasEstoque: number;
   totalMovimentacoesEstoque: number;
   totalPaginasMovimentacoesEstoque: number;
   isFetchingProducts: boolean;
   isFetchingCategories: boolean;
   isFetchingCategoriesPage: boolean;
-  isFetchingStock: boolean;
   isFetchingStockMovements: boolean;
   isSubmitting: boolean;
   fetchErrorMessage: string | null;
@@ -118,9 +103,6 @@ interface ProductStoreState {
   fetchCategoriasPaginadas: (
     query?: Partial<PesquisaPaginada>,
   ) => Promise<ResultadoPaginado<Categoria> | void>;
-  fetchEstoque: (
-    query?: Partial<PesquisaPaginada>,
-  ) => Promise<ResultadoPaginado<EstoqueProduto> | void>;
   fetchMovimentacoesEstoque: (
     idProduto: number,
     query?: Partial<PesquisaPaginada>,
@@ -142,24 +124,19 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   produtos: [],
   categorias: [],
   categoriasPaginadas: [],
-  estoqueProdutos: [],
   movimentacoesEstoque: [],
   paginacao: paginacaoInicial,
   paginacaoCategorias: paginacaoCategoriasInicial,
-  paginacaoEstoque: paginacaoEstoqueInicial,
   paginacaoMovimentacoesEstoque: paginacaoMovimentacoesInicial,
   totalItens: 0,
   totalPaginas: 1,
   totalCategorias: 0,
   totalPaginasCategorias: 1,
-  totalItensEstoque: 0,
-  totalPaginasEstoque: 1,
   totalMovimentacoesEstoque: 0,
   totalPaginasMovimentacoesEstoque: 1,
   isFetchingProducts: false,
   isFetchingCategories: false,
   isFetchingCategoriesPage: false,
-  isFetchingStock: false,
   isFetchingStockMovements: false,
   isSubmitting: false,
   fetchErrorMessage: null,
@@ -304,40 +281,6 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
       set({ isFetchingCategoriesPage: false });
     }
   },
-  fetchEstoque: async (query) => {
-    const currentPagination = get().paginacaoEstoque;
-    const nextPagination: PesquisaPaginada = {
-      pagina: query?.pagina ?? currentPagination.pagina,
-      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
-      termo: query?.termo ?? currentPagination.termo ?? '',
-      ordenarPor:
-        query?.ordenarPor ?? currentPagination.ordenarPor ?? 'nivelEstoque',
-      direcao: query?.direcao ?? currentPagination.direcao ?? 'asc',
-    };
-
-    set({ isFetchingStock: true, fetchErrorMessage: null });
-    try {
-      const response = await listStock(nextPagination);
-      set({
-        estoqueProdutos: response.itens,
-        paginacaoEstoque: {
-          pagina: response.pagina,
-          tamanhoPagina: response.tamanhoPagina,
-          termo: nextPagination.termo ?? '',
-          ordenarPor: nextPagination.ordenarPor,
-          direcao: nextPagination.direcao,
-        },
-        totalItensEstoque: response.totalItens,
-        totalPaginasEstoque: response.totalPaginas,
-      });
-      return response;
-    } catch (error) {
-      const problem = getProblemDetailsFromError(error);
-      set({ fetchErrorMessage: problem.detail });
-    } finally {
-      set({ isFetchingStock: false });
-    }
-  },
   fetchMovimentacoesEstoque: async (idProduto, query) => {
     const currentPagination = get().paginacaoMovimentacoesEstoque;
     const nextPagination: PesquisaPaginada = {
@@ -370,11 +313,11 @@ export const useProductStore = create<ProductStoreState>((set, get) => ({
   },
   atualizarQuantidadeEstoqueLocal: (idProduto, delta) => {
     set((state) => ({
-      estoqueProdutos: state.estoqueProdutos.map((produto) =>
+      produtos: state.produtos.map((produto) =>
         produto.id === idProduto
           ? {
               ...produto,
-              quantidadeEstoque: produto.quantidadeEstoque + delta,
+              quantidadeEstoque: (produto.quantidadeEstoque ?? 0) + delta,
             }
           : produto,
       ),
@@ -429,12 +372,10 @@ export const productStoreSelectors = {
   produtos: (state: ProductStoreState) => state.produtos,
   categorias: (state: ProductStoreState) => state.categorias,
   categoriasPaginadas: (state: ProductStoreState) => state.categoriasPaginadas,
-  estoqueProdutos: (state: ProductStoreState) => state.estoqueProdutos,
   movimentacoesEstoque: (state: ProductStoreState) =>
     state.movimentacoesEstoque,
   paginacao: (state: ProductStoreState) => state.paginacao,
   paginacaoCategorias: (state: ProductStoreState) => state.paginacaoCategorias,
-  paginacaoEstoque: (state: ProductStoreState) => state.paginacaoEstoque,
   paginacaoMovimentacoesEstoque: (state: ProductStoreState) =>
     state.paginacaoMovimentacoesEstoque,
   totalItens: (state: ProductStoreState) => state.totalItens,
@@ -442,8 +383,6 @@ export const productStoreSelectors = {
   totalCategorias: (state: ProductStoreState) => state.totalCategorias,
   totalPaginasCategorias: (state: ProductStoreState) =>
     state.totalPaginasCategorias,
-  totalItensEstoque: (state: ProductStoreState) => state.totalItensEstoque,
-  totalPaginasEstoque: (state: ProductStoreState) => state.totalPaginasEstoque,
   totalMovimentacoesEstoque: (state: ProductStoreState) =>
     state.totalMovimentacoesEstoque,
   totalPaginasMovimentacoesEstoque: (state: ProductStoreState) =>
@@ -453,7 +392,6 @@ export const productStoreSelectors = {
     state.isFetchingCategories,
   isFetchingCategoriesPage: (state: ProductStoreState) =>
     state.isFetchingCategoriesPage,
-  isFetchingStock: (state: ProductStoreState) => state.isFetchingStock,
   isFetchingStockMovements: (state: ProductStoreState) =>
     state.isFetchingStockMovements,
   isSubmitting: (state: ProductStoreState) => state.isSubmitting,
@@ -465,7 +403,6 @@ export const productStoreSelectors = {
   fetchCategorias: (state: ProductStoreState) => state.fetchCategorias,
   fetchCategoriasPaginadas: (state: ProductStoreState) =>
     state.fetchCategoriasPaginadas,
-  fetchEstoque: (state: ProductStoreState) => state.fetchEstoque,
   fetchMovimentacoesEstoque: (state: ProductStoreState) =>
     state.fetchMovimentacoesEstoque,
   atualizarQuantidadeEstoqueLocal: (state: ProductStoreState) =>

@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import {
   Alert,
   Autocomplete,
   Box,
+  Button,
+  Chip,
   Divider,
   MenuItem,
   Paper,
@@ -18,9 +20,11 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { Inventory2 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import NewProductDialog from '../components/new-product-dialog';
+import StockManagementDialog from '../components/stock-management-dialog';
 import {
   productStoreSelectors,
   useProductStore,
@@ -35,8 +39,24 @@ import {
   type Categoria,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
+  type Produto,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
+
+function getStockQuantity(produto: Produto): number {
+  return produto.quantidadeEstoque ?? 0;
+}
+
+function isBelowMinimumStock(produto: Produto): boolean {
+  return (
+    produto.estoqueMinimo !== undefined &&
+    getStockQuantity(produto) < produto.estoqueMinimo
+  );
+}
+
+function isCriticalMinimumStock(produto: Produto): boolean {
+  return produto.estoqueMinimo !== undefined && getStockQuantity(produto) <= 0;
+}
 
 export default function ProductsPage() {
   const theme = useTheme();
@@ -65,6 +85,7 @@ export default function ProductsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [stockProduct, setStockProduct] = useState<Produto | null>(null);
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     Categoria[]
   >([]);
@@ -112,6 +133,14 @@ export default function ProductsPage() {
       ),
     );
   }, [categorias, paginacao.idsCategorias]);
+
+  const openStockDialog = (
+    event: MouseEvent<HTMLButtonElement>,
+    produto: Produto,
+  ) => {
+    event.stopPropagation();
+    setStockProduct(produto);
+  };
 
   return (
     <Stack spacing={3}>
@@ -194,6 +223,9 @@ export default function ProductsPage() {
               <LoadingState />
             ) : produtos.length > 0 ? (
               produtos.map((produto) => {
+                const belowMinimumStock = isBelowMinimumStock(produto);
+                const criticalMinimumStock = isCriticalMinimumStock(produto);
+
                 return (
                   <Box
                     key={produto.id}
@@ -202,6 +234,10 @@ export default function ProductsPage() {
                       cursor: 'pointer',
                       px: 2,
                       py: 2,
+                      transition: 'background-color 0.2s ease',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
                     }}
                   >
                     <Stack spacing={1.5}>
@@ -219,6 +255,16 @@ export default function ProductsPage() {
                             {produto.nome}
                           </Typography>
                         </Box>
+
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          startIcon={<Inventory2 fontSize="small" />}
+                          onClick={(event) => openStockDialog(event, produto)}
+                        >
+                          Movimentar
+                        </Button>
                       </Stack>
 
                       <Stack spacing={0.75}>
@@ -231,6 +277,33 @@ export default function ProductsPage() {
                         <Typography variant="body2" color="text.secondary">
                           Estoque mínimo: {produto.estoqueMinimo ?? '-'}
                         </Typography>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          flexWrap="wrap"
+                          useFlexGap
+                        >
+                          <Typography variant="body2" color="text.secondary">
+                            Estoque atual:
+                          </Typography>
+                          <Chip
+                            label={getStockQuantity(produto)}
+                            size="small"
+                            color={
+                              criticalMinimumStock
+                                ? 'error'
+                                : belowMinimumStock
+                                  ? 'warning'
+                                  : 'default'
+                            }
+                            variant={
+                              criticalMinimumStock || belowMinimumStock
+                                ? 'filled'
+                                : 'outlined'
+                            }
+                          />
+                        </Stack>
                         <Typography variant="body2" color="text.secondary">
                           Valor: {formatCurrency(produto.valor)}
                         </Typography>
@@ -263,6 +336,9 @@ export default function ProductsPage() {
                   <TableCell align="right">
                     <strong>Estoque mínimo</strong>
                   </TableCell>
+                  <TableCell align="center">
+                    <strong>Estoque</strong>
+                  </TableCell>
                   <TableCell align="right">
                     <strong>Valor</strong>
                   </TableCell>
@@ -272,12 +348,16 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : produtos.length > 0 ? (
                   produtos.map((produto) => {
+                    const belowMinimumStock = isBelowMinimumStock(produto);
+                    const criticalMinimumStock =
+                      isCriticalMinimumStock(produto);
+
                     return (
                       <TableRow
                         key={produto.id}
@@ -285,6 +365,9 @@ export default function ProductsPage() {
                         sx={{
                           '&:last-child td, &:last-child th': { border: 0 },
                           cursor: 'pointer',
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
                         }}
                       >
                         <TableCell component="th" scope="row">
@@ -296,6 +379,42 @@ export default function ProductsPage() {
                         <TableCell align="right">
                           {produto.estoqueMinimo ?? '-'}
                         </TableCell>
+                        <TableCell align="center">
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Chip
+                              label={getStockQuantity(produto)}
+                              size="small"
+                              color={
+                                criticalMinimumStock
+                                    ? 'error'
+                                    : belowMinimumStock
+                                      ? 'warning'
+                                      : 'default'
+                              }
+                              variant={
+                                criticalMinimumStock || belowMinimumStock
+                                  ? 'filled'
+                                  : 'outlined'
+                              }
+                            />
+                            <Button
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                              startIcon={<Inventory2 fontSize="small" />}
+                              onClick={(event) =>
+                                openStockDialog(event, produto)
+                              }
+                            >
+                              Movimentar
+                            </Button>
+                          </Stack>
+                        </TableCell>
                         <TableCell align="right">
                           {formatCurrency(produto.valor)}
                         </TableCell>
@@ -304,7 +423,7 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
                     </TableCell>
                   </TableRow>
@@ -341,6 +460,14 @@ export default function ProductsPage() {
       <NewProductDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+      />
+      <StockManagementDialog
+        open={stockProduct !== null}
+        produto={stockProduct}
+        onClose={() => setStockProduct(null)}
+        onUpdated={async () => {
+          await fetchProdutos();
+        }}
       />
     </Stack>
   );

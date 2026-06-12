@@ -668,21 +668,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <ListItemButton
                 component={NavLink}
                 end
-                to="/produtos/estoque"
-                onClick={closeMobileMenu}
-                sx={(theme: Theme) => ({
-                  borderRadius: 2,
-                  '&.active': getActiveSubmenuStyles(theme),
-                })}
-              >
-                <ListItemText primary="Estoque" />
-              </ListItemButton>
-            </ListItem>
-
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={NavLink}
-                end
                 to="/produtos/categorias"
                 onClick={closeMobileMenu}
                 sx={(theme: Theme) => ({
