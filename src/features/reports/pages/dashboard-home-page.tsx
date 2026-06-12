@@ -33,7 +33,6 @@ import {
   getProblemDetailsFromError,
   type ProblemDetails,
 } from '@/shared';
-import { listExpenses } from '@/features/finance/api/finance-api';
 import {
   getDashboardExpenseCategories,
   getDashboardMonthlySummary,
@@ -655,26 +654,11 @@ export default function DashboardHomePage() {
           topProductsResponse.ano,
           topProductsResponse.mes,
         );
-        const expenseCategoriesDateRange = getMonthDateRange(
-          expenseCategoriesResponse.ano,
-          expenseCategoriesResponse.mes,
-        );
 
-        const [salesSummaryResponse, expenseSummaryResponse] =
-          await Promise.all([
-            getSalesSummary({
-              dataInicio: topProductsDateRange.dataInicio,
-              dataFim: topProductsDateRange.dataFim,
-            }),
-            listExpenses({
-              pagina: 1,
-              tamanhoPagina: 1,
-              termo: '',
-              dataInicio: expenseCategoriesDateRange.dataInicio,
-              dataFim: expenseCategoriesDateRange.dataFim,
-              idsCategorias: [],
-            }),
-          ]);
+        const salesSummaryResponse = await getSalesSummary({
+          dataInicio: topProductsDateRange.dataInicio,
+          dataFim: topProductsDateRange.dataFim,
+        });
 
         if (!active) {
           return;
@@ -685,7 +669,7 @@ export default function DashboardHomePage() {
         setExpenseCategories(expenseCategoriesResponse);
         setTopProductsMonthTotalQuantity(salesSummaryResponse.quantidadeItens);
         setExpenseCategoriesMonthTotalValue(
-          expenseSummaryResponse.totalizadores.valorTotal,
+          expenseCategoriesResponse.valorTotal,
         );
       } catch (error) {
         if (!active) {
@@ -1224,12 +1208,16 @@ export default function DashboardHomePage() {
                   sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
                   onMouseMove={handleCardMouseMove([
                     {
-                      label: 'Itens',
-                      value: String(result.totalQuantidadeItensVendidos),
+                      label: 'Catálogo',
+                      value: String(result.totalQuantidadeItensCatalogo ?? 0),
                     },
                     {
                       label: 'Brindes',
-                      value: String(result.totalQuantidadeBrindes),
+                      value: String(result.totalQuantidadeBrindes ?? 0),
+                    },
+                    {
+                      label: 'Avulsos',
+                      value: String(result.totalQuantidadeItensAvulsos ?? 0),
                     },
                   ])}
                   onMouseLeave={() => setCardTooltip(null)}
@@ -1307,7 +1295,49 @@ export default function DashboardHomePage() {
               </Grid>
 
               <Grid size={{ xs: 12, md: 3 }}>
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  onMouseMove={handleCardMouseMove([
+                    {
+                      label: 'Fórmula',
+                      value: 'vendas - taxas - despesas + ajustes',
+                    },
+                    {
+                      label: 'Vendas',
+                      value: hideValues
+                        ? '••••••'
+                        : formatCurrency(result.totalVendas),
+                    },
+                    {
+                      label: 'Taxas',
+                      value: hideValues
+                        ? '••••••'
+                        : `-${formatCurrency(result.totalTaxas)}`,
+                    },
+                    {
+                      label: 'Despesas',
+                      value: hideValues
+                        ? '••••••'
+                        : `-${formatCurrency(result.totalDespesas)}`,
+                    },
+                    {
+                      label: 'Ajustes de carteira',
+                      value: hideValues
+                        ? '••••••'
+                        : `${(result.totalAjusteCarteira ?? 0) >= 0 ? '+' : '-'}${formatCurrency(
+                            Math.abs(result.totalAjusteCarteira ?? 0),
+                          )}`,
+                    },
+                    {
+                      label: 'Saldo',
+                      value: hideValues
+                        ? '••••••'
+                        : formatCurrency(result.saldo),
+                    },
+                  ])}
+                  onMouseLeave={() => setCardTooltip(null)}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Saldo acumulado em {result.ano}
                   </Typography>

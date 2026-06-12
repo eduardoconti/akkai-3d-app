@@ -11,22 +11,28 @@ export interface SalesSummaryPeriodFilter {
 export interface DashboardMonthlySummaryItem {
   mes: number;
   quantidadeItensVendidos: number;
+  quantidadeItensCatalogo: number;
   quantidadeBrindes: number;
+  quantidadeItensAvulsos: number;
   valorVendas: number;
   valorTaxas: number;
   valorImpostos: number;
   valorDespesas: number;
+  valorAjusteCarteira: number;
   saldo: number;
 }
 
 export interface DashboardMonthlySummaryResponse {
   ano: number;
   totalQuantidadeItensVendidos: number;
+  totalQuantidadeItensCatalogo: number;
   totalQuantidadeBrindes: number;
+  totalQuantidadeItensAvulsos: number;
   totalVendas: number;
   totalTaxas: number;
   totalImpostos: number;
   totalDespesas: number;
+  totalAjusteCarteira: number;
   saldo: number;
   itens: DashboardMonthlySummaryItem[];
 }
@@ -57,6 +63,7 @@ export interface DashboardExpenseCategoryItem {
 export interface DashboardExpenseCategoriesResponse {
   ano: number;
   mes: number;
+  valorTotal: number;
   itens: DashboardExpenseCategoryItem[];
 }
 
