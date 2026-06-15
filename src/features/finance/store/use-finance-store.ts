@@ -5,6 +5,8 @@ import {
   createExpenseCategory,
   createPaymentMethodWalletFee,
   createWallet,
+  createWalletTransfer,
+  deleteWalletTransfer,
   deleteExpenseCategory,
   deletePaymentMethodWalletFee,
   deleteWallet,
@@ -16,10 +18,12 @@ import {
   listExpenses,
   listPaymentMethodWalletFees,
   listWallets,
+  listWalletTransfers,
   updatePaymentMethodWalletFee,
   updateExpense,
   updateExpenseCategory,
   updateWallet,
+  updateWalletTransfer,
 } from '@/features/finance/api/finance-api';
 import { listFairs } from '@/features/sales/api/sales-api';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
@@ -37,10 +41,14 @@ import type {
   DespesaInput,
   Feira,
   PesquisaPaginadaDespesas,
+  PesquisaPaginadaTransferenciasCarteira,
   ResultadoPaginado,
+  ResultadoPaginadoTransferenciasCarteira,
   TaxaMeioPagamentoCarteira,
   TaxaMeioPagamentoCarteiraInput,
   TotalizadoresDespesas,
+  TransferenciaCarteira,
+  TransferenciaCarteiraInput,
 } from '@/shared/lib/types/domain';
 
 const paginacaoInicialPeriodo = getMonthRangeInput();
@@ -56,15 +64,29 @@ const paginacaoInicial: PesquisaPaginadaDespesas = {
   idFeira: undefined,
 };
 
+const paginacaoInicialTransferencias: PesquisaPaginadaTransferenciasCarteira = {
+  pagina: 1,
+  tamanhoPagina: DEFAULT_PAGE_SIZE,
+  termo: '',
+  dataInicio: paginacaoInicialPeriodo.startValue,
+  dataFim: paginacaoInicialPeriodo.endValue,
+  idCarteiraOrigem: undefined,
+  idCarteiraDestino: undefined,
+};
+
 interface FinanceStoreState {
   carteiras: Carteira[];
   taxasMeioPagamentoCarteira: TaxaMeioPagamentoCarteira[];
+  transferenciasCarteira: TransferenciaCarteira[];
   despesas: Despesa[];
   categoriasDespesa: CategoriaDespesa[];
   feiras: Feira[];
   paginacao: PesquisaPaginadaDespesas;
+  paginacaoTransferencias: PesquisaPaginadaTransferenciasCarteira;
   totalItens: number;
   totalPaginas: number;
+  totalItensTransferencias: number;
+  totalPaginasTransferencias: number;
   totalizadores: TotalizadoresDespesas;
   isFetching: boolean;
   isSubmitting: boolean;
@@ -80,6 +102,9 @@ interface FinanceStoreState {
   fetchDespesas: (
     query?: Partial<PesquisaPaginadaDespesas>,
   ) => Promise<ResultadoPaginado<Despesa> | void>;
+  fetchTransferenciasCarteira: (
+    query?: Partial<PesquisaPaginadaTransferenciasCarteira>,
+  ) => Promise<ResultadoPaginadoTransferenciasCarteira | void>;
   fetchCategoriasDespesa: () => Promise<void>;
   fetchFeiras: () => Promise<void>;
   criarCarteira: (dados: CarteiraInput) => Promise<ActionResult<Carteira>>;
@@ -92,6 +117,14 @@ interface FinanceStoreState {
     idCarteira: number,
     dados: AjusteCarteiraInput,
   ) => Promise<ActionResult<AjusteCarteira>>;
+  criarTransferenciaCarteira: (
+    dados: TransferenciaCarteiraInput,
+  ) => Promise<ActionResult<TransferenciaCarteira>>;
+  atualizarTransferenciaCarteira: (
+    id: number,
+    dados: TransferenciaCarteiraInput,
+  ) => Promise<ActionResult<TransferenciaCarteira>>;
+  excluirTransferenciaCarteira: (id: number) => Promise<ActionResult<void>>;
   criarTaxaMeioPagamentoCarteira: (
     dados: TaxaMeioPagamentoCarteiraInput,
   ) => Promise<ActionResult<TaxaMeioPagamentoCarteira>>;
@@ -120,12 +153,16 @@ interface FinanceStoreState {
 export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
   carteiras: [],
   taxasMeioPagamentoCarteira: [],
+  transferenciasCarteira: [],
   despesas: [],
   categoriasDespesa: [],
   feiras: [],
   paginacao: paginacaoInicial,
+  paginacaoTransferencias: paginacaoInicialTransferencias,
   totalItens: 0,
   totalPaginas: 1,
+  totalItensTransferencias: 0,
+  totalPaginasTransferencias: 1,
   totalizadores: {
     valorTotal: 0,
   },
@@ -226,6 +263,64 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
       set({ isFetching: false });
     }
   },
+  fetchTransferenciasCarteira: async (query) => {
+    const currentPagination = get().paginacaoTransferencias;
+    const hasQueryValue = <
+      TKey extends keyof PesquisaPaginadaTransferenciasCarteira,
+    >(
+      key: TKey,
+    ) => (query ? Object.prototype.hasOwnProperty.call(query, key) : false);
+
+    const nextPagination: PesquisaPaginadaTransferenciasCarteira = {
+      pagina: hasQueryValue('pagina')
+        ? (query?.pagina ?? paginacaoInicialTransferencias.pagina)
+        : currentPagination.pagina,
+      tamanhoPagina: hasQueryValue('tamanhoPagina')
+        ? (query?.tamanhoPagina ?? paginacaoInicialTransferencias.tamanhoPagina)
+        : currentPagination.tamanhoPagina,
+      termo: hasQueryValue('termo')
+        ? (query?.termo ?? paginacaoInicialTransferencias.termo)
+        : (currentPagination.termo ?? paginacaoInicialTransferencias.termo),
+      dataInicio: hasQueryValue('dataInicio')
+        ? (query?.dataInicio ?? paginacaoInicialTransferencias.dataInicio)
+        : (currentPagination.dataInicio ??
+          paginacaoInicialTransferencias.dataInicio),
+      dataFim: hasQueryValue('dataFim')
+        ? (query?.dataFim ?? paginacaoInicialTransferencias.dataFim)
+        : (currentPagination.dataFim ?? paginacaoInicialTransferencias.dataFim),
+      idCarteiraOrigem: hasQueryValue('idCarteiraOrigem')
+        ? query?.idCarteiraOrigem
+        : currentPagination.idCarteiraOrigem,
+      idCarteiraDestino: hasQueryValue('idCarteiraDestino')
+        ? query?.idCarteiraDestino
+        : currentPagination.idCarteiraDestino,
+    };
+
+    set({ isFetching: true, fetchErrorMessage: null });
+    try {
+      const response = await listWalletTransfers(nextPagination);
+      set({
+        transferenciasCarteira: response.itens,
+        paginacaoTransferencias: {
+          pagina: response.pagina,
+          tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo,
+          dataInicio: nextPagination.dataInicio,
+          dataFim: nextPagination.dataFim,
+          idCarteiraOrigem: nextPagination.idCarteiraOrigem,
+          idCarteiraDestino: nextPagination.idCarteiraDestino,
+        },
+        totalItensTransferencias: response.totalItens,
+        totalPaginasTransferencias: response.totalPaginas,
+      });
+      return response;
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ fetchErrorMessage: problem.detail });
+    } finally {
+      set({ isFetching: false });
+    }
+  },
   fetchCategoriasDespesa: async () => {
     try {
       const categoriasDespesa = await listExpenseCategories();
@@ -286,6 +381,45 @@ export const useFinanceStore = create<FinanceStoreState>((set, get) => ({
     try {
       const ajuste = await createWalletAdjustment(idCarteira, dados);
       return { success: true, data: ajuste };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  criarTransferenciaCarteira: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const transferencia = await createWalletTransfer(dados);
+      return { success: true, data: transferencia };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  atualizarTransferenciaCarteira: async (id, dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const transferencia = await updateWalletTransfer(id, dados);
+      return { success: true, data: transferencia };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
+  excluirTransferenciaCarteira: async (id) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      await deleteWalletTransfer(id);
+      return { success: true, data: undefined };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
       set({ submitErrorMessage: problem.detail });
@@ -424,12 +558,20 @@ export const financeStoreSelectors = {
   carteiras: (state: FinanceStoreState) => state.carteiras,
   taxasMeioPagamentoCarteira: (state: FinanceStoreState) =>
     state.taxasMeioPagamentoCarteira,
+  transferenciasCarteira: (state: FinanceStoreState) =>
+    state.transferenciasCarteira,
   despesas: (state: FinanceStoreState) => state.despesas,
   categoriasDespesa: (state: FinanceStoreState) => state.categoriasDespesa,
   feiras: (state: FinanceStoreState) => state.feiras,
   paginacao: (state: FinanceStoreState) => state.paginacao,
+  paginacaoTransferencias: (state: FinanceStoreState) =>
+    state.paginacaoTransferencias,
   totalItens: (state: FinanceStoreState) => state.totalItens,
   totalPaginas: (state: FinanceStoreState) => state.totalPaginas,
+  totalItensTransferencias: (state: FinanceStoreState) =>
+    state.totalItensTransferencias,
+  totalPaginasTransferencias: (state: FinanceStoreState) =>
+    state.totalPaginasTransferencias,
   totalizadores: (state: FinanceStoreState) => state.totalizadores,
   isFetching: (state: FinanceStoreState) => state.isFetching,
   isSubmitting: (state: FinanceStoreState) => state.isSubmitting,
@@ -444,6 +586,8 @@ export const financeStoreSelectors = {
   listarAjustesCarteira: (state: FinanceStoreState) =>
     state.listarAjustesCarteira,
   fetchDespesas: (state: FinanceStoreState) => state.fetchDespesas,
+  fetchTransferenciasCarteira: (state: FinanceStoreState) =>
+    state.fetchTransferenciasCarteira,
   fetchCategoriasDespesa: (state: FinanceStoreState) =>
     state.fetchCategoriasDespesa,
   fetchFeiras: (state: FinanceStoreState) => state.fetchFeiras,
@@ -451,6 +595,12 @@ export const financeStoreSelectors = {
   atualizarCarteira: (state: FinanceStoreState) => state.atualizarCarteira,
   excluirCarteira: (state: FinanceStoreState) => state.excluirCarteira,
   criarAjusteCarteira: (state: FinanceStoreState) => state.criarAjusteCarteira,
+  criarTransferenciaCarteira: (state: FinanceStoreState) =>
+    state.criarTransferenciaCarteira,
+  atualizarTransferenciaCarteira: (state: FinanceStoreState) =>
+    state.atualizarTransferenciaCarteira,
+  excluirTransferenciaCarteira: (state: FinanceStoreState) =>
+    state.excluirTransferenciaCarteira,
   criarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>
     state.criarTaxaMeioPagamentoCarteira,
   atualizarTaxaMeioPagamentoCarteira: (state: FinanceStoreState) =>

@@ -61,6 +61,7 @@ import {
   NewExpenseDialog,
   NewWalletDialog,
   PaymentMethodWalletFeeDialog,
+  WalletTransferDialog,
 } from '@/features/finance';
 import {
   NewAssinanteDialog,
@@ -224,6 +225,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     paymentMethodWalletFeeDialogOpen,
     setPaymentMethodWalletFeeDialogOpen,
   ] = useState(false);
+  const [walletTransferDialogOpen, setWalletTransferDialogOpen] =
+    useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [assinanteDialogOpen, setAssinanteDialogOpen] = useState(false);
   const [cicloDialogOpen, setCicloDialogOpen] = useState(false);
@@ -786,6 +789,34 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     event.preventDefault();
                     event.stopPropagation();
                     openDialog(() => setWalletDialogOpen(true));
+                  }}
+                  sx={{
+                    ...MENU_ACTION_BUTTON_SX,
+                  }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/financeiro/transferencias"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Transferências" />
+                <IconButton
+                  size="small"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openDialog(() => setWalletTransferDialogOpen(true));
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -1631,6 +1662,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <PaymentMethodWalletFeeDialog
         open={paymentMethodWalletFeeDialogOpen}
         onClose={() => setPaymentMethodWalletFeeDialogOpen(false)}
+      />
+      <WalletTransferDialog
+        open={walletTransferDialogOpen}
+        onClose={() => setWalletTransferDialogOpen(false)}
+        onSaved={() => undefined}
       />
       <EditProfileDialog
         open={editProfileDialogOpen}

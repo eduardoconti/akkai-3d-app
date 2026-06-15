@@ -144,6 +144,17 @@ export interface AjusteCarteira {
   observacao?: string;
 }
 
+export interface TransferenciaCarteira {
+  id: number;
+  dataInclusao: string;
+  dataTransferencia: string;
+  idCarteiraOrigem: number;
+  idCarteiraDestino: number;
+  valor: number;
+  carteiraOrigem?: Carteira;
+  carteiraDestino?: Carteira;
+}
+
 export interface Despesa {
   id: number;
   dataLancamento: string;
@@ -283,6 +294,14 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   idFeira?: number;
 }
 
+export interface PesquisaPaginadaTransferenciasCarteira
+  extends PesquisaPaginada {
+  dataInicio?: string;
+  dataFim?: string;
+  idCarteiraOrigem?: number;
+  idCarteiraDestino?: number;
+}
+
 export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {
   status?: StatusOrcamento[];
 }
@@ -308,6 +327,13 @@ export interface AjusteCarteiraInput {
   valor: number;
   motivo: string;
   observacao?: string;
+}
+
+export interface TransferenciaCarteiraInput {
+  idCarteiraOrigem: number;
+  idCarteiraDestino: number;
+  valor: number;
+  dataTransferencia: string;
 }
 
 export interface CategoriaDespesaInput {
@@ -662,3 +688,6 @@ export interface TotalizadoresDespesas {
 export interface ResultadoPaginadoDespesas extends ResultadoPaginado<Despesa> {
   totalizadores: TotalizadoresDespesas;
 }
+
+export type ResultadoPaginadoTransferenciasCarteira =
+  ResultadoPaginado<TransferenciaCarteira>;
