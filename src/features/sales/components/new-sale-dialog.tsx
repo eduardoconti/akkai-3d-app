@@ -857,8 +857,12 @@ export default function NewSaleDialog({
       return;
     }
 
+    const dataVendaFormatoApi = isEditMode
+      ? formatLocalDate(form.dataVenda, 'api-date-time')
+      : formatLocalDate(form.dataVenda, 'api-current-date-time');
+
     const payload = {
-      dataVenda: formatLocalDate(form.dataVenda, 'api-date-time'),
+      dataVenda: dataVendaFormatoApi,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
       desconto: totals.saleDiscount,
