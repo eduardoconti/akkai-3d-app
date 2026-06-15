@@ -7,6 +7,10 @@ import {
   Chip,
   Collapse,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   MenuItem,
   Paper,
@@ -24,8 +28,11 @@ import {
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import {
+  Add,
   AddCircleOutline,
   AssignmentReturn,
+  Delete as DeleteIcon,
+  Edit,
   FileDownload,
   KeyboardArrowDown,
   KeyboardArrowUp,
@@ -36,6 +43,7 @@ import {
   listarTodosRevendedoresAtivos,
 } from '@/features/consignacao/api/consignacao-api';
 import ConsignacaoDialog from '@/features/consignacao/components/consignacao-dialog';
+import ItemConsignacaoDialog from '@/features/consignacao/components/item-consignacao-dialog';
 import RegistrarDevolucaoConsignadaDialog from '@/features/consignacao/components/registrar-devolucao-consignada-dialog';
 import RegistrarVendasRevendedorDialog from '@/features/consignacao/components/registrar-vendas-revendedor-dialog';
 import {
@@ -93,10 +101,16 @@ function obterStatusColor(status: StatusConsignacao) {
 
 function DetalheItens({
   consignacao,
+  onAdicionar,
   onDevolucao,
+  onAlterar,
+  onExcluir,
 }: {
   consignacao: Consignacao;
+  onAdicionar: () => void;
   onDevolucao: (item: ItemConsignacao) => void;
+  onAlterar: (item: ItemConsignacao) => void;
+  onExcluir: (item: ItemConsignacao) => void;
 }) {
   return (
     <Box
@@ -108,9 +122,27 @@ function DetalheItens({
         borderRadius: 2,
       }}
     >
-      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
-        Itens da Consignação #{consignacao.id}
-      </Typography>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        spacing={1}
+        sx={{ mb: 1.5 }}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          Itens da Consignação #{consignacao.id}
+        </Typography>
+
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<Add />}
+          onClick={onAdicionar}
+          disabled={consignacao.status !== 'ABERTA'}
+        >
+          Adicionar item
+        </Button>
+      </Stack>
 
       <Stack
         direction="row"
@@ -161,17 +193,46 @@ function DetalheItens({
                 {formatCurrency(item.valorUnitario)}
               </TableCell>
               <TableCell align="right">
-                <Button
-                  size="small"
-                  startIcon={<AssignmentReturn />}
-                  onClick={() => onDevolucao(item)}
-                  disabled={
-                    consignacao.status !== 'ABERTA' ||
-                    item.quantidadeDisponivel <= 0
-                  }
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  justifyContent="flex-end"
+                  flexWrap="wrap"
+                  useFlexGap
                 >
-                  Devolver
-                </Button>
+                  <Button
+                    size="small"
+                    startIcon={<Edit />}
+                    onClick={() => onAlterar(item)}
+                    disabled={consignacao.status !== 'ABERTA'}
+                  >
+                    Alterar
+                  </Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => onExcluir(item)}
+                    disabled={
+                      consignacao.status !== 'ABERTA' ||
+                      item.quantidadeVendida > 0 ||
+                      item.quantidadeDevolvida > 0
+                    }
+                  >
+                    Excluir
+                  </Button>
+                  <Button
+                    size="small"
+                    startIcon={<AssignmentReturn />}
+                    onClick={() => onDevolucao(item)}
+                    disabled={
+                      consignacao.status !== 'ABERTA' ||
+                      item.quantidadeDisponivel <= 0
+                    }
+                  >
+                    Devolver
+                  </Button>
+                </Stack>
               </TableCell>
             </TableRow>
           ))}
@@ -187,6 +248,7 @@ export default function ConsignacoesPage() {
   const {
     consignacoes,
     detalheConsignacao,
+    excluirItemConsignacao,
     fetchConsignacoes,
     fetchErrorMessage,
     isFetching,
@@ -197,6 +259,8 @@ export default function ConsignacoesPage() {
     useShallow((state) => ({
       consignacoes: consignacaoStoreSelectors.consignacoes(state),
       detalheConsignacao: consignacaoStoreSelectors.detalheConsignacao(state),
+      excluirItemConsignacao:
+        consignacaoStoreSelectors.excluirItemConsignacao(state),
       fetchConsignacoes: consignacaoStoreSelectors.fetchConsignacoes(state),
       fetchErrorMessage: consignacaoStoreSelectors.fetchErrorMessage(state),
       isFetching: consignacaoStoreSelectors.isFetching(state),
@@ -213,6 +277,7 @@ export default function ConsignacoesPage() {
   const [relatorioErrorMessage, setRelatorioErrorMessage] = useState<
     string | null
   >(null);
+  const [itemErrorMessage, setItemErrorMessage] = useState<string | null>(null);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const [revendedores, setRevendedores] = useState<Revendedor[]>([]);
   const [revendedorSelecionado, setRevendedorSelecionado] =
@@ -229,6 +294,19 @@ export default function ConsignacoesPage() {
   );
   const [devolucaoConsignacao, setDevolucaoConsignacao] =
     useState<Consignacao | null>(null);
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
+  const [itemDialogConsignacao, setItemDialogConsignacao] =
+    useState<Consignacao | null>(null);
+  const [itemDialogItem, setItemDialogItem] = useState<ItemConsignacao | null>(
+    null,
+  );
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [itemExclusaoConsignacao, setItemExclusaoConsignacao] =
+    useState<Consignacao | null>(null);
+  const [itemExclusao, setItemExclusao] = useState<ItemConsignacao | null>(
+    null,
+  );
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
 
   useEffect(() => {
     void fetchConsignacoes();
@@ -317,6 +395,78 @@ export default function ConsignacoesPage() {
   ) => {
     setDevolucaoConsignacao(consignacao);
     setDevolucaoItem(item);
+  };
+
+  const handleOpenAdicionarItem = (consignacao: Consignacao) => {
+    setItemErrorMessage(null);
+    setItemDialogConsignacao(consignacao);
+    setItemDialogItem(null);
+    setItemDialogOpen(true);
+  };
+
+  const handleOpenAlterarItem = (
+    consignacao: Consignacao,
+    item: ItemConsignacao,
+  ) => {
+    setItemErrorMessage(null);
+    setItemDialogConsignacao(consignacao);
+    setItemDialogItem(item);
+    setItemDialogOpen(true);
+  };
+
+  const handleCloseItemDialog = () => {
+    setItemDialogOpen(false);
+    setItemDialogConsignacao(null);
+    setItemDialogItem(null);
+  };
+
+  const handleOpenExcluirItem = (
+    consignacao: Consignacao,
+    item: ItemConsignacao,
+  ) => {
+    setItemErrorMessage(null);
+    setItemExclusaoConsignacao(consignacao);
+    setItemExclusao(item);
+    setConfirmDeleteOpen(true);
+  };
+
+  const handleCloseConfirmDelete = () => {
+    if (isDeletingItem) {
+      return;
+    }
+
+    setConfirmDeleteOpen(false);
+    setItemExclusaoConsignacao(null);
+    setItemExclusao(null);
+  };
+
+  const handleConfirmExcluirItem = async () => {
+    if (!itemExclusaoConsignacao || !itemExclusao) {
+      return;
+    }
+
+    setIsDeletingItem(true);
+    setItemErrorMessage(null);
+
+    try {
+      const result = await excluirItemConsignacao(
+        itemExclusaoConsignacao.id,
+        itemExclusao.id,
+      );
+
+      if (!result.success) {
+        setItemErrorMessage(result.problem.detail);
+        return;
+      }
+
+      await handleRefresh();
+      showSuccess('Item da consignação excluído com sucesso.');
+      setConfirmDeleteOpen(false);
+      setItemExclusaoConsignacao(null);
+      setItemExclusao(null);
+    } finally {
+      setIsDeletingItem(false);
+    }
   };
 
   const handleDownloadRelatorio = async (id: number) => {
@@ -439,6 +589,10 @@ export default function ConsignacoesPage() {
         <Alert severity="error">{relatorioErrorMessage}</Alert>
       ) : null}
 
+      {itemErrorMessage ? (
+        <Alert severity="error">{itemErrorMessage}</Alert>
+      ) : null}
+
       <Paper sx={{ overflow: 'hidden' }}>
         {isMobile ? (
           <Stack
@@ -521,6 +675,19 @@ export default function ConsignacoesPage() {
                       </Stack>
 
                       <Collapse in={expanded} timeout="auto" unmountOnExit>
+                        {detalhe.status === 'ABERTA' ? (
+                          <Box sx={{ py: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<Add />}
+                              onClick={() => handleOpenAdicionarItem(detalhe)}
+                            >
+                              Adicionar item
+                            </Button>
+                          </Box>
+                        ) : null}
+
                         {(detalhe.itens ?? []).map((item) => (
                           <Box key={item.id} sx={{ py: 1 }}>
                             <Typography variant="body2" fontWeight={700}>
@@ -535,7 +702,38 @@ export default function ConsignacoesPage() {
                               {item.quantidadeDevolvida} · Disponível{' '}
                               {item.quantidadeDisponivel}
                             </Typography>
-                            <Box sx={{ mt: 0.5 }}>
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              flexWrap="wrap"
+                              useFlexGap
+                              sx={{ mt: 0.5 }}
+                            >
+                              <Button
+                                size="small"
+                                startIcon={<Edit />}
+                                onClick={() =>
+                                  handleOpenAlterarItem(detalhe, item)
+                                }
+                                disabled={detalhe.status !== 'ABERTA'}
+                              >
+                                Alterar
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() =>
+                                  handleOpenExcluirItem(detalhe, item)
+                                }
+                                disabled={
+                                  detalhe.status !== 'ABERTA' ||
+                                  item.quantidadeVendida > 0 ||
+                                  item.quantidadeDevolvida > 0
+                                }
+                              >
+                                Excluir
+                              </Button>
                               <Button
                                 size="small"
                                 startIcon={<AssignmentReturn />}
@@ -549,7 +747,7 @@ export default function ConsignacoesPage() {
                               >
                                 Devolver
                               </Button>
-                            </Box>
+                            </Stack>
                           </Box>
                         ))}
                       </Collapse>
@@ -667,8 +865,17 @@ export default function ConsignacoesPage() {
                             >
                               <DetalheItens
                                 consignacao={detalhe}
+                                onAdicionar={() =>
+                                  handleOpenAdicionarItem(detalhe)
+                                }
                                 onDevolucao={(item) =>
                                   handleOpenDevolucao(detalhe, item)
+                                }
+                                onAlterar={(item) =>
+                                  handleOpenAlterarItem(detalhe, item)
+                                }
+                                onExcluir={(item) =>
+                                  handleOpenExcluirItem(detalhe, item)
                                 }
                               />
                             </Collapse>
@@ -710,6 +917,42 @@ export default function ConsignacoesPage() {
         onClose={() => setDialogOpen(false)}
         onSaved={handleRefresh}
       />
+      <ItemConsignacaoDialog
+        open={itemDialogOpen}
+        consignacao={itemDialogConsignacao}
+        item={itemDialogItem}
+        onClose={handleCloseItemDialog}
+        onSaved={handleRefresh}
+      />
+      <Dialog
+        open={confirmDeleteOpen}
+        onClose={handleCloseConfirmDelete}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Excluir item</DialogTitle>
+        <DialogContent dividers>
+          <Typography>
+            Tem certeza que deseja excluir este item da consignação? Essa ação
+            não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={handleCloseConfirmDelete} disabled={isDeletingItem}>
+            Cancelar
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => {
+              void handleConfirmExcluirItem();
+            }}
+            disabled={isDeletingItem}
+          >
+            {isDeletingItem ? 'Excluindo...' : 'Confirmar exclusão'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       <RegistrarVendasRevendedorDialog
         open={vendasRevendedorDialogOpen}
         onClose={() => setVendasRevendedorDialogOpen(false)}

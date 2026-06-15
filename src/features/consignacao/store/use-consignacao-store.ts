@@ -1,8 +1,11 @@
 import { create } from 'zustand';
 import {
+  adicionarItemConsignacao,
+  alterarItemConsignacao,
   atualizarRevendedor,
   criarConsignacao,
   criarRevendedor,
+  excluirItemConsignacao,
   listarConsignacoes,
   listarRevendedores,
   obterConsignacaoPorId,
@@ -14,8 +17,10 @@ import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
+  AlterarItemConsignacaoInput,
   Consignacao,
   InserirConsignacaoInput,
+  ItemConsignacaoInput,
   PesquisaPaginadaConsignacoes,
   PesquisaPaginadaRevendedores,
   RegistrarDevolucaoConsignadaInput,
@@ -84,6 +89,17 @@ function resolverPaginacaoConsignacoes(
   };
 }
 
+function substituirConsignacaoNaLista(
+  consignacoes: Consignacao[],
+  consignacaoAtualizada: Consignacao,
+): Consignacao[] {
+  return consignacoes.map((consignacao) =>
+    consignacao.id === consignacaoAtualizada.id
+      ? { ...consignacao, ...consignacaoAtualizada }
+      : consignacao,
+  );
+}
+
 interface ConsignacaoStoreState {
   revendedores: Revendedor[];
   consignacoes: Consignacao[];
@@ -115,6 +131,19 @@ interface ConsignacaoStoreState {
   obterConsignacaoPorId: (id: number) => Promise<Consignacao>;
   criarConsignacao: (
     dados: InserirConsignacaoInput,
+  ) => Promise<ActionResult<Consignacao>>;
+  adicionarItemConsignacao: (
+    idConsignacao: number,
+    dados: ItemConsignacaoInput,
+  ) => Promise<ActionResult<Consignacao>>;
+  alterarItemConsignacao: (
+    idConsignacao: number,
+    idItem: number,
+    dados: AlterarItemConsignacaoInput,
+  ) => Promise<ActionResult<Consignacao>>;
+  excluirItemConsignacao: (
+    idConsignacao: number,
+    idItem: number,
   ) => Promise<ActionResult<Consignacao>>;
   registrarVendasRevendedor: (
     idRevendedor: number,
@@ -242,6 +271,73 @@ export const useConsignacaoStore = create<ConsignacaoStoreState>(
         set({ isSubmitting: false });
       }
     },
+    adicionarItemConsignacao: async (idConsignacao, dados) => {
+      set({ isSubmitting: true, submitErrorMessage: null });
+      try {
+        const consignacao = await adicionarItemConsignacao(
+          idConsignacao,
+          dados,
+        );
+        set((state) => ({
+          consignacoes: substituirConsignacaoNaLista(
+            state.consignacoes,
+            consignacao,
+          ),
+          detalheConsignacao: consignacao,
+        }));
+        return { success: true, data: consignacao };
+      } catch (error) {
+        const problem = getProblemDetailsFromError(error);
+        set({ submitErrorMessage: problem.detail });
+        return { success: false, problem };
+      } finally {
+        set({ isSubmitting: false });
+      }
+    },
+    alterarItemConsignacao: async (idConsignacao, idItem, dados) => {
+      set({ isSubmitting: true, submitErrorMessage: null });
+      try {
+        const consignacao = await alterarItemConsignacao(
+          idConsignacao,
+          idItem,
+          dados,
+        );
+        set((state) => ({
+          consignacoes: substituirConsignacaoNaLista(
+            state.consignacoes,
+            consignacao,
+          ),
+          detalheConsignacao: consignacao,
+        }));
+        return { success: true, data: consignacao };
+      } catch (error) {
+        const problem = getProblemDetailsFromError(error);
+        set({ submitErrorMessage: problem.detail });
+        return { success: false, problem };
+      } finally {
+        set({ isSubmitting: false });
+      }
+    },
+    excluirItemConsignacao: async (idConsignacao, idItem) => {
+      set({ isSubmitting: true, submitErrorMessage: null });
+      try {
+        const consignacao = await excluirItemConsignacao(idConsignacao, idItem);
+        set((state) => ({
+          consignacoes: substituirConsignacaoNaLista(
+            state.consignacoes,
+            consignacao,
+          ),
+          detalheConsignacao: consignacao,
+        }));
+        return { success: true, data: consignacao };
+      } catch (error) {
+        const problem = getProblemDetailsFromError(error);
+        set({ submitErrorMessage: problem.detail });
+        return { success: false, problem };
+      } finally {
+        set({ isSubmitting: false });
+      }
+    },
     registrarVendasRevendedor: async (idRevendedor, dados) => {
       set({ isSubmitting: true, submitErrorMessage: null });
       try {
@@ -307,6 +403,12 @@ export const consignacaoStoreSelectors = {
   obterConsignacaoPorId: (state: ConsignacaoStoreState) =>
     state.obterConsignacaoPorId,
   criarConsignacao: (state: ConsignacaoStoreState) => state.criarConsignacao,
+  adicionarItemConsignacao: (state: ConsignacaoStoreState) =>
+    state.adicionarItemConsignacao,
+  alterarItemConsignacao: (state: ConsignacaoStoreState) =>
+    state.alterarItemConsignacao,
+  excluirItemConsignacao: (state: ConsignacaoStoreState) =>
+    state.excluirItemConsignacao,
   registrarVendasRevendedor: (state: ConsignacaoStoreState) =>
     state.registrarVendasRevendedor,
   registrarDevolucao: (state: ConsignacaoStoreState) =>
