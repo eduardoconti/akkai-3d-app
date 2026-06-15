@@ -268,10 +268,8 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
 
 export type PesquisaPaginadaFeiras = PesquisaPaginada;
 
-export interface PesquisaPaginadaPrecosProdutosFeira extends Omit<
-  PesquisaPaginada,
-  'ordenarPor'
-> {
+export interface PesquisaPaginadaPrecosProdutosFeira
+  extends Omit<PesquisaPaginada, 'ordenarPor'> {
   idFeira?: number;
   ordenarPor?: OrdenacaoPrecoProdutoFeira;
   direcao?: DirecaoOrdenacao;
@@ -411,6 +409,11 @@ export interface ItemConsignacaoInput {
   valorUnitario?: number;
 }
 
+export interface AlterarItemConsignacaoInput {
+  quantidade: number;
+  valorUnitario?: number;
+}
+
 export interface InserirConsignacaoInput {
   idRevendedor: number;
   itens: ItemConsignacaoInput[];
@@ -431,18 +434,14 @@ export interface RegistrarDevolucaoConsignadaInput {
   quantidade: number;
 }
 
-export interface PesquisaPaginadaRevendedores extends Omit<
-  PesquisaPaginada,
-  'ordenarPor' | 'idsCategorias'
-> {
+export interface PesquisaPaginadaRevendedores
+  extends Omit<PesquisaPaginada, 'ordenarPor' | 'idsCategorias'> {
   status?: StatusRevendedor;
   ordenarPor?: 'nome' | 'dataInclusao';
 }
 
-export interface PesquisaPaginadaConsignacoes extends Omit<
-  PesquisaPaginada,
-  'ordenarPor' | 'idsCategorias'
-> {
+export interface PesquisaPaginadaConsignacoes
+  extends Omit<PesquisaPaginada, 'ordenarPor' | 'idsCategorias'> {
   idRevendedor?: number;
   status?: StatusConsignacao;
   ordenarPor?: 'dataInclusao' | 'revendedor';

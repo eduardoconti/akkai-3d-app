@@ -1,7 +1,9 @@
 import { httpClient } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type {
+  AlterarItemConsignacaoInput,
   Consignacao,
+  ItemConsignacaoInput,
   InserirConsignacaoInput,
   PesquisaPaginadaConsignacoes,
   PesquisaPaginadaRevendedores,
@@ -89,6 +91,36 @@ export function criarConsignacao(
   dados: InserirConsignacaoInput,
 ): Promise<Consignacao> {
   return httpClient.post<Consignacao>('/consignacao', dados);
+}
+
+export function adicionarItemConsignacao(
+  idConsignacao: number,
+  dados: ItemConsignacaoInput,
+): Promise<Consignacao> {
+  return httpClient.post<Consignacao>(
+    `/consignacao/${idConsignacao}/itens`,
+    dados,
+  );
+}
+
+export function alterarItemConsignacao(
+  idConsignacao: number,
+  idItem: number,
+  dados: AlterarItemConsignacaoInput,
+): Promise<Consignacao> {
+  return httpClient.put<Consignacao>(
+    `/consignacao/${idConsignacao}/itens/${idItem}`,
+    dados,
+  );
+}
+
+export function excluirItemConsignacao(
+  idConsignacao: number,
+  idItem: number,
+): Promise<Consignacao> {
+  return httpClient.delete<Consignacao>(
+    `/consignacao/${idConsignacao}/itens/${idItem}`,
+  );
 }
 
 export function registrarVendasRevendedorConsignado(
