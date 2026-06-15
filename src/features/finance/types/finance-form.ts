@@ -75,6 +75,20 @@ export type WalletAdjustmentFormErrors = {
   observacao?: string;
 };
 
+export type WalletTransferFormState = {
+  dataTransferencia: string;
+  idCarteiraOrigem: number | '';
+  idCarteiraDestino: number | '';
+  valor: number;
+};
+
+export type WalletTransferFormErrors = {
+  dataTransferencia?: string;
+  idCarteiraOrigem?: string;
+  idCarteiraDestino?: string;
+  valor?: string;
+};
+
 function getCurrentDateInput(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -100,6 +114,13 @@ export const initialWalletAdjustmentFormState: WalletAdjustmentFormState = {
   valor: 0,
   motivo: '',
   observacao: '',
+};
+
+export const initialWalletTransferFormState: WalletTransferFormState = {
+  dataTransferencia: getCurrentDateInput(),
+  idCarteiraOrigem: '',
+  idCarteiraDestino: '',
+  valor: 0,
 };
 
 export function convertDateToApiDateFormat(value: string): string | null {

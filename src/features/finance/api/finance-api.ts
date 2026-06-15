@@ -9,9 +9,13 @@ import type {
   Despesa,
   DespesaInput,
   PesquisaPaginadaDespesas,
+  PesquisaPaginadaTransferenciasCarteira,
   ResultadoPaginadoDespesas,
+  ResultadoPaginadoTransferenciasCarteira,
   TaxaMeioPagamentoCarteira,
   TaxaMeioPagamentoCarteiraInput,
+  TransferenciaCarteira,
+  TransferenciaCarteiraInput,
 } from '@/shared/lib/types/domain';
 
 export function listWallets(): Promise<Carteira[]> {
@@ -52,6 +56,38 @@ export function createWalletAdjustment(
   return httpClient.post<AjusteCarteira>(
     `/financeiro/carteiras/${idCarteira}/ajustes`,
     input,
+  );
+}
+
+export function createWalletTransfer(
+  input: TransferenciaCarteiraInput,
+): Promise<TransferenciaCarteira> {
+  return httpClient.post<TransferenciaCarteira>(
+    '/financeiro/transferencias-carteira',
+    input,
+  );
+}
+
+export function updateWalletTransfer(
+  id: number,
+  input: TransferenciaCarteiraInput,
+): Promise<TransferenciaCarteira> {
+  return httpClient.put<TransferenciaCarteira>(
+    `/financeiro/transferencias-carteira/${id}`,
+    input,
+  );
+}
+
+export function deleteWalletTransfer(id: number): Promise<void> {
+  return httpClient.delete<void>(`/financeiro/transferencias-carteira/${id}`);
+}
+
+export function listWalletTransfers(
+  query: PesquisaPaginadaTransferenciasCarteira,
+): Promise<ResultadoPaginadoTransferenciasCarteira> {
+  return httpClient.get<ResultadoPaginadoTransferenciasCarteira>(
+    '/financeiro/transferencias-carteira',
+    query,
   );
 }
 
