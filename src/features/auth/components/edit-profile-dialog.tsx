@@ -90,9 +90,9 @@ export default function EditProfileDialog({
     {},
   );
   const canUpdateRole =
-    user?.permissions.includes('auth.user.update_role') ?? false;
+    user?.permissions.includes('usuario.alterar-papel') ?? false;
   const canUpdateStatus =
-    user?.permissions.includes('auth.user.update_status') ?? false;
+    user?.permissions.includes('usuario.alterar-status') ?? false;
 
   useEffect(() => {
     if (!open || !user) {

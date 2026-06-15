@@ -143,7 +143,7 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
         <TableCell>
           {formatLocalDate(
             venda.dataVenda ?? venda.dataInclusao,
-            'display-date',
+            'display-date-time',
           )}
         </TableCell>
         <TableCell>
@@ -721,7 +721,7 @@ export default function SalesPage() {
                           <Typography variant="body2">
                             {formatLocalDate(
                               venda.dataVenda ?? venda.dataInclusao,
-                              'display-date',
+                              'display-date-time',
                             )}
                           </Typography>
                         </Box>
