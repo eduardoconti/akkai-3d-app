@@ -1,4 +1,8 @@
-import type { StatusOrcamento, TipoVenda } from '@/shared/lib/types/domain';
+import type {
+  CanalAtendimentoOrcamento,
+  StatusOrcamento,
+  TipoVenda,
+} from '@/shared/lib/types/domain';
 
 export type BudgetFormState = {
   nomeCliente: string;
@@ -7,6 +11,7 @@ export type BudgetFormState = {
   linkSTL: string;
   status: StatusOrcamento;
   tipo: TipoVenda;
+  canalAtendimento: CanalAtendimentoOrcamento | '';
   idFeira: number | '';
   valor: number;
   quantidade: number | '';
@@ -18,6 +23,7 @@ export type BudgetFormErrors = {
   descricao?: string;
   linkSTL?: string;
   tipo?: string;
+  canalAtendimento?: string;
   idFeira?: string;
   valor?: string;
   quantidade?: string;
@@ -30,6 +36,7 @@ export const initialBudgetFormState: BudgetFormState = {
   linkSTL: '',
   status: 'PENDENTE',
   tipo: 'LOJA',
+  canalAtendimento: '',
   idFeira: '',
   valor: 0,
   quantidade: '',
@@ -37,6 +44,7 @@ export const initialBudgetFormState: BudgetFormState = {
 
 export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
   'PENDENTE',
+  'ATENDIMENTO',
   'AGUARDANDO_APROVACAO',
   'APROVADO',
   'PRODUZIDO',
@@ -44,9 +52,23 @@ export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
 ];
 
 export const STATUS_ORCAMENTO_LABEL: Record<StatusOrcamento, string> = {
+  ATENDIMENTO: 'Em atendimento',
   PENDENTE: 'Pendente',
   AGUARDANDO_APROVACAO: 'Aguardando aprovação',
   APROVADO: 'Aprovado',
   PRODUZIDO: 'Produzido',
   FINALIZADO: 'Finalizado',
+};
+
+export const ALL_CANAIS_ATENDIMENTO_ORCAMENTO: CanalAtendimentoOrcamento[] = [
+  'WPP',
+  'INSTAGRAM',
+];
+
+export const CANAL_ATENDIMENTO_ORCAMENTO_LABEL: Record<
+  CanalAtendimentoOrcamento,
+  string
+> = {
+  WPP: 'WhatsApp',
+  INSTAGRAM: 'Instagram',
 };

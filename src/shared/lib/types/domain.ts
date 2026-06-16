@@ -94,11 +94,13 @@ export interface PrecoProdutoFeiraInput {
 export type MeioPagamento = 'DIN' | 'DEB' | 'CRE' | 'PIX';
 export type TipoVenda = 'FEIRA' | 'LOJA' | 'ONLINE' | 'CONSIGNACAO';
 export type StatusOrcamento =
+  | 'ATENDIMENTO'
   | 'PENDENTE'
   | 'AGUARDANDO_APROVACAO'
   | 'APROVADO'
   | 'PRODUZIDO'
   | 'FINALIZADO';
+export type CanalAtendimentoOrcamento = 'WPP' | 'INSTAGRAM';
 export interface CategoriaDespesa {
   id: number;
   nome: string;
@@ -217,6 +219,7 @@ export interface Orcamento {
   dataInclusao: string;
   status: StatusOrcamento;
   tipo: TipoVenda;
+  canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
   quantidade?: number;
@@ -304,6 +307,8 @@ export interface PesquisaPaginadaTransferenciasCarteira
 
 export interface PesquisaPaginadaOrcamentos extends PesquisaPaginada {
   status?: StatusOrcamento[];
+  tipo?: TipoVenda;
+  canalAtendimento?: CanalAtendimentoOrcamento;
 }
 
 export interface CarteiraInput {
@@ -358,6 +363,7 @@ export interface OrcamentoInput {
   linkSTL?: string;
   status?: StatusOrcamento;
   tipo: TipoVenda;
+  canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
   quantidade?: number;
@@ -370,6 +376,7 @@ export interface AtualizarOrcamentoInput {
   linkSTL?: string;
   status?: StatusOrcamento;
   tipo?: TipoVenda;
+  canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
   quantidade?: number;

@@ -48,6 +48,7 @@ export type {
 export type {
   AjusteCarteira,
   AjusteCarteiraInput,
+  CanalAtendimentoOrcamento,
   Carteira,
   CarteiraInput,
   CategoriaDespesa,
