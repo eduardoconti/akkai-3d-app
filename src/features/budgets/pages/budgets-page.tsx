@@ -28,7 +28,9 @@ import {
   useBudgetStore,
 } from '@/features/budgets/store/use-budget-store';
 import {
+  ALL_CANAIS_ATENDIMENTO_ORCAMENTO,
   ALL_STATUSES_ORCAMENTO,
+  CANAL_ATENDIMENTO_ORCAMENTO_LABEL,
   STATUS_ORCAMENTO_LABEL,
 } from '@/features/budgets/types/budget-form';
 import {
@@ -40,6 +42,7 @@ import {
 } from '@/shared';
 import type {
   Orcamento,
+  CanalAtendimentoOrcamento,
   StatusOrcamento,
   TipoVenda,
 } from '@/shared/lib/types/domain';
@@ -60,6 +63,7 @@ const STATUS_COLOR: Record<
   StatusOrcamento,
   'default' | 'warning' | 'info' | 'success' | 'primary'
 > = {
+  ATENDIMENTO: 'info',
   PENDENTE: 'warning',
   AGUARDANDO_APROVACAO: 'info',
   APROVADO: 'success',
@@ -73,6 +77,7 @@ const TIPO_LABEL: Record<TipoVenda, string> = {
   ONLINE: 'Online',
   CONSIGNACAO: 'Consignação',
 };
+const TIPOS_ORCAMENTO: TipoVenda[] = ['LOJA', 'FEIRA', 'ONLINE'];
 
 const STATUS_PADRAO_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
   (status) => status !== 'FINALIZADO',
@@ -156,6 +161,12 @@ export default function BudgetsPage() {
   const [statusSelecionados, setStatusSelecionados] = useState<
     StatusOrcamento[]
   >(paginacao.status ?? STATUS_PADRAO_ORCAMENTO);
+  const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
+  const [tipoSelecionado, setTipoSelecionado] = useState<TipoVenda | ''>(
+    paginacao.tipo ?? '',
+  );
+  const [canalAtendimentoSelecionado, setCanalAtendimentoSelecionado] =
+    useState<CanalAtendimentoOrcamento | ''>(paginacao.canalAtendimento ?? '');
 
   useEffect(() => {
     void fetchOrcamentos();
@@ -186,16 +197,28 @@ export default function BudgetsPage() {
 
   const handleClearFilters = () => {
     setStatusSelecionados(STATUS_PADRAO_ORCAMENTO);
+    setSearchInput('');
+    setTipoSelecionado('');
+    setCanalAtendimentoSelecionado('');
     void fetchOrcamentos({
       pagina: 1,
+      termo: '',
       status: STATUS_PADRAO_ORCAMENTO,
+      tipo: undefined,
+      canalAtendimento: undefined,
     });
   };
 
   const handleSearch = () => {
     void fetchOrcamentos({
       pagina: 1,
+      termo: searchInput.trim(),
       status: statusSelecionados,
+      tipo: tipoSelecionado === '' ? undefined : tipoSelecionado,
+      canalAtendimento:
+        tipoSelecionado === 'ONLINE' && canalAtendimentoSelecionado !== ''
+          ? canalAtendimentoSelecionado
+          : undefined,
     });
   };
 
@@ -216,8 +239,74 @@ export default function BudgetsPage() {
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}
+        columns={{ xs: 12, md: 12, lg: 24 }}
       >
-        <Grid size={{ xs: 12, md: 12, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+          <TextField
+            fullWidth
+            label="Pesquisar orçamento"
+            placeholder="Cliente, telefone ou descrição"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Tipo"
+            value={tipoSelecionado}
+            onChange={(event) => {
+              const nextTipo = event.target.value as TipoVenda | '';
+              setTipoSelecionado(nextTipo);
+
+              if (nextTipo !== 'ONLINE') {
+                setCanalAtendimentoSelecionado('');
+              }
+            }}
+            helperText="Opcional"
+          >
+            <MenuItem value="">Todos</MenuItem>
+            {TIPOS_ORCAMENTO.map((tipo) => (
+              <MenuItem key={tipo} value={tipo}>
+                {TIPO_LABEL[tipo]}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
+
+        {tipoSelecionado === 'ONLINE' ? (
+          <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+            <TextField
+              select
+              fullWidth
+              label="Canal de atendimento"
+              value={canalAtendimentoSelecionado}
+              onChange={(event) =>
+                setCanalAtendimentoSelecionado(
+                  event.target.value as CanalAtendimentoOrcamento | '',
+                )
+              }
+              helperText="Opcional"
+            >
+              <MenuItem value="">Todos</MenuItem>
+              {ALL_CANAIS_ATENDIMENTO_ORCAMENTO.map((canal) => (
+                <MenuItem key={canal} value={canal}>
+                  {CANAL_ATENDIMENTO_ORCAMENTO_LABEL[canal]}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+        ) : null}
+
+        <Grid
+          size={{
+            xs: 12,
+            md: 12,
+            lg: tipoSelecionado === 'ONLINE' ? 13 : 17,
+          }}
+        >
           <Autocomplete
             multiple
             fullWidth
@@ -302,6 +391,18 @@ export default function BudgetsPage() {
                         size="small"
                         variant="outlined"
                       />
+                      {orcamento.tipo === 'ONLINE' &&
+                      orcamento.canalAtendimento ? (
+                        <Chip
+                          label={
+                            CANAL_ATENDIMENTO_ORCAMENTO_LABEL[
+                              orcamento.canalAtendimento
+                            ]
+                          }
+                          size="small"
+                          variant="outlined"
+                        />
+                      ) : null}
                     </Stack>
 
                     {orcamento.telefoneCliente ? (
@@ -422,6 +523,19 @@ export default function BudgetsPage() {
                               color="text.secondary"
                             >
                               {orcamento.feira.nome}
+                            </Typography>
+                          ) : null}
+                          {orcamento.tipo === 'ONLINE' &&
+                          orcamento.canalAtendimento ? (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {
+                                CANAL_ATENDIMENTO_ORCAMENTO_LABEL[
+                                  orcamento.canalAtendimento
+                                ]
+                              }
                             </Typography>
                           ) : null}
                         </Stack>

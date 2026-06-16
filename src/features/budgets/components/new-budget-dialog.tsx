@@ -29,7 +29,9 @@ import {
   useBudgetStore,
 } from '@/features/budgets/store/use-budget-store';
 import {
+  ALL_CANAIS_ATENDIMENTO_ORCAMENTO,
   ALL_STATUSES_ORCAMENTO,
+  CANAL_ATENDIMENTO_ORCAMENTO_LABEL,
   STATUS_ORCAMENTO_LABEL,
   initialBudgetFormState,
   type BudgetFormErrors,
@@ -133,6 +135,7 @@ export default function NewBudgetDialog({
       linkSTL: budget.linkSTL ?? '',
       status: budget.status,
       tipo: budget.tipo,
+      canalAtendimento: budget.canalAtendimento ?? '',
       idFeira: budget.idFeira ?? '',
       valor: budget.valor != null ? budget.valor / 100 : 0,
       quantidade: budget.quantidade ?? '',
@@ -170,6 +173,11 @@ export default function NewBudgetDialog({
 
     if (form.tipo === 'FEIRA' && form.idFeira === '') {
       errors.idFeira = 'Selecione a feira.';
+    }
+
+    if (form.tipo === 'ONLINE' && form.canalAtendimento === '') {
+      errors.canalAtendimento =
+        'Selecione o canal de atendimento do orçamento online.';
     }
 
     if (form.descricao.trim().length > 1000) {
@@ -210,6 +218,10 @@ export default function NewBudgetDialog({
         linkSTL: form.linkSTL.trim() || undefined,
         status: form.status,
         tipo: form.tipo,
+        canalAtendimento:
+          form.tipo === 'ONLINE' && form.canalAtendimento !== ''
+            ? form.canalAtendimento
+            : undefined,
         idFeira: form.idFeira === '' ? undefined : form.idFeira,
         valor: form.valor > 0 ? Math.round(form.valor * 100) : undefined,
         quantidade:
@@ -342,7 +354,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.nomeCliente ||
-                  getFieldMessage(problem, 'nomeCliente'),
+                    getFieldMessage(problem, 'nomeCliente'),
                 )}
                 helperText={
                   localErrors.nomeCliente ??
@@ -366,7 +378,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.telefoneCliente ||
-                  getFieldMessage(problem, 'telefoneCliente'),
+                    getFieldMessage(problem, 'telefoneCliente'),
                 )}
                 helperText={
                   localErrors.telefoneCliente ??
@@ -389,6 +401,8 @@ export default function NewBudgetDialog({
                     ...current,
                     tipo: value,
                     idFeira: value !== 'FEIRA' ? '' : current.idFeira,
+                    canalAtendimento:
+                      value === 'ONLINE' ? current.canalAtendimento : '',
                   }));
                 }}
                 size="small"
@@ -401,6 +415,40 @@ export default function NewBudgetDialog({
                 <FormHelperText error>{localErrors.tipo}</FormHelperText>
               ) : null}
             </Grid>
+
+            {form.tipo === 'ONLINE' && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Canal de atendimento"
+                  value={form.canalAtendimento}
+                  disabled={isDeleting}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      canalAtendimento: event.target
+                        .value as BudgetFormState['canalAtendimento'],
+                    }))
+                  }
+                  error={Boolean(
+                    localErrors.canalAtendimento ||
+                      getFieldMessage(problem, 'canalAtendimento'),
+                  )}
+                  helperText={
+                    localErrors.canalAtendimento ??
+                    getFieldMessage(problem, 'canalAtendimento')
+                  }
+                >
+                  <MenuItem value="">Selecione o canal</MenuItem>
+                  {ALL_CANAIS_ATENDIMENTO_ORCAMENTO.map((canal) => (
+                    <MenuItem key={canal} value={canal}>
+                      {CANAL_ATENDIMENTO_ORCAMENTO_LABEL[canal]}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
 
             {form.tipo === 'FEIRA' && (
               <Grid size={{ xs: 12, md: 6 }}>
@@ -476,7 +524,7 @@ export default function NewBudgetDialog({
                 slotProps={{ htmlInput: { min: 1, step: 1 } }}
                 error={Boolean(
                   localErrors.quantidade ||
-                  getFieldMessage(problem, 'quantidade'),
+                    getFieldMessage(problem, 'quantidade'),
                 )}
                 helperText={
                   localErrors.quantidade ??
@@ -523,7 +571,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.descricao ||
-                  getFieldMessage(problem, 'descricao'),
+                    getFieldMessage(problem, 'descricao'),
                 )}
                 helperText={
                   localErrors.descricao ?? getFieldMessage(problem, 'descricao')

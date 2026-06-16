@@ -20,7 +20,10 @@ import type {
 const paginacaoInicial: PesquisaPaginadaOrcamentos = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
+  termo: '',
   status: ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO'),
+  tipo: undefined,
+  canalAtendimento: undefined,
 };
 
 interface BudgetStoreState {
@@ -55,10 +58,27 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
   submitErrorMessage: null,
   fetchOrcamentos: async (query) => {
     const currentPagination = get().paginacao;
+    const hasQueryValue = <TKey extends keyof PesquisaPaginadaOrcamentos>(
+      key: TKey,
+    ) => (query ? Object.prototype.hasOwnProperty.call(query, key) : false);
+
     const nextPagination: PesquisaPaginadaOrcamentos = {
-      pagina: query?.pagina ?? currentPagination.pagina,
-      tamanhoPagina: query?.tamanhoPagina ?? currentPagination.tamanhoPagina,
-      status: query?.status ?? currentPagination.status,
+      pagina: hasQueryValue('pagina')
+        ? (query?.pagina ?? paginacaoInicial.pagina)
+        : currentPagination.pagina,
+      tamanhoPagina: hasQueryValue('tamanhoPagina')
+        ? (query?.tamanhoPagina ?? paginacaoInicial.tamanhoPagina)
+        : currentPagination.tamanhoPagina,
+      termo: hasQueryValue('termo')
+        ? (query?.termo ?? paginacaoInicial.termo)
+        : (currentPagination.termo ?? paginacaoInicial.termo),
+      status: hasQueryValue('status')
+        ? (query?.status ?? paginacaoInicial.status)
+        : currentPagination.status,
+      tipo: hasQueryValue('tipo') ? query?.tipo : currentPagination.tipo,
+      canalAtendimento: hasQueryValue('canalAtendimento')
+        ? query?.canalAtendimento
+        : currentPagination.canalAtendimento,
     };
 
     set({ isFetching: true, fetchErrorMessage: null });
@@ -69,7 +89,10 @@ export const useBudgetStore = create<BudgetStoreState>((set, get) => ({
         paginacao: {
           pagina: response.pagina,
           tamanhoPagina: response.tamanhoPagina,
+          termo: nextPagination.termo,
           status: nextPagination.status,
+          tipo: nextPagination.tipo,
+          canalAtendimento: nextPagination.canalAtendimento,
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
