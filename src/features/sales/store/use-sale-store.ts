@@ -168,6 +168,7 @@ function buildOfflineSale(
     tipo: dados.tipo,
     desconto: dados.desconto ?? 0,
     idFeira: dados.idFeira,
+    idOrcamento: dados.idOrcamento,
     feira,
     itens,
     pagamentos,
@@ -471,6 +472,20 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       const problem = getProblemDetailsFromError(error);
 
       if (problem.status === 0) {
+        if (dados.idOrcamento !== undefined) {
+          const offlineBudgetProblem = {
+            type: 'about:blank',
+            title: 'Venda online obrigatória',
+            status: 0,
+            detail:
+              'Não é possível finalizar orçamento offline. Conecte-se à internet e tente novamente.',
+            instance: '',
+          };
+
+          set({ submitErrorMessage: offlineBudgetProblem.detail });
+          return { success: false, problem: offlineBudgetProblem };
+        }
+
         const localSale = buildOfflineSale(
           dados,
           (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] })

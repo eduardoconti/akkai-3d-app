@@ -49,7 +49,12 @@ export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
   'APROVADO',
   'PRODUZIDO',
   'FINALIZADO',
+  'CANCELADO',
 ];
+
+export const STATUSES_ALTERAVEIS_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
+  (status) => status !== 'FINALIZADO',
+);
 
 export const STATUS_ORCAMENTO_LABEL: Record<StatusOrcamento, string> = {
   ATENDIMENTO: 'Em atendimento',
@@ -58,6 +63,7 @@ export const STATUS_ORCAMENTO_LABEL: Record<StatusOrcamento, string> = {
   APROVADO: 'Aprovado',
   PRODUZIDO: 'Produzido',
   FINALIZADO: 'Finalizado',
+  CANCELADO: 'Cancelado',
 };
 
 export const ALL_CANAIS_ATENDIMENTO_ORCAMENTO: CanalAtendimentoOrcamento[] = [

@@ -86,6 +86,7 @@ interface NewSaleDialogProps {
   initialForm?: SaleFormState;
   onDraftChange?: (form: SaleFormState) => void;
   onMinimize?: () => void;
+  onSaved?: () => void | Promise<void>;
   sale?: Venda | null;
 }
 
@@ -248,6 +249,7 @@ function mapSaleToForm(sale: Venda): SaleFormState {
     dataVenda: formatLocalDate(sale.dataVenda ?? sale.dataInclusao),
     tipo: sale.tipo,
     idFeira: sale.idFeira ?? '',
+    idOrcamento: sale.idOrcamento,
     desconto: sale.desconto / 100,
     descontoModo: 'VALOR',
     pagamentos,
@@ -269,6 +271,7 @@ export default function NewSaleDialog({
   open,
   onClose,
   onMinimize,
+  onSaved,
   sale = null,
 }: NewSaleDialogProps) {
   const isOnline = useOnlineStatus();
@@ -865,6 +868,7 @@ export default function NewSaleDialog({
       dataVenda: dataVendaFormatoApi,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
+      idOrcamento: form.idOrcamento,
       desconto: totals.saleDiscount,
       pagamentos: form.pagamentos.map((pagamento) => ({
         idCarteira: pagamento.idCarteira === '' ? 0 : pagamento.idCarteira,
@@ -923,6 +927,7 @@ export default function NewSaleDialog({
       }
 
       await fetchVendas();
+      await onSaved?.();
       showSuccess(
         isEditMode
           ? 'Venda alterada com sucesso.'
