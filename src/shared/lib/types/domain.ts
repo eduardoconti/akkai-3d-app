@@ -99,7 +99,8 @@ export type StatusOrcamento =
   | 'AGUARDANDO_APROVACAO'
   | 'APROVADO'
   | 'PRODUZIDO'
-  | 'FINALIZADO';
+  | 'FINALIZADO'
+  | 'CANCELADO';
 export type CanalAtendimentoOrcamento = 'WPP' | 'INSTAGRAM';
 export interface CategoriaDespesa {
   id: number;
@@ -206,6 +207,8 @@ export interface Venda {
   desconto: number;
   idFeira?: number;
   feira?: Feira | null;
+  idOrcamento?: number;
+  orcamento?: Orcamento | null;
   itens: VendaItem[];
   pagamentos: PagamentoVenda[];
 }
@@ -252,6 +255,7 @@ export interface InserirVendaInput {
   dataVenda: string;
   tipo: TipoVenda;
   idFeira?: number;
+  idOrcamento?: number;
   desconto?: number;
   itens: InserirVendaItemInput[];
   pagamentos: Array<{

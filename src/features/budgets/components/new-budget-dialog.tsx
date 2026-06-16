@@ -30,9 +30,9 @@ import {
 } from '@/features/budgets/store/use-budget-store';
 import {
   ALL_CANAIS_ATENDIMENTO_ORCAMENTO,
-  ALL_STATUSES_ORCAMENTO,
   CANAL_ATENDIMENTO_ORCAMENTO_LABEL,
   STATUS_ORCAMENTO_LABEL,
+  STATUSES_ALTERAVEIS_ORCAMENTO,
   initialBudgetFormState,
   type BudgetFormErrors,
   type BudgetFormState,
@@ -547,7 +547,12 @@ export default function NewBudgetDialog({
                   }))
                 }
               >
-                {ALL_STATUSES_ORCAMENTO.map((status) => (
+                {form.status === 'FINALIZADO' ? (
+                  <MenuItem value="FINALIZADO" disabled>
+                    {STATUS_ORCAMENTO_LABEL.FINALIZADO}
+                  </MenuItem>
+                ) : null}
+                {STATUSES_ALTERAVEIS_ORCAMENTO.map((status) => (
                   <MenuItem key={status} value={status}>
                     {STATUS_ORCAMENTO_LABEL[status]}
                   </MenuItem>

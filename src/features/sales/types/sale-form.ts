@@ -23,6 +23,7 @@ export type SaleFormState = {
   dataVenda: string;
   tipo: TipoVenda;
   idFeira: number | '';
+  idOrcamento?: number;
   desconto: number;
   descontoModo: DiscountMode;
   itens: SaleFormItem[];

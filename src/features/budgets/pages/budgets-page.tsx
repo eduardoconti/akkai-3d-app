@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
   Box,
+  Button,
   Chip,
   Divider,
   Link,
@@ -17,12 +18,15 @@ import {
   TableHead,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { PointOfSale } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
+import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
 import {
   budgetStoreSelectors,
   useBudgetStore,
@@ -32,7 +36,13 @@ import {
   ALL_STATUSES_ORCAMENTO,
   CANAL_ATENDIMENTO_ORCAMENTO_LABEL,
   STATUS_ORCAMENTO_LABEL,
+  STATUSES_ALTERAVEIS_ORCAMENTO,
 } from '@/features/budgets/types/budget-form';
+import {
+  emptySaleItem,
+  initialSaleFormState,
+  type SaleFormState,
+} from '@/features/sales/types/sale-form';
 import {
   AppTablePagination,
   EmptyState,
@@ -41,11 +51,12 @@ import {
   SearchFilterPanel,
 } from '@/shared';
 import type {
-  Orcamento,
   CanalAtendimentoOrcamento,
+  Orcamento,
   StatusOrcamento,
   TipoVenda,
 } from '@/shared/lib/types/domain';
+import { formatLocalDate } from '@/shared/utils/date';
 import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
@@ -59,9 +70,41 @@ function formatCurrency(valueInCents: number): string {
   });
 }
 
+function buildSaleFormFromBudget(orcamento: Orcamento): SaleFormState {
+  const itemName =
+    orcamento.descricao?.trim() ||
+    `Orçamento #${orcamento.id} - ${orcamento.nomeCliente}`;
+  const budgetValue = orcamento.valor ?? 0;
+
+  return {
+    ...initialSaleFormState,
+    dataVenda: formatLocalDate(),
+    tipo: orcamento.tipo,
+    idFeira: orcamento.tipo === 'FEIRA' ? (orcamento.idFeira ?? '') : '',
+    idOrcamento: orcamento.id,
+    desconto: 0,
+    descontoModo: 'VALOR',
+    itens: [
+      {
+        ...emptySaleItem,
+        tipoItem: 'AVULSO',
+        nomeProduto: itemName,
+        valorUnitario: budgetValue / 100,
+        quantidade: 1,
+      },
+    ],
+    pagamentos: [
+      {
+        ...initialSaleFormState.pagamentos[0],
+        valor: budgetValue / 100,
+      },
+    ],
+  };
+}
+
 const STATUS_COLOR: Record<
   StatusOrcamento,
-  'default' | 'warning' | 'info' | 'success' | 'primary'
+  'default' | 'warning' | 'info' | 'success' | 'primary' | 'error'
 > = {
   ATENDIMENTO: 'info',
   PENDENTE: 'warning',
@@ -69,6 +112,7 @@ const STATUS_COLOR: Record<
   APROVADO: 'success',
   PRODUZIDO: 'primary',
   FINALIZADO: 'default',
+  CANCELADO: 'error',
 };
 
 const TIPO_LABEL: Record<TipoVenda, string> = {
@@ -114,7 +158,7 @@ function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
         onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
       >
-        {ALL_STATUSES_ORCAMENTO.map((status) => (
+        {STATUSES_ALTERAVEIS_ORCAMENTO.map((status) => (
           <MenuItem
             key={status}
             selected={orcamento.status === status}
@@ -158,6 +202,9 @@ export default function BudgetsPage() {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
+  const [finalizingBudget, setFinalizingBudget] = useState<Orcamento | null>(
+    null,
+  );
   const [statusSelecionados, setStatusSelecionados] = useState<
     StatusOrcamento[]
   >(paginacao.status ?? STATUS_PADRAO_ORCAMENTO);
@@ -190,10 +237,29 @@ export default function BudgetsPage() {
     setDialogOpen(true);
   };
 
+  const handleOpenFinalizeDialog = (budget: Orcamento) => {
+    setFinalizingBudget(budget);
+  };
+
+  const handleCloseFinalizeDialog = () => {
+    setFinalizingBudget(null);
+  };
+
+  const handleFinalizeSaved = async () => {
+    await fetchOrcamentos();
+    setFinalizingBudget(null);
+  };
+
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedBudget(null);
   };
+
+  const finalizationSaleForm = useMemo(
+    () =>
+      finalizingBudget ? buildSaleFormFromBudget(finalizingBudget) : undefined,
+    [finalizingBudget],
+  );
 
   const handleClearFilters = () => {
     setStatusSelecionados(STATUS_PADRAO_ORCAMENTO);
@@ -383,7 +449,9 @@ export default function BudgetsPage() {
                         <StatusChip
                           orcamento={orcamento}
                           onStatusChange={handleStatusChange}
-                          disabled={isSubmitting}
+                          disabled={
+                            isSubmitting || orcamento.status === 'FINALIZADO'
+                          }
                         />
                       </Box>
                       <Chip
@@ -404,6 +472,23 @@ export default function BudgetsPage() {
                         />
                       ) : null}
                     </Stack>
+
+                    <Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<PointOfSale />}
+                        disabled={
+                          isSubmitting || orcamento.status === 'FINALIZADO'
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleOpenFinalizeDialog(orcamento);
+                        }}
+                      >
+                        Finalizar
+                      </Button>
+                    </Box>
 
                     {orcamento.telefoneCliente ? (
                       <Typography variant="body2" color="text.secondary">
@@ -489,12 +574,15 @@ export default function BudgetsPage() {
                   <TableCell>
                     <strong>Data de inclusão</strong>
                   </TableCell>
+                  <TableCell align="right">
+                    <strong>Ações</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={9} sx={{ p: 0 }}>
+                    <TableCell colSpan={10} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -544,7 +632,9 @@ export default function BudgetsPage() {
                         <StatusChip
                           orcamento={orcamento}
                           onStatusChange={handleStatusChange}
-                          disabled={isSubmitting}
+                          disabled={
+                            isSubmitting || orcamento.status === 'FINALIZADO'
+                          }
                         />
                       </TableCell>
                       <TableCell>
@@ -557,11 +647,40 @@ export default function BudgetsPage() {
                       <TableCell>
                         {formatDateTime(orcamento.dataInclusao)}
                       </TableCell>
+                      <TableCell
+                        align="right"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <Tooltip
+                          title={
+                            orcamento.status === 'FINALIZADO'
+                              ? 'Orçamento já finalizado'
+                              : 'Finalizar orçamento com venda'
+                          }
+                        >
+                          <span>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<PointOfSale />}
+                              disabled={
+                                isSubmitting ||
+                                orcamento.status === 'FINALIZADO'
+                              }
+                              onClick={() =>
+                                handleOpenFinalizeDialog(orcamento)
+                              }
+                            >
+                              Finalizar
+                            </Button>
+                          </span>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} sx={{ p: 0 }}>
+                    <TableCell colSpan={10} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum orçamento cadastrado até o momento." />
                     </TableCell>
                   </TableRow>
@@ -591,6 +710,13 @@ export default function BudgetsPage() {
         open={dialogOpen}
         budget={selectedBudget}
         onClose={handleCloseDialog}
+      />
+      <NewSaleDialog
+        open={Boolean(finalizingBudget)}
+        draftKey={finalizingBudget ? `orcamento-${finalizingBudget.id}` : ''}
+        initialForm={finalizationSaleForm}
+        onClose={handleCloseFinalizeDialog}
+        onSaved={handleFinalizeSaved}
       />
     </Stack>
   );
