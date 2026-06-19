@@ -168,9 +168,9 @@ export interface ProductionReportResponse {
 }
 
 export interface ProductionSuggestionReportFilter {
-  diasHistorico?: number;
-  diasPlanejamento?: number;
-  diasEstoqueSeguranca?: number;
+  feirasHistorico?: number;
+  feirasPlanejamento?: number;
+  feirasEstoqueSeguranca?: number;
   pagina?: number;
   tamanhoPagina?: number;
   ordenarPor?:
@@ -178,8 +178,8 @@ export interface ProductionSuggestionReportFilter {
     | 'nome'
     | 'estoqueAtual'
     | 'quantidadeVendida'
-    | 'mediaVendaDiaria'
-    | 'diasCobertura'
+    | 'mediaVendaPorFeira'
+    | 'feirasCobertura'
     | 'sugestaoProducao';
   direcao?: 'asc' | 'desc';
 }
@@ -195,11 +195,11 @@ export interface ProductionSuggestionReportItem {
   estoqueAtual: number;
   estoqueMinimo: number;
   quantidadeVendida: number;
-  mediaVendaDiaria: number;
+  mediaVendaPorFeira: number;
   demandaPlanejada: number;
   estoqueSeguranca: number;
   estoqueAlvo: number;
-  diasCobertura: number | null;
+  feirasCobertura: number | null;
   sugestaoProducao: number;
   prioridade: 'CRITICO' | 'PRODUZIR';
 }
@@ -207,9 +207,10 @@ export interface ProductionSuggestionReportItem {
 export interface ProductionSuggestionReportResponse {
   dataInicio: string;
   dataFim: string;
-  diasHistorico: number;
-  diasPlanejamento: number;
-  diasEstoqueSeguranca: number;
+  feirasHistorico: number;
+  feirasConsideradas: number;
+  feirasPlanejamento: number;
+  feirasEstoqueSeguranca: number;
   itens: ProductionSuggestionReportItem[];
   pagina: number;
   tamanhoPagina: number;

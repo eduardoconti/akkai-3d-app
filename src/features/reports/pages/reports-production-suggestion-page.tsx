@@ -40,7 +40,7 @@ function formatQuantity(value: number): string {
 }
 
 function formatCoverage(value: number | null): string {
-  return value === null ? 'Sem venda' : `${formatQuantity(value)} dia(s)`;
+  return value === null ? 'Sem venda' : `${formatQuantity(value)} feira(s)`;
 }
 
 type SuggestionOrderBy =
@@ -48,15 +48,15 @@ type SuggestionOrderBy =
   | 'nome'
   | 'estoqueAtual'
   | 'quantidadeVendida'
-  | 'mediaVendaDiaria'
-  | 'diasCobertura'
+  | 'mediaVendaPorFeira'
+  | 'feirasCobertura'
   | 'sugestaoProducao';
 type SortDirection = 'asc' | 'desc';
 
 interface AppliedFilters {
-  diasHistorico: number;
-  diasPlanejamento: number;
-  diasEstoqueSeguranca: number;
+  feirasHistorico: number;
+  feirasPlanejamento: number;
+  feirasEstoqueSeguranca: number;
   ordenarPor: SuggestionOrderBy;
   direcao: SortDirection;
 }
@@ -64,9 +64,9 @@ interface AppliedFilters {
 export default function ReportsProductionSuggestionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [diasHistorico, setDiasHistorico] = useState(28);
-  const [diasPlanejamento, setDiasPlanejamento] = useState(7);
-  const [diasEstoqueSeguranca, setDiasEstoqueSeguranca] = useState(2);
+  const [feirasHistorico, setFeirasHistorico] = useState(8);
+  const [feirasPlanejamento, setFeirasPlanejamento] = useState(2);
+  const [feirasEstoqueSeguranca, setFeirasEstoqueSeguranca] = useState(1);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] =
     useState<SuggestionOrderBy>('sugestaoProducao');
@@ -89,9 +89,9 @@ export default function ReportsProductionSuggestionPage() {
 
     try {
       const response = await getProductionSuggestionReport({
-        diasHistorico: filters.diasHistorico,
-        diasPlanejamento: filters.diasPlanejamento,
-        diasEstoqueSeguranca: filters.diasEstoqueSeguranca,
+        feirasHistorico: filters.feirasHistorico,
+        feirasPlanejamento: filters.feirasPlanejamento,
+        feirasEstoqueSeguranca: filters.feirasEstoqueSeguranca,
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
         ordenarPor: filters.ordenarPor,
@@ -113,18 +113,18 @@ export default function ReportsProductionSuggestionPage() {
     setProblem(null);
 
     await fetchReport(1, tamanhoPagina, {
-      diasHistorico,
-      diasPlanejamento,
-      diasEstoqueSeguranca,
+      feirasHistorico,
+      feirasPlanejamento,
+      feirasEstoqueSeguranca,
       ordenarPor,
       direcao,
     });
   };
 
   const handleClearFilters = () => {
-    setDiasHistorico(28);
-    setDiasPlanejamento(7);
-    setDiasEstoqueSeguranca(2);
+    setFeirasHistorico(8);
+    setFeirasPlanejamento(2);
+    setFeirasEstoqueSeguranca(1);
     setOrdenarPor('sugestaoProducao');
     setDirecao('desc');
     setProblem(null);
@@ -194,7 +194,7 @@ export default function ReportsProductionSuggestionPage() {
             <Typography variant="caption" color="text.secondary">
               Cobertura
             </Typography>
-            <Typography>{formatCoverage(item.diasCobertura)}</Typography>
+            <Typography>{formatCoverage(item.feirasCobertura)}</Typography>
           </Grid>
 
           <Grid size={{ xs: 6 }}>
@@ -215,8 +215,8 @@ export default function ReportsProductionSuggestionPage() {
           Sugestão de produção
         </Typography>
         <Typography color="text.secondary">
-          Compare vendas recentes, estoque atual e estoque mínimo para decidir o
-          que produzir na semana.
+          Compare as últimas vendas de feira, estoque atual e estoque mínimo
+          para decidir o que produzir para os próximos eventos.
         </Typography>
       </Box>
 
@@ -227,52 +227,54 @@ export default function ReportsProductionSuggestionPage() {
         onClear={handleClearFilters}
         isLoading={isLoading}
       >
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Últimos dias"
+            label="Últimas feiras"
             type="number"
-            value={diasHistorico}
+            value={feirasHistorico}
             slotProps={{
               htmlInput: { min: 1, max: 365 },
             }}
             onChange={(event) =>
-              setDiasHistorico(Math.max(1, Number(event.target.value) || 1))
+              setFeirasHistorico(Math.max(1, Number(event.target.value) || 1))
             }
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Dias planejamento"
+            label="Feiras planejamento"
             type="number"
-            value={diasPlanejamento}
+            value={feirasPlanejamento}
             slotProps={{
               htmlInput: { min: 1, max: 90 },
             }}
             onChange={(event) =>
-              setDiasPlanejamento(Math.max(1, Number(event.target.value) || 1))
+              setFeirasPlanejamento(
+                Math.max(1, Number(event.target.value) || 1),
+              )
             }
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Dias segurança"
+            label="Feiras segurança"
             type="number"
-            value={diasEstoqueSeguranca}
+            value={feirasEstoqueSeguranca}
             slotProps={{
               htmlInput: { min: 0, max: 30 },
             }}
             onChange={(event) =>
-              setDiasEstoqueSeguranca(Math.max(0, Number(event.target.value)))
+              setFeirasEstoqueSeguranca(Math.max(0, Number(event.target.value)))
             }
           />
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -283,16 +285,16 @@ export default function ReportsProductionSuggestionPage() {
             }
           >
             <MenuItem value="sugestaoProducao">Sugestão</MenuItem>
-            <MenuItem value="diasCobertura">Cobertura</MenuItem>
+            <MenuItem value="feirasCobertura">Cobertura</MenuItem>
             <MenuItem value="quantidadeVendida">Quantidade vendida</MenuItem>
-            <MenuItem value="mediaVendaDiaria">Média diária</MenuItem>
+            <MenuItem value="mediaVendaPorFeira">Média por feira</MenuItem>
             <MenuItem value="estoqueAtual">Estoque atual</MenuItem>
             <MenuItem value="codigo">Codigo</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             select
             fullWidth
@@ -320,15 +322,15 @@ export default function ReportsProductionSuggestionPage() {
               size="small"
             />
             <Chip
-              label={`Histórico: ${result.diasHistorico} dia(s)`}
+              label={`Histórico: ${result.feirasConsideradas}/${result.feirasHistorico} feira(s)`}
               size="small"
             />
             <Chip
-              label={`Planejamento: ${result.diasPlanejamento} dia(s)`}
+              label={`Planejamento: ${result.feirasPlanejamento} feira(s)`}
               size="small"
             />
             <Chip
-              label={`Segurança: ${result.diasEstoqueSeguranca} dia(s)`}
+              label={`Segurança: ${result.feirasEstoqueSeguranca} feira(s)`}
               size="small"
             />
           </Stack>
@@ -365,7 +367,7 @@ export default function ReportsProductionSuggestionPage() {
                         <strong>Vendido</strong>
                       </TableCell>
                       <TableCell align="right">
-                        <strong>Média/dia</strong>
+                        <strong>Média/feira</strong>
                       </TableCell>
                       <TableCell align="right">
                         <strong>Cobertura</strong>
@@ -394,10 +396,10 @@ export default function ReportsProductionSuggestionPage() {
                             {formatQuantity(item.quantidadeVendida)}
                           </TableCell>
                           <TableCell align="right">
-                            {formatQuantity(item.mediaVendaDiaria)}
+                            {formatQuantity(item.mediaVendaPorFeira)}
                           </TableCell>
                           <TableCell align="right">
-                            {formatCoverage(item.diasCobertura)}
+                            {formatCoverage(item.feirasCobertura)}
                           </TableCell>
                           <TableCell align="right">
                             {formatQuantity(item.estoqueAlvo)}
