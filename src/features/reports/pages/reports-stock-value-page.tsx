@@ -25,12 +25,14 @@ import {
   type StockValueReportResponse,
 } from '@/features/reports/api/reports-api';
 import {
+  CurrencyValue,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
-  formatCurrency,
+  formatCurrencyWithVisibility,
   getProblemDetailsFromError,
+  useValueVisibilityStore,
   type ProblemDetails,
 } from '@/shared';
 
@@ -49,6 +51,7 @@ interface AppliedFilters {
 export default function ReportsStockValuePage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] = useState<StockOrderBy>('codigo');
@@ -125,7 +128,7 @@ export default function ReportsStockValuePage() {
               Valor unitario
             </Typography>
             <Typography fontWeight={600}>
-              {formatCurrency(item.valor)}
+              <CurrencyValue value={item.valor} />
             </Typography>
           </Grid>
 
@@ -134,7 +137,7 @@ export default function ReportsStockValuePage() {
               Valor total
             </Typography>
             <Typography fontWeight={700}>
-              {formatCurrency(item.valorTotal)}
+              <CurrencyValue value={item.valorTotal} />
             </Typography>
           </Grid>
         </Grid>
@@ -206,11 +209,11 @@ export default function ReportsStockValuePage() {
               size="small"
             />
             <Chip
-              label={`Soma dos valores: ${formatCurrency(result.totalValor)}`}
+              label={`Soma dos valores: ${formatCurrencyWithVisibility(result.totalValor, hideValues)}`}
               size="small"
             />
             <Chip
-              label={`Valor total em estoque: ${formatCurrency(result.totalValorTotal)}`}
+              label={`Valor total em estoque: ${formatCurrencyWithVisibility(result.totalValorTotal, hideValues)}`}
               color="primary"
               size="small"
             />
@@ -259,10 +262,10 @@ export default function ReportsStockValuePage() {
                             {formatQuantity(item.quantidade)}
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.valor)}
+                            <CurrencyValue value={item.valor} />
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.valorTotal)}
+                            <CurrencyValue value={item.valorTotal} />
                           </TableCell>
                         </TableRow>
                       ))

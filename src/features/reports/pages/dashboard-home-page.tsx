@@ -8,7 +8,6 @@ import {
 import {
   Alert,
   Box,
-  Button,
   CircularProgress,
   Collapse,
   IconButton,
@@ -22,15 +21,15 @@ import {
   DragIndicator,
   ExpandLess,
   ExpandMore,
-  Visibility,
-  VisibilityOff,
   ViewAgenda,
   ViewWeek,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
-  formatCurrency,
+  formatCurrencyWithVisibility,
+  formatValueWithVisibility,
   getProblemDetailsFromError,
+  useValueVisibilityStore,
   type ProblemDetails,
 } from '@/shared';
 import {
@@ -62,7 +61,6 @@ const MONTH_LABELS = [
 const DASHBOARD_WIDGET_ORDER_KEY = 'akkai.dashboard.widget-order';
 const DASHBOARD_WIDGET_COLLAPSE_KEY = 'akkai.dashboard.widget-collapse';
 const DASHBOARD_WIDGET_WIDTH_KEY = 'akkai.dashboard.widget-width';
-const DASHBOARD_HIDE_VALUES_KEY = 'akkai.dashboard.hide-values';
 
 type DashboardWidgetId =
   | 'monthly-summary'
@@ -189,18 +187,6 @@ function getStoredWidgetWidths(): Partial<
   }
 }
 
-function getStoredHideValues(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return window.localStorage.getItem(DASHBOARD_HIDE_VALUES_KEY) === 'true';
-}
-
-function formatDashboardValue(value: string, hideValues: boolean): string {
-  return hideValues ? '••••••' : value;
-}
-
 function formatPercentage(value: number): string {
   return `${value.toFixed(1).replace('.', ',')}%`;
 }
@@ -228,8 +214,10 @@ function getMonthDateRange(
 }
 
 function DashboardMonthlyChart({
+  hideValues,
   items,
 }: {
+  hideValues: boolean;
   items: DashboardMonthlySummaryItem[];
 }) {
   const chartHeight = 260;
@@ -320,7 +308,7 @@ function DashboardMonthlyChart({
               </Typography>
             </Stack>
             <Typography variant="body2">
-              {formatCurrency(tooltip.value)}
+              {formatCurrencyWithVisibility(tooltip.value, hideValues)}
             </Typography>
           </Stack>
         </Paper>
@@ -354,7 +342,7 @@ function DashboardMonthlyChart({
                   fill="currentColor"
                   opacity="0.72"
                 >
-                  {formatCurrency(tick)}
+                  {formatCurrencyWithVisibility(tick, hideValues)}
                 </text>
               </g>
             );
@@ -595,7 +583,7 @@ export default function DashboardHomePage() {
   const [widgetWidths, setWidgetWidths] = useState<
     Partial<Record<DashboardWidgetId, DashboardWidgetWidth>>
   >(getStoredWidgetWidths);
-  const [hideValues, setHideValues] = useState<boolean>(getStoredHideValues);
+  const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const [draggingWidgetId, setDraggingWidgetId] =
     useState<DashboardWidgetId | null>(null);
   const [dropTargetWidgetId, setDropTargetWidgetId] =
@@ -630,10 +618,6 @@ export default function DashboardHomePage() {
       JSON.stringify(widgetWidths),
     );
   }, [widgetWidths]);
-
-  useEffect(() => {
-    window.localStorage.setItem(DASHBOARD_HIDE_VALUES_KEY, String(hideValues));
-  }, [hideValues]);
 
   useEffect(() => {
     let active = true;
@@ -825,7 +809,7 @@ export default function DashboardHomePage() {
             {strongestMonth ? (
               <Typography variant="body2" color="text.secondary">
                 Melhor saldo: {MONTH_LABELS[strongestMonth.mes - 1]} ·{' '}
-                {formatCurrency(strongestMonth.saldo)}
+                {formatCurrencyWithVisibility(strongestMonth.saldo, hideValues)}
               </Typography>
             ) : null}
 
@@ -885,7 +869,10 @@ export default function DashboardHomePage() {
             </Stack>
 
             {chartItems.length > 0 ? (
-              <DashboardMonthlyChart items={chartItems} />
+              <DashboardMonthlyChart
+                hideValues={hideValues}
+                items={chartItems}
+              />
             ) : (
               <Box sx={{ py: 8, textAlign: 'center' }}>
                 <Typography color="text.secondary">
@@ -1038,7 +1025,10 @@ export default function DashboardHomePage() {
                   onMouseMove={handleOpenRankingTooltip({
                     color: '#C62828',
                     label: `${index + 1}. ${item.nomeCategoria}`,
-                    valueLabel: formatCurrency(item.valorTotal),
+                    valueLabel: formatCurrencyWithVisibility(
+                      item.valorTotal,
+                      hideValues,
+                    ),
                     percentageLabel: `${formatPercentage(monthShare)} do total de despesas do mes`,
                   })}
                   onMouseLeave={() => setRankingTooltip(null)}
@@ -1057,7 +1047,10 @@ export default function DashboardHomePage() {
                     </Typography>
 
                     <Typography fontWeight={700} color="error.main">
-                      {formatCurrency(item.valorTotal)}
+                      {formatCurrencyWithVisibility(
+                        item.valorTotal,
+                        hideValues,
+                      )}
                     </Typography>
                   </Stack>
 
@@ -1181,14 +1174,6 @@ export default function DashboardHomePage() {
               Acompanhe a evolução mensal de vendas, despesas e saldo.
             </Typography>
           </Box>
-
-          <Button
-            variant="outlined"
-            startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
-            onClick={() => setHideValues((current) => !current)}
-          >
-            {hideValues ? 'Exibir valores' : 'Ocultar valores'}
-          </Button>
         </Stack>
 
         {problem?.detail ? (
@@ -1226,7 +1211,7 @@ export default function DashboardHomePage() {
                     Itens vendidos em {result.ano}
                   </Typography>
                   <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                    {formatDashboardValue(
+                    {formatValueWithVisibility(
                       String(result.totalQuantidadeItensVendidos),
                       hideValues,
                     )}
@@ -1241,25 +1226,26 @@ export default function DashboardHomePage() {
                   onMouseMove={handleCardMouseMove([
                     {
                       label: 'Taxas',
-                      value: hideValues
-                        ? '••••••'
-                        : formatCurrency(result.totalTaxas),
+                      value: formatCurrencyWithVisibility(
+                        result.totalTaxas,
+                        hideValues,
+                      ),
                     },
                     {
                       label: 'Impostos',
-                      value: hideValues
-                        ? '••••••'
-                        : formatCurrency(result.totalImpostos),
+                      value: formatCurrencyWithVisibility(
+                        result.totalImpostos,
+                        hideValues,
+                      ),
                     },
                     {
                       label: 'Valor líquido',
-                      value: hideValues
-                        ? '••••••'
-                        : formatCurrency(
-                            result.totalVendas -
-                              result.totalTaxas -
-                              result.totalImpostos,
-                          ),
+                      value: formatCurrencyWithVisibility(
+                        result.totalVendas -
+                          result.totalTaxas -
+                          result.totalImpostos,
+                        hideValues,
+                      ),
                     },
                   ])}
                   onMouseLeave={() => setCardTooltip(null)}
@@ -1268,8 +1254,8 @@ export default function DashboardHomePage() {
                     Total de vendas em {result.ano}
                   </Typography>
                   <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                    {formatDashboardValue(
-                      formatCurrency(result.totalVendas),
+                    {formatCurrencyWithVisibility(
+                      result.totalVendas,
                       hideValues,
                     )}
                   </Typography>
@@ -1286,8 +1272,8 @@ export default function DashboardHomePage() {
                     fontWeight={800}
                     sx={{ mt: 1, color: 'error.main' }}
                   >
-                    {formatDashboardValue(
-                      formatCurrency(result.totalDespesas),
+                    {formatCurrencyWithVisibility(
+                      result.totalDespesas,
                       hideValues,
                     )}
                   </Typography>
@@ -1305,35 +1291,47 @@ export default function DashboardHomePage() {
                     },
                     {
                       label: 'Vendas',
-                      value: hideValues
-                        ? '••••••'
-                        : formatCurrency(result.totalVendas),
+                      value: formatCurrencyWithVisibility(
+                        result.totalVendas,
+                        hideValues,
+                      ),
                     },
                     {
                       label: 'Taxas',
                       value: hideValues
-                        ? '••••••'
-                        : `-${formatCurrency(result.totalTaxas)}`,
+                        ? formatCurrencyWithVisibility(
+                            result.totalTaxas,
+                            hideValues,
+                          )
+                        : `-${formatCurrencyWithVisibility(result.totalTaxas, hideValues)}`,
                     },
                     {
                       label: 'Despesas',
                       value: hideValues
-                        ? '••••••'
-                        : `-${formatCurrency(result.totalDespesas)}`,
+                        ? formatCurrencyWithVisibility(
+                            result.totalDespesas,
+                            hideValues,
+                          )
+                        : `-${formatCurrencyWithVisibility(result.totalDespesas, hideValues)}`,
                     },
                     {
                       label: 'Ajustes de carteira',
                       value: hideValues
-                        ? '••••••'
-                        : `${(result.totalAjusteCarteira ?? 0) >= 0 ? '+' : '-'}${formatCurrency(
+                        ? formatCurrencyWithVisibility(
                             Math.abs(result.totalAjusteCarteira ?? 0),
+                            hideValues,
+                          )
+                        : `${(result.totalAjusteCarteira ?? 0) >= 0 ? '+' : '-'}${formatCurrencyWithVisibility(
+                            Math.abs(result.totalAjusteCarteira ?? 0),
+                            hideValues,
                           )}`,
                     },
                     {
                       label: 'Saldo',
-                      value: hideValues
-                        ? '••••••'
-                        : formatCurrency(result.saldo),
+                      value: formatCurrencyWithVisibility(
+                        result.saldo,
+                        hideValues,
+                      ),
                     },
                   ])}
                   onMouseLeave={() => setCardTooltip(null)}
@@ -1349,10 +1347,7 @@ export default function DashboardHomePage() {
                       color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
                     }}
                   >
-                    {formatDashboardValue(
-                      formatCurrency(result.saldo),
-                      hideValues,
-                    )}
+                    {formatCurrencyWithVisibility(result.saldo, hideValues)}
                   </Typography>
                 </Paper>
               </Grid>

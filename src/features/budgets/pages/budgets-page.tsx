@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { PointOfSale } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
 import {
@@ -45,6 +45,7 @@ import {
 } from '@/features/sales/types/sale-form';
 import {
   AppTablePagination,
+  CurrencyValue,
   EmptyState,
   LoadingState,
   PageHeader,
@@ -61,13 +62,6 @@ import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('pt-BR');
-}
-
-function formatCurrency(valueInCents: number): string {
-  return (valueInCents / 100).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
 }
 
 function buildSaleFormFromBudget(orcamento: Orcamento): SaleFormState {
@@ -102,17 +96,45 @@ function buildSaleFormFromBudget(orcamento: Orcamento): SaleFormState {
   };
 }
 
-const STATUS_COLOR: Record<
+const STATUS_CHIP_COLOR: Record<
   StatusOrcamento,
-  'default' | 'warning' | 'info' | 'success' | 'primary' | 'error'
+  { background: string; border: string; text: string }
 > = {
-  ATENDIMENTO: 'info',
-  PENDENTE: 'warning',
-  AGUARDANDO_APROVACAO: 'info',
-  APROVADO: 'success',
-  PRODUZIDO: 'primary',
-  FINALIZADO: 'default',
-  CANCELADO: 'error',
+  PENDENTE: {
+    background: '#fee2e2',
+    border: '#ef4444',
+    text: '#991b1b',
+  },
+  ATENDIMENTO: {
+    background: '#fef3c7',
+    border: '#f59e0b',
+    text: '#92400e',
+  },
+  AGUARDANDO_APROVACAO: {
+    background: '#dbeafe',
+    border: '#3b82f6',
+    text: '#1e40af',
+  },
+  APROVADO: {
+    background: '#dcfce7',
+    border: '#22c55e',
+    text: '#166534',
+  },
+  PRODUZIDO: {
+    background: '#ccfbf1',
+    border: '#14b8a6',
+    text: '#115e59',
+  },
+  FINALIZADO: {
+    background: '#e5e7eb',
+    border: '#9ca3af',
+    text: '#374151',
+  },
+  CANCELADO: {
+    background: '#f3e8ff',
+    border: '#a855f7',
+    text: '#6b21a8',
+  },
 };
 
 const TIPO_LABEL: Record<TipoVenda, string> = {
@@ -134,15 +156,34 @@ interface StatusChipProps {
 }
 
 function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
+  const theme = useTheme();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+  const color = STATUS_CHIP_COLOR[orcamento.status];
 
   return (
     <>
       <Chip
         label={STATUS_ORCAMENTO_LABEL[orcamento.status]}
-        color={STATUS_COLOR[orcamento.status]}
         size="small"
         clickable={!disabled}
+        sx={{
+          bgcolor:
+            theme.palette.mode === 'dark'
+              ? alpha(color.border, 0.22)
+              : color.background,
+          border: `1px solid ${alpha(color.border, theme.palette.mode === 'dark' ? 0.7 : 1)}`,
+          color: theme.palette.mode === 'dark' ? color.background : color.text,
+          fontWeight: 700,
+          '& .MuiChip-label': {
+            px: 1,
+          },
+          '&:hover': {
+            bgcolor:
+              theme.palette.mode === 'dark'
+                ? alpha(color.border, 0.32)
+                : alpha(color.border, 0.18),
+          },
+        }}
         onClick={
           disabled
             ? undefined
@@ -503,7 +544,7 @@ export default function BudgetsPage() {
                     <Stack direction="row" spacing={2}>
                       {orcamento.valor != null ? (
                         <Typography variant="body2" color="text.secondary">
-                          Valor: {formatCurrency(orcamento.valor)}
+                          Valor: <CurrencyValue value={orcamento.valor} />
                         </Typography>
                       ) : null}
                       {orcamento.quantidade != null ? (
@@ -636,9 +677,11 @@ export default function BudgetsPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        {orcamento.valor != null
-                          ? formatCurrency(orcamento.valor)
-                          : '-'}
+                        {orcamento.valor != null ? (
+                          <CurrencyValue value={orcamento.valor} />
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell>{orcamento.quantidade ?? '-'}</TableCell>
 

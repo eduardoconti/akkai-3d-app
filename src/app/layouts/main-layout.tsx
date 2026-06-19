@@ -53,6 +53,8 @@ import {
   RequestQuote,
   ShoppingCart as SaleIcon,
   Sync,
+  Visibility,
+  VisibilityOff,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
 import { EditProfileDialog, useAuth } from '@/features/auth';
@@ -77,12 +79,13 @@ import {
   type SaleFormState,
 } from '@/features/sales/types/sale-form';
 import {
-  formatCurrency,
+  CurrencyValue,
   formatLocalDate,
   GlobalFeedbackSnackbar,
   useFeedbackStore,
   useOnlineStatus,
   useSwUpdate,
+  useValueVisibilityStore,
 } from '@/shared';
 import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
@@ -188,6 +191,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const isOnline = useOnlineStatus();
   const { needsUpdate, update } = useSwUpdate();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const { hideValues, toggleHideValues } = useValueVisibilityStore(
+    useShallow((state) => ({
+      hideValues: state.hideValues,
+      toggleHideValues: state.toggleHideValues,
+    })),
+  );
   const {
     hydrateOfflineState,
     isSyncingPendingSales,
@@ -1248,6 +1257,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Divider orientation="vertical" flexItem />
 
             <IconButton
+              color="inherit"
+              onClick={toggleHideValues}
+              size="small"
+              aria-label={hideValues ? 'Exibir valores' : 'Ocultar valores'}
+              sx={{ flexShrink: 0 }}
+            >
+              {hideValues ? <Visibility /> : <VisibilityOff />}
+            </IconButton>
+
+            <Divider orientation="vertical" flexItem />
+
+            <IconButton
               onClick={() => openDialog(handleOpenNewQuickSaleDraft)}
               aria-label="Nova venda"
               sx={{
@@ -1324,6 +1345,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 : `Sincronizar ${pendingSalesCount}`}
             </Button>
           ) : null}
+
+          <Divider orientation="vertical" flexItem />
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="small"
+            startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
+            onClick={toggleHideValues}
+          >
+            {hideValues ? 'Exibir valores' : 'Ocultar valores'}
+          </Button>
 
           <Divider orientation="vertical" flexItem />
 
@@ -1587,7 +1620,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           </Typography>
                           <Typography variant="body2" fontWeight={800} noWrap>
                             {summary.itemLabel} •{' '}
-                            {formatCurrency(summary.total)}
+                            <CurrencyValue value={summary.total} />
                           </Typography>
                         </Box>
                       </Button>

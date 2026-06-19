@@ -33,8 +33,6 @@ import {
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
-  Visibility,
-  VisibilityOff,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import NewSaleDialog from '../components/new-sale-dialog';
@@ -49,10 +47,11 @@ import {
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   ProductAutocompleteField,
   SearchFilterPanel,
-  formatCurrency,
+  formatCurrencyWithVisibility,
   formatLocalDate,
   useFeedbackStore,
   useOnlineStatus,
+  useValueVisibilityStore,
   type MeioPagamento,
   type Feira,
   type Produto,
@@ -66,7 +65,7 @@ function getSaleItemName(vendaItem: Venda['itens'][number]): string {
 }
 
 function formatSaleValue(value: number, hideValues: boolean): string {
-  return hideValues ? 'R$ ••••' : formatCurrency(value);
+  return formatCurrencyWithVisibility(value, hideValues);
 }
 
 function getSalePayments(venda: Venda): Venda['pagamentos'] {
@@ -305,6 +304,7 @@ export default function SalesPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isOnline = useOnlineStatus();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const {
     carteiras,
     excluirVenda,
@@ -345,9 +345,7 @@ export default function SalesPage() {
   const [type, setType] = useState<'TODOS' | TipoVenda>(
     paginacao.tipo ?? 'TODOS',
   );
-  const [idFeira, setIdFeira] = useState<number | ''>(
-    paginacao.idFeira ?? '',
-  );
+  const [idFeira, setIdFeira] = useState<number | ''>(paginacao.idFeira ?? '');
   const [idProduto, setIdProduto] = useState<number | ''>(
     paginacao.idProduto ?? '',
   );
@@ -366,7 +364,6 @@ export default function SalesPage() {
     null,
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
-  const [hideValues, setHideValues] = useState(false);
 
   const handleSearch = () => {
     void fetchVendas({
@@ -518,14 +515,6 @@ export default function SalesPage() {
             itens.
           </Typography>
         </Box>
-
-        <Button
-          variant="outlined"
-          startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
-          onClick={() => setHideValues((current) => !current)}
-        >
-          {hideValues ? 'Exibir valores' : 'Ocultar valores'}
-        </Button>
       </Stack>
 
       <Box>

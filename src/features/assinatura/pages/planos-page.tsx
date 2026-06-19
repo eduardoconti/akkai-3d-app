@@ -23,11 +23,11 @@ import {
 } from '@/features/assinatura/store/use-assinatura-store';
 import {
   AppTablePagination,
+  CurrencyValue,
   DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
-  formatCurrency,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -129,7 +129,7 @@ export default function PlanosPage() {
                         fontWeight={700}
                         color="primary.main"
                       >
-                        {formatCurrency(plano.valor)}
+                        <CurrencyValue value={plano.valor} />
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         /mês
@@ -192,7 +192,7 @@ export default function PlanosPage() {
                         align="right"
                         sx={{ fontWeight: 700, color: 'primary.main' }}
                       >
-                        {formatCurrency(plano.valor)}
+                        <CurrencyValue value={plano.valor} />
                       </TableCell>
                     </TableRow>
                   ))

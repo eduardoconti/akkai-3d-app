@@ -108,12 +108,7 @@ export interface CategoriaDespesa {
   id: number;
   nome: string;
 }
-export type OrdenacaoProduto =
-  | 'nome'
-  | 'codigo'
-  | 'quantidade'
-  | 'nivelEstoque'
-  | 'estoqueMinimo';
+export type OrdenacaoProduto = 'nome' | 'codigo' | 'nivelEstoque';
 export type OrdenacaoPrecoProdutoFeira = 'codigo' | 'nome' | 'valor' | 'feira';
 export type DirecaoOrdenacao = 'asc' | 'desc';
 
@@ -288,8 +283,10 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
 
 export type PesquisaPaginadaFeiras = PesquisaPaginada;
 
-export interface PesquisaPaginadaPrecosProdutosFeira
-  extends Omit<PesquisaPaginada, 'ordenarPor'> {
+export interface PesquisaPaginadaPrecosProdutosFeira extends Omit<
+  PesquisaPaginada,
+  'ordenarPor'
+> {
   idFeira?: number;
   ordenarPor?: OrdenacaoPrecoProdutoFeira;
   direcao?: DirecaoOrdenacao;

@@ -30,11 +30,11 @@ import {
 } from '@/features/finance/store/use-finance-store';
 import {
   AppTablePagination,
+  CurrencyValue,
   DEFAULT_PAGE_SIZE,
   EmptyState,
   LoadingState,
   PageHeader,
-  formatCurrency,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -143,7 +143,7 @@ export default function FinanceWalletsPage() {
                             : 'success.main'
                         }
                       >
-                        {formatCurrency(carteira.saldoAtual)}
+                        <CurrencyValue value={carteira.saldoAtual} />
                       </Typography>
                       <Stack
                         direction="row"
@@ -238,7 +238,7 @@ export default function FinanceWalletsPage() {
                               : 'success.main',
                         }}
                       >
-                        {formatCurrency(carteira.saldoAtual)}
+                        <CurrencyValue value={carteira.saldoAtual} />
                       </TableCell>
                       <TableCell align="right">
                         <Stack

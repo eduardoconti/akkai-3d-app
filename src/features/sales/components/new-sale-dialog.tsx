@@ -305,8 +305,7 @@ export default function NewSaleDialog({
     })),
   );
 
-  const [form, setInternalForm] =
-    useState<SaleFormState>(initialSaleFormState);
+  const [form, setInternalForm] = useState<SaleFormState>(initialSaleFormState);
   const [persistedConfig, setPersistedConfig] = useState<PersistedSaleConfig>({
     tipo: initialSaleFormState.tipo,
     idFeira: initialSaleFormState.idFeira,
@@ -342,9 +341,7 @@ export default function NewSaleDialog({
   initialFormRef.current = initialForm;
 
   const setForm = (
-    nextForm:
-      | SaleFormState
-      | ((currentForm: SaleFormState) => SaleFormState),
+    nextForm: SaleFormState | ((currentForm: SaleFormState) => SaleFormState),
   ) => {
     setInternalForm((currentForm) =>
       typeof nextForm === 'function' ? nextForm(currentForm) : nextForm,
@@ -401,7 +398,7 @@ export default function NewSaleDialog({
             ? mapSaleToForm(sale)
             : initialFormRef.current
               ? cloneSaleFormState(initialFormRef.current)
-            : getResetFormState(persistedConfigRef.current);
+              : getResetFormState(persistedConfigRef.current);
 
         setForm(nextForm);
       }

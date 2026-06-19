@@ -1,4 +1,5 @@
 export { default as AppTablePagination } from './components/app-table-pagination';
+export { default as CurrencyValue } from './components/currency-value';
 export {
   DEFAULT_PAGE_SIZE,
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
@@ -22,6 +23,7 @@ export {
 export { useOnlineStatus } from './lib/offline/use-online-status';
 export { useSwUpdate } from './lib/offline/use-sw-update';
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
+export { useValueVisibilityStore } from './lib/stores/use-value-visibility-store';
 export type { ActionResult } from './lib/types/action-result';
 export type {
   AlterarCicloAssinaturaInput,
@@ -112,7 +114,13 @@ export type {
   ProblemValidationItem,
 } from './lib/types/problem-details';
 export { getFieldMessage, getFieldMessages } from './lib/utils/problem';
-export { formatCurrency } from './utils/format-currency';
+export {
+  formatCurrency,
+  formatCurrencyWithVisibility,
+  formatValueWithVisibility,
+  HIDDEN_CURRENCY_VALUE,
+  HIDDEN_VALUE,
+} from './utils/format-currency';
 export { formatLocalDate, type LocalDateFormat } from './utils/date';
 export {
   getMonthStartInput,

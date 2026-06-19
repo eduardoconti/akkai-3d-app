@@ -31,11 +31,11 @@ import {
 } from '../store/use-product-store';
 import {
   AppTablePagination,
+  CurrencyValue,
   EmptyState,
   LoadingState,
   PageHeader,
   SearchFilterPanel,
-  formatCurrency,
   type Categoria,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
@@ -164,7 +164,7 @@ export default function ProductsPage() {
           >
             <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
-            <MenuItem value="estoqueMinimo">Estoque mínimo</MenuItem>
+            <MenuItem value="nivelEstoque">Nível estoque</MenuItem>
           </TextField>
         </Grid>
 
@@ -305,7 +305,7 @@ export default function ProductsPage() {
                           />
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
-                          Valor: {formatCurrency(produto.valor)}
+                          Valor: <CurrencyValue value={produto.valor} />
                         </Typography>
                       </Stack>
                     </Stack>
@@ -391,10 +391,10 @@ export default function ProductsPage() {
                               size="small"
                               color={
                                 criticalMinimumStock
-                                    ? 'error'
-                                    : belowMinimumStock
-                                      ? 'warning'
-                                      : 'default'
+                                  ? 'error'
+                                  : belowMinimumStock
+                                    ? 'warning'
+                                    : 'default'
                               }
                               variant={
                                 criticalMinimumStock || belowMinimumStock
@@ -416,7 +416,7 @@ export default function ProductsPage() {
                           </Stack>
                         </TableCell>
                         <TableCell align="right">
-                          {formatCurrency(produto.valor)}
+                          <CurrencyValue value={produto.valor} />
                         </TableCell>
                       </TableRow>
                     );
