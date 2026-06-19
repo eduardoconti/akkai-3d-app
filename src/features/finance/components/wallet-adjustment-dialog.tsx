@@ -36,9 +36,9 @@ import {
 } from '@/features/finance/types/finance-form';
 import {
   CurrencyField,
+  CurrencyValue,
   DatePickerField,
   FormFeedbackAlert,
-  formatCurrency,
   getFieldMessage,
   useFeedbackStore,
   useFormDialog,
@@ -226,7 +226,7 @@ export default function WalletAdjustmentDialog({
                 (carteira?.saldoAtual ?? 0) < 0 ? 'error.main' : 'success.main'
               }
             >
-              {formatCurrency(carteira?.saldoAtual ?? 0)}
+              <CurrencyValue value={carteira?.saldoAtual ?? 0} />
             </Typography>
           </Box>
 
@@ -378,7 +378,7 @@ export default function WalletAdjustmentDialog({
                       }
                     >
                       {ajuste.tipo === 'CREDITO' ? '+' : '-'}
-                      {formatCurrency(ajuste.valor)}
+                      <CurrencyValue value={ajuste.valor} />
                     </Typography>
                   </Stack>
                 ))}

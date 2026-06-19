@@ -29,12 +29,12 @@ import {
 } from '@/features/finance/types/finance-form';
 import {
   AppTablePagination,
+  CurrencyValue,
   DateRangePickerField,
   EmptyState,
   LoadingState,
   PageHeader,
   SearchFilterPanel,
-  formatCurrency,
   type TransferenciaCarteira,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -233,7 +233,7 @@ export default function FinanceWalletTransfersPage() {
                         </Typography>
                       </Box>
                       <Typography variant="subtitle1" fontWeight={700}>
-                        {formatCurrency(transferencia.valor)}
+                        <CurrencyValue value={transferencia.valor} />
                       </Typography>
                     </Stack>
 
@@ -296,7 +296,7 @@ export default function FinanceWalletTransfersPage() {
                         {transferencia.carteiraDestino?.nome ?? '-'}
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700 }}>
-                        {formatCurrency(transferencia.valor)}
+                        <CurrencyValue value={transferencia.valor} />
                       </TableCell>
                     </TableRow>
                   ))

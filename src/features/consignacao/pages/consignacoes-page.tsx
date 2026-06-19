@@ -52,11 +52,11 @@ import {
 } from '@/features/consignacao/store/use-consignacao-store';
 import {
   AppTablePagination,
+  CurrencyValue,
   EmptyState,
   LoadingState,
   PageHeader,
   SearchFilterPanel,
-  formatCurrency,
   getProblemDetailsFromError,
   useFeedbackStore,
   type Consignacao,
@@ -190,7 +190,7 @@ function DetalheItens({
                 {item.quantidadeDisponivel}
               </TableCell>
               <TableCell align="right">
-                {formatCurrency(item.valorUnitario)}
+                <CurrencyValue value={item.valorUnitario} />
               </TableCell>
               <TableCell align="right">
                 <Stack

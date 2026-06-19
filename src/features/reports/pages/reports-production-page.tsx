@@ -25,14 +25,16 @@ import {
   type ProductionReportResponse,
 } from '@/features/reports/api/reports-api';
 import {
+  CurrencyValue,
   DateRangePickerField,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   SearchFilterPanel,
-  formatCurrency,
+  formatCurrencyWithVisibility,
   getMonthRangeInput,
   getProblemDetailsFromError,
+  useValueVisibilityStore,
   type ProblemDetails,
 } from '@/shared';
 
@@ -59,6 +61,7 @@ interface AppliedFilters {
 export default function ReportsProductionPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] = useState<ProductionOrderBy>(
@@ -162,7 +165,7 @@ export default function ReportsProductionPage() {
               Valor unitario
             </Typography>
             <Typography fontWeight={600}>
-              {formatCurrency(item.valorUnitario)}
+              <CurrencyValue value={item.valorUnitario} />
             </Typography>
           </Grid>
 
@@ -171,7 +174,7 @@ export default function ReportsProductionPage() {
               Valor estimado
             </Typography>
             <Typography fontWeight={700}>
-              {formatCurrency(item.valorEstimado)}
+              <CurrencyValue value={item.valorEstimado} />
             </Typography>
           </Grid>
 
@@ -188,7 +191,9 @@ export default function ReportsProductionPage() {
             <Typography variant="caption" color="text.secondary">
               Media de valor por dia
             </Typography>
-            <Typography>{formatCurrency(item.mediaValorPorDia)}</Typography>
+            <Typography>
+              <CurrencyValue value={item.mediaValorPorDia} />
+            </Typography>
           </Grid>
         </Grid>
       </Stack>
@@ -272,7 +277,7 @@ export default function ReportsProductionPage() {
               size="small"
             />
             <Chip
-              label={`Valor estimado: ${formatCurrency(result.totalValorEstimado)}`}
+              label={`Valor estimado: ${formatCurrencyWithVisibility(result.totalValorEstimado, hideValues)}`}
               color="primary"
               size="small"
             />
@@ -281,7 +286,7 @@ export default function ReportsProductionPage() {
               size="small"
             />
             <Chip
-              label={`Media de valor/dia: ${formatCurrency(result.mediaValorPorDia)}`}
+              label={`Media de valor/dia: ${formatCurrencyWithVisibility(result.mediaValorPorDia, hideValues)}`}
               size="small"
             />
           </Stack>
@@ -335,16 +340,16 @@ export default function ReportsProductionPage() {
                             {formatQuantity(item.quantidadeProduzida)}
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.valorUnitario)}
+                            <CurrencyValue value={item.valorUnitario} />
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.valorEstimado)}
+                            <CurrencyValue value={item.valorEstimado} />
                           </TableCell>
                           <TableCell align="right">
                             {formatQuantity(item.mediaQuantidadePorDia)}
                           </TableCell>
                           <TableCell align="right">
-                            {formatCurrency(item.mediaValorPorDia)}
+                            <CurrencyValue value={item.mediaValorPorDia} />
                           </TableCell>
                         </TableRow>
                       ))

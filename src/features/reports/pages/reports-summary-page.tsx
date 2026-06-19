@@ -15,10 +15,10 @@ import {
 } from '@/features/reports/api/reports-api';
 import { listFairs } from '@/features/sales/api/sales-api';
 import {
+  CurrencyValue,
   DateRangePickerField,
   FormFeedbackAlert,
   SearchFilterPanel,
-  formatCurrency,
   getProblemDetailsFromError,
   getMonthRangeInput,
   type Feira,
@@ -286,7 +286,7 @@ export default function ReportsSummaryPage() {
                   fontWeight={800}
                   sx={{ mt: 1, color: 'warning.dark' }}
                 >
-                  {formatCurrency(summary.descontoTotal)}
+                  <CurrencyValue value={summary.descontoTotal} />
                 </Typography>
               </Paper>
             </Grid>
@@ -304,7 +304,7 @@ export default function ReportsSummaryPage() {
                   fontWeight={800}
                   sx={{ mt: 1, color: 'success.main' }}
                 >
-                  {formatCurrency(summary.valorTotal)}
+                  <CurrencyValue value={summary.valorTotal} />
                 </Typography>
               </Paper>
             </Grid>
@@ -322,7 +322,7 @@ export default function ReportsSummaryPage() {
                   fontWeight={800}
                   sx={{ mt: 1, color: 'success.main' }}
                 >
-                  {formatCurrency(summary.valorLiquido)}
+                  <CurrencyValue value={summary.valorLiquido} />
                 </Typography>
               </Paper>
             </Grid>

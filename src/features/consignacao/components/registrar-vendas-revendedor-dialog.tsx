@@ -37,10 +37,10 @@ import { listWallets } from '@/features/finance/api/finance-api';
 import { listAllProducts } from '@/features/products/api/products-api';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import {
+  CurrencyValue,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
   ProductAutocompleteField,
-  formatCurrency,
   useFeedbackStore,
   type Carteira,
   type Consignacao,
@@ -738,7 +738,7 @@ export default function RegistrarVendasRevendedorDialog({
                             Total do item
                           </Typography>
                           <Typography variant="subtitle1" fontWeight={800}>
-                            {formatCurrency(subtotal)}
+                            <CurrencyValue value={subtotal} />
                           </Typography>
                         </Box>
                       </Stack>
@@ -823,7 +823,7 @@ export default function RegistrarVendasRevendedorDialog({
             {totais.quantidadeItens === 1 ? 'item' : 'itens'}
           </Typography>
           <Typography variant="h4" fontWeight={900} color="success.main">
-            {formatCurrency(totais.total)}
+            <CurrencyValue value={totais.total} />
           </Typography>
         </Box>
 

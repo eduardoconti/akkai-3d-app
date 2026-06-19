@@ -29,9 +29,9 @@ import { listAllProducts } from '@/features/products/api/products-api';
 import type { Produto, Revendedor } from '@/shared';
 import {
   CurrencyField,
+  CurrencyValue,
   FormFeedbackAlert,
   ProductAutocompleteField,
-  formatCurrency,
   getFieldMessage,
   useFeedbackStore,
   useFormDialog,
@@ -455,7 +455,10 @@ export default function ConsignacaoDialog({
           </Box>
 
           <Typography variant="body2" color="text.secondary" textAlign="right">
-            Total consignado: <strong>{formatCurrency(valorTotal)}</strong>
+            Total consignado:{' '}
+            <strong>
+              <CurrencyValue value={valorTotal} />
+            </strong>
           </Typography>
         </Stack>
       </DialogContent>

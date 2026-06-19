@@ -26,11 +26,11 @@ import {
 } from '@/features/sales/api/sales-api';
 import {
   AppTablePagination,
+  CurrencyValue,
   EmptyState,
   LoadingState,
   PageHeader,
   SearchFilterPanel,
-  formatCurrency,
   getProblemDetailsFromError,
   type DirecaoOrdenacao,
   type Feira,
@@ -260,12 +260,14 @@ export default function FairProductPricesPage() {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Preço padrão:{' '}
-                      {price.produto
-                        ? formatCurrency(price.produto.valor)
-                        : '-'}
+                      {price.produto ? (
+                        <CurrencyValue value={price.produto.valor} />
+                      ) : (
+                        '-'
+                      )}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Preço na feira: {formatCurrency(price.valor)}
+                      Preço na feira: <CurrencyValue value={price.valor} />
                     </Typography>
                   </Stack>
                 </Box>
@@ -320,12 +322,14 @@ export default function FairProductPricesPage() {
                         {price.feira?.nome ?? price.idFeira}
                       </TableCell>
                       <TableCell align="right">
-                        {price.produto
-                          ? formatCurrency(price.produto.valor)
-                          : '-'}
+                        {price.produto ? (
+                          <CurrencyValue value={price.produto.valor} />
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell align="right">
-                        {formatCurrency(price.valor)}
+                        <CurrencyValue value={price.valor} />
                       </TableCell>
                     </TableRow>
                   ))

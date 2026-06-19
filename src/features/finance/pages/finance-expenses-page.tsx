@@ -30,12 +30,12 @@ import {
 } from '@/features/finance/types/finance-form';
 import {
   AppTablePagination,
+  CurrencyValue,
   DateRangePickerField,
   EmptyState,
   LoadingState,
   PageHeader,
   SearchFilterPanel,
-  formatCurrency,
   type Despesa,
 } from '@/shared';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
@@ -88,9 +88,7 @@ export default function FinanceExpensesPage() {
   const [idCarteira, setIdCarteira] = useState<number | ''>(
     paginacao.idCarteira ?? '',
   );
-  const [idFeira, setIdFeira] = useState<number | ''>(
-    paginacao.idFeira ?? '',
-  );
+  const [idFeira, setIdFeira] = useState<number | ''>(paginacao.idFeira ?? '');
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa
   >([]);
@@ -241,7 +239,7 @@ export default function FinanceExpensesPage() {
           Valor total das despesas
         </Typography>
         <Typography variant="h6" fontWeight={700} color="error.main">
-          {formatCurrency(totalizadores.valorTotal)}
+          <CurrencyValue value={totalizadores.valorTotal} />
         </Typography>
       </Paper>
 
@@ -289,7 +287,7 @@ export default function FinanceExpensesPage() {
                         fontWeight={700}
                         color="error.main"
                       >
-                        {formatCurrency(despesa.valor)}
+                        <CurrencyValue value={despesa.valor} />
                       </Typography>
                     </Stack>
 
@@ -369,7 +367,7 @@ export default function FinanceExpensesPage() {
                         align="right"
                         sx={{ color: 'error.main', fontWeight: 700 }}
                       >
-                        {formatCurrency(despesa.valor)}
+                        <CurrencyValue value={despesa.valor} />
                       </TableCell>
                     </TableRow>
                   ))
