@@ -142,6 +142,7 @@ export default function StockMovementForm({
               select
               fullWidth
               label="Movimentacao"
+              required
               value={form.tipo}
               onChange={(event) => {
                 const tipo = event.target.value as MovementType;
@@ -162,6 +163,7 @@ export default function StockMovementForm({
               select
               fullWidth
               label="Origem"
+              required
               value={form.origem}
               onChange={(event) => {
                 setForm((current) => ({
@@ -185,6 +187,7 @@ export default function StockMovementForm({
               fullWidth
               type="number"
               label="Quantidade"
+              required
               value={form.quantidade}
               onChange={(event) => {
                 setForm((current) => ({

@@ -287,12 +287,14 @@ export default function FairProductPricesDialog({
                   onChange={handleProductChange}
                   loading={isLoadingProducts || isLoadingPrices}
                   disabled={isBusy || isEditMode}
+                  required
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>
                 <CurrencyField
                   fullWidth
                   label="Preço na feira"
+                  required
                   value={value}
                   onValueChange={setValue}
                   name="precoProdutoFeira"

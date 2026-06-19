@@ -250,6 +250,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
             <TextField
               fullWidth
               label="Nome da feira"
+              required
               placeholder="Ex: MAUA"
               value={form.nome}
               disabled={isLoading}
@@ -278,7 +279,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
                 }));
               }}
               error={Boolean(getErrorMessage('local'))}
-              helperText={getErrorMessage('local') ?? 'Opcional'}
+              helperText={getErrorMessage('local')}
             />
           </Grid>
 
@@ -298,7 +299,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
                 }));
               }}
               error={Boolean(getErrorMessage('descricao'))}
-              helperText={getErrorMessage('descricao') ?? 'Opcional'}
+              helperText={getErrorMessage('descricao')}
             />
           </Grid>
 

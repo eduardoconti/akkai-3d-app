@@ -177,6 +177,7 @@ export default function NewCategoryDialog({
             <TextField
               fullWidth
               label="Nome da Categoria"
+              required
               placeholder="Ex: CHAVEIROS"
               value={form.nome}
               onChange={(event) => {
@@ -203,7 +204,6 @@ export default function NewCategoryDialog({
                     event.target.value === '' ? '' : Number(event.target.value),
                 }));
               }}
-              helperText="Opcional. Use se esta categoria fizer parte de outra."
               disabled={isFetchingCategories}
             >
               <MenuItem value="">Sem categoria pai</MenuItem>

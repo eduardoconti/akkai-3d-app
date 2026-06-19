@@ -611,7 +611,6 @@ export default function EditKitDialog({
                       fullWidth
                       disabled={isLoading}
                       label="Observação"
-                      placeholder="Opcional"
                       value={item.observacao}
                       onChange={(e) =>
                         setItem(index, { observacao: e.target.value })

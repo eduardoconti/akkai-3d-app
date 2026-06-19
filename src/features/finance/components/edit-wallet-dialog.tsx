@@ -287,6 +287,7 @@ export default function EditWalletDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Nome da carteira"
+                required
                 placeholder="Ex: Nubank PIX"
                 value={form.nome}
                 onChange={(event) =>
@@ -374,6 +375,7 @@ export default function EditWalletDialog({
               <TextField
                 fullWidth
                 label="Percentual do imposto"
+                required={form.consideraImpostoVenda}
                 placeholder="Ex: 4,00"
                 value={form.percentualImpostoVenda}
                 disabled={isLoading || !form.consideraImpostoVenda}

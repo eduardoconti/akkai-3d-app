@@ -215,6 +215,7 @@ export default function EditCategoryDialog({
             <TextField
               fullWidth
               label="Nome da categoria"
+              required
               placeholder="Ex: CHAVEIROS"
               value={form.nome}
               disabled={isLoading}
@@ -242,7 +243,6 @@ export default function EditCategoryDialog({
                     event.target.value === '' ? '' : Number(event.target.value),
                 }));
               }}
-              helperText="Opcional. Use se esta categoria fizer parte de outra."
               disabled={isLoading || isFetchingCategories}
             >
               <MenuItem value="">Sem categoria pai</MenuItem>

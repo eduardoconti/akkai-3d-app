@@ -574,7 +574,7 @@ export default function SalesPage() {
                   )
                 }
                 helperText={
-                  feiras.length === 0 ? 'Nenhuma feira cadastrada.' : 'Opcional'
+                  feiras.length === 0 ? 'Nenhuma feira cadastrada.' : undefined
                 }
               >
                 <MenuItem value="">Todas</MenuItem>
@@ -598,7 +598,7 @@ export default function SalesPage() {
                   ? 'Carregando produtos...'
                   : produtos.length === 0
                     ? 'Nenhum produto cadastrado.'
-                    : 'Opcional'
+                    : undefined
               }
               loading={isLoadingProducts}
               disabled={isLoadingProducts || produtos.length === 0}
@@ -616,7 +616,6 @@ export default function SalesPage() {
                   event.target.value === '' ? '' : Number(event.target.value),
                 )
               }
-              helperText="Opcional"
             >
               <MenuItem value="">Todas</MenuItem>
               {carteiras.map((carteira) => (
@@ -640,7 +639,6 @@ export default function SalesPage() {
                     : (event.target.value as MeioPagamento),
                 )
               }
-              helperText="Opcional"
             >
               <MenuItem value="">Todos</MenuItem>
               <MenuItem value="DIN">Dinheiro</MenuItem>

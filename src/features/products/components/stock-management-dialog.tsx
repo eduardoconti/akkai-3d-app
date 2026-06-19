@@ -32,6 +32,7 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   type EstoqueProduto,
+  type MovimentacaoEstoque,
   type Produto,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
@@ -51,8 +52,12 @@ function getMovementTypeColor(tipo: 'E' | 'S'): 'success' | 'error' {
   return tipo === 'E' ? 'success' : 'error';
 }
 
-function getMovementOriginLabel(origem: string) {
-  switch (origem) {
+function getMovementOriginLabel(movimentacao: MovimentacaoEstoque) {
+  if (movimentacao.origem === 'VENDA' && movimentacao.idVenda) {
+    return `Venda #${movimentacao.idVenda}`;
+  }
+
+  switch (movimentacao.origem) {
     case 'COMPRA':
       return 'Compra';
     case 'VENDA':
@@ -66,7 +71,7 @@ function getMovementOriginLabel(origem: string) {
     case 'CONSIGNACAO':
       return 'Consignacao';
     default:
-      return origem;
+      return movimentacao.origem;
   }
 }
 
@@ -265,13 +270,27 @@ export default function StockManagementDialog({
                               </Typography>
                             </Box>
 
-                            <Chip
-                              label={getMovementOriginLabel(
-                                movimentacao.origem,
-                              )}
-                              size="small"
-                              color={getMovementTypeColor(movimentacao.tipo)}
-                            />
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              justifyContent="flex-end"
+                              flexWrap="wrap"
+                              useFlexGap
+                            >
+                              <Chip
+                                label={getMovementOriginLabel(movimentacao)}
+                                size="small"
+                                color={getMovementTypeColor(movimentacao.tipo)}
+                              />
+                              {movimentacao.brinde ? (
+                                <Chip
+                                  label="Brinde"
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              ) : null}
+                            </Stack>
                           </Stack>
 
                           <Stack
@@ -367,7 +386,25 @@ export default function StockManagementDialog({
                               />
                             </TableCell>
                             <TableCell>
-                              {getMovementOriginLabel(movimentacao.origem)}
+                              <Stack
+                                direction="row"
+                                spacing={0.75}
+                                alignItems="center"
+                                flexWrap="wrap"
+                                useFlexGap
+                              >
+                                <span>
+                                  {getMovementOriginLabel(movimentacao)}
+                                </span>
+                                {movimentacao.brinde ? (
+                                  <Chip
+                                    label="Brinde"
+                                    size="small"
+                                    color="warning"
+                                    variant="outlined"
+                                  />
+                                ) : null}
+                              </Stack>
                             </TableCell>
                             <TableCell align="right">
                               {movimentacao.quantidade}

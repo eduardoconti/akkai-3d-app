@@ -1100,6 +1100,7 @@ export default function NewSaleDialog({
                       slotProps={{
                         textField: {
                           size: 'small',
+                          required: true,
                           error: Boolean(
                             localErrors.dataVenda ||
                             getFieldMessage(problem, 'dataVenda'),
@@ -1123,6 +1124,7 @@ export default function NewSaleDialog({
                       fullWidth
                       size="small"
                       label="Tipo"
+                      required
                       value={form.tipo}
                       onChange={(event) =>
                         handleChangeSaleType(event.target.value as TipoVenda)
@@ -1144,6 +1146,7 @@ export default function NewSaleDialog({
                         fullWidth
                         size="small"
                         label="Feira"
+                        required
                         value={form.idFeira}
                         onChange={(event) => {
                           handleChangeFair(
@@ -1222,6 +1225,7 @@ export default function NewSaleDialog({
                                 productId={item.idProduto}
                                 loading={isFetching}
                                 size="small"
+                                required
                                 onChange={(newValue) => {
                                   updateItem(index, {
                                     idProduto: newValue?.id ?? null,
@@ -1251,6 +1255,7 @@ export default function NewSaleDialog({
                                 fullWidth
                                 size="small"
                                 label="Nome do item"
+                                required
                                 value={item.nomeProduto}
                                 onChange={(event) => {
                                   updateItem(index, {
@@ -1281,6 +1286,7 @@ export default function NewSaleDialog({
                                 fullWidth
                                 size="small"
                                 label="Valor unit."
+                                required
                                 value={item.brinde ? 0 : item.valorUnitario}
                                 onValueChange={(valorUnitario) => {
                                   updateItem(index, { valorUnitario });
@@ -1711,6 +1717,7 @@ export default function NewSaleDialog({
                                 fullWidth
                                 size="small"
                                 label="Meio"
+                                required
                                 value={pagamento.meioPagamento}
                                 onChange={(event) => {
                                   updatePayment(index, {
@@ -1753,6 +1760,7 @@ export default function NewSaleDialog({
                                 fullWidth
                                 size="small"
                                 label="Valor"
+                                required
                                 value={paymentValue}
                                 onValueChange={(valor) => {
                                   updatePayment(index, { valor });

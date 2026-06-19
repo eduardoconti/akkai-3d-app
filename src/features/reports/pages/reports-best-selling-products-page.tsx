@@ -343,7 +343,7 @@ export default function ReportsBestSellingProductsPage() {
               helperText={
                 feiras.length === 0 && !isLoadingFeiras
                   ? 'Nenhuma feira cadastrada.'
-                  : 'Opcional. Filtre uma feira específica.'
+                  : undefined
               }
             >
               <MenuItem value="">Todas as feiras</MenuItem>

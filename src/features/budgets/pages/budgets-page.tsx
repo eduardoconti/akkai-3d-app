@@ -331,7 +331,6 @@ export default function BudgetsPage() {
                 setCanalAtendimentoSelecionado('');
               }
             }}
-            helperText="Opcional"
           >
             <MenuItem value="">Todos</MenuItem>
             {TIPOS_ORCAMENTO.map((tipo) => (
@@ -354,7 +353,6 @@ export default function BudgetsPage() {
                   event.target.value as CanalAtendimentoOrcamento | '',
                 )
               }
-              helperText="Opcional"
             >
               <MenuItem value="">Todos</MenuItem>
               {ALL_CANAIS_ATENDIMENTO_ORCAMENTO.map((canal) => (

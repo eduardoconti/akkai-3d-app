@@ -335,6 +335,7 @@ export default function EditCicloDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Status"
+                required
                 value={form.status}
                 onChange={(e) =>
                   setForm((c) => ({
@@ -362,9 +363,7 @@ export default function EditCicloDialog({
                   setForm((c) => ({ ...c, codigoRastreio: e.target.value }))
                 }
                 error={Boolean(getFieldMessage(problem, 'codigoRastreio'))}
-                helperText={
-                  getFieldMessage(problem, 'codigoRastreio') ?? 'Opcional'
-                }
+                helperText={getFieldMessage(problem, 'codigoRastreio')}
               />
             </Grid>
 
@@ -380,7 +379,6 @@ export default function EditCicloDialog({
                 onChange={(e) =>
                   setForm((c) => ({ ...c, observacao: e.target.value }))
                 }
-                helperText="Opcional"
               />
             </Grid>
           </Grid>
@@ -426,6 +424,7 @@ export default function EditCicloDialog({
                       disabled={
                         isLoading || isLoadingProducts || produtos.length === 0
                       }
+                      required
                       onChange={(newValue) =>
                         setItem(index, {
                           idProduto: newValue?.id ?? '',
@@ -442,6 +441,7 @@ export default function EditCicloDialog({
                       fullWidth
                       disabled={isLoading}
                       label="Qtd."
+                      required
                       type="number"
                       slotProps={{ htmlInput: { min: 1 } }}
                       value={item.quantidade}
@@ -459,7 +459,6 @@ export default function EditCicloDialog({
                       fullWidth
                       disabled={isLoading}
                       label="Observação"
-                      placeholder="Opcional"
                       value={item.observacao}
                       onChange={(e) =>
                         setItem(index, { observacao: e.target.value })

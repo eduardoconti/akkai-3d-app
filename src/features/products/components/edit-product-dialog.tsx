@@ -266,6 +266,7 @@ export default function EditProductDialog({
                   <TextField
                     fullWidth
                     label="Nome do Produto"
+                    required
                     value={form.nome}
                     onChange={(event) => {
                       setForm((current) => ({
@@ -283,6 +284,7 @@ export default function EditProductDialog({
                     fullWidth
                     type="number"
                     label="Codigo"
+                    required
                     value={form.codigo}
                     onChange={(event) => {
                       setForm((current) => ({
@@ -334,10 +336,7 @@ export default function EditProductDialog({
                     }}
                     inputProps={{ min: 0, step: 1 }}
                     error={Boolean(getErrorMessage('estoqueMinimo'))}
-                    helperText={
-                      getErrorMessage('estoqueMinimo') ??
-                      'Opcional. Usado para destacar quando o saldo estiver baixo.'
-                    }
+                    helperText={getErrorMessage('estoqueMinimo')}
                   />
                 </Grid>
 
@@ -346,6 +345,7 @@ export default function EditProductDialog({
                     select
                     fullWidth
                     label="Categoria"
+                    required
                     value={form.idCategoria}
                     onChange={(event) => {
                       setForm((current) => ({
@@ -372,6 +372,7 @@ export default function EditProductDialog({
                   <CurrencyField
                     fullWidth
                     label="Valor de Venda"
+                    required
                     value={form.valor}
                     onValueChange={(valor) => {
                       setForm((current) => ({ ...current, valor }));

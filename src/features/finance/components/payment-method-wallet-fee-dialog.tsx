@@ -352,6 +352,7 @@ export default function PaymentMethodWalletFeeDialog({
                 select
                 fullWidth
                 label="Carteira"
+                required
                 value={form.idCarteira}
                 disabled={isLoading}
                 onChange={(event) => {
@@ -380,6 +381,7 @@ export default function PaymentMethodWalletFeeDialog({
                 select
                 fullWidth
                 label="Pagamento"
+                required
                 value={form.meioPagamento}
                 disabled={isLoading}
                 onChange={(event) => {
@@ -401,6 +403,7 @@ export default function PaymentMethodWalletFeeDialog({
               <TextField
                 fullWidth
                 label="Percentual da taxa"
+                required
                 placeholder="Ex: 2,99"
                 value={form.percentual}
                 disabled={isLoading}

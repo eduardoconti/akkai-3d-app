@@ -145,6 +145,7 @@ export default function RegistrarDevolucaoConsignadaDialog({
         <TextField
           fullWidth
           label="Quantidade devolvida"
+          required
           type="number"
           value={quantidade}
           onChange={(event) => setQuantidade(event.target.value)}

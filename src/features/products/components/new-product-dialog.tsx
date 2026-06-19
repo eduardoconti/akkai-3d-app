@@ -212,6 +212,7 @@ export default function NewProductDialog({
             <TextField
               fullWidth
               label="Nome do Produto"
+              required
               placeholder="Ex: Stegossauro Brilha"
               value={form.nome}
               onChange={(event) => {
@@ -230,6 +231,7 @@ export default function NewProductDialog({
               fullWidth
               type="number"
               label="Código"
+              required
               placeholder="1002"
               value={form.codigo}
               onChange={(event) => {
@@ -270,6 +272,7 @@ export default function NewProductDialog({
               select
               fullWidth
               label="Categoria"
+              required
               value={form.idCategoria}
               onChange={(event) => {
                 setForm((current) => ({
@@ -295,6 +298,7 @@ export default function NewProductDialog({
             <CurrencyField
               fullWidth
               label="Valor de Venda"
+              required
               value={form.valor}
               onValueChange={(valor) => {
                 setForm((current) => ({ ...current, valor }));
