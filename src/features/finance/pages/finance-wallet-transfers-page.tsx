@@ -155,7 +155,6 @@ export default function FinanceWalletTransfersPage() {
                 event.target.value === '' ? '' : Number(event.target.value),
               )
             }
-            helperText="Opcional"
           >
             <MenuItem value="">Todas</MenuItem>
             {carteirasOrdenadas.map((carteira) => (
@@ -177,7 +176,6 @@ export default function FinanceWalletTransfersPage() {
                 event.target.value === '' ? '' : Number(event.target.value),
               )
             }
-            helperText="Opcional"
           >
             <MenuItem value="">Todas</MenuItem>
             {carteirasOrdenadas.map((carteira) => (

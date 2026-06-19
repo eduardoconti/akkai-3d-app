@@ -340,6 +340,7 @@ export default function ConsignacaoDialog({
                   <TextField
                     {...params}
                     label="Revendedor"
+                    required
                     error={Boolean(
                       localErrors.idRevendedor ||
                       getFieldMessage(problem, 'idRevendedor'),
@@ -375,6 +376,7 @@ export default function ConsignacaoDialog({
                       loading={isLoadingOptions}
                       disabled={isBusy}
                       label="Produto"
+                      required
                       onChange={(produto) =>
                         handleSelectProduct(index, produto)
                       }
@@ -385,6 +387,7 @@ export default function ConsignacaoDialog({
                     <TextField
                       fullWidth
                       label="Qtd."
+                      required
                       type="number"
                       value={item.quantidade}
                       onChange={(event) =>
@@ -401,6 +404,7 @@ export default function ConsignacaoDialog({
                     <CurrencyField
                       fullWidth
                       label="Valor unitário"
+                      required
                       value={item.valorUnitario}
                       onValueChange={(value) =>
                         handleChangeItem(index, { valorUnitario: value })

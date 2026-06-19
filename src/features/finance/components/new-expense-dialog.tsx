@@ -351,6 +351,7 @@ export default function NewExpenseDialog({
                 }
                 slotProps={{
                   textField: {
+                    required: true,
                     error: Boolean(
                       localErrors.dataLancamento ||
                       getFieldMessage(problem, 'dataLancamento'),
@@ -367,6 +368,7 @@ export default function NewExpenseDialog({
               <TextField
                 fullWidth
                 label="Descrição"
+                required
                 value={form.descricao}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -388,6 +390,7 @@ export default function NewExpenseDialog({
               <CurrencyField
                 fullWidth
                 label="Valor"
+                required
                 value={form.valor}
                 onValueChange={(valor) =>
                   setForm((current) => ({ ...current, valor }))
@@ -406,6 +409,7 @@ export default function NewExpenseDialog({
                 select
                 fullWidth
                 label="Categoria"
+                required
                 value={form.idCategoria}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -436,6 +440,7 @@ export default function NewExpenseDialog({
                 select
                 fullWidth
                 label="Carteira"
+                required
                 value={form.idCarteira}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -469,6 +474,7 @@ export default function NewExpenseDialog({
                 select
                 fullWidth
                 label="Pagamento"
+                required
                 value={form.meioPagamento}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -507,7 +513,6 @@ export default function NewExpenseDialog({
                         : Number(event.target.value),
                   }))
                 }
-                helperText="Opcional"
               >
                 <MenuItem value="">Sem feira</MenuItem>
                 {feiras.map((feira) => (

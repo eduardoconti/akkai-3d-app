@@ -179,6 +179,7 @@ export default function NewAssinanteDialog({
             <TextField
               fullWidth
               label="Nome"
+              required
               placeholder="Ex: João da Silva"
               value={form.nome}
               onChange={(e) => setForm((c) => ({ ...c, nome: e.target.value }))}
@@ -194,6 +195,7 @@ export default function NewAssinanteDialog({
               select
               fullWidth
               label="Status"
+              required
               value={form.status}
               onChange={(e) =>
                 setForm((c) => ({
@@ -217,6 +219,7 @@ export default function NewAssinanteDialog({
               select
               fullWidth
               label="Plano"
+              required
               value={form.idPlano}
               onChange={(e) =>
                 setForm((c) => ({
@@ -250,7 +253,7 @@ export default function NewAssinanteDialog({
                 setForm((c) => ({ ...c, email: e.target.value }))
               }
               error={Boolean(getFieldMessage(problem, 'email'))}
-              helperText={getFieldMessage(problem, 'email') ?? 'Opcional'}
+              helperText={getFieldMessage(problem, 'email')}
             />
           </Grid>
 
@@ -264,7 +267,7 @@ export default function NewAssinanteDialog({
                 setForm((c) => ({ ...c, telefone: e.target.value }))
               }
               error={Boolean(getFieldMessage(problem, 'telefone'))}
-              helperText={getFieldMessage(problem, 'telefone') ?? 'Opcional'}
+              helperText={getFieldMessage(problem, 'telefone')}
             />
           </Grid>
 
@@ -279,7 +282,6 @@ export default function NewAssinanteDialog({
               onChange={(e) =>
                 setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))
               }
-              helperText="Opcional"
             />
           </Grid>
         </Grid>

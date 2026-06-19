@@ -309,6 +309,7 @@ export default function EditProfileDialog({
                 <TextField
                   fullWidth
                   label="Nome"
+                  required
                   value={profileForm.name}
                   onChange={(event) => {
                     setProfileForm((current) => ({
@@ -329,6 +330,7 @@ export default function EditProfileDialog({
                 <TextField
                   fullWidth
                   label="Login"
+                  required
                   value={profileForm.login}
                   onChange={(event) => {
                     setProfileForm((current) => ({
@@ -351,6 +353,7 @@ export default function EditProfileDialog({
                     select
                     fullWidth
                     label="Papel"
+                    required
                     value={profileForm.roleId}
                     onChange={(event) => {
                       setProfileForm((current) => ({
@@ -425,6 +428,7 @@ export default function EditProfileDialog({
                   fullWidth
                   type={showCurrentPassword ? 'text' : 'password'}
                   label="Senha atual"
+                  required
                   value={passwordForm.currentPassword}
                   onChange={(event) => {
                     setPasswordForm((current) => ({
@@ -472,6 +476,7 @@ export default function EditProfileDialog({
                   fullWidth
                   type={showNewPassword ? 'text' : 'password'}
                   label="Nova senha"
+                  required
                   value={passwordForm.newPassword}
                   onChange={(event) => {
                     setPasswordForm((current) => ({
@@ -519,6 +524,7 @@ export default function EditProfileDialog({
                   fullWidth
                   type={showConfirmPassword ? 'text' : 'password'}
                   label="Confirmar nova senha"
+                  required
                   value={passwordForm.confirmPassword}
                   onChange={(event) => {
                     setPasswordForm((current) => ({

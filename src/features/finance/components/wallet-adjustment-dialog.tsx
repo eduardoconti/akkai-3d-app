@@ -240,6 +240,7 @@ export default function WalletAdjustmentDialog({
                 }
                 slotProps={{
                   textField: {
+                    required: true,
                     error: Boolean(helperText('dataAjuste')),
                     helperText: helperText('dataAjuste'),
                   },
@@ -250,6 +251,7 @@ export default function WalletAdjustmentDialog({
             <Grid size={{ xs: 12, md: 4 }}>
               <CurrencyField
                 label="Valor"
+                required
                 value={form.valor}
                 onValueChange={(value) =>
                   setForm((current) => ({ ...current, valor: value }))
@@ -286,6 +288,7 @@ export default function WalletAdjustmentDialog({
             <Grid size={{ xs: 12 }}>
               <TextField
                 label="Motivo"
+                required
                 value={form.motivo}
                 onChange={(event) =>
                   setForm((current) => ({

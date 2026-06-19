@@ -344,6 +344,7 @@ export default function NewBudgetDialog({
               <TextField
                 fullWidth
                 label="Nome do cliente"
+                required
                 value={form.nomeCliente}
                 disabled={isDeleting}
                 onChange={(event) =>
@@ -367,7 +368,6 @@ export default function NewBudgetDialog({
               <TextField
                 fullWidth
                 label="Telefone do cliente"
-                placeholder="Opcional"
                 value={form.telefoneCliente}
                 disabled={isDeleting}
                 onChange={(event) =>
@@ -422,6 +422,7 @@ export default function NewBudgetDialog({
                   select
                   fullWidth
                   label="Canal de atendimento"
+                  required
                   value={form.canalAtendimento}
                   disabled={isDeleting}
                   onChange={(event) =>
@@ -456,6 +457,7 @@ export default function NewBudgetDialog({
                   select
                   fullWidth
                   label="Feira"
+                  required
                   value={form.idFeira}
                   disabled={isDeleting}
                   onChange={(event) =>
@@ -497,9 +499,7 @@ export default function NewBudgetDialog({
                   localErrors.valor || getFieldMessage(problem, 'valor'),
                 )}
                 helperText={
-                  localErrors.valor ??
-                  getFieldMessage(problem, 'valor') ??
-                  'Opcional'
+                  localErrors.valor ?? getFieldMessage(problem, 'valor')
                 }
               />
             </Grid>
@@ -509,7 +509,6 @@ export default function NewBudgetDialog({
                 fullWidth
                 type="number"
                 label="Quantidade"
-                placeholder="Opcional"
                 value={form.quantidade}
                 disabled={isDeleting}
                 onChange={(event) =>
@@ -538,6 +537,7 @@ export default function NewBudgetDialog({
                 select
                 fullWidth
                 label="Status"
+                required
                 value={form.status}
                 disabled={isDeleting}
                 onChange={(event) =>

@@ -288,6 +288,7 @@ export default function ItemConsignacaoDialog({
               loading={isLoadingOptions}
               disabled={isBusy}
               label="Produto"
+              required
               onChange={handleSelectProduct}
               error={Boolean(
                 localErrors.idProduto || getFieldMessage(problem, 'idProduto'),
@@ -303,6 +304,7 @@ export default function ItemConsignacaoDialog({
               <TextField
                 fullWidth
                 label="Quantidade enviada"
+                required
                 type="number"
                 value={form.quantidade}
                 onChange={(event) =>
@@ -328,6 +330,7 @@ export default function ItemConsignacaoDialog({
               <CurrencyField
                 fullWidth
                 label="Valor unitário"
+                required
                 value={form.valorUnitario}
                 onValueChange={(value) =>
                   setForm((current) => ({

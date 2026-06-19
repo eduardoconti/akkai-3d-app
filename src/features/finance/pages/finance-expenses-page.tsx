@@ -194,7 +194,6 @@ export default function FinanceExpensesPage() {
                 event.target.value === '' ? '' : Number(event.target.value),
               )
             }
-            helperText="Opcional"
           >
             <MenuItem value="">Todas</MenuItem>
             {carteiras.map((carteira) => (
@@ -216,7 +215,6 @@ export default function FinanceExpensesPage() {
                 event.target.value === '' ? '' : Number(event.target.value),
               )
             }
-            helperText="Opcional"
           >
             <MenuItem value="">Todas</MenuItem>
             {feiras.map((feira) => (

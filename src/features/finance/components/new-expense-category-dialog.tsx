@@ -158,6 +158,7 @@ export default function NewExpenseCategoryDialog({
             <TextField
               fullWidth
               label="Nome da categoria"
+              required
               placeholder="Ex: Matéria-prima"
               value={form.nome}
               onChange={(event) =>

@@ -203,6 +203,7 @@ export default function EditExpenseCategoryDialog({
               <TextField
                 fullWidth
                 label="Nome da categoria"
+                required
                 value={form.nome}
                 onChange={(event) =>
                   setForm((current) => ({

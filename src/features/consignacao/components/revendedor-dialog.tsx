@@ -235,6 +235,7 @@ export default function RevendedorDialog({
             <TextField
               fullWidth
               label="Nome"
+              required
               value={form.nome}
               onChange={(event) =>
                 setForm((current) => ({ ...current, nome: event.target.value }))
@@ -251,6 +252,7 @@ export default function RevendedorDialog({
             <TextField
               fullWidth
               label="Telefone"
+              required
               value={form.telefone}
               onChange={(event) =>
                 setForm((current) => ({
@@ -273,6 +275,7 @@ export default function RevendedorDialog({
               select
               fullWidth
               label="Status"
+              required
               value={form.status}
               onChange={(event) =>
                 setForm((current) => ({
@@ -291,6 +294,7 @@ export default function RevendedorDialog({
             <TextField
               fullWidth
               label="Desconto (%)"
+              required
               type="number"
               value={form.percentualDesconto}
               onChange={(event) =>

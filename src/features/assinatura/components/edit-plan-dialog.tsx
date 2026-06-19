@@ -282,6 +282,7 @@ export default function EditPlanDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Nome do plano"
+                required
                 placeholder="Ex: Kit Mensal Básico"
                 value={form.nome}
                 onChange={(e) =>
@@ -299,6 +300,7 @@ export default function EditPlanDialog({
             <Grid size={{ xs: 12, sm: 3 }}>
               <CurrencyField
                 label="Valor (R$)"
+                required
                 value={form.valor === '' ? 0 : form.valor}
                 onValueChange={(value) =>
                   setForm((c) => ({ ...c, valor: value }))

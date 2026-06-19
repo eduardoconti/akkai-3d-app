@@ -252,6 +252,7 @@ export default function EditAssinanteDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Nome"
+                required
                 placeholder="Ex: João da Silva"
                 value={form.nome}
                 onChange={(e) =>
@@ -272,6 +273,7 @@ export default function EditAssinanteDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Status"
+                required
                 value={form.status}
                 onChange={(e) =>
                   setForm((c) => ({
@@ -296,6 +298,7 @@ export default function EditAssinanteDialog({
                 fullWidth
                 disabled={isLoading}
                 label="Plano"
+                required
                 value={form.idPlano}
                 onChange={(e) =>
                   setForm((c) => ({
@@ -331,7 +334,7 @@ export default function EditAssinanteDialog({
                   setForm((c) => ({ ...c, email: e.target.value }))
                 }
                 error={Boolean(getFieldMessage(problem, 'email'))}
-                helperText={getFieldMessage(problem, 'email') ?? 'Opcional'}
+                helperText={getFieldMessage(problem, 'email')}
               />
             </Grid>
 
@@ -346,7 +349,7 @@ export default function EditAssinanteDialog({
                   setForm((c) => ({ ...c, telefone: e.target.value }))
                 }
                 error={Boolean(getFieldMessage(problem, 'telefone'))}
-                helperText={getFieldMessage(problem, 'telefone') ?? 'Opcional'}
+                helperText={getFieldMessage(problem, 'telefone')}
               />
             </Grid>
 
@@ -362,7 +365,6 @@ export default function EditAssinanteDialog({
                 onChange={(e) =>
                   setForm((c) => ({ ...c, enderecoEntrega: e.target.value }))
                 }
-                helperText="Opcional"
               />
             </Grid>
           </Grid>

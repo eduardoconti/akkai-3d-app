@@ -12,6 +12,7 @@ interface ProductAutocompleteFieldProps {
   loading?: boolean;
   fullWidth?: boolean;
   size?: 'small' | 'medium';
+  required?: boolean;
 }
 
 export default function ProductAutocompleteField({
@@ -25,6 +26,7 @@ export default function ProductAutocompleteField({
   loading = false,
   fullWidth = true,
   size = 'medium',
+  required = false,
 }: ProductAutocompleteFieldProps) {
   return (
     <Autocomplete
@@ -41,6 +43,7 @@ export default function ProductAutocompleteField({
           fullWidth={fullWidth}
           size={size}
           label={label}
+          required={required}
           error={error}
           helperText={helperText}
         />

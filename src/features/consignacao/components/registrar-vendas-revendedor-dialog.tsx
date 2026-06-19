@@ -567,7 +567,12 @@ export default function RegistrarVendasRevendedorDialog({
                   loading={isLoadingDados}
                   disabled={isBusy || isLoadingDados}
                   renderInput={(params) => (
-                    <TextField {...params} size="small" label="Revendedor" />
+                    <TextField
+                      {...params}
+                      size="small"
+                      label="Revendedor"
+                      required
+                    />
                   )}
                 />
 
@@ -644,6 +649,7 @@ export default function RegistrarVendasRevendedorDialog({
                             }
                             loading={isLoadingProdutos}
                             size="small"
+                            required
                           />
                         </Grid>
 

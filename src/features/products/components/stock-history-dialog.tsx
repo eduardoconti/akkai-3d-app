@@ -24,7 +24,10 @@ import {
 import { Close } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import { useProductStore } from '../store/use-product-store';
-import { PAGINATED_SEARCH_PAGE_SIZE_OPTIONS } from '@/shared';
+import {
+  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  type MovimentacaoEstoque,
+} from '@/shared';
 
 interface StockHistoryDialogProps {
   open: boolean;
@@ -41,8 +44,12 @@ function getMovementTypeColor(tipo: 'E' | 'S'): 'success' | 'error' {
   return tipo === 'E' ? 'success' : 'error';
 }
 
-function getMovementOriginLabel(origem: string) {
-  switch (origem) {
+function getMovementOriginLabel(movimentacao: MovimentacaoEstoque) {
+  if (movimentacao.origem === 'VENDA' && movimentacao.idVenda) {
+    return `Venda #${movimentacao.idVenda}`;
+  }
+
+  switch (movimentacao.origem) {
     case 'COMPRA':
       return 'Compra';
     case 'VENDA':
@@ -56,7 +63,7 @@ function getMovementOriginLabel(origem: string) {
     case 'CONSIGNACAO':
       return 'Consignacao';
     default:
-      return origem;
+      return movimentacao.origem;
   }
 }
 
@@ -156,11 +163,27 @@ export default function StockHistoryDialog({
                             </Typography>
                           </Box>
 
-                          <Chip
-                            label={getMovementOriginLabel(movimentacao.origem)}
-                            size="small"
-                            color={getMovementTypeColor(movimentacao.tipo)}
-                          />
+                          <Stack
+                            direction="row"
+                            spacing={0.75}
+                            justifyContent="flex-end"
+                            flexWrap="wrap"
+                            useFlexGap
+                          >
+                            <Chip
+                              label={getMovementOriginLabel(movimentacao)}
+                              size="small"
+                              color={getMovementTypeColor(movimentacao.tipo)}
+                            />
+                            {movimentacao.brinde ? (
+                              <Chip
+                                label="Brinde"
+                                size="small"
+                                color="warning"
+                                variant="outlined"
+                              />
+                            ) : null}
+                          </Stack>
                         </Stack>
 
                         <Stack
@@ -198,16 +221,25 @@ export default function StockHistoryDialog({
                             >
                               Origem
                             </Typography>
-                            <Typography
-                              variant="body1"
-                              fontWeight={700}
-                              sx={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              justifyContent="flex-end"
+                              flexWrap="wrap"
+                              useFlexGap
                             >
-                              {getMovementOriginLabel(movimentacao.origem)}
-                            </Typography>
+                              <Typography variant="body1" fontWeight={700}>
+                                {getMovementOriginLabel(movimentacao)}
+                              </Typography>
+                              {movimentacao.brinde ? (
+                                <Chip
+                                  label="Brinde"
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              ) : null}
+                            </Stack>
                           </Box>
                         </Stack>
                       </Stack>
@@ -260,7 +292,25 @@ export default function StockHistoryDialog({
                             />
                           </TableCell>
                           <TableCell>
-                            {getMovementOriginLabel(movimentacao.origem)}
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              alignItems="center"
+                              flexWrap="wrap"
+                              useFlexGap
+                            >
+                              <span>
+                                {getMovementOriginLabel(movimentacao)}
+                              </span>
+                              {movimentacao.brinde ? (
+                                <Chip
+                                  label="Brinde"
+                                  size="small"
+                                  color="warning"
+                                  variant="outlined"
+                                />
+                              ) : null}
+                            </Stack>
                           </TableCell>
                           <TableCell align="right">
                             {movimentacao.quantidade}

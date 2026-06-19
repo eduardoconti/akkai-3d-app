@@ -307,6 +307,7 @@ export default function WalletTransferDialog({
                 select
                 fullWidth
                 label="Carteira de origem"
+                required
                 value={form.idCarteiraOrigem}
                 disabled={isBusy}
                 onChange={(event) =>
@@ -335,6 +336,7 @@ export default function WalletTransferDialog({
                 select
                 fullWidth
                 label="Carteira de destino"
+                required
                 value={form.idCarteiraDestino}
                 disabled={isBusy}
                 onChange={(event) =>
@@ -370,6 +372,7 @@ export default function WalletTransferDialog({
                 }
                 slotProps={{
                   textField: {
+                    required: true,
                     error: Boolean(helperText('dataTransferencia')),
                     helperText: helperText('dataTransferencia'),
                   },
@@ -380,6 +383,7 @@ export default function WalletTransferDialog({
             <Grid size={{ xs: 12, md: 6 }}>
               <CurrencyField
                 label="Valor"
+                required
                 value={form.valor}
                 onValueChange={(value) =>
                   setForm((current) => ({ ...current, valor: value }))

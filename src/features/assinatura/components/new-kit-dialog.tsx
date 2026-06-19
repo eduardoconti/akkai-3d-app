@@ -286,6 +286,7 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
               select
               fullWidth
               label="Plano"
+              required
               value={form.idPlano}
               onChange={(e) =>
                 setForm((c) => ({
@@ -314,6 +315,7 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
               select
               fullWidth
               label="Mês"
+              required
               value={form.mesReferencia}
               onChange={(e) =>
                 setForm((c) => ({
@@ -335,6 +337,7 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
               select
               fullWidth
               label="Ano"
+              required
               value={form.anoReferencia}
               onChange={(e) =>
                 setForm((c) => ({
@@ -542,7 +545,6 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
                   <TextField
                     fullWidth
                     label="Observação"
-                    placeholder="Opcional"
                     value={item.observacao}
                     onChange={(e) =>
                       setItem(index, { observacao: e.target.value })

@@ -55,6 +55,8 @@ export interface MovimentacaoEstoque {
   id: number;
   idProduto: number;
   idItemVenda?: number;
+  idVenda?: number;
+  brinde?: boolean;
   usuario: string;
   quantidade: number;
   tipo: TipoMovimentacaoEstoque;
@@ -301,8 +303,7 @@ export interface PesquisaPaginadaDespesas extends PesquisaPaginada {
   idFeira?: number;
 }
 
-export interface PesquisaPaginadaTransferenciasCarteira
-  extends PesquisaPaginada {
+export interface PesquisaPaginadaTransferenciasCarteira extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
   idCarteiraOrigem?: number;
@@ -471,14 +472,18 @@ export interface RegistrarDevolucaoConsignadaInput {
   quantidade: number;
 }
 
-export interface PesquisaPaginadaRevendedores
-  extends Omit<PesquisaPaginada, 'ordenarPor' | 'idsCategorias'> {
+export interface PesquisaPaginadaRevendedores extends Omit<
+  PesquisaPaginada,
+  'ordenarPor' | 'idsCategorias'
+> {
   status?: StatusRevendedor;
   ordenarPor?: 'nome' | 'dataInclusao';
 }
 
-export interface PesquisaPaginadaConsignacoes
-  extends Omit<PesquisaPaginada, 'ordenarPor' | 'idsCategorias'> {
+export interface PesquisaPaginadaConsignacoes extends Omit<
+  PesquisaPaginada,
+  'ordenarPor' | 'idsCategorias'
+> {
   idRevendedor?: number;
   status?: StatusConsignacao;
   ordenarPor?: 'dataInclusao' | 'revendedor';

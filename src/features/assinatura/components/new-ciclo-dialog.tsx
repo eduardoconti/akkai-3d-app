@@ -261,6 +261,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               select
               fullWidth
               label="Assinante"
+              required
               value={form.idAssinante}
               onChange={(e) =>
                 setForm((c) => ({
@@ -292,6 +293,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               select
               fullWidth
               label="Mês"
+              required
               value={form.mesReferencia}
               onChange={(e) =>
                 setForm((c) => ({
@@ -313,6 +315,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               select
               fullWidth
               label="Ano"
+              required
               value={form.anoReferencia}
               onChange={(e) =>
                 setForm((c) => ({
@@ -334,6 +337,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               select
               fullWidth
               label="Status"
+              required
               value={form.status}
               onChange={(e) =>
                 setForm((c) => ({
@@ -359,7 +363,6 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               onChange={(e) =>
                 setForm((c) => ({ ...c, codigoRastreio: e.target.value }))
               }
-              helperText="Opcional"
             />
           </Grid>
 
@@ -374,7 +377,6 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
               onChange={(e) =>
                 setForm((c) => ({ ...c, observacao: e.target.value }))
               }
-              helperText="Opcional"
             />
           </Grid>
         </Grid>
@@ -418,6 +420,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
                     productId={item.idProduto}
                     loading={isLoadingProducts}
                     disabled={isBusy || produtos.length === 0}
+                    required
                     onChange={(newValue) =>
                       setItem(index, {
                         idProduto: newValue?.id ?? '',
@@ -433,6 +436,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
                   <TextField
                     fullWidth
                     label="Qtd."
+                    required
                     type="number"
                     slotProps={{ htmlInput: { min: 1 } }}
                     value={item.quantidade}
@@ -449,7 +453,6 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
                   <TextField
                     fullWidth
                     label="Observação"
-                    placeholder="Opcional"
                     value={item.observacao}
                     onChange={(e) =>
                       setItem(index, { observacao: e.target.value })
