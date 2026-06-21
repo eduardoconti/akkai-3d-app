@@ -62,6 +62,8 @@ export default function NewExpenseCategoryDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<FormState, FormErrors>({
     open,
     initialValues: { nome: '' },
@@ -80,7 +82,15 @@ export default function NewExpenseCategoryDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -116,7 +126,7 @@ export default function NewExpenseCategoryDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="xs">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -187,6 +197,7 @@ export default function NewExpenseCategoryDialog({
           {isBusy ? 'Salvando...' : 'Salvar'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

@@ -76,6 +76,7 @@ export default function EditCicloDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -83,6 +84,8 @@ export default function EditCicloDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<CicloFormState, CicloFormErrors>({
     open,
     initialValues: initialCicloFormState,
@@ -141,7 +144,7 @@ export default function EditCicloDialog({
         setAssinanteName(
           ciclo.assinante?.nome ?? `Assinante #${ciclo.idAssinante}`,
         );
-        setForm({
+        setInitialForm({
           idAssinante: ciclo.idAssinante,
           mesReferencia: ciclo.mesReferencia,
           anoReferencia: ciclo.anoReferencia,
@@ -183,7 +186,15 @@ export default function EditCicloDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
@@ -283,7 +294,7 @@ export default function EditCicloDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -522,6 +533,7 @@ export default function EditCicloDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog

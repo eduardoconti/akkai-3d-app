@@ -60,6 +60,8 @@ export default function NewProductDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<ProductFormState, ProductFormErrors>({
     open,
     initialValues: initialProductFormState,
@@ -118,7 +120,15 @@ export default function NewProductDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -170,7 +180,7 @@ export default function NewProductDialog({
   const globalMessage = problem?.detail ?? submitErrorMessage;
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -238,9 +248,7 @@ export default function NewProductDialog({
                 setForm((current) => ({
                   ...current,
                   codigo:
-                    event.target.value === ''
-                      ? ''
-                      : Number(event.target.value),
+                    event.target.value === '' ? '' : Number(event.target.value),
                 }));
               }}
               error={Boolean(getErrorMessage('codigo'))}
@@ -344,6 +352,7 @@ export default function NewProductDialog({
           {isBusy ? 'Salvando...' : 'Salvar Produto'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

@@ -94,6 +94,7 @@ export default function NewBudgetDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -101,6 +102,8 @@ export default function NewBudgetDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<BudgetFormState, BudgetFormErrors>({
     open,
     initialValues: initialBudgetFormState,
@@ -124,11 +127,11 @@ export default function NewBudgetDialog({
     setLocalErrors({});
 
     if (!budget) {
-      setForm(initialBudgetFormState);
+      setInitialForm(initialBudgetFormState);
       return;
     }
 
-    setForm({
+    setInitialForm({
       nomeCliente: budget.nomeCliente,
       telefoneCliente: budget.telefoneCliente ?? '',
       descricao: budget.descricao ?? '',
@@ -152,7 +155,15 @@ export default function NewBudgetDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const validateForm = (): BudgetFormErrors => {
@@ -289,7 +300,7 @@ export default function NewBudgetDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -355,7 +366,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.nomeCliente ||
-                    getFieldMessage(problem, 'nomeCliente'),
+                  getFieldMessage(problem, 'nomeCliente'),
                 )}
                 helperText={
                   localErrors.nomeCliente ??
@@ -378,7 +389,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.telefoneCliente ||
-                    getFieldMessage(problem, 'telefoneCliente'),
+                  getFieldMessage(problem, 'telefoneCliente'),
                 )}
                 helperText={
                   localErrors.telefoneCliente ??
@@ -434,7 +445,7 @@ export default function NewBudgetDialog({
                   }
                   error={Boolean(
                     localErrors.canalAtendimento ||
-                      getFieldMessage(problem, 'canalAtendimento'),
+                    getFieldMessage(problem, 'canalAtendimento'),
                   )}
                   helperText={
                     localErrors.canalAtendimento ??
@@ -523,7 +534,7 @@ export default function NewBudgetDialog({
                 slotProps={{ htmlInput: { min: 1, step: 1 } }}
                 error={Boolean(
                   localErrors.quantidade ||
-                    getFieldMessage(problem, 'quantidade'),
+                  getFieldMessage(problem, 'quantidade'),
                 )}
                 helperText={
                   localErrors.quantidade ??
@@ -576,7 +587,7 @@ export default function NewBudgetDialog({
                 }
                 error={Boolean(
                   localErrors.descricao ||
-                    getFieldMessage(problem, 'descricao'),
+                  getFieldMessage(problem, 'descricao'),
                 )}
                 helperText={
                   localErrors.descricao ?? getFieldMessage(problem, 'descricao')
@@ -654,6 +665,7 @@ export default function NewBudgetDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog

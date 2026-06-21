@@ -69,6 +69,7 @@ export default function EditPlanDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -76,6 +77,8 @@ export default function EditPlanDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<PlanoFormState, PlanoFormErrors>({
     open,
     initialValues: initialPlanoFormState,
@@ -100,7 +103,7 @@ export default function EditPlanDialog({
 
         if (!active) return;
 
-        setForm({
+        setInitialForm({
           nome: plano.nome,
           descricao: plano.descricao ?? '',
           valor: plano.valor / 100,
@@ -136,7 +139,15 @@ export default function EditPlanDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const addStringItem = (field: 'itensInclusos' | 'beneficios') => {
@@ -240,7 +251,7 @@ export default function EditPlanDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -467,6 +478,7 @@ export default function EditPlanDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog
@@ -533,7 +545,12 @@ function StringListSection({
         <Typography variant="subtitle1" fontWeight={700}>
           {label}
         </Typography>
-        <Button size="small" startIcon={<Add />} onClick={onAdd} disabled={disabled}>
+        <Button
+          size="small"
+          startIcon={<Add />}
+          onClick={onAdd}
+          disabled={disabled}
+        >
           Adicionar
         </Button>
       </Stack>

@@ -83,6 +83,7 @@ export default function NewExpenseDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -90,6 +91,8 @@ export default function NewExpenseDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<ExpenseFormState, ExpenseFormErrors>({
     open,
     initialValues: initialExpenseFormState,
@@ -110,7 +113,7 @@ export default function NewExpenseDialog({
     void fetchFeiras();
 
     if (despesa) {
-      setForm({
+      setInitialForm({
         dataLancamento: despesa.dataLancamento.substring(0, 10),
         descricao: despesa.descricao,
         valor: despesa.valor / 100,
@@ -185,7 +188,15 @@ export default function NewExpenseDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleConfirmDeleteDialogClose = () => {
@@ -292,7 +303,7 @@ export default function NewExpenseDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -592,6 +603,7 @@ export default function NewExpenseDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
       <Dialog
         open={confirmDeleteOpen}

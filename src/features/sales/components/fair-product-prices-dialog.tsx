@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -59,6 +59,10 @@ export default function FairProductPricesDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const cleanFormRef = useRef({
+    selectedProductId: null as number | null,
+    value: 0,
+  });
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
 
   const isBusy = isLoadingProducts || isLoadingPrices || isSaving || isDeleting;
@@ -75,6 +79,7 @@ export default function FairProductPricesDialog({
       setIsDeleting(false);
       setConfirmDeleteOpen(false);
       setErrorMessage(null);
+      cleanFormRef.current = { selectedProductId: null, value: 0 };
       return;
     }
 
@@ -85,8 +90,13 @@ export default function FairProductPricesDialog({
       setErrorMessage(null);
       setProducts([]);
       setPrices([]);
-      setSelectedProductId(price?.idProduto ?? null);
-      setValue((price?.valor ?? 0) / 100);
+      const initialForm = {
+        selectedProductId: price?.idProduto ?? null,
+        value: (price?.valor ?? 0) / 100,
+      };
+      cleanFormRef.current = initialForm;
+      setSelectedProductId(initialForm.selectedProductId);
+      setValue(initialForm.value);
       setIsLoadingPrices(true);
 
       try {
@@ -101,8 +111,9 @@ export default function FairProductPricesDialog({
 
         setProducts(nextProducts);
         setPrices(nextPrices);
-        setSelectedProductId(price?.idProduto ?? null);
-        setValue((price?.valor ?? 0) / 100);
+        cleanFormRef.current = initialForm;
+        setSelectedProductId(initialForm.selectedProductId);
+        setValue(initialForm.value);
         void saveCachedFairProductPrices(fairId, nextPrices).catch(
           () => undefined,
         );
@@ -132,6 +143,27 @@ export default function FairProductPricesDialog({
 
   const handleDialogClose = () => {
     if (isBusy) {
+      return;
+    }
+
+    onClose();
+  };
+
+  const handleAskDiscard = () => {
+    if (isBusy) {
+      return;
+    }
+
+    const isDirty =
+      selectedProductId !== cleanFormRef.current.selectedProductId ||
+      value !== cleanFormRef.current.value;
+
+    if (
+      isDirty &&
+      !window.confirm(
+        'As informações preenchidas serão descartadas. Deseja descartar?',
+      )
+    ) {
       return;
     }
 
@@ -266,7 +298,7 @@ export default function FairProductPricesDialog({
             </Box>
 
             <IconButton
-              onClick={handleDialogClose}
+              onClick={handleAskDiscard}
               aria-label="Fechar modal de preços da feira"
               disabled={isBusy}
             >
@@ -328,7 +360,7 @@ export default function FairProductPricesDialog({
 
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             <Button
-              onClick={handleDialogClose}
+              onClick={handleAskDiscard}
               color="inherit"
               disabled={isBusy}
             >

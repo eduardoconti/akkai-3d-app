@@ -71,6 +71,7 @@ export default function EditAssinanteDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -78,6 +79,8 @@ export default function EditAssinanteDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<AssinanteFormState, AssinanteFormErrors>({
     open,
     initialValues: initialAssinanteFormState,
@@ -107,7 +110,7 @@ export default function EditAssinanteDialog({
 
         if (!active) return;
 
-        setForm({
+        setInitialForm({
           nome: assinante.nome,
           email: assinante.email ?? '',
           telefone: assinante.telefone ?? '',
@@ -139,7 +142,15 @@ export default function EditAssinanteDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -210,7 +221,7 @@ export default function EditAssinanteDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -407,6 +418,7 @@ export default function EditAssinanteDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog

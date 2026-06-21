@@ -113,12 +113,15 @@ export default function PaymentMethodWalletFeeDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
     setLocalErrors,
     isSaving,
     setIsSaving,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<FeeFormState, FeeFormErrors>({
     open,
     initialValues: initialFeeFormState,
@@ -157,7 +160,7 @@ export default function PaymentMethodWalletFeeDialog({
           return;
         }
 
-        setForm({
+        setInitialForm({
           idCarteira: taxa.idCarteira,
           meioPagamento: taxa.meioPagamento,
           percentual: taxa.percentual.toFixed(2).replace('.', ','),
@@ -214,7 +217,17 @@ export default function PaymentMethodWalletFeeDialog({
       return;
     }
 
-    setConfirmDeleteOpen(false);
+    requestClose(() => {
+      setConfirmDeleteOpen(false);
+      onClose();
+    });
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
@@ -309,7 +322,7 @@ export default function PaymentMethodWalletFeeDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -497,11 +510,12 @@ export default function PaymentMethodWalletFeeDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog
         open={confirmDeleteOpen}
-        onClose={handleDialogClose}
+        onClose={() => setConfirmDeleteOpen(false)}
         fullWidth
         maxWidth="xs"
       >

@@ -91,6 +91,8 @@ export default function WalletAdjustmentDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<WalletAdjustmentFormState, WalletAdjustmentFormErrors>({
     open,
     initialValues: initialWalletAdjustmentFormState,
@@ -127,7 +129,15 @@ export default function WalletAdjustmentDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -187,7 +197,7 @@ export default function WalletAdjustmentDialog({
   return (
     <Dialog
       open={open}
-      onClose={handleDialogClose}
+      onClose={handleDialogDismiss}
       fullWidth
       maxWidth="md"
       aria-labelledby="wallet-adjustment-dialog-title"
@@ -405,6 +415,7 @@ export default function WalletAdjustmentDialog({
           {isBusy ? 'Salvando...' : 'Salvar ajuste'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

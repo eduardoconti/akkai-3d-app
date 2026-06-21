@@ -77,12 +77,15 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
     setLocalErrors,
     isSaving,
     setIsSaving,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<FairFormState, FairFormErrors>({
     open,
     initialValues: initialFairFormState,
@@ -109,7 +112,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
           return;
         }
 
-        setForm({
+        setInitialForm({
           nome: feira.nome,
           local: feira.local ?? '',
           descricao: feira.descricao ?? '',
@@ -136,6 +139,14 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
   const isBusy = isSubmitting || isSaving || isLoading;
 
   const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    requestClose(onClose);
+  };
+
+  const handleDialogDismiss = () => {
     if (isBusy) {
       return;
     }
@@ -206,7 +217,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
     localErrors[field] ?? getFieldMessage(problem, field) ?? undefined;
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -374,6 +385,7 @@ export default function FairDialog({ open, fairId, onClose }: FairDialogProps) {
         fairName={form.nome}
         onClose={() => setPricesDialogOpen(false)}
       />
+      {discardChangesDialog}
     </Dialog>
   );
 }

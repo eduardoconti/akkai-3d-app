@@ -58,6 +58,8 @@ export default function NewCategoryDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<CategoryFormState, CategoryFormErrors>({
     open,
     initialValues: initialCategoryFormState,
@@ -97,7 +99,15 @@ export default function NewCategoryDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -135,7 +145,7 @@ export default function NewCategoryDialog({
     localErrors[field] ?? getFieldMessage(problem, field) ?? undefined;
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -231,6 +241,7 @@ export default function NewCategoryDialog({
           {isBusy ? 'Salvando...' : 'Salvar Categoria'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

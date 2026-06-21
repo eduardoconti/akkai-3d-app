@@ -78,6 +78,7 @@ export default function WalletTransferDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -85,6 +86,8 @@ export default function WalletTransferDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<WalletTransferFormState, WalletTransferFormErrors>({
     open,
     initialValues: initialWalletTransferFormState,
@@ -123,7 +126,7 @@ export default function WalletTransferDialog({
     void fetchCarteiras();
 
     if (transferencia) {
-      setForm({
+      setInitialForm({
         dataTransferencia: transferencia.dataTransferencia.substring(0, 10),
         idCarteiraOrigem: transferencia.idCarteiraOrigem,
         idCarteiraDestino: transferencia.idCarteiraDestino,
@@ -148,6 +151,22 @@ export default function WalletTransferDialog({
 
     setConfirmDeleteOpen(false);
     resetForm();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
@@ -262,7 +281,7 @@ export default function WalletTransferDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -289,7 +308,7 @@ export default function WalletTransferDialog({
             </Box>
 
             <IconButton
-              onClick={handleClose}
+              onClick={handleDialogClose}
               aria-label="Fechar modal de transferência"
               disabled={isBusy}
             >
@@ -416,7 +435,11 @@ export default function WalletTransferDialog({
             ) : null}
           </Box>
           <Box sx={{ display: 'flex', gap: 1.5 }}>
-            <Button onClick={handleClose} color="inherit" disabled={isBusy}>
+            <Button
+              onClick={handleDialogClose}
+              color="inherit"
+              disabled={isBusy}
+            >
               Cancelar
             </Button>
             <Button
@@ -433,6 +456,7 @@ export default function WalletTransferDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog

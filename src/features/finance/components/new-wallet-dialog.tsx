@@ -79,6 +79,8 @@ export default function NewWalletDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<WalletFormState, WalletFormErrors>({
     open,
     initialValues: initialWalletFormState,
@@ -97,7 +99,15 @@ export default function NewWalletDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -156,7 +166,7 @@ export default function NewWalletDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -322,6 +332,7 @@ export default function NewWalletDialog({
           {isBusy ? 'Salvando...' : 'Salvar Carteira'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }
