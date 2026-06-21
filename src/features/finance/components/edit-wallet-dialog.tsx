@@ -80,6 +80,7 @@ export default function EditWalletDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -87,6 +88,8 @@ export default function EditWalletDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<WalletFormState, WalletFormErrors>({
     open,
     initialValues: initialWalletFormState,
@@ -113,7 +116,7 @@ export default function EditWalletDialog({
           return;
         }
 
-        setForm({
+        setInitialForm({
           nome: carteira.nome,
           ativa: carteira.ativa,
           meiosPagamento: carteira.meiosPagamento ?? [],
@@ -155,7 +158,15 @@ export default function EditWalletDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -244,7 +255,7 @@ export default function EditWalletDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -442,10 +453,11 @@ export default function EditWalletDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
       <Dialog
         open={confirmDeleteOpen}
-        onClose={handleDialogClose}
+        onClose={() => setConfirmDeleteOpen(false)}
         fullWidth
         maxWidth="xs"
       >

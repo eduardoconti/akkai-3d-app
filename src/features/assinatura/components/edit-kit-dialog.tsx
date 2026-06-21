@@ -84,6 +84,7 @@ export default function EditKitDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -91,6 +92,8 @@ export default function EditKitDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<KitFormState, KitFormErrors>({
     open,
     initialValues: initialKitFormState,
@@ -153,7 +156,7 @@ export default function EditKitDialog({
         setKitLabel(
           `${kit.plano?.nome ?? `Plano #${kit.idPlano}`} — ${MESES_LABEL[kit.mesReferencia] ?? ''} / ${kit.anoReferencia}`,
         );
-        setForm({
+        setInitialForm({
           idPlano: kit.idPlano,
           mesReferencia: kit.mesReferencia,
           anoReferencia: kit.anoReferencia,
@@ -203,7 +206,15 @@ export default function EditKitDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
@@ -277,7 +288,10 @@ export default function EditKitDialog({
 
     try {
       const itensValidos = form.itens.filter(
-        (item) => item.idProduto !== '' && item.quantidade !== '' && Number(item.quantidade) > 0,
+        (item) =>
+          item.idProduto !== '' &&
+          item.quantidade !== '' &&
+          Number(item.quantidade) > 0,
       );
 
       const result = await atualizarKit(kitId, {
@@ -356,7 +370,7 @@ export default function EditKitDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -504,7 +518,12 @@ export default function EditKitDialog({
             ) : (
               <Stack spacing={1.5}>
                 {form.itensVitrine.map((value, index) => (
-                  <Stack key={index} direction="row" spacing={1} alignItems="center">
+                  <Stack
+                    key={index}
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                  >
                     <TextField
                       fullWidth
                       size="small"
@@ -552,8 +571,8 @@ export default function EditKitDialog({
 
             {produtos.length === 0 && !isLoadingProducts ? (
               <Alert severity="info" sx={{ mb: 2 }}>
-                Nenhum produto cadastrado. Cadastre produtos antes de montar o kit
-                mensal.
+                Nenhum produto cadastrado. Cadastre produtos antes de montar o
+                kit mensal.
               </Alert>
             ) : null}
 
@@ -683,6 +702,7 @@ export default function EditKitDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
 
       <Dialog

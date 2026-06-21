@@ -48,6 +48,7 @@ export default function EditCategoryDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -55,6 +56,8 @@ export default function EditCategoryDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<CategoryFormState, CategoryFormErrors>({
     open,
     initialValues: initialCategoryFormState,
@@ -81,7 +84,7 @@ export default function EditCategoryDialog({
           return;
         }
 
-        setForm({
+        setInitialForm({
           nome: category.nome,
           idAscendente: category.idAscendente ?? '',
         });
@@ -135,7 +138,15 @@ export default function EditCategoryDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -173,7 +184,7 @@ export default function EditCategoryDialog({
     localErrors[field] ?? getFieldMessage(problem, field) ?? undefined;
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -270,6 +281,7 @@ export default function EditCategoryDialog({
           {isBusy ? 'Salvando...' : 'Salvar categoria'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

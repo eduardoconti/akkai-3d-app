@@ -65,6 +65,8 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<PlanoFormState, PlanoFormErrors>({
     open,
     initialValues: initialPlanoFormState,
@@ -80,7 +82,15 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const addStringItem = (field: 'itensInclusos' | 'beneficios') => {
@@ -158,7 +168,7 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -348,6 +358,7 @@ export default function NewPlanDialog({ open, onClose }: NewPlanDialogProps) {
           {isBusy ? 'Salvando...' : 'Salvar Plano'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }
@@ -382,7 +393,12 @@ function StringListSection({
         <Typography variant="subtitle1" fontWeight={700}>
           {label}
         </Typography>
-        <Button size="small" startIcon={<Add />} onClick={onAdd} disabled={disabled}>
+        <Button
+          size="small"
+          startIcon={<Add />}
+          onClick={onAdd}
+          disabled={disabled}
+        >
           Adicionar
         </Button>
       </Stack>

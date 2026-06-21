@@ -111,6 +111,8 @@ export default function ConsignacaoDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<ConsignacaoFormState, ConsignacaoFormErrors>({
     open,
     initialValues: initialFormState,
@@ -156,6 +158,22 @@ export default function ConsignacaoDialog({
     }
 
     resetForm();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
@@ -288,7 +306,7 @@ export default function ConsignacaoDialog({
   }, 0);
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -313,7 +331,7 @@ export default function ConsignacaoDialog({
           </Box>
 
           <IconButton
-            onClick={handleClose}
+            onClick={handleDialogClose}
             aria-label="Fechar modal de consignação"
             disabled={isBusy}
           >
@@ -464,7 +482,7 @@ export default function ConsignacaoDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isBusy}>
+        <Button onClick={handleDialogClose} disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -476,6 +494,7 @@ export default function ConsignacaoDialog({
           Cadastrar
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

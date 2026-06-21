@@ -100,6 +100,8 @@ export default function ItemConsignacaoDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<ItemConsignacaoFormState, ItemConsignacaoFormErrors>({
     open,
     initialValues: initialFormState,
@@ -165,6 +167,22 @@ export default function ItemConsignacaoDialog({
     }
 
     resetForm();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
@@ -236,7 +254,7 @@ export default function ItemConsignacaoDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -261,7 +279,7 @@ export default function ItemConsignacaoDialog({
           </Box>
 
           <IconButton
-            onClick={handleClose}
+            onClick={handleDialogClose}
             aria-label="Fechar modal de item da consignação"
             disabled={isBusy}
           >
@@ -316,7 +334,7 @@ export default function ItemConsignacaoDialog({
                 disabled={isBusy}
                 error={Boolean(
                   localErrors.quantidade ||
-                    getFieldMessage(problem, 'quantidade'),
+                  getFieldMessage(problem, 'quantidade'),
                 )}
                 helperText={
                   localErrors.quantidade ??
@@ -341,7 +359,7 @@ export default function ItemConsignacaoDialog({
                 disabled={isBusy}
                 error={Boolean(
                   localErrors.valorUnitario ||
-                    getFieldMessage(problem, 'valorUnitario'),
+                  getFieldMessage(problem, 'valorUnitario'),
                 )}
                 helperText={
                   localErrors.valorUnitario ??
@@ -354,7 +372,7 @@ export default function ItemConsignacaoDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isBusy}>
+        <Button onClick={handleDialogClose} disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -366,6 +384,7 @@ export default function ItemConsignacaoDialog({
           Salvar
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

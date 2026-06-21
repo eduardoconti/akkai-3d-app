@@ -77,6 +77,7 @@ export default function RevendedorDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -84,6 +85,8 @@ export default function RevendedorDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<RevendedorFormState, RevendedorFormErrors>({
     open,
     initialValues: initialFormState,
@@ -107,7 +110,7 @@ export default function RevendedorDialog({
           return;
         }
 
-        setForm({
+        setInitialForm({
           nome: revendedor.nome,
           telefone: revendedor.telefone ?? '',
           status: revendedor.status,
@@ -131,6 +134,22 @@ export default function RevendedorDialog({
     }
 
     resetForm();
+    onClose();
+  };
+
+  const handleDialogClose = () => {
+    if (isBusy) {
+      return;
+    }
+
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
@@ -193,7 +212,7 @@ export default function RevendedorDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -218,7 +237,7 @@ export default function RevendedorDialog({
           </Box>
 
           <IconButton
-            onClick={handleClose}
+            onClick={handleDialogClose}
             aria-label="Fechar modal de revendedor"
             disabled={isBusy}
           >
@@ -319,7 +338,7 @@ export default function RevendedorDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={handleClose} disabled={isBusy}>
+        <Button onClick={handleDialogClose} disabled={isBusy}>
           Cancelar
         </Button>
         <Button
@@ -331,6 +350,7 @@ export default function RevendedorDialog({
           {isEditing ? 'Salvar' : 'Cadastrar'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

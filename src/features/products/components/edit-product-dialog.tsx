@@ -54,12 +54,15 @@ export default function EditProductDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
     setLocalErrors,
     isSaving,
     setIsSaving,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<ProductFormState, ProductFormErrors>({
     open,
     initialValues: initialProductFormState,
@@ -99,7 +102,7 @@ export default function EditProductDialog({
 
         setCategorias(categories);
         setProductName(product.nome);
-        setForm({
+        setInitialForm({
           nome: product.nome,
           codigo: product.codigo,
           descricao: product.descricao ?? '',
@@ -204,11 +207,19 @@ export default function EditProductDialog({
       return;
     }
 
+    requestClose(onClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
     onClose();
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -404,6 +415,7 @@ export default function EditProductDialog({
           {isSaving ? 'Salvando...' : 'Salvar cadastro'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

@@ -80,6 +80,8 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<KitFormState, KitFormErrors>({
     open,
     initialValues: initialKitFormState,
@@ -130,7 +132,15 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
@@ -206,7 +216,10 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
 
     try {
       const itensValidos = form.itens.filter(
-        (item) => item.idProduto !== '' && item.quantidade !== '' && Number(item.quantidade) > 0,
+        (item) =>
+          item.idProduto !== '' &&
+          item.quantidade !== '' &&
+          Number(item.quantidade) > 0,
       );
 
       const result = await criarKit({
@@ -243,7 +256,7 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -442,7 +455,12 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
           ) : (
             <Stack spacing={1.5}>
               {form.itensVitrine.map((value, index) => (
-                <Stack key={index} direction="row" spacing={1} alignItems="center">
+                <Stack
+                  key={index}
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                >
                   <TextField
                     fullWidth
                     size="small"
@@ -585,6 +603,7 @@ export default function NewKitDialog({ open, onClose }: NewKitDialogProps) {
           {isBusy ? 'Salvando...' : 'Salvar kit'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

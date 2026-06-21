@@ -81,6 +81,8 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<CicloFormState, CicloFormErrors>({
     open,
     initialValues: initialCicloFormState,
@@ -131,7 +133,15 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const setItem = (index: number, patch: Partial<ItemCicloFormState>) => {
@@ -212,7 +222,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="md">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -493,6 +503,7 @@ export default function NewCicloDialog({ open, onClose }: NewCicloDialogProps) {
           {isBusy ? 'Salvando...' : 'Salvar ciclo'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }

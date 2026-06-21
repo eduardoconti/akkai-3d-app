@@ -60,6 +60,7 @@ export default function EditExpenseCategoryDialog({
   const {
     form,
     setForm,
+    setInitialForm,
     problem,
     setProblem,
     localErrors,
@@ -67,6 +68,8 @@ export default function EditExpenseCategoryDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<FormState, FormErrors>({
     open,
     initialValues: { nome: '' },
@@ -81,7 +84,7 @@ export default function EditExpenseCategoryDialog({
 
     const categoria = categoriasDespesa.find((c) => c.id === categoryId);
     if (categoria) {
-      setForm({ nome: categoria.nome });
+      setInitialForm({ nome: categoria.nome });
     }
   }, [open, categoryId, categoriasDespesa, setForm]);
 
@@ -97,7 +100,15 @@ export default function EditExpenseCategoryDialog({
       return;
     }
 
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -161,7 +172,7 @@ export default function EditExpenseCategoryDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="xs">
+      <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="xs">
         <DialogTitle sx={{ px: 3, py: 2.5 }}>
           <Box
             sx={{
@@ -259,10 +270,11 @@ export default function EditExpenseCategoryDialog({
             </Button>
           </Box>
         </DialogActions>
+        {discardChangesDialog}
       </Dialog>
       <Dialog
         open={confirmDeleteOpen}
-        onClose={handleDialogClose}
+        onClose={() => setConfirmDeleteOpen(false)}
         fullWidth
         maxWidth="xs"
       >

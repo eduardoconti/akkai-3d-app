@@ -71,6 +71,8 @@ export default function NewAssinanteDialog({
     isSaving,
     setIsSaving,
     resetForm,
+    requestClose,
+    discardChangesDialog,
   } = useFormDialog<AssinanteFormState, AssinanteFormErrors>({
     open,
     initialValues: initialAssinanteFormState,
@@ -91,7 +93,15 @@ export default function NewAssinanteDialog({
 
   const handleDialogClose = () => {
     if (isBusy) return;
-    handleClose();
+    requestClose(handleClose);
+  };
+
+  const handleDialogDismiss = () => {
+    if (isBusy) {
+      return;
+    }
+
+    onClose();
   };
 
   const handleSubmit = async () => {
@@ -138,7 +148,7 @@ export default function NewAssinanteDialog({
   const activePlanos = planos.filter((p) => p.ativo);
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={handleDialogDismiss} fullWidth maxWidth="sm">
       <DialogTitle sx={{ px: 3, py: 2.5 }}>
         <Box
           sx={{
@@ -301,6 +311,7 @@ export default function NewAssinanteDialog({
           {isBusy ? 'Salvando...' : 'Salvar assinante'}
         </Button>
       </DialogActions>
+      {discardChangesDialog}
     </Dialog>
   );
 }
