@@ -29,12 +29,15 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
+  Add,
   Close,
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
+  SwapHoriz,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
+import ExchangeReturnDialog from '../components/exchange-return-dialog';
 import NewSaleDialog from '../components/new-sale-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
@@ -357,7 +360,9 @@ export default function SalesPage() {
   );
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
+  const [isExchangeReturnOpen, setIsExchangeReturnOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
   const [selectedSale, setSelectedSale] = useState<Venda | null>(null);
   const [actionsAnchorEl, setActionsAnchorEl] = useState<HTMLElement | null>(
@@ -515,6 +520,24 @@ export default function SalesPage() {
             itens.
           </Typography>
         </Box>
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<SwapHoriz />}
+            onClick={() => setIsExchangeReturnOpen(true)}
+            disabled={!isOnline}
+          >
+            Troca/devolução
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => setIsNewSaleOpen(true)}
+          >
+            Nova venda
+          </Button>
+        </Stack>
       </Stack>
 
       <Box>
@@ -972,9 +995,26 @@ export default function SalesPage() {
       </Dialog>
 
       <NewSaleDialog
-        open={Boolean(editingSale)}
-        onClose={() => setEditingSale(null)}
+        open={isNewSaleOpen || Boolean(editingSale)}
+        onClose={() => {
+          setIsNewSaleOpen(false);
+          setEditingSale(null);
+        }}
         sale={editingSale}
+        onSaved={async () => {
+          await fetchVendas({ pagina: 1 });
+        }}
+      />
+
+      <ExchangeReturnDialog
+        open={isExchangeReturnOpen}
+        onClose={() => setIsExchangeReturnOpen(false)}
+        onSaved={async () => {
+          await fetchCarteiras();
+        }}
+        produtos={produtos}
+        carteiras={carteiras}
+        isLoadingProducts={isLoadingProducts}
       />
     </Stack>
   );

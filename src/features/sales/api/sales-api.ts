@@ -3,6 +3,7 @@ import type {
   Carteira,
   Feira,
   FeiraInput,
+  InserirTrocaDevolucaoInput,
   InserirVendaInput,
   PesquisaPaginadaFeiras,
   PesquisaPaginadaPrecosProdutosFeira,
@@ -11,6 +12,7 @@ import type {
   PrecoProdutoFeiraInput,
   ResultadoPaginado,
   ResultadoPaginadoVendas,
+  TrocaDevolucao,
   Venda,
 } from '@/shared/lib/types/domain';
 
@@ -91,6 +93,12 @@ export function listWallets(): Promise<Carteira[]> {
 
 export function createSale(input: InserirVendaInput): Promise<Venda> {
   return httpClient.post<Venda>('/venda', input);
+}
+
+export function createExchangeReturn(
+  input: InserirTrocaDevolucaoInput,
+): Promise<TrocaDevolucao> {
+  return httpClient.post<TrocaDevolucao>('/venda/trocas-devolucoes', input);
 }
 
 export function updateSale(

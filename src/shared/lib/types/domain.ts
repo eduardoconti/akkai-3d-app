@@ -49,7 +49,9 @@ export type OrigemMovimentacaoEstoque =
   | OrigemEntradaEstoque
   | OrigemSaidaEstoque
   | 'VENDA'
-  | 'CONSIGNACAO';
+  | 'CONSIGNACAO'
+  | 'DEVOLUCAO'
+  | 'TROCA';
 
 export interface MovimentacaoEstoque {
   id: number;
@@ -260,6 +262,53 @@ export interface InserirVendaInput {
     meioPagamento: MeioPagamento;
     valor: number;
   }>;
+}
+
+export type TipoItemTrocaDevolucao = 'DEVOLVIDO' | 'ENTREGUE';
+export type TipoDiferencaTrocaDevolucao =
+  | 'A_PAGAR'
+  | 'A_DEVOLVER'
+  | 'SEM_DIFERENCA';
+
+export interface InserirTrocaDevolucaoItemInput {
+  idProduto: number;
+  tipo: TipoItemTrocaDevolucao;
+  quantidade: number;
+  valorUnitario: number;
+}
+
+export interface InserirTrocaDevolucaoInput {
+  dataTrocaDevolucao: string;
+  itens: InserirTrocaDevolucaoItemInput[];
+  idCarteira?: number;
+  meioPagamento?: MeioPagamento;
+  observacao?: string;
+}
+
+export interface ItemTrocaDevolucao {
+  id: number;
+  idTrocaDevolucao: number;
+  idProduto: number;
+  tipo: TipoItemTrocaDevolucao;
+  quantidade: number;
+  valorUnitario: number;
+  valorTotal: number;
+  produto?: Produto;
+}
+
+export interface TrocaDevolucao {
+  id: number;
+  dataInclusao: string;
+  dataTrocaDevolucao: string;
+  valorDevolvido: number;
+  valorNovo: number;
+  valorDiferenca: number;
+  tipoDiferenca: TipoDiferencaTrocaDevolucao;
+  idCarteira?: number;
+  meioPagamento?: MeioPagamento;
+  observacao?: string;
+  carteira?: Carteira;
+  itens: ItemTrocaDevolucao[];
 }
 
 export interface PesquisaPaginada {
