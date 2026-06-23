@@ -47,15 +47,8 @@ function getStockQuantity(produto: Produto): number {
   return produto.quantidadeEstoque ?? 0;
 }
 
-function isBelowMinimumStock(produto: Produto): boolean {
-  return (
-    produto.estoqueMinimo !== undefined &&
-    getStockQuantity(produto) < produto.estoqueMinimo
-  );
-}
-
-function isCriticalMinimumStock(produto: Produto): boolean {
-  return produto.estoqueMinimo !== undefined && getStockQuantity(produto) <= 0;
+function isOutOfStock(produto: Produto): boolean {
+  return getStockQuantity(produto) <= 0;
 }
 
 export default function ProductsPage() {
@@ -223,8 +216,7 @@ export default function ProductsPage() {
               <LoadingState />
             ) : produtos.length > 0 ? (
               produtos.map((produto) => {
-                const belowMinimumStock = isBelowMinimumStock(produto);
-                const criticalMinimumStock = isCriticalMinimumStock(produto);
+                const outOfStock = isOutOfStock(produto);
 
                 return (
                   <Box
@@ -274,9 +266,6 @@ export default function ProductsPage() {
                         <Typography variant="body2" color="text.secondary">
                           Descrição: {produto.descricao || '-'}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Estoque mínimo: {produto.estoqueMinimo ?? '-'}
-                        </Typography>
                         <Stack
                           direction="row"
                           spacing={1}
@@ -289,19 +278,14 @@ export default function ProductsPage() {
                           </Typography>
                           <Chip
                             label={getStockQuantity(produto)}
-                            size="small"
-                            color={
-                              criticalMinimumStock
-                                ? 'error'
-                                : belowMinimumStock
-                                  ? 'warning'
-                                  : 'default'
-                            }
-                            variant={
-                              criticalMinimumStock || belowMinimumStock
-                                ? 'filled'
-                                : 'outlined'
-                            }
+                            size="medium"
+                            color={outOfStock ? 'error' : 'default'}
+                            variant={outOfStock ? 'filled' : 'outlined'}
+                            sx={{
+                              minWidth: 44,
+                              fontWeight: 700,
+                              '& .MuiChip-label': { px: 1.5 },
+                            }}
                           />
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
@@ -318,7 +302,7 @@ export default function ProductsPage() {
           </Stack>
         ) : (
           <TableContainer>
-            <Table sx={{ minWidth: 860 }} aria-label="tabela de produtos">
+            <Table sx={{ minWidth: 780 }} aria-label="tabela de produtos">
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -333,9 +317,6 @@ export default function ProductsPage() {
                   <TableCell>
                     <strong>Descrição</strong>
                   </TableCell>
-                  <TableCell align="right">
-                    <strong>Estoque mínimo</strong>
-                  </TableCell>
                   <TableCell align="center">
                     <strong>Estoque</strong>
                   </TableCell>
@@ -348,15 +329,13 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={7} sx={{ p: 0 }}>
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
                 ) : produtos.length > 0 ? (
                   produtos.map((produto) => {
-                    const belowMinimumStock = isBelowMinimumStock(produto);
-                    const criticalMinimumStock =
-                      isCriticalMinimumStock(produto);
+                    const outOfStock = isOutOfStock(produto);
 
                     return (
                       <TableRow
@@ -376,9 +355,6 @@ export default function ProductsPage() {
                         <TableCell>{produto.nome}</TableCell>
                         <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
                         <TableCell>{produto.descricao || '-'}</TableCell>
-                        <TableCell align="right">
-                          {produto.estoqueMinimo ?? '-'}
-                        </TableCell>
                         <TableCell align="center">
                           <Stack
                             direction="row"
@@ -388,19 +364,14 @@ export default function ProductsPage() {
                           >
                             <Chip
                               label={getStockQuantity(produto)}
-                              size="small"
-                              color={
-                                criticalMinimumStock
-                                  ? 'error'
-                                  : belowMinimumStock
-                                    ? 'warning'
-                                    : 'default'
-                              }
-                              variant={
-                                criticalMinimumStock || belowMinimumStock
-                                  ? 'filled'
-                                  : 'outlined'
-                              }
+                              size="medium"
+                              color={outOfStock ? 'error' : 'default'}
+                              variant={outOfStock ? 'filled' : 'outlined'}
+                              sx={{
+                                minWidth: 44,
+                                fontWeight: 700,
+                                '& .MuiChip-label': { px: 1.5 },
+                              }}
                             />
                             <Button
                               variant="outlined"
@@ -423,7 +394,7 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} sx={{ p: 0 }}>
+                    <TableCell colSpan={6} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
                     </TableCell>
                   </TableRow>

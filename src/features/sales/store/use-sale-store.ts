@@ -16,6 +16,7 @@ import {
 } from '@/shared/lib/offline/indexed-db';
 import {
   createFair,
+  createExchangeReturn,
   createSale,
   deleteFair,
   deleteSale,
@@ -32,6 +33,7 @@ import type {
   Carteira,
   Feira,
   FeiraInput,
+  InserirTrocaDevolucaoInput,
   InserirVendaInput,
   PesquisaPaginadaFeiras,
   PesquisaPaginadaPrecosProdutosFeira,
@@ -40,6 +42,7 @@ import type {
   ResultadoPaginado,
   ResultadoPaginadoVendas,
   TotalizadoresVendas,
+  TrocaDevolucao,
   Venda,
 } from '@/shared/lib/types/domain';
 
@@ -212,6 +215,9 @@ interface SaleStoreState {
   ) => Promise<ActionResult<Feira>>;
   excluirFeira: (id: number) => Promise<ActionResult<void>>;
   criarVenda: (dados: InserirVendaInput) => Promise<ActionResult<Venda>>;
+  criarTrocaDevolucao: (
+    dados: InserirTrocaDevolucaoInput,
+  ) => Promise<ActionResult<TrocaDevolucao>>;
   alterarVenda: (
     id: number,
     dados: InserirVendaInput,
@@ -514,6 +520,19 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
+  criarTrocaDevolucao: async (dados) => {
+    set({ isSubmitting: true, submitErrorMessage: null });
+    try {
+      const trocaDevolucao = await createExchangeReturn(dados);
+      return { success: true, data: trocaDevolucao };
+    } catch (error) {
+      const problem = getProblemDetailsFromError(error);
+      set({ submitErrorMessage: problem.detail });
+      return { success: false, problem };
+    } finally {
+      set({ isSubmitting: false });
+    }
+  },
   alterarVenda: async (id, dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
     try {
@@ -620,6 +639,7 @@ export const saleStoreSelectors = {
   atualizarFeira: (state: SaleStoreState) => state.atualizarFeira,
   excluirFeira: (state: SaleStoreState) => state.excluirFeira,
   criarVenda: (state: SaleStoreState) => state.criarVenda,
+  criarTrocaDevolucao: (state: SaleStoreState) => state.criarTrocaDevolucao,
   alterarVenda: (state: SaleStoreState) => state.alterarVenda,
   excluirVenda: (state: SaleStoreState) => state.excluirVenda,
   hydrateOfflineState: (state: SaleStoreState) => state.hydrateOfflineState,
