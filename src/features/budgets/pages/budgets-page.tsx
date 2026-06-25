@@ -547,11 +547,6 @@ export default function BudgetsPage() {
                           Valor: <CurrencyValue value={orcamento.valor} />
                         </Typography>
                       ) : null}
-                      {orcamento.quantidade != null ? (
-                        <Typography variant="body2" color="text.secondary">
-                          Qtd: {orcamento.quantidade}
-                        </Typography>
-                      ) : null}
                     </Stack>
 
                     {orcamento.descricao ? (
@@ -607,10 +602,6 @@ export default function BudgetsPage() {
                     <strong>Valor</strong>
                   </TableCell>
                   <TableCell>
-                    <strong>Qtd</strong>
-                  </TableCell>
-
-                  <TableCell>
                     <strong>Data de inclusão</strong>
                   </TableCell>
                   <TableCell align="right">
@@ -621,7 +612,7 @@ export default function BudgetsPage() {
               <TableBody>
                 {isFetching ? (
                   <TableRow>
-                    <TableCell colSpan={10} sx={{ p: 0 }}>
+                    <TableCell colSpan={9} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -683,8 +674,6 @@ export default function BudgetsPage() {
                           '-'
                         )}
                       </TableCell>
-                      <TableCell>{orcamento.quantidade ?? '-'}</TableCell>
-
                       <TableCell>
                         {formatDateTime(orcamento.dataInclusao)}
                       </TableCell>

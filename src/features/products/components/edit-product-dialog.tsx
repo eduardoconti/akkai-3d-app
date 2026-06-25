@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -20,6 +21,7 @@ import {
   getProductById,
   listAllCategories,
   updateProduct,
+  updateProductStatus,
 } from '../api/products-api';
 import { formatCategoryOptions } from '../utils/format-category-options';
 import {
@@ -35,7 +37,11 @@ import {
   useFeedbackStore,
   useFormDialog,
   type Categoria,
+  type StatusProduto,
 } from '@/shared';
+import { useAuth } from '@/features/auth';
+
+const PERMISSAO_ALTERAR_STATUS_PRODUTO = 'produto.alterar-status';
 
 interface EditProductDialogProps {
   open: boolean;
@@ -69,7 +75,12 @@ export default function EditProductDialog({
   });
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productName, setProductName] = useState('');
+  const [productStatus, setProductStatus] = useState<StatusProduto>('ATIVO');
   const [isLoading, setIsLoading] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const { user } = useAuth();
+  const podeAlterarStatus =
+    user?.permissions.includes(PERMISSAO_ALTERAR_STATUS_PRODUTO) ?? false;
 
   const categoryOptions = useMemo(
     () => formatCategoryOptions(categorias),
@@ -80,6 +91,7 @@ export default function EditProductDialog({
     if (!open || productId === null) {
       setCategorias([]);
       setProductName('');
+      setProductStatus('ATIVO');
       return;
     }
 
@@ -102,6 +114,7 @@ export default function EditProductDialog({
 
         setCategorias(categories);
         setProductName(product.nome);
+        setProductStatus(product.status);
         setInitialForm({
           nome: product.nome,
           codigo: product.codigo,
@@ -128,7 +141,7 @@ export default function EditProductDialog({
     return () => {
       active = false;
     };
-  }, [open, productId]);
+  }, [open, productId, setInitialForm, setLocalErrors, setProblem]);
 
   const validateForm = (): ProductFormErrors => {
     const errors: ProductFormErrors = {};
@@ -196,11 +209,38 @@ export default function EditProductDialog({
     }
   };
 
+  const handleChangeStatus = async () => {
+    if (productId === null) {
+      return;
+    }
+
+    const nextStatus: StatusProduto =
+      productStatus === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+
+    setIsChangingStatus(true);
+    setProblem(null);
+
+    try {
+      const produto = await updateProductStatus(productId, nextStatus);
+      setProductStatus(produto.status);
+      await onUpdated();
+      showSuccess(
+        nextStatus === 'ATIVO'
+          ? 'Produto ativado com sucesso.'
+          : 'Produto inativado com sucesso.',
+      );
+    } catch (error) {
+      setProblem(getProblemDetailsFromError(error));
+    } finally {
+      setIsChangingStatus(false);
+    }
+  };
+
   const getErrorMessage = (field: keyof ProductFormErrors | 'descricao') =>
     localErrors[field as keyof ProductFormErrors] ??
     getFieldMessage(problem, field) ??
     undefined;
-  const isBusy = isLoading || isSaving;
+  const isBusy = isLoading || isSaving || isChangingStatus;
 
   const handleDialogClose = () => {
     if (isBusy) {
@@ -261,9 +301,21 @@ export default function EditProductDialog({
         ) : (
           <Stack spacing={3}>
             <Box>
-              <Typography variant="h6" fontWeight={700}>
-                {productName || 'Editar produto'}
-              </Typography>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1}
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+              >
+                <Typography variant="h6" fontWeight={700}>
+                  {productName || 'Editar produto'}
+                </Typography>
+                <Chip
+                  size="small"
+                  label={productStatus === 'ATIVO' ? 'Ativo' : 'Inativo'}
+                  color={productStatus === 'ATIVO' ? 'success' : 'default'}
+                  variant={productStatus === 'ATIVO' ? 'filled' : 'outlined'}
+                />
+              </Stack>
               <Typography color="text.secondary">
                 Ajuste nome, codigo, descricao, categoria, valor e estoque
                 minimo.
@@ -401,19 +453,46 @@ export default function EditProductDialog({
 
       <Divider />
 
-      <DialogActions sx={{ px: 3, py: 2, justifyContent: 'flex-end', gap: 1 }}>
-        <Button onClick={onClose} color="inherit">
-          Cancelar
-        </Button>
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
+        <Box>
+          {podeAlterarStatus ? (
+            <Button
+              color={productStatus === 'ATIVO' ? 'warning' : 'success'}
+              variant="outlined"
+              onClick={handleChangeStatus}
+              disabled={isBusy || productId === null}
+            >
+              {isChangingStatus
+                ? 'Alterando...'
+                : productStatus === 'ATIVO'
+                  ? 'Inativar produto'
+                  : 'Ativar produto'}
+            </Button>
+          ) : null}
+        </Box>
 
-        <Button
-          onClick={handleSaveProduct}
-          variant="contained"
-          startIcon={<Save />}
-          disabled={isLoading || isSaving}
-        >
-          {isSaving ? 'Salvando...' : 'Salvar cadastro'}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Button onClick={handleDialogClose} color="inherit" disabled={isBusy}>
+            Cancelar
+          </Button>
+
+          <Button
+            onClick={handleSaveProduct}
+            variant="contained"
+            startIcon={<Save />}
+            disabled={isBusy}
+          >
+            {isSaving ? 'Salvando...' : 'Salvar cadastro'}
+          </Button>
+        </Box>
       </DialogActions>
       {discardChangesDialog}
     </Dialog>

@@ -51,6 +51,14 @@ function isOutOfStock(produto: Produto): boolean {
   return getStockQuantity(produto) <= 0;
 }
 
+function getStatusProductLabel(produto: Produto): string {
+  return produto.status === 'ATIVO' ? 'Ativo' : 'Inativo';
+}
+
+function getStatusProductColor(produto: Produto): 'success' | 'default' {
+  return produto.status === 'ATIVO' ? 'success' : 'default';
+}
+
 export default function ProductsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -246,6 +254,17 @@ export default function ProductsPage() {
                           <Typography variant="subtitle1" fontWeight={700}>
                             {produto.nome}
                           </Typography>
+                          <Chip
+                            label={getStatusProductLabel(produto)}
+                            size="small"
+                            color={getStatusProductColor(produto)}
+                            variant={
+                              produto.status === 'ATIVO'
+                                ? 'filled'
+                                : 'outlined'
+                            }
+                            sx={{ mt: 0.75 }}
+                          />
                         </Box>
 
                         <Button
@@ -312,8 +331,11 @@ export default function ProductsPage() {
                     <strong>Nome</strong>
                   </TableCell>
                   <TableCell>
-                    <strong>Categoria</strong>
+                    <strong>Status</strong>
                   </TableCell>
+	                  <TableCell>
+	                    <strong>Categoria</strong>
+	                  </TableCell>
                   <TableCell>
                     <strong>Descrição</strong>
                   </TableCell>
@@ -329,7 +351,7 @@ export default function ProductsPage() {
               <TableBody>
                 {isFetchingProducts ? (
                   <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
                       <LoadingState />
                     </TableCell>
                   </TableRow>
@@ -353,6 +375,18 @@ export default function ProductsPage() {
                           {produto.codigo}
                         </TableCell>
                         <TableCell>{produto.nome}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={getStatusProductLabel(produto)}
+                            size="small"
+                            color={getStatusProductColor(produto)}
+                            variant={
+                              produto.status === 'ATIVO'
+                                ? 'filled'
+                                : 'outlined'
+                            }
+                          />
+                        </TableCell>
                         <TableCell>{produto.categoria?.nome ?? '-'}</TableCell>
                         <TableCell>{produto.descricao || '-'}</TableCell>
                         <TableCell align="center">
@@ -394,7 +428,7 @@ export default function ProductsPage() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
+                    <TableCell colSpan={7} sx={{ p: 0 }}>
                       <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
                     </TableCell>
                   </TableRow>

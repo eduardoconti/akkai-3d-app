@@ -9,6 +9,7 @@ export { default as GlobalFeedbackSnackbar } from './components/feedback/global-
 export { default as LoadingState } from './components/feedback/loading-state';
 export { default as PageHeader } from './components/page-header';
 export { default as SearchFilterPanel } from './components/search-filter-panel';
+export { default as TableColumnVisibilityButton } from './components/table-column-visibility-button';
 export { default as DatePickerField } from './components/form/date-picker-field';
 export { default as DateRangePickerField } from './components/form/date-range-picker-field';
 export { default as CurrencyField } from './components/form/currency-field';
@@ -22,6 +23,8 @@ export {
 } from './lib/api/http-client';
 export { useOnlineStatus } from './lib/offline/use-online-status';
 export { useSwUpdate } from './lib/offline/use-sw-update';
+export { useTableColumnVisibility } from './hooks/use-table-column-visibility';
+export type { TableColumnOption } from './hooks/use-table-column-visibility';
 export { useFeedbackStore } from './lib/stores/use-feedback-store';
 export { useValueVisibilityStore } from './lib/stores/use-value-visibility-store';
 export type { ActionResult } from './lib/types/action-result';
@@ -103,6 +106,7 @@ export type {
   RevendedorInput,
   RevendedorResumo,
   StatusConsignacao,
+  StatusProduto,
   StatusRevendedor,
   TipoVenda,
   TipoAjusteCarteira,
