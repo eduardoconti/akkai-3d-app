@@ -141,6 +141,7 @@ export default function StockManagementDialog({
       descricao: produto.descricao,
       estoqueMinimo: produto.estoqueMinimo,
       idCategoria: produto.idCategoria,
+      status: produto.status,
       categoria: produto.categoria,
       quantidadeEstoque: quantidadeAtual,
     };

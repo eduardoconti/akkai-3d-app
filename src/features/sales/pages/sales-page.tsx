@@ -50,11 +50,14 @@ import {
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   ProductAutocompleteField,
   SearchFilterPanel,
+  TableColumnVisibilityButton,
   formatCurrencyWithVisibility,
   formatLocalDate,
+  useTableColumnVisibility,
   useFeedbackStore,
   useOnlineStatus,
   useValueVisibilityStore,
+  type TableColumnOption,
   type MeioPagamento,
   type Feira,
   type Produto,
@@ -113,16 +116,65 @@ function getSalePaymentTotal(
   );
 }
 
+type SaleTableColumnId =
+  | 'id'
+  | 'data'
+  | 'tipo'
+  | 'feira'
+  | 'carteira'
+  | 'pagamento'
+  | 'desconto'
+  | 'taxa'
+  | 'imposto'
+  | 'total'
+  | 'liquido';
+
+const SALE_TABLE_COLUMNS: readonly TableColumnOption<SaleTableColumnId>[] = [
+  { id: 'id', label: 'ID', required: true },
+  { id: 'data', label: 'Data' },
+  { id: 'tipo', label: 'Tipo' },
+  { id: 'feira', label: 'Feira' },
+  { id: 'carteira', label: 'Carteira' },
+  { id: 'pagamento', label: 'Pagamento' },
+  { id: 'desconto', label: 'Desconto' },
+  { id: 'taxa', label: 'Taxa' },
+  { id: 'imposto', label: 'Imposto' },
+  { id: 'total', label: 'Total' },
+  { id: 'liquido', label: 'Líquido' },
+];
+
+const DEFAULT_SALE_TABLE_COLUMN_IDS: readonly SaleTableColumnId[] = [
+  'id',
+  'data',
+  'tipo',
+  'feira',
+  'carteira',
+  'pagamento',
+  'desconto',
+  'taxa',
+  'imposto',
+  'total',
+  'liquido',
+];
+
 interface SaleRowProps {
   venda: Venda;
   hideValues: boolean;
+  isColumnVisible: (columnId: SaleTableColumnId) => boolean;
+  visibleColumnCount: number;
   onOpenActions: (
     event: React.MouseEvent<HTMLButtonElement>,
     venda: Venda,
   ) => void;
 }
 
-function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
+function SaleRow({
+  venda,
+  hideValues,
+  isColumnVisible,
+  visibleColumnCount,
+  onOpenActions,
+}: SaleRowProps) {
   const [open, setOpen] = useState(false);
   const pagamentos = getSalePayments(venda);
   const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
@@ -139,48 +191,73 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
             {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </TableCell>
-        <TableCell component="th" scope="row">
-          #{venda.id}
-        </TableCell>
-        <TableCell>
-          {formatLocalDate(
-            venda.dataVenda ?? venda.dataInclusao,
-            'display-date-time',
-          )}
-        </TableCell>
-        <TableCell>
-          <Chip
-            label={getSaleTypeLabel(venda.tipo)}
-            size="small"
-            color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
-            variant="outlined"
-          />
-        </TableCell>
-        <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
-        <TableCell>{getSaleWalletLabel(venda)}</TableCell>
-        <TableCell>{getSalePaymentMethodLabel(venda)}</TableCell>
-        <TableCell align="right">
-          {venda.desconto > 0
-            ? formatSaleValue(venda.desconto, hideValues)
-            : '-'}
-        </TableCell>
-        <TableCell align="right">
-          {valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-'}
-        </TableCell>
-        <TableCell align="right">
-          {valorImposto != null
-            ? formatSaleValue(valorImposto, hideValues)
-            : '-'}
-        </TableCell>
-        <TableCell align="right" sx={{ fontWeight: 700 }}>
-          {formatSaleValue(venda.valorTotal, hideValues)}
-        </TableCell>
-        <TableCell
-          align="right"
-          sx={{ fontWeight: 700, color: 'success.main' }}
-        >
-          {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
-        </TableCell>
+        {isColumnVisible('id') ? (
+          <TableCell component="th" scope="row">
+            #{venda.id}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('data') ? (
+          <TableCell>
+            {formatLocalDate(
+              venda.dataVenda ?? venda.dataInclusao,
+              'display-date-time',
+            )}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('tipo') ? (
+          <TableCell>
+            <Chip
+              label={getSaleTypeLabel(venda.tipo)}
+              size="small"
+              color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
+              variant="outlined"
+            />
+          </TableCell>
+        ) : null}
+        {isColumnVisible('feira') ? (
+          <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
+        ) : null}
+        {isColumnVisible('carteira') ? (
+          <TableCell>{getSaleWalletLabel(venda)}</TableCell>
+        ) : null}
+        {isColumnVisible('pagamento') ? (
+          <TableCell>{getSalePaymentMethodLabel(venda)}</TableCell>
+        ) : null}
+        {isColumnVisible('desconto') ? (
+          <TableCell align="right">
+            {venda.desconto > 0
+              ? formatSaleValue(venda.desconto, hideValues)
+              : '-'}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('taxa') ? (
+          <TableCell align="right">
+            {valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-'}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('imposto') ? (
+          <TableCell align="right">
+            {valorImposto != null
+              ? formatSaleValue(valorImposto, hideValues)
+              : '-'}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('total') ? (
+          <TableCell align="right" sx={{ fontWeight: 700 }}>
+            {formatSaleValue(venda.valorTotal, hideValues)}
+          </TableCell>
+        ) : null}
+        {isColumnVisible('liquido') ? (
+          <TableCell
+            align="right"
+            sx={{ fontWeight: 700, color: 'success.main' }}
+          >
+            {formatSaleValue(
+              venda.valorLiquido ?? venda.valorTotal,
+              hideValues,
+            )}
+          </TableCell>
+        ) : null}
         <TableCell align="center">
           <IconButton
             size="small"
@@ -196,7 +273,10 @@ function SaleRow({ venda, hideValues, onOpenActions }: SaleRowProps) {
       </TableRow>
 
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={13}>
+        <TableCell
+          style={{ paddingBottom: 0, paddingTop: 0 }}
+          colSpan={visibleColumnCount + 2}
+        >
           <Collapse in={open} timeout="auto" unmountOnExit>
             <Box
               sx={{
@@ -369,6 +449,19 @@ export default function SalesPage() {
     null,
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
+  const {
+    visibleColumnIds,
+    isColumnVisible,
+    toggleColumnVisibility,
+    resetColumnVisibility,
+  } = useTableColumnVisibility<SaleTableColumnId>(
+    'akkai:sales-page:vendas:columns',
+    SALE_TABLE_COLUMNS,
+    DEFAULT_SALE_TABLE_COLUMN_IDS,
+  );
+  const visibleColumnCount = SALE_TABLE_COLUMNS.filter((column) =>
+    isColumnVisible(column.id),
+  ).length;
 
   const handleSearch = () => {
     void fetchVendas({
@@ -823,75 +916,122 @@ export default function SalesPage() {
             )}
           </Stack>
         ) : (
-          <TableContainer>
-            <Table aria-label="tabela de vendas">
-              <TableHead>
-                <TableRow>
-                  <TableCell width={48} />
-                  <TableCell>
-                    <strong>ID</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Data</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Tipo</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Feira</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Carteira</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Pagamento</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Desconto</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Taxa</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Imposto</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Total</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Líquido</strong>
-                  </TableCell>
-                  <TableCell align="center" width={80}>
-                    <strong>Ações</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
+          <>
+            <Stack
+              direction="row"
+              justifyContent="flex-end"
+              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}
+            >
+              <TableColumnVisibilityButton
+                columns={SALE_TABLE_COLUMNS}
+                visibleColumnIds={visibleColumnIds}
+                onToggleColumn={toggleColumnVisibility}
+                onResetColumns={resetColumnVisibility}
+              />
+            </Stack>
+
+            <TableContainer>
+              <Table aria-label="tabela de vendas">
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
-                      <CircularProgress />
+                    <TableCell width={48} />
+                    {isColumnVisible('id') ? (
+                      <TableCell>
+                        <strong>ID</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('data') ? (
+                      <TableCell>
+                        <strong>Data</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('tipo') ? (
+                      <TableCell>
+                        <strong>Tipo</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('feira') ? (
+                      <TableCell>
+                        <strong>Feira</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('carteira') ? (
+                      <TableCell>
+                        <strong>Carteira</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('pagamento') ? (
+                      <TableCell>
+                        <strong>Pagamento</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('desconto') ? (
+                      <TableCell align="right">
+                        <strong>Desconto</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('taxa') ? (
+                      <TableCell align="right">
+                        <strong>Taxa</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('imposto') ? (
+                      <TableCell align="right">
+                        <strong>Imposto</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('total') ? (
+                      <TableCell align="right">
+                        <strong>Total</strong>
+                      </TableCell>
+                    ) : null}
+                    {isColumnVisible('liquido') ? (
+                      <TableCell align="right">
+                        <strong>Líquido</strong>
+                      </TableCell>
+                    ) : null}
+                    <TableCell align="center" width={80}>
+                      <strong>Ações</strong>
                     </TableCell>
                   </TableRow>
-                ) : vendas.length > 0 ? (
-                  vendas.map((venda) => (
-                    <SaleRow
-                      key={venda.id}
-                      venda={venda}
-                      hideValues={hideValues}
-                      onOpenActions={handleOpenActions}
-                    />
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={13} align="center" sx={{ py: 6 }}>
-                      Nenhuma venda encontrada para os filtros informados.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {isFetching ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={visibleColumnCount + 2}
+                        align="center"
+                        sx={{ py: 6 }}
+                      >
+                        <CircularProgress />
+                      </TableCell>
+                    </TableRow>
+                  ) : vendas.length > 0 ? (
+                    vendas.map((venda) => (
+                      <SaleRow
+                        key={venda.id}
+                        venda={venda}
+                        hideValues={hideValues}
+                        isColumnVisible={isColumnVisible}
+                        visibleColumnCount={visibleColumnCount}
+                        onOpenActions={handleOpenActions}
+                      />
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={visibleColumnCount + 2}
+                        align="center"
+                        sx={{ py: 6 }}
+                      >
+                        Nenhuma venda encontrada para os filtros informados.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
         )}
 
         <TablePagination

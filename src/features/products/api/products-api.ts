@@ -11,6 +11,7 @@ import type {
   Produto,
   ProdutoInput,
   ResultadoPaginado,
+  StatusProduto,
 } from '@/shared/lib/types/domain';
 
 export interface CategoriaInput {
@@ -99,6 +100,13 @@ export function updateProduct(
   input: ProdutoInput,
 ): Promise<Produto> {
   return httpClient.put<Produto>(`/produto/${id}`, input);
+}
+
+export function updateProductStatus(
+  id: number,
+  status: StatusProduto,
+): Promise<Produto> {
+  return httpClient.patch<Produto>(`/produto/${id}/status`, { status });
 }
 
 export function deleteProduct(id: number): Promise<void> {

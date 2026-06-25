@@ -4,6 +4,8 @@ export interface Categoria {
   idAscendente: number | null;
 }
 
+export type StatusProduto = 'ATIVO' | 'INATIVO';
+
 export interface Produto {
   id: number;
   nome: string;
@@ -12,6 +14,7 @@ export interface Produto {
   estoqueMinimo?: number;
   idCategoria: number;
   valor: number;
+  status: StatusProduto;
   quantidadeEstoque?: number;
   categoria?: Categoria;
 }
@@ -23,6 +26,7 @@ export interface EstoqueProduto {
   descricao?: string;
   estoqueMinimo?: number;
   idCategoria: number;
+  status: StatusProduto;
   quantidadeEstoque: number;
   categoria?: Categoria;
 }
@@ -35,6 +39,7 @@ export interface DetalheProduto {
   estoqueMinimo?: number;
   idCategoria: number;
   valor: number;
+  status: StatusProduto;
   categoria: {
     id: number;
     nome: string;
@@ -224,7 +229,6 @@ export interface Orcamento {
   canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
-  quantidade?: number;
   feira?: Feira | null;
 }
 
@@ -417,7 +421,6 @@ export interface OrcamentoInput {
   canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
-  quantidade?: number;
 }
 
 export interface AtualizarOrcamentoInput {
@@ -430,7 +433,6 @@ export interface AtualizarOrcamentoInput {
   canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
-  quantidade?: number;
 }
 
 // ── Consignação ──────────────────────────────────────────────────────────────

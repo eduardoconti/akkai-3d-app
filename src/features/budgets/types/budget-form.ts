@@ -14,7 +14,6 @@ export type BudgetFormState = {
   canalAtendimento: CanalAtendimentoOrcamento | '';
   idFeira: number | '';
   valor: number;
-  quantidade: number | '';
 };
 
 export type BudgetFormErrors = {
@@ -26,7 +25,6 @@ export type BudgetFormErrors = {
   canalAtendimento?: string;
   idFeira?: string;
   valor?: string;
-  quantidade?: string;
 };
 
 export const initialBudgetFormState: BudgetFormState = {
@@ -39,7 +37,6 @@ export const initialBudgetFormState: BudgetFormState = {
   canalAtendimento: '',
   idFeira: '',
   valor: 0,
-  quantidade: '',
 };
 
 export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [

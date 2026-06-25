@@ -105,7 +105,7 @@ export function useTableColumnVisibility<TColumnId extends string>(
         const currentColumnIds = new Set(normalizeColumnIds(current));
 
         if (currentColumnIds.has(columnId)) {
-          if (currentColumnIds.size <= requiredColumnIds.length + 1) {
+          if (currentColumnIds.size <= requiredColumnIds.length) {
             return current;
           }
 

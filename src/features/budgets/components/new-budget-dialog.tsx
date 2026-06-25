@@ -3,12 +3,16 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
   FormHelperText,
+  Paper,
+  Stack,
   Typography,
   DialogContentText,
   MenuItem,
@@ -141,9 +145,8 @@ export default function NewBudgetDialog({
       canalAtendimento: budget.canalAtendimento ?? '',
       idFeira: budget.idFeira ?? '',
       valor: budget.valor != null ? budget.valor / 100 : 0,
-      quantidade: budget.quantidade ?? '',
     });
-  }, [budget, open, setForm, setLocalErrors, setProblem]);
+  }, [budget, open, setInitialForm, setLocalErrors, setProblem]);
 
   const handleClose = () => {
     setConfirmDeleteOpen(false);
@@ -203,10 +206,6 @@ export default function NewBudgetDialog({
       }
     }
 
-    if (form.quantidade !== '' && Number(form.quantidade) < 1) {
-      errors.quantidade = 'A quantidade deve ser maior que zero.';
-    }
-
     return errors;
   };
 
@@ -235,8 +234,6 @@ export default function NewBudgetDialog({
             : undefined,
         idFeira: form.idFeira === '' ? undefined : form.idFeira,
         valor: form.valor > 0 ? Math.round(form.valor * 100) : undefined,
-        quantidade:
-          form.quantidade === '' ? undefined : Number(form.quantidade),
       };
       const result =
         isEditMode && budget
@@ -350,273 +347,315 @@ export default function NewBudgetDialog({
             </Alert>
           ) : null}
 
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Nome do cliente"
-                required
-                value={form.nomeCliente}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    nomeCliente: event.target.value,
-                  }))
-                }
-                error={Boolean(
-                  localErrors.nomeCliente ||
-                  getFieldMessage(problem, 'nomeCliente'),
-                )}
-                helperText={
-                  localErrors.nomeCliente ??
-                  getFieldMessage(problem, 'nomeCliente')
-                }
-              />
-            </Grid>
+          <Stack spacing={2.5} sx={{ mt: 0.5 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Cliente
+                  </Typography>
+                </Box>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Telefone do cliente"
-                value={form.telefoneCliente}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    telefoneCliente: event.target.value,
-                  }))
-                }
-                error={Boolean(
-                  localErrors.telefoneCliente ||
-                  getFieldMessage(problem, 'telefoneCliente'),
-                )}
-                helperText={
-                  localErrors.telefoneCliente ??
-                  getFieldMessage(problem, 'telefoneCliente')
-                }
-              />
-            </Grid>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 7 }}>
+                    <TextField
+                      fullWidth
+                      label="Nome do cliente"
+                      required
+                      value={form.nomeCliente}
+                      disabled={isDeleting}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          nomeCliente: event.target.value,
+                        }))
+                      }
+                      error={Boolean(
+                        localErrors.nomeCliente ||
+                          getFieldMessage(problem, 'nomeCliente'),
+                      )}
+                      helperText={
+                        localErrors.nomeCliente ??
+                        getFieldMessage(problem, 'nomeCliente')
+                      }
+                    />
+                  </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                Tipo
-              </Typography>
-              <ToggleButtonGroup
-                exclusive
-                value={form.tipo}
-                disabled={isDeleting}
-                onChange={(_event, value: TipoVenda | null) => {
-                  if (!value) return;
-                  setForm((current) => ({
-                    ...current,
-                    tipo: value,
-                    idFeira: value !== 'FEIRA' ? '' : current.idFeira,
-                    canalAtendimento:
-                      value === 'ONLINE' ? current.canalAtendimento : '',
-                  }));
-                }}
-                size="small"
-              >
-                <ToggleButton value="LOJA">Loja</ToggleButton>
-                <ToggleButton value="FEIRA">Feira</ToggleButton>
-                <ToggleButton value="ONLINE">Online</ToggleButton>
-              </ToggleButtonGroup>
-              {localErrors.tipo ? (
-                <FormHelperText error>{localErrors.tipo}</FormHelperText>
-              ) : null}
-            </Grid>
+                  <Grid size={{ xs: 12, md: 5 }}>
+                    <TextField
+                      fullWidth
+                      label="Telefone do cliente"
+                      value={form.telefoneCliente}
+                      disabled={isDeleting}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          telefoneCliente: event.target.value,
+                        }))
+                      }
+                      error={Boolean(
+                        localErrors.telefoneCliente ||
+                          getFieldMessage(problem, 'telefoneCliente'),
+                      )}
+                      helperText={
+                        localErrors.telefoneCliente ??
+                        getFieldMessage(problem, 'telefoneCliente')
+                      }
+                    />
+                  </Grid>
+                </Grid>
+              </Stack>
+            </Paper>
 
-            {form.tipo === 'ONLINE' && (
-              <Grid size={{ xs: 12, md: 6 }}>
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
+              <Stack spacing={2}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  spacing={1}
+                >
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Origem do orçamento
+                    </Typography>
+                  </Box>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={
+                      form.tipo === 'ONLINE'
+                        ? 'Online'
+                        : form.tipo === 'FEIRA'
+                          ? 'Feira'
+                          : 'Loja'
+                    }
+                  />
+                </Stack>
+
+                <Divider />
+
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: form.tipo === 'LOJA' ? 12 : 6 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1 }}
+                    >
+                      Tipo
+                    </Typography>
+                    <ToggleButtonGroup
+                      exclusive
+                      value={form.tipo}
+                      disabled={isDeleting}
+                      onChange={(_event, value: TipoVenda | null) => {
+                        if (!value) return;
+                        setForm((current) => ({
+                          ...current,
+                          tipo: value,
+                          idFeira: value !== 'FEIRA' ? '' : current.idFeira,
+                          canalAtendimento:
+                            value === 'ONLINE' ? current.canalAtendimento : '',
+                        }));
+                      }}
+                      size="small"
+                      sx={{
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        '& .MuiToggleButtonGroup-grouped': {
+                          borderRadius: 1,
+                          border: 1,
+                          borderColor: 'divider',
+                          px: 2,
+                        },
+                      }}
+                    >
+                      <ToggleButton value="LOJA">Loja</ToggleButton>
+                      <ToggleButton value="FEIRA">Feira</ToggleButton>
+                      <ToggleButton value="ONLINE">Online</ToggleButton>
+                    </ToggleButtonGroup>
+                    {localErrors.tipo ? (
+                      <FormHelperText error>{localErrors.tipo}</FormHelperText>
+                    ) : null}
+                  </Grid>
+
+                  {form.tipo === 'ONLINE' ? (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Canal de atendimento"
+                        required
+                        value={form.canalAtendimento}
+                        disabled={isDeleting}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            canalAtendimento: event.target
+                              .value as BudgetFormState['canalAtendimento'],
+                          }))
+                        }
+                        error={Boolean(
+                          localErrors.canalAtendimento ||
+                            getFieldMessage(problem, 'canalAtendimento'),
+                        )}
+                        helperText={
+                          localErrors.canalAtendimento ??
+                          getFieldMessage(problem, 'canalAtendimento')
+                        }
+                      >
+                        <MenuItem value="">Selecione o canal</MenuItem>
+                        {ALL_CANAIS_ATENDIMENTO_ORCAMENTO.map((canal) => (
+                          <MenuItem key={canal} value={canal}>
+                            {CANAL_ATENDIMENTO_ORCAMENTO_LABEL[canal]}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                  ) : null}
+
+                  {form.tipo === 'FEIRA' ? (
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        select
+                        fullWidth
+                        label="Feira"
+                        required
+                        value={form.idFeira}
+                        disabled={isDeleting}
+                        onChange={(event) =>
+                          setForm((current) => ({
+                            ...current,
+                            idFeira:
+                              event.target.value === ''
+                                ? ''
+                                : Number(event.target.value),
+                          }))
+                        }
+                        error={Boolean(
+                          localErrors.idFeira ||
+                            getFieldMessage(problem, 'idFeira'),
+                        )}
+                        helperText={
+                          localErrors.idFeira ??
+                          getFieldMessage(problem, 'idFeira')
+                        }
+                      >
+                        <MenuItem value="">Selecione a feira</MenuItem>
+                        {activeFeiras.map((feira) => (
+                          <MenuItem key={feira.id} value={feira.id}>
+                            {feira.nome}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Grid>
+                  ) : null}
+                </Grid>
+              </Stack>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <CurrencyField
+                    fullWidth
+                    label="Valor estimado"
+                    value={form.valor}
+                    disabled={isDeleting}
+                    onValueChange={(valor) =>
+                      setForm((current) => ({ ...current, valor }))
+                    }
+                    error={Boolean(
+                      localErrors.valor || getFieldMessage(problem, 'valor'),
+                    )}
+                    helperText={
+                      localErrors.valor ?? getFieldMessage(problem, 'valor')
+                    }
+                  />
+                </Grid>
+
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Status"
+                    required
+                    value={form.status}
+                    disabled={isDeleting}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        status: event.target.value as BudgetFormState['status'],
+                      }))
+                    }
+                  >
+                    {form.status === 'FINALIZADO' ? (
+                      <MenuItem value="FINALIZADO" disabled>
+                        {STATUS_ORCAMENTO_LABEL.FINALIZADO}
+                      </MenuItem>
+                    ) : null}
+                    {STATUSES_ALTERAVEIS_ORCAMENTO.map((status) => (
+                      <MenuItem key={status} value={status}>
+                        {STATUS_ORCAMENTO_LABEL[status]}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+              </Grid>
+            </Paper>
+
+            <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700}>
+                    Detalhes do pedido
+                  </Typography>
+                </Box>
+
                 <TextField
-                  select
                   fullWidth
-                  label="Canal de atendimento"
-                  required
-                  value={form.canalAtendimento}
+                  multiline
+                  rows={4}
+                  label="Descrição"
+                  value={form.descricao}
                   disabled={isDeleting}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      canalAtendimento: event.target
-                        .value as BudgetFormState['canalAtendimento'],
+                      descricao: event.target.value,
                     }))
                   }
                   error={Boolean(
-                    localErrors.canalAtendimento ||
-                    getFieldMessage(problem, 'canalAtendimento'),
+                    localErrors.descricao ||
+                      getFieldMessage(problem, 'descricao'),
                   )}
                   helperText={
-                    localErrors.canalAtendimento ??
-                    getFieldMessage(problem, 'canalAtendimento')
+                    localErrors.descricao ??
+                    getFieldMessage(problem, 'descricao')
                   }
-                >
-                  <MenuItem value="">Selecione o canal</MenuItem>
-                  {ALL_CANAIS_ATENDIMENTO_ORCAMENTO.map((canal) => (
-                    <MenuItem key={canal} value={canal}>
-                      {CANAL_ATENDIMENTO_ORCAMENTO_LABEL[canal]}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            )}
+                />
 
-            {form.tipo === 'FEIRA' && (
-              <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
-                  select
                   fullWidth
-                  label="Feira"
-                  required
-                  value={form.idFeira}
+                  label="Link STL"
+                  placeholder="https://..."
+                  value={form.linkSTL}
                   disabled={isDeleting}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                      idFeira:
-                        event.target.value === ''
-                          ? ''
-                          : Number(event.target.value),
+                      linkSTL: event.target.value,
                     }))
                   }
                   error={Boolean(
-                    localErrors.idFeira || getFieldMessage(problem, 'idFeira'),
+                    localErrors.linkSTL || getFieldMessage(problem, 'linkSTL'),
                   )}
                   helperText={
-                    localErrors.idFeira ?? getFieldMessage(problem, 'idFeira')
+                    localErrors.linkSTL ?? getFieldMessage(problem, 'linkSTL')
                   }
-                >
-                  <MenuItem value="">Selecione a feira</MenuItem>
-                  {activeFeiras.map((feira) => (
-                    <MenuItem key={feira.id} value={feira.id}>
-                      {feira.nome}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            )}
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <CurrencyField
-                fullWidth
-                label="Valor estimado"
-                value={form.valor}
-                disabled={isDeleting}
-                onValueChange={(valor) =>
-                  setForm((current) => ({ ...current, valor }))
-                }
-                error={Boolean(
-                  localErrors.valor || getFieldMessage(problem, 'valor'),
-                )}
-                helperText={
-                  localErrors.valor ?? getFieldMessage(problem, 'valor')
-                }
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label="Quantidade"
-                value={form.quantidade}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    quantidade:
-                      event.target.value === ''
-                        ? ''
-                        : Number(event.target.value),
-                  }))
-                }
-                slotProps={{ htmlInput: { min: 1, step: 1 } }}
-                error={Boolean(
-                  localErrors.quantidade ||
-                  getFieldMessage(problem, 'quantidade'),
-                )}
-                helperText={
-                  localErrors.quantidade ??
-                  getFieldMessage(problem, 'quantidade')
-                }
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                select
-                fullWidth
-                label="Status"
-                required
-                value={form.status}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    status: event.target.value as BudgetFormState['status'],
-                  }))
-                }
-              >
-                {form.status === 'FINALIZADO' ? (
-                  <MenuItem value="FINALIZADO" disabled>
-                    {STATUS_ORCAMENTO_LABEL.FINALIZADO}
-                  </MenuItem>
-                ) : null}
-                {STATUSES_ALTERAVEIS_ORCAMENTO.map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {STATUS_ORCAMENTO_LABEL[status]}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Descrição"
-                value={form.descricao}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    descricao: event.target.value,
-                  }))
-                }
-                error={Boolean(
-                  localErrors.descricao ||
-                  getFieldMessage(problem, 'descricao'),
-                )}
-                helperText={
-                  localErrors.descricao ?? getFieldMessage(problem, 'descricao')
-                }
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Link STL"
-                placeholder="https://..."
-                value={form.linkSTL}
-                disabled={isDeleting}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    linkSTL: event.target.value,
-                  }))
-                }
-                error={Boolean(
-                  localErrors.linkSTL || getFieldMessage(problem, 'linkSTL'),
-                )}
-                helperText={
-                  localErrors.linkSTL ?? getFieldMessage(problem, 'linkSTL')
-                }
-              />
-            </Grid>
-          </Grid>
+                />
+              </Stack>
+            </Paper>
+          </Stack>
         </DialogContent>
 
         <DialogActions
