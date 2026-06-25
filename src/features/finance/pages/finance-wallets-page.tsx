@@ -21,9 +21,9 @@ import { AccountBalanceWallet, Edit } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   EditWalletDialog,
-  NewWalletDialog,
   WalletAdjustmentDialog,
 } from '@/features/finance';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   financeStoreSelectors,
   useFinanceStore,
@@ -50,13 +50,13 @@ export default function FinanceWalletsPage() {
         isFetching: financeStoreSelectors.isFetching(state),
       })),
     );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingWalletId, setEditingWalletId] = useState<number | null>(null);
   const [adjustingWalletId, setAdjustingWalletId] = useState<number | null>(
     null,
   );
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const { openNewWalletDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchCarteiras();
@@ -92,7 +92,7 @@ export default function FinanceWalletsPage() {
         title="Carteiras"
         description="Cadastre os destinos de entrada e saída para acompanhar o saldo por carteira."
         actionLabel="Nova carteira"
-        onAction={() => setDialogOpen(true)}
+        onAction={openNewWalletDialog}
       />
 
       {fetchErrorMessage ? (
@@ -301,7 +301,6 @@ export default function FinanceWalletsPage() {
         />
       </Paper>
 
-      <NewWalletDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
       <EditWalletDialog
         open={editingWalletId !== null}
         walletId={editingWalletId}

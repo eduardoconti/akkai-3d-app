@@ -23,6 +23,7 @@ import { useTheme } from '@mui/material/styles';
 import FairDialog from '../components/fair-dialog';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   AppTablePagination,
   EmptyState,
@@ -51,9 +52,9 @@ export default function FairsPage() {
       totalFeiras: saleStoreSelectors.totalFeiras(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFairId, setEditingFairId] = useState<number | null>(null);
   const [pricingFairId, setPricingFairId] = useState<number | null>(null);
+  const { openFairDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchFeirasPaginadas();
@@ -65,7 +66,7 @@ export default function FairsPage() {
         title="Feiras"
         description="Gerencie as feiras disponíveis para vendas presenciais e relatórios."
         actionLabel="Nova feira"
-        onAction={() => setDialogOpen(true)}
+        onAction={openFairDialog}
         breakpoint="lg"
       />
 
@@ -214,7 +215,6 @@ export default function FairsPage() {
         />
       </Paper>
 
-      <FairDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
       <FairDialog
         open={editingFairId !== null}
         fairId={editingFairId}

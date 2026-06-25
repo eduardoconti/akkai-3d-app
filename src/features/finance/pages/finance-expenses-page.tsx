@@ -20,6 +20,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   financeStoreSelectors,
   useFinanceStore,
@@ -78,7 +79,6 @@ export default function FinanceExpensesPage() {
       totalizadores: financeStoreSelectors.totalizadores(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
   const [dateRange, setDateRange] = useState({
@@ -92,6 +92,7 @@ export default function FinanceExpensesPage() {
   const [categoriasSelecionadas, setCategoriasSelecionadas] = useState<
     typeof categoriasDespesa
   >([]);
+  const { openNewExpenseDialog } = useMainLayoutActions();
 
   const handleSearch = () => {
     void fetchDespesas({
@@ -149,7 +150,7 @@ export default function FinanceExpensesPage() {
         title="Despesas"
         description="Registre saídas com categoria, pagamento e carteira para acompanhar os custos do negócio."
         actionLabel="Nova despesa"
-        onAction={() => setDialogOpen(true)}
+        onAction={openNewExpenseDialog}
         breakpoint="lg"
       />
 
@@ -398,11 +399,6 @@ export default function FinanceExpensesPage() {
           }}
         />
       </Paper>
-
-      <NewExpenseDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-      />
 
       <NewExpenseDialog
         open={Boolean(editingDespesa)}

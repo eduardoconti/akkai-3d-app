@@ -27,6 +27,7 @@ import { PointOfSale } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   budgetStoreSelectors,
   useBudgetStore,
@@ -241,7 +242,6 @@ export default function BudgetsPage() {
       totalItens: budgetStoreSelectors.totalItens(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState<Orcamento | null>(null);
   const [finalizingBudget, setFinalizingBudget] = useState<Orcamento | null>(
     null,
@@ -255,6 +255,7 @@ export default function BudgetsPage() {
   );
   const [canalAtendimentoSelecionado, setCanalAtendimentoSelecionado] =
     useState<CanalAtendimentoOrcamento | ''>(paginacao.canalAtendimento ?? '');
+  const { openNewBudgetDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchOrcamentos();
@@ -268,14 +269,8 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleOpenCreateDialog = () => {
-    setSelectedBudget(null);
-    setDialogOpen(true);
-  };
-
   const handleOpenEditDialog = (budget: Orcamento) => {
     setSelectedBudget(budget);
-    setDialogOpen(true);
   };
 
   const handleOpenFinalizeDialog = (budget: Orcamento) => {
@@ -292,7 +287,6 @@ export default function BudgetsPage() {
   };
 
   const handleCloseDialog = () => {
-    setDialogOpen(false);
     setSelectedBudget(null);
   };
 
@@ -335,7 +329,7 @@ export default function BudgetsPage() {
         title="Orçamentos"
         description="Registre e acompanhe solicitações de orçamento dos clientes."
         actionLabel="Novo orçamento"
-        onAction={handleOpenCreateDialog}
+        onAction={openNewBudgetDialog}
       />
 
       {fetchErrorMessage ? (
@@ -737,7 +731,7 @@ export default function BudgetsPage() {
       </Paper>
 
       <NewBudgetDialog
-        open={dialogOpen}
+        open={selectedBudget !== null}
         budget={selectedBudget}
         onClose={handleCloseDialog}
       />

@@ -69,6 +69,11 @@ export interface MovimentacaoEstoque {
   tipo: TipoMovimentacaoEstoque;
   origem: OrigemMovimentacaoEstoque;
   dataInclusao: string;
+  produto?: {
+    id: number;
+    codigo: number;
+    nome: string;
+  };
 }
 
 export interface Feira {
@@ -332,6 +337,15 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   meioPagamento?: MeioPagamento;
   dataInicio?: string;
   dataFim?: string;
+}
+
+export interface PesquisaPaginadaMovimentacoesEstoque
+  extends PesquisaPaginada {
+  dataInicio?: string;
+  dataFim?: string;
+  tipos?: TipoMovimentacaoEstoque[];
+  origens?: OrigemMovimentacaoEstoque[];
+  idProduto?: number;
 }
 
 export type PesquisaPaginadaFeiras = PesquisaPaginada;

@@ -16,7 +16,8 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { EditPlanDialog, NewPlanDialog } from '@/features/assinatura';
+import { EditPlanDialog } from '@/features/assinatura';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   assinaturaStoreSelectors,
   useAssinaturaStore,
@@ -43,10 +44,10 @@ export default function PlanosPage() {
         planos: assinaturaStoreSelectors.planos(state),
       })),
     );
-  const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const { openNewPlanDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchPlanos();
@@ -77,7 +78,7 @@ export default function PlanosPage() {
         title="Planos"
         description="Cadastre os planos de kit mensal para oferecer aos assinantes."
         actionLabel="Novo plano"
-        onAction={() => setNewDialogOpen(true)}
+        onAction={openNewPlanDialog}
       />
 
       {fetchErrorMessage ? (
@@ -220,10 +221,6 @@ export default function PlanosPage() {
         />
       </Paper>
 
-      <NewPlanDialog
-        open={newDialogOpen}
-        onClose={() => setNewDialogOpen(false)}
-      />
       <EditPlanDialog
         open={editingPlanId !== null}
         planId={editingPlanId}

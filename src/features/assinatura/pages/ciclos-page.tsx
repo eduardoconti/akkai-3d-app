@@ -19,7 +19,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import { EditCicloDialog, NewCicloDialog } from '@/features/assinatura';
+import { EditCicloDialog } from '@/features/assinatura';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   assinaturaStoreSelectors,
   useAssinaturaStore,
@@ -64,7 +65,6 @@ export default function CiclosPage() {
       totalCiclos: assinaturaStoreSelectors.totalCiclos(state),
     })),
   );
-  const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingCicloId, setEditingCicloId] = useState<number | null>(null);
   const [statusFiltro, setStatusFiltro] = useState<StatusCiclo | ''>(
     paginacaoCiclos.status ?? '',
@@ -78,6 +78,7 @@ export default function CiclosPage() {
   const [anoFiltro, setAnoFiltro] = useState<number | ''>(
     paginacaoCiclos.ano ?? '',
   );
+  const { openNewCicloDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchAssinantes({ tamanhoPagina: DEFAULT_PAGE_SIZE });
@@ -121,7 +122,7 @@ export default function CiclosPage() {
         title="Ciclos"
         description="Acompanhe e gerencie os ciclos de envio dos kits mensais."
         actionLabel="Novo ciclo"
-        onAction={() => setNewDialogOpen(true)}
+        onAction={openNewCicloDialog}
       />
 
       <SearchFilterPanel
@@ -349,10 +350,6 @@ export default function CiclosPage() {
         />
       </Paper>
 
-      <NewCicloDialog
-        open={newDialogOpen}
-        onClose={() => setNewDialogOpen(false)}
-      />
       <EditCicloDialog
         open={editingCicloId !== null}
         cicloId={editingCicloId}
