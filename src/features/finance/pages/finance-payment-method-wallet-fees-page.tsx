@@ -21,6 +21,7 @@ import {
   financeStoreSelectors,
   useFinanceStore,
 } from '@/features/finance/store/use-finance-store';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import { MEIO_PAGAMENTO_LABEL } from '@/features/finance/types/finance-form';
 import {
   AppTablePagination,
@@ -51,10 +52,10 @@ export default function FinancePaymentMethodWalletFeesPage() {
         financeStoreSelectors.taxasMeioPagamentoCarteira(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingFeeId, setEditingFeeId] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const { openPaymentMethodWalletFeeDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void Promise.all([fetchCarteiras(), fetchTaxasMeioPagamentoCarteira()]);
@@ -94,7 +95,7 @@ export default function FinancePaymentMethodWalletFeesPage() {
         title="Taxas por pagamento"
         description="Configure a taxa percentual aplicada para cada carteira e meio de pagamento."
         actionLabel="Nova taxa"
-        onAction={() => setDialogOpen(true)}
+        onAction={openPaymentMethodWalletFeeDialog}
       />
 
       {fetchErrorMessage ? (
@@ -215,10 +216,6 @@ export default function FinancePaymentMethodWalletFeesPage() {
         />
       </Paper>
 
-      <PaymentMethodWalletFeeDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-      />
       <PaymentMethodWalletFeeDialog
         open={editingFeeId !== null}
         feeId={editingFeeId}

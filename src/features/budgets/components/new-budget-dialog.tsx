@@ -130,10 +130,7 @@ export default function NewBudgetDialog({
     setProblem(null);
     setLocalErrors({});
 
-    if (!budget) {
-      setInitialForm(initialBudgetFormState);
-      return;
-    }
+    if (!budget) return;
 
     setInitialForm({
       nomeCliente: budget.nomeCliente,

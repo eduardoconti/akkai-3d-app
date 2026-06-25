@@ -19,7 +19,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
-import { EditAssinanteDialog, NewAssinanteDialog } from '@/features/assinatura';
+import { EditAssinanteDialog } from '@/features/assinatura';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   assinaturaStoreSelectors,
   useAssinaturaStore,
@@ -63,7 +64,6 @@ export default function AssinantesPage() {
       totalAssinantes: assinaturaStoreSelectors.totalAssinantes(state),
     })),
   );
-  const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingAssinanteId, setEditingAssinanteId] = useState<number | null>(
     null,
   );
@@ -74,6 +74,7 @@ export default function AssinantesPage() {
   const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>(
     paginacaoAssinantes.idPlano ?? '',
   );
+  const { openNewAssinanteDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchPlanos();
@@ -111,7 +112,7 @@ export default function AssinantesPage() {
         title="Assinantes"
         description="Gerencie os assinantes dos kits mensais e seus planos."
         actionLabel="Novo assinante"
-        onAction={() => setNewDialogOpen(true)}
+        onAction={openNewAssinanteDialog}
       />
 
       <SearchFilterPanel
@@ -318,10 +319,6 @@ export default function AssinantesPage() {
         />
       </Paper>
 
-      <NewAssinanteDialog
-        open={newDialogOpen}
-        onClose={() => setNewDialogOpen(false)}
-      />
       <EditAssinanteDialog
         open={editingAssinanteId !== null}
         assinanteId={editingAssinanteId}

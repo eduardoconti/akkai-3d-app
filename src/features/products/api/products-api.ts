@@ -7,6 +7,7 @@ import type {
   MovimentacaoEstoque,
   OrigemEntradaEstoque,
   OrigemSaidaEstoque,
+  PesquisaPaginadaMovimentacoesEstoque,
   PesquisaPaginada,
   Produto,
   ProdutoInput,
@@ -31,6 +32,15 @@ export function listStockMovements(
 ): Promise<ResultadoPaginado<MovimentacaoEstoque>> {
   return httpClient.get<ResultadoPaginado<MovimentacaoEstoque>>(
     `/produto/${id}/estoque/movimentacoes`,
+    query,
+  );
+}
+
+export function listProductStockMovements(
+  query: PesquisaPaginadaMovimentacoesEstoque,
+): Promise<ResultadoPaginado<MovimentacaoEstoque>> {
+  return httpClient.get<ResultadoPaginado<MovimentacaoEstoque>>(
+    '/produto/estoque/movimentacoes',
     query,
   );
 }

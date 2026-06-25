@@ -21,7 +21,8 @@ import {
 import Grid from '@mui/material/Grid';
 import { AutoAwesome } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
-import { EditKitDialog, NewKitDialog } from '@/features/assinatura';
+import { EditKitDialog } from '@/features/assinatura';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   assinaturaStoreSelectors,
   useAssinaturaStore,
@@ -69,7 +70,6 @@ export default function KitsPage() {
     })),
   );
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
-  const [newDialogOpen, setNewDialogOpen] = useState(false);
   const [editingKitId, setEditingKitId] = useState<number | null>(null);
   const [idPlanoFiltro, setIdPlanoFiltro] = useState<number | ''>(
     paginacaoKits.idPlano ?? '',
@@ -80,6 +80,7 @@ export default function KitsPage() {
   const [anoFiltro, setAnoFiltro] = useState<number | ''>(
     paginacaoKits.ano ?? '',
   );
+  const { openNewKitDialog } = useMainLayoutActions();
 
   useEffect(() => {
     void fetchPlanos();
@@ -140,7 +141,7 @@ export default function KitsPage() {
         title="Kits mensais"
         description="Defina o kit de produtos de cada plano por mês e gere os ciclos de envio."
         actionLabel="Novo kit"
-        onAction={() => setNewDialogOpen(true)}
+        onAction={openNewKitDialog}
       />
 
       <SearchFilterPanel
@@ -384,10 +385,6 @@ export default function KitsPage() {
         />
       </Paper>
 
-      <NewKitDialog
-        open={newDialogOpen}
-        onClose={() => setNewDialogOpen(false)}
-      />
       <EditKitDialog
         open={editingKitId !== null}
         kitId={editingKitId}

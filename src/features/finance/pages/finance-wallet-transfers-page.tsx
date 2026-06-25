@@ -19,6 +19,7 @@ import {
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import WalletTransferDialog from '@/features/finance/components/wallet-transfer-dialog';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   financeStoreSelectors,
   useFinanceStore,
@@ -67,7 +68,6 @@ export default function FinanceWalletTransfersPage() {
         financeStoreSelectors.transferenciasCarteira(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTransferencia, setEditingTransferencia] =
     useState<TransferenciaCarteira | null>(null);
   const [dateRange, setDateRange] = useState({
@@ -80,6 +80,7 @@ export default function FinanceWalletTransfersPage() {
   const [idCarteiraDestino, setIdCarteiraDestino] = useState<number | ''>(
     paginacaoTransferencias.idCarteiraDestino ?? '',
   );
+  const { openWalletTransferDialog } = useMainLayoutActions();
 
   const carteirasOrdenadas = useMemo(
     () => [...carteiras].sort((a, b) => a.nome.localeCompare(b.nome)),
@@ -125,7 +126,7 @@ export default function FinanceWalletTransfersPage() {
         title="Transferências"
         description="Pesquise movimentações de valores entre carteiras financeiras."
         actionLabel="Nova transferência"
-        onAction={() => setDialogOpen(true)}
+        onAction={openWalletTransferDialog}
         breakpoint="lg"
       />
 
@@ -327,12 +328,6 @@ export default function FinanceWalletTransfersPage() {
           }}
         />
       </Paper>
-
-      <WalletTransferDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSaved={() => undefined}
-      />
 
       <WalletTransferDialog
         open={Boolean(editingTransferencia)}

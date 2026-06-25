@@ -57,6 +57,7 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import { NavLink, useLocation } from 'react-router-dom';
+import { MainLayoutActionsContext } from './main-layout-actions';
 import { EditProfileDialog, useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
 import {
@@ -116,6 +117,7 @@ const MENU_ACTION_BUTTON_SX = {
     bgcolor: 'action.hover',
   },
 };
+const PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE = 'estoque.ler';
 
 type QuickSaleDraft = {
   id: string;
@@ -252,6 +254,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
     null,
   );
   const quickSaleDraftSequenceRef = useRef(0);
+  const podeListarMovimentacoesEstoque =
+    user?.permissions.includes(PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE) ?? false;
 
   useEffect(() => {
     void hydrateOfflineState();
@@ -325,22 +329,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return 'Painel Operacional';
   }, [location.pathname]);
 
-  const closeMobileMenu = () => setMobileOpen(false);
+  const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setUserMenuAnchorEl(event.currentTarget);
   };
   const handleCloseUserMenu = () => setUserMenuAnchorEl(null);
 
-  const openDialog = (open: () => void) => {
-    const activeElement = document.activeElement;
+  const openDialog = useCallback(
+    (open: () => void) => {
+      const activeElement = document.activeElement;
 
-    if (activeElement instanceof HTMLElement) {
-      activeElement.blur();
-    }
+      if (activeElement instanceof HTMLElement) {
+        activeElement.blur();
+      }
 
-    closeMobileMenu();
-    open();
-  };
+      closeMobileMenu();
+      open();
+    },
+    [closeMobileMenu],
+  );
 
   const handleSyncPendingSales = useCallback(async () => {
     const syncedCount = await sincronizarVendasPendentes();
@@ -381,6 +388,39 @@ export default function MainLayout({ children }: MainLayoutProps) {
     ]);
     setActiveQuickSaleDraftId(id);
   }, [quickSaleDefaultConfig]);
+
+  const layoutActions = useMemo(
+    () => ({
+      openNewProductDialog: () => openDialog(() => setProductDialogOpen(true)),
+      openNewCategoryDialog: () =>
+        openDialog(() => setCategoryDialogOpen(true)),
+      openNewBudgetDialog: () => openDialog(() => setBudgetDialogOpen(true)),
+      openNewExpenseDialog: () => openDialog(() => setExpenseDialogOpen(true)),
+      openNewWalletDialog: () => openDialog(() => setWalletDialogOpen(true)),
+      openWalletTransferDialog: () =>
+        openDialog(() => setWalletTransferDialogOpen(true)),
+      openPaymentMethodWalletFeeDialog: () =>
+        openDialog(() => setPaymentMethodWalletFeeDialogOpen(true)),
+      openFairDialog: () => openDialog(() => setFairDialogOpen(true)),
+      openNewPlanDialog: () => openDialog(() => setPlanDialogOpen(true)),
+      openNewAssinanteDialog: () =>
+        openDialog(() => setAssinanteDialogOpen(true)),
+      openNewCicloDialog: () => openDialog(() => setCicloDialogOpen(true)),
+      openNewKitDialog: () => openDialog(() => setKitDialogOpen(true)),
+    }),
+    [openDialog],
+  );
+
+  const openQuickSaleDraft = useCallback(() => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    closeMobileMenu();
+    handleOpenNewQuickSaleDraft();
+  }, [closeMobileMenu, handleOpenNewQuickSaleDraft]);
 
   const handleQuickSaleDraftChange = useCallback(
     (form: SaleFormState) => {
@@ -551,7 +591,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                openDialog(handleOpenNewQuickSaleDraft);
+                  openQuickSaleDraft();
               }}
               sx={{
                 mr: 0.5,
@@ -598,7 +638,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setFairDialogOpen(true));
+                    layoutActions.openFairDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -646,7 +686,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                openDialog(() => setProductDialogOpen(true));
+                layoutActions.openNewProductDialog();
               }}
               sx={{
                 mr: 0.5,
@@ -693,7 +733,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setCategoryDialogOpen(true));
+                    layoutActions.openNewCategoryDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -703,6 +743,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </IconButton>
               </ListItemButton>
             </ListItem>
+
+            {podeListarMovimentacoesEstoque ? (
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  component={NavLink}
+                  end
+                  to="/produtos/movimentacoes"
+                  onClick={closeMobileMenu}
+                  sx={(theme: Theme) => ({
+                    borderRadius: 2,
+                    '&.active': getActiveSubmenuStyles(theme),
+                  })}
+                >
+                  <ListItemText primary="Movimentações" />
+                </ListItemButton>
+              </ListItem>
+            ) : null}
           </List>
         </Collapse>
 
@@ -726,7 +783,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                openDialog(() => setBudgetDialogOpen(true));
+                layoutActions.openNewBudgetDialog();
               }}
               sx={{
                 mr: 0.5,
@@ -797,7 +854,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setWalletDialogOpen(true));
+                    layoutActions.openNewWalletDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -825,7 +882,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setWalletTransferDialogOpen(true));
+                    layoutActions.openWalletTransferDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -853,7 +910,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setExpenseDialogOpen(true));
+                    layoutActions.openNewExpenseDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -881,7 +938,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setPaymentMethodWalletFeeDialogOpen(true));
+                    layoutActions.openPaymentMethodWalletFeeDialog();
                   }}
                   sx={{
                     ...MENU_ACTION_BUTTON_SX,
@@ -948,7 +1005,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setPlanDialogOpen(true));
+                    layoutActions.openNewPlanDialog();
                   }}
                   sx={{ ...MENU_ACTION_BUTTON_SX }}
                 >
@@ -974,7 +1031,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setAssinanteDialogOpen(true));
+                    layoutActions.openNewAssinanteDialog();
                   }}
                   sx={{ ...MENU_ACTION_BUTTON_SX }}
                 >
@@ -1000,7 +1057,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setCicloDialogOpen(true));
+                    layoutActions.openNewCicloDialog();
                   }}
                   sx={{ ...MENU_ACTION_BUTTON_SX }}
                 >
@@ -1026,7 +1083,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openDialog(() => setKitDialogOpen(true));
+                    layoutActions.openNewKitDialog();
                   }}
                   sx={{ ...MENU_ACTION_BUTTON_SX }}
                 >
@@ -1269,7 +1326,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Divider orientation="vertical" flexItem />
 
             <IconButton
-              onClick={() => openDialog(handleOpenNewQuickSaleDraft)}
+              onClick={openQuickSaleDraft}
               aria-label="Nova venda"
               sx={{
                 flexShrink: 0,
@@ -1363,7 +1420,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <Button
             variant="contained"
             startIcon={<AddShoppingCart />}
-            onClick={() => openDialog(handleOpenNewQuickSaleDraft)}
+            onClick={openQuickSaleDraft}
           >
             Nova venda
           </Button>
@@ -1505,7 +1562,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
         }}
       >
         <Box sx={{ height: { xs: `${MOBILE_APPBAR_MIN_HEIGHT}px`, md: 64 } }} />
-        <Box sx={{ p: { xs: 2, md: 4 } }}>{children}</Box>
+        <MainLayoutActionsContext.Provider value={layoutActions}>
+          <Box sx={{ p: { xs: 2, md: 4 } }}>{children}</Box>
+        </MainLayoutActionsContext.Provider>
       </Box>
 
       <NewProductDialog

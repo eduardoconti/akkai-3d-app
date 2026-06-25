@@ -33,6 +33,9 @@ const ProductsPage = lazy(
 const ProductCategoriesPage = lazy(
   () => import('@/features/products/pages/product-categories-page'),
 );
+const ProductStockMovementsPage = lazy(
+  () => import('@/features/products/pages/product-stock-movements-page'),
+);
 const ReportsBestSellingProductsPage = lazy(
   () => import('@/features/reports/pages/reports-best-selling-products-page'),
 );
@@ -129,6 +132,10 @@ function App() {
             <Route
               path="/produtos/categorias"
               element={<ProductCategoriesPage />}
+            />
+            <Route
+              path="/produtos/movimentacoes"
+              element={<ProductStockMovementsPage />}
             />
             <Route
               path="/relatorios/produtos-mais-vendidos"

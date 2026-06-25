@@ -18,11 +18,11 @@ import {
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
-import NewCategoryDialog from '../components/new-category-dialog';
 import {
   productStoreSelectors,
   useProductStore,
 } from '../store/use-product-store';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   AppTablePagination,
   EmptyState,
@@ -69,13 +69,13 @@ export default function ProductCategoriesPage() {
       totalCategorias: productStoreSelectors.totalCategorias(state),
     })),
   );
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
     null,
   );
   const [searchInput, setSearchInput] = useState(
     paginacaoCategorias.termo ?? '',
   );
+  const { openNewCategoryDialog } = useMainLayoutActions();
 
   const handleSearch = () => {
     void fetchCategoriasPaginadas({ pagina: 1, termo: searchInput.trim() });
@@ -97,7 +97,7 @@ export default function ProductCategoriesPage() {
         title="Categorias"
         description="Consulte as categorias de produtos cadastradas e a hierarquia entre elas."
         actionLabel="Nova categoria"
-        onAction={() => setDialogOpen(true)}
+        onAction={openNewCategoryDialog}
       />
 
       <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
@@ -208,10 +208,6 @@ export default function ProductCategoriesPage() {
         />
       </Paper>
 
-      <NewCategoryDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-      />
       <EditCategoryDialog
         open={editingCategoryId !== null}
         categoryId={editingCategoryId}

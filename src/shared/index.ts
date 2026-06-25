@@ -88,6 +88,7 @@ export type {
   PagamentoVenda,
   PesquisaPaginadaConsignacoes,
   PesquisaPaginadaDespesas,
+  PesquisaPaginadaMovimentacoesEstoque,
   PesquisaPaginadaOrcamentos,
   PesquisaPaginadaPrecosProdutosFeira,
   PesquisaPaginadaRevendedores,
