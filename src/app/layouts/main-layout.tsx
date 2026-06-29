@@ -389,8 +389,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
     setActiveQuickSaleDraftId(id);
   }, [quickSaleDefaultConfig]);
 
+  const openQuickSaleDraft = useCallback(() => {
+    const activeElement = document.activeElement;
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur();
+    }
+
+    closeMobileMenu();
+    handleOpenNewQuickSaleDraft();
+  }, [closeMobileMenu, handleOpenNewQuickSaleDraft]);
+
   const layoutActions = useMemo(
     () => ({
+      openNewSaleDialog: openQuickSaleDraft,
       openNewProductDialog: () => openDialog(() => setProductDialogOpen(true)),
       openNewCategoryDialog: () =>
         openDialog(() => setCategoryDialogOpen(true)),
@@ -408,19 +420,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
       openNewCicloDialog: () => openDialog(() => setCicloDialogOpen(true)),
       openNewKitDialog: () => openDialog(() => setKitDialogOpen(true)),
     }),
-    [openDialog],
+    [openDialog, openQuickSaleDraft],
   );
-
-  const openQuickSaleDraft = useCallback(() => {
-    const activeElement = document.activeElement;
-
-    if (activeElement instanceof HTMLElement) {
-      activeElement.blur();
-    }
-
-    closeMobileMenu();
-    handleOpenNewQuickSaleDraft();
-  }, [closeMobileMenu, handleOpenNewQuickSaleDraft]);
 
   const handleQuickSaleDraftChange = useCallback(
     (form: SaleFormState) => {
@@ -591,7 +592,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="small"
               onClick={(event) => {
                 event.stopPropagation();
-                  openQuickSaleDraft();
+                layoutActions.openNewSaleDialog();
               }}
               sx={{
                 mr: 0.5,
@@ -1326,7 +1327,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Divider orientation="vertical" flexItem />
 
             <IconButton
-              onClick={openQuickSaleDraft}
+              onClick={layoutActions.openNewSaleDialog}
               aria-label="Nova venda"
               sx={{
                 flexShrink: 0,
@@ -1420,7 +1421,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <Button
             variant="contained"
             startIcon={<AddShoppingCart />}
-            onClick={openQuickSaleDraft}
+            onClick={layoutActions.openNewSaleDialog}
           >
             Nova venda
           </Button>

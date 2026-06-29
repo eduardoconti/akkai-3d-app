@@ -40,10 +40,10 @@ import {
 } from '@/features/sales/types/sale-form';
 import {
   CurrencyField,
-  CurrencyValue,
   DatePickerField,
   FormFeedbackAlert,
   ProductAutocompleteField,
+  formatCurrency,
   formatLocalDate,
   getFieldMessage,
   useFeedbackStore,
@@ -636,7 +636,7 @@ export default function ExchangeReturnDialog({
                         sx={{ mt: 1.5 }}
                       >
                         <Typography variant="body2" fontWeight={700}>
-                          <CurrencyValue value={calcularValorItem(item)} />
+                          {formatCurrency(calcularValorItem(item))}
                         </Typography>
                       </Stack>
                     </Paper>
@@ -760,7 +760,7 @@ export default function ExchangeReturnDialog({
                 Devolvido
               </Typography>
               <Typography variant="body2" fontWeight={700}>
-                <CurrencyValue value={totais.valorDevolvido} />
+                {formatCurrency(totais.valorDevolvido)}
               </Typography>
             </Box>
             <Box>
@@ -768,7 +768,7 @@ export default function ExchangeReturnDialog({
                 Entregue
               </Typography>
               <Typography variant="body2" fontWeight={700}>
-                <CurrencyValue value={totais.valorNovo} />
+                {formatCurrency(totais.valorNovo)}
               </Typography>
             </Box>
             <Box>
@@ -786,7 +786,7 @@ export default function ExchangeReturnDialog({
                       : 'text.primary'
                 }
               >
-                <CurrencyValue value={totais.valorDiferenca} />
+                {formatCurrency(totais.valorDiferenca)}
               </Typography>
             </Box>
           </Stack>
