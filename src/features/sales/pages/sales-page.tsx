@@ -15,6 +15,7 @@ import {
   Menu,
   MenuItem,
   Paper,
+  Portal,
   Stack,
   Table,
   TableBody,
@@ -619,38 +620,40 @@ export default function SalesPage() {
   return (
     <Stack spacing={3}>
       {cardTooltip ? (
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            left: cardTooltip.x + 14,
-            top: cardTooltip.y - 14,
-            px: 1.5,
-            py: 1,
-            pointerEvents: 'none',
-            zIndex: 1400,
-            borderRadius: 2,
-          }}
-        >
-          <Stack spacing={0.5}>
-            {cardTooltip.lines.map((line) => (
-              <Stack
-                key={line.label}
-                direction="row"
-                spacing={1.5}
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography variant="caption" color="text.secondary">
-                  {line.label}
-                </Typography>
-                <Typography variant="caption" fontWeight={700}>
-                  {line.value}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-        </Paper>
+        <Portal>
+          <Paper
+            elevation={3}
+            sx={{
+              position: 'fixed',
+              left: cardTooltip.x + 14,
+              top: cardTooltip.y - 14,
+              px: 1.5,
+              py: 1,
+              pointerEvents: 'none',
+              zIndex: 1400,
+              borderRadius: 2,
+            }}
+          >
+            <Stack spacing={0.5}>
+              {cardTooltip.lines.map((line) => (
+                <Stack
+                  key={line.label}
+                  direction="row"
+                  spacing={1.5}
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    {line.label}
+                  </Typography>
+                  <Typography variant="caption" fontWeight={700}>
+                    {line.value}
+                  </Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Paper>
+        </Portal>
       ) : null}
 
       <Stack
