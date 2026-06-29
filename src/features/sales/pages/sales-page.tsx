@@ -44,6 +44,7 @@ import {
   getPaymentMethodLabel,
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
+import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
@@ -52,6 +53,7 @@ import {
   SearchFilterPanel,
   TableColumnVisibilityButton,
   formatCurrencyWithVisibility,
+  formatValueWithVisibility,
   formatLocalDate,
   useTableColumnVisibility,
   useFeedbackStore,
@@ -72,6 +74,17 @@ function getSaleItemName(vendaItem: Venda['itens'][number]): string {
 
 function formatSaleValue(value: number, hideValues: boolean): string {
   return formatCurrencyWithVisibility(value, hideValues);
+}
+
+interface CardTooltipLine {
+  label: string;
+  value: string;
+}
+
+interface CardTooltipState {
+  x: number;
+  y: number;
+  lines: CardTooltipLine[];
 }
 
 function getSalePayments(venda: Venda): Venda['pagamentos'] {
@@ -383,6 +396,7 @@ function SaleRow({
 }
 
 export default function SalesPage() {
+  const { openNewSaleDialog } = useMainLayoutActions();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isOnline = useOnlineStatus();
@@ -440,7 +454,6 @@ export default function SalesPage() {
   );
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const [isNewSaleOpen, setIsNewSaleOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Venda | null>(null);
   const [isExchangeReturnOpen, setIsExchangeReturnOpen] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState<Venda | null>(null);
@@ -449,6 +462,7 @@ export default function SalesPage() {
     null,
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
+  const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
   const {
     visibleColumnIds,
     isColumnVisible,
@@ -597,8 +611,48 @@ export default function SalesPage() {
     setSaleToDelete(null);
   };
 
+  const handleCardMouseMove =
+    (lines: CardTooltipLine[]) => (event: React.MouseEvent<HTMLDivElement>) => {
+      setCardTooltip({ x: event.clientX, y: event.clientY, lines });
+    };
+
   return (
     <Stack spacing={3}>
+      {cardTooltip ? (
+        <Paper
+          elevation={3}
+          sx={{
+            position: 'fixed',
+            left: cardTooltip.x + 14,
+            top: cardTooltip.y - 14,
+            px: 1.5,
+            py: 1,
+            pointerEvents: 'none',
+            zIndex: 1400,
+            borderRadius: 2,
+          }}
+        >
+          <Stack spacing={0.5}>
+            {cardTooltip.lines.map((line) => (
+              <Stack
+                key={line.label}
+                direction="row"
+                spacing={1.5}
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Typography variant="caption" color="text.secondary">
+                  {line.label}
+                </Typography>
+                <Typography variant="caption" fontWeight={700}>
+                  {line.value}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Paper>
+      ) : null}
+
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         justifyContent="space-between"
@@ -626,7 +680,7 @@ export default function SalesPage() {
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => setIsNewSaleOpen(true)}
+            onClick={openNewSaleDialog}
           >
             Nova venda
           </Button>
@@ -756,7 +810,38 @@ export default function SalesPage() {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <Paper
+            variant="outlined"
+            sx={{ p: 2, cursor: 'default' }}
+            onMouseMove={handleCardMouseMove([
+              {
+                label: 'Catálogo',
+                value: String(totalizadores.quantidadeItensCatalogo ?? 0),
+              },
+              {
+                label: 'Brindes',
+                value: String(totalizadores.quantidadeBrindes ?? 0),
+              },
+              {
+                label: 'Avulsos',
+                value: String(totalizadores.quantidadeItensAvulsos ?? 0),
+              },
+            ])}
+            onMouseLeave={() => setCardTooltip(null)}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Itens
+            </Typography>
+            <Typography variant="h6" fontWeight={700}>
+              {formatValueWithVisibility(
+                String(totalizadores.quantidadeItensVendidos ?? 0),
+                hideValues,
+              )}
+            </Typography>
+          </Paper>
+        </Grid>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Desconto total
@@ -766,7 +851,7 @@ export default function SalesPage() {
             </Typography>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Valor total das vendas
@@ -776,7 +861,7 @@ export default function SalesPage() {
             </Typography>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Valor líquido das vendas
@@ -1135,9 +1220,8 @@ export default function SalesPage() {
       </Dialog>
 
       <NewSaleDialog
-        open={isNewSaleOpen || Boolean(editingSale)}
+        open={Boolean(editingSale)}
         onClose={() => {
-          setIsNewSaleOpen(false);
           setEditingSale(null);
         }}
         sale={editingSale}

@@ -750,6 +750,10 @@ export interface ResultadoPaginado<T> {
 }
 
 export interface TotalizadoresVendas {
+  quantidadeItensVendidos: number;
+  quantidadeItensCatalogo: number;
+  quantidadeBrindes: number;
+  quantidadeItensAvulsos: number;
   valorTotal: number;
   descontoTotal: number;
   valorLiquido: number;

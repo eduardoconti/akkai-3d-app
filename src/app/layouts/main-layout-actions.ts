@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 
 export interface MainLayoutActions {
+  openNewSaleDialog: () => void;
   openNewProductDialog: () => void;
   openNewCategoryDialog: () => void;
   openNewBudgetDialog: () => void;

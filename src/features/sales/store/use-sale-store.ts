@@ -55,6 +55,30 @@ const paginacaoInicial: PesquisaPaginadaVendas = {
   dataFim: paginacaoInicialPeriodo.endValue,
 };
 
+const totalizadoresVendasIniciais: TotalizadoresVendas = {
+  quantidadeItensVendidos: 0,
+  quantidadeItensCatalogo: 0,
+  quantidadeBrindes: 0,
+  quantidadeItensAvulsos: 0,
+  valorTotal: 0,
+  descontoTotal: 0,
+  valorLiquido: 0,
+};
+
+function normalizarTotalizadoresVendas(
+  totalizadores?: Partial<TotalizadoresVendas>,
+): TotalizadoresVendas {
+  return {
+    quantidadeItensVendidos: totalizadores?.quantidadeItensVendidos ?? 0,
+    quantidadeItensCatalogo: totalizadores?.quantidadeItensCatalogo ?? 0,
+    quantidadeBrindes: totalizadores?.quantidadeBrindes ?? 0,
+    quantidadeItensAvulsos: totalizadores?.quantidadeItensAvulsos ?? 0,
+    valorTotal: totalizadores?.valorTotal ?? 0,
+    descontoTotal: totalizadores?.descontoTotal ?? 0,
+    valorLiquido: totalizadores?.valorLiquido ?? 0,
+  };
+}
+
 const paginacaoFeirasInicial: PesquisaPaginadaFeiras = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
@@ -239,11 +263,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   totalItens: 0,
   totalPaginas: 1,
   totalFeiras: 0,
-  totalizadores: {
-    valorTotal: 0,
-    descontoTotal: 0,
-    valorLiquido: 0,
-  },
+  totalizadores: totalizadoresVendasIniciais,
   pendingSalesCount: 0,
   isFetching: false,
   isSubmitting: false,
@@ -302,7 +322,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         },
         totalItens: response.totalItens,
         totalPaginas: response.totalPaginas,
-        totalizadores: response.totalizadores,
+        totalizadores: normalizarTotalizadoresVendas(response.totalizadores),
       });
       await saveCachedSales(response);
       return response;
@@ -328,12 +348,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
             },
             totalItens: cachedResponse.totalItens,
             totalPaginas: cachedResponse.totalPaginas,
-            totalizadores: (cachedResponse as ResultadoPaginadoVendas)
-              .totalizadores ?? {
-              valorTotal: 0,
-              descontoTotal: 0,
-              valorLiquido: 0,
-            },
+            totalizadores: normalizarTotalizadoresVendas(
+              (cachedResponse as ResultadoPaginadoVendas).totalizadores,
+            ),
             fetchErrorMessage: null,
           });
           return cachedResponse;
