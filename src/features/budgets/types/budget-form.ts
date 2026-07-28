@@ -49,9 +49,7 @@ export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
   'CANCELADO',
 ];
 
-export const STATUSES_ALTERAVEIS_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
-  (status) => status !== 'FINALIZADO',
-);
+export const STATUSES_ALTERAVEIS_ORCAMENTO = ALL_STATUSES_ORCAMENTO;
 
 export const STATUS_ORCAMENTO_LABEL: Record<StatusOrcamento, string> = {
   ATENDIMENTO: 'Em atendimento',

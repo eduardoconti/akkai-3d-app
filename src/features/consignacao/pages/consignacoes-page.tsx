@@ -37,12 +37,14 @@ import {
   KeyboardArrowDown,
   KeyboardArrowUp,
   PointOfSale,
+  TaskAlt,
 } from '@mui/icons-material';
 import {
   baixarRelatorioConsignacaoPdf,
   listarTodosRevendedoresAtivos,
 } from '@/features/consignacao/api/consignacao-api';
 import ConsignacaoDialog from '@/features/consignacao/components/consignacao-dialog';
+import FecharConsignacaoDialog from '@/features/consignacao/components/fechar-consignacao-dialog';
 import ItemConsignacaoDialog from '@/features/consignacao/components/item-consignacao-dialog';
 import RegistrarDevolucaoConsignadaDialog from '@/features/consignacao/components/registrar-devolucao-consignada-dialog';
 import RegistrarVendasRevendedorDialog from '@/features/consignacao/components/registrar-vendas-revendedor-dialog';
@@ -307,6 +309,8 @@ export default function ConsignacoesPage() {
     null,
   );
   const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [fechamentoConsignacao, setFechamentoConsignacao] =
+    useState<Consignacao | null>(null);
 
   useEffect(() => {
     void fetchConsignacoes();
@@ -395,6 +399,18 @@ export default function ConsignacoesPage() {
   ) => {
     setDevolucaoConsignacao(consignacao);
     setDevolucaoItem(item);
+  };
+
+  const handleOpenFechamento = async (consignacao: Consignacao) => {
+    setItemErrorMessage(null);
+    try {
+      const detalhe = consignacao.itens
+        ? consignacao
+        : await obterConsignacaoPorId(consignacao.id);
+      setFechamentoConsignacao(detalhe);
+    } catch (error) {
+      setItemErrorMessage(getProblemDetailsFromError(error).detail);
+    }
   };
 
   const handleOpenAdicionarItem = (consignacao: Consignacao) => {
@@ -672,6 +688,20 @@ export default function ConsignacoesPage() {
                         >
                           PDF
                         </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          startIcon={<TaskAlt />}
+                          onClick={() =>
+                            void handleOpenFechamento(consignacao)
+                          }
+                          disabled={
+                            consignacao.status !== 'ABERTA' ||
+                            consignacao.quantidadeDisponivel <= 0
+                          }
+                        >
+                          Fechar consignação
+                        </Button>
                       </Stack>
 
                       <Collapse in={expanded} timeout="auto" unmountOnExit>
@@ -845,15 +875,35 @@ export default function ConsignacoesPage() {
                             {consignacao.quantidadeDisponivel}
                           </TableCell>
                           <TableCell align="right">
-                            <Button
-                              size="small"
-                              startIcon={<FileDownload />}
-                              onClick={() =>
-                                void handleDownloadRelatorio(consignacao.id)
-                              }
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              justifyContent="flex-end"
                             >
-                              PDF
-                            </Button>
+                              <Button
+                                size="small"
+                                startIcon={<FileDownload />}
+                                onClick={() =>
+                                  void handleDownloadRelatorio(consignacao.id)
+                                }
+                              >
+                                PDF
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<TaskAlt />}
+                                onClick={() =>
+                                  void handleOpenFechamento(consignacao)
+                                }
+                                disabled={
+                                  consignacao.status !== 'ABERTA' ||
+                                  consignacao.quantidadeDisponivel <= 0
+                                }
+                              >
+                                Fechar
+                              </Button>
+                            </Stack>
                           </TableCell>
                         </TableRow>
                         <TableRow>
@@ -966,6 +1016,12 @@ export default function ConsignacoesPage() {
           setDevolucaoItem(null);
           setDevolucaoConsignacao(null);
         }}
+        onSaved={handleRefresh}
+      />
+      <FecharConsignacaoDialog
+        open={fechamentoConsignacao !== null}
+        consignacao={fechamentoConsignacao}
+        onClose={() => setFechamentoConsignacao(null)}
         onSaved={handleRefresh}
       />
     </Stack>

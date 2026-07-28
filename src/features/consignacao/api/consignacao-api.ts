@@ -3,6 +3,7 @@ import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type {
   AlterarItemConsignacaoInput,
   Consignacao,
+  FecharConsignacaoInput,
   ItemConsignacaoInput,
   InserirConsignacaoInput,
   PesquisaPaginadaConsignacoes,
@@ -140,6 +141,16 @@ export function registrarDevolucaoConsignada(
 ): Promise<Consignacao> {
   return httpClient.post<Consignacao>(
     `/consignacao/${idConsignacao}/itens/${idItem}/devolucoes`,
+    dados,
+  );
+}
+
+export function fecharConsignacao(
+  idConsignacao: number,
+  dados: FecharConsignacaoInput,
+): Promise<Consignacao> {
+  return httpClient.post<Consignacao>(
+    `/consignacao/${idConsignacao}/fechamento`,
     dados,
   );
 }

@@ -534,6 +534,17 @@ export interface RegistrarDevolucaoConsignadaInput {
   quantidade: number;
 }
 
+export interface FecharItemConsignacaoInput {
+  idItem: number;
+  quantidadeVendida: number;
+}
+
+export interface FecharConsignacaoInput {
+  itens: FecharItemConsignacaoInput[];
+  idCarteira?: number;
+  meioPagamento?: MeioPagamento;
+}
+
 export interface PesquisaPaginadaRevendedores extends Omit<
   PesquisaPaginada,
   'ordenarPor' | 'idsCategorias'

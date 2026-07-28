@@ -6,6 +6,7 @@ import {
   criarConsignacao,
   criarRevendedor,
   excluirItemConsignacao,
+  fecharConsignacao,
   listarConsignacoes,
   listarRevendedores,
   obterConsignacaoPorId,
@@ -19,6 +20,7 @@ import type { ActionResult } from '@/shared/lib/types/action-result';
 import type {
   AlterarItemConsignacaoInput,
   Consignacao,
+  FecharConsignacaoInput,
   InserirConsignacaoInput,
   ItemConsignacaoInput,
   PesquisaPaginadaConsignacoes,
@@ -144,6 +146,10 @@ interface ConsignacaoStoreState {
   excluirItemConsignacao: (
     idConsignacao: number,
     idItem: number,
+  ) => Promise<ActionResult<Consignacao>>;
+  fecharConsignacao: (
+    idConsignacao: number,
+    dados: FecharConsignacaoInput,
   ) => Promise<ActionResult<Consignacao>>;
   registrarVendasRevendedor: (
     idRevendedor: number,
@@ -338,6 +344,26 @@ export const useConsignacaoStore = create<ConsignacaoStoreState>(
         set({ isSubmitting: false });
       }
     },
+    fecharConsignacao: async (idConsignacao, dados) => {
+      set({ isSubmitting: true, submitErrorMessage: null });
+      try {
+        const consignacao = await fecharConsignacao(idConsignacao, dados);
+        set((state) => ({
+          consignacoes: substituirConsignacaoNaLista(
+            state.consignacoes,
+            consignacao,
+          ),
+          detalheConsignacao: consignacao,
+        }));
+        return { success: true, data: consignacao };
+      } catch (error) {
+        const problem = getProblemDetailsFromError(error);
+        set({ submitErrorMessage: problem.detail });
+        return { success: false, problem };
+      } finally {
+        set({ isSubmitting: false });
+      }
+    },
     registrarVendasRevendedor: async (idRevendedor, dados) => {
       set({ isSubmitting: true, submitErrorMessage: null });
       try {
@@ -409,6 +435,8 @@ export const consignacaoStoreSelectors = {
     state.alterarItemConsignacao,
   excluirItemConsignacao: (state: ConsignacaoStoreState) =>
     state.excluirItemConsignacao,
+  fecharConsignacao: (state: ConsignacaoStoreState) =>
+    state.fecharConsignacao,
   registrarVendasRevendedor: (state: ConsignacaoStoreState) =>
     state.registrarVendasRevendedor,
   registrarDevolucao: (state: ConsignacaoStoreState) =>

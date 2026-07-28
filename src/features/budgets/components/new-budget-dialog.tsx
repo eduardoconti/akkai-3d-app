@@ -585,13 +585,20 @@ export default function NewBudgetDialog({
                       }))
                     }
                   >
-                    {form.status === 'FINALIZADO' ? (
-                      <MenuItem value="FINALIZADO" disabled>
-                        {STATUS_ORCAMENTO_LABEL.FINALIZADO}
-                      </MenuItem>
-                    ) : null}
-                    {STATUSES_ALTERAVEIS_ORCAMENTO.map((status) => (
-                      <MenuItem key={status} value={status}>
+                    {STATUSES_ALTERAVEIS_ORCAMENTO.filter(
+                      (status) =>
+                        isEditMode ||
+                        status !== 'FINALIZADO' ||
+                        form.status === 'FINALIZADO',
+                    ).map((status) => (
+                      <MenuItem
+                        key={status}
+                        value={status}
+                        disabled={
+                          form.status === 'FINALIZADO' ||
+                          (!isEditMode && status === 'FINALIZADO')
+                        }
+                      >
                         {STATUS_ORCAMENTO_LABEL[status]}
                       </MenuItem>
                     ))}
