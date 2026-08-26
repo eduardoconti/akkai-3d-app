@@ -50,6 +50,7 @@ import {
   Loyalty,
   Logout as LogoutIcon,
   Menu as MenuIcon,
+  PointOfSale,
   RequestQuote,
   ShoppingCart as SaleIcon,
   Sync,
@@ -61,6 +62,7 @@ import { MainLayoutActionsContext } from './main-layout-actions';
 import { EditProfileDialog, useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
 import {
+  CashRegisterOpeningDialog,
   NewExpenseDialog,
   NewWalletDialog,
   PaymentMethodWalletFeeDialog,
@@ -232,6 +234,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     });
   const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [cashRegisterDialogOpen, setCashRegisterDialogOpen] = useState(false);
   const [
     paymentMethodWalletFeeDialogOpen,
     setPaymentMethodWalletFeeDialogOpen,
@@ -409,6 +412,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
       openNewBudgetDialog: () => openDialog(() => setBudgetDialogOpen(true)),
       openNewExpenseDialog: () => openDialog(() => setExpenseDialogOpen(true)),
       openNewWalletDialog: () => openDialog(() => setWalletDialogOpen(true)),
+      openCashRegisterDialog: () =>
+        openDialog(() => setCashRegisterDialogOpen(true)),
       openWalletTransferDialog: () =>
         openDialog(() => setWalletTransferDialogOpen(true)),
       openPaymentMethodWalletFeeDialog: () =>
@@ -838,6 +843,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <Collapse in={financeMenuOpen} timeout="auto" unmountOnExit>
           <List component="div" disablePadding sx={{ pl: 1.5 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                component={NavLink}
+                end
+                to="/financeiro/caixas"
+                onClick={closeMobileMenu}
+                sx={(theme: Theme) => ({
+                  borderRadius: 2,
+                  '&.active': getActiveSubmenuStyles(theme),
+                })}
+              >
+                <ListItemText primary="Caixas" />
+              </ListItemButton>
+            </ListItem>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -1327,6 +1346,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Divider orientation="vertical" flexItem />
 
             <IconButton
+              color="inherit"
+              size="small"
+              aria-label="Abertura de caixa"
+              onClick={layoutActions.openCashRegisterDialog}
+              sx={{ flexShrink: 0 }}
+            >
+              <PointOfSale />
+            </IconButton>
+
+            <Divider orientation="vertical" flexItem />
+
+            <IconButton
               onClick={layoutActions.openNewSaleDialog}
               aria-label="Nova venda"
               sx={{
@@ -1414,6 +1445,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={toggleHideValues}
           >
             {hideValues ? 'Exibir valores' : 'Ocultar valores'}
+          </Button>
+
+          <Divider orientation="vertical" flexItem />
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="small"
+            startIcon={<PointOfSale />}
+            onClick={layoutActions.openCashRegisterDialog}
+          >
+            Abertura de caixa
           </Button>
 
           <Divider orientation="vertical" flexItem />
@@ -1751,6 +1794,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewWalletDialog
         open={walletDialogOpen}
         onClose={() => setWalletDialogOpen(false)}
+      />
+      <CashRegisterOpeningDialog
+        open={cashRegisterDialogOpen}
+        onClose={() => setCashRegisterDialogOpen(false)}
       />
       <PaymentMethodWalletFeeDialog
         open={paymentMethodWalletFeeDialogOpen}

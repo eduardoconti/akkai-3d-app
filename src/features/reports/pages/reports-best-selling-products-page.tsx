@@ -59,11 +59,23 @@ function getPeriodoLabel(result: BestSellingProductsResponse | null) {
     return null;
   }
 
-  if (result.dataInicio === result.dataFim) {
-    return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)}`;
+  if (!result.dataInicio && !result.dataFim) {
+    return 'Período consultado: todo o histórico';
   }
 
-  return `Período consultado: ${formatApiDateToDisplay(result.dataInicio)} até ${formatApiDateToDisplay(result.dataFim)}`;
+  if (result.dataInicio && !result.dataFim) {
+    return `Período consultado: a partir de ${formatApiDateToDisplay(result.dataInicio)}`;
+  }
+
+  if (!result.dataInicio && result.dataFim) {
+    return `Período consultado: até ${formatApiDateToDisplay(result.dataFim)}`;
+  }
+
+  if (result.dataInicio === result.dataFim) {
+    return `Período consultado: ${formatApiDateToDisplay(result.dataInicio!)}`;
+  }
+
+  return `Período consultado: ${formatApiDateToDisplay(result.dataInicio!)} até ${formatApiDateToDisplay(result.dataFim!)}`;
 }
 
 function getProductRowKey(
@@ -107,7 +119,6 @@ export default function ReportsBestSellingProductsPage() {
     null,
   );
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
-  const [localError, setLocalError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
   const [isLoadingFeiras, setIsLoadingFeiras] = useState(false);
@@ -195,21 +206,13 @@ export default function ReportsBestSellingProductsPage() {
     filters = getCurrentFilters(),
   ) => {
     setProblem(null);
-    setLocalError(null);
-
-    if (!filters.dataInicio || !filters.dataFim) {
-      setLocalError('Selecione as datas inicial e final.');
-      setResult(null);
-      setAppliedFilters(null);
-      return;
-    }
 
     setIsLoading(true);
 
     try {
       const response = await getBestSellingProducts({
-        dataInicio: filters.dataInicio,
-        dataFim: filters.dataFim,
+        dataInicio: filters.dataInicio || undefined,
+        dataFim: filters.dataFim || undefined,
         tipoVenda:
           filters.tipoVenda === 'TODOS' ? undefined : filters.tipoVenda,
         idFeira:
@@ -241,7 +244,6 @@ export default function ReportsBestSellingProductsPage() {
     setIdFeira('');
     setCategoriasSelecionadas([]);
     setProblem(null);
-    setLocalError(null);
     setResult(null);
     setAppliedFilters(null);
   };
@@ -288,8 +290,8 @@ export default function ReportsBestSellingProductsPage() {
           Produtos mais vendidos
         </Typography>
         <Typography color="text.secondary">
-          Identifique os produtos com maior giro por período, tipo de venda,
-          feira e categorias.
+          Identifique os produtos com maior giro em todo o histórico ou filtre
+          por período, tipo de venda, feira e categorias.
         </Typography>
       </Box>
 
@@ -376,7 +378,7 @@ export default function ReportsBestSellingProductsPage() {
         </Grid>
       </SearchFilterPanel>
 
-      <FormFeedbackAlert message={localError ?? problem?.detail} />
+      <FormFeedbackAlert message={problem?.detail} />
 
       {result ? (
         <Stack spacing={2}>

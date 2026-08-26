@@ -13,6 +13,9 @@ const FairProductPricesPage = lazy(
 const FinanceWalletsPage = lazy(
   () => import('@/features/finance/pages/finance-wallets-page'),
 );
+const FinanceCashRegistersPage = lazy(
+  () => import('@/features/finance/pages/finance-cash-registers-page'),
+);
 const FinanceExpenseCategoriesPage = lazy(
   () => import('@/features/finance/pages/finance-expense-categories-page'),
 );
@@ -110,6 +113,10 @@ function App() {
             <Route
               path="/financeiro/carteiras"
               element={<FinanceWalletsPage />}
+            />
+            <Route
+              path="/financeiro/caixas"
+              element={<FinanceCashRegistersPage />}
             />
             <Route
               path="/financeiro/categorias-despesa"

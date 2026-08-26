@@ -7,6 +7,7 @@ export interface MainLayoutActions {
   openNewBudgetDialog: () => void;
   openNewExpenseDialog: () => void;
   openNewWalletDialog: () => void;
+  openCashRegisterDialog: () => void;
   openWalletTransferDialog: () => void;
   openPaymentMethodWalletFeeDialog: () => void;
   openFairDialog: () => void;
@@ -16,14 +17,17 @@ export interface MainLayoutActions {
   openNewKitDialog: () => void;
 }
 
-export const MainLayoutActionsContext =
-  createContext<MainLayoutActions | null>(null);
+export const MainLayoutActionsContext = createContext<MainLayoutActions | null>(
+  null,
+);
 
 export function useMainLayoutActions() {
   const actions = useContext(MainLayoutActionsContext);
 
   if (!actions) {
-    throw new Error('useMainLayoutActions deve ser usado dentro do MainLayout.');
+    throw new Error(
+      'useMainLayoutActions deve ser usado dentro do MainLayout.',
+    );
   }
 
   return actions;

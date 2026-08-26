@@ -77,7 +77,7 @@ export interface SalesSummary {
 }
 
 export interface BestSellingProductsFilter {
-  dataInicio: string;
+  dataInicio?: string;
   dataFim?: string;
   tipoVenda?: TipoVenda;
   idFeira?: number;
@@ -98,8 +98,8 @@ export interface BestSellingProductItem {
 }
 
 export interface BestSellingProductsResponse {
-  dataInicio: string;
-  dataFim: string;
+  dataInicio: string | null;
+  dataFim: string | null;
   itens: BestSellingProductItem[];
   pagina: number;
   tamanhoPagina: number;

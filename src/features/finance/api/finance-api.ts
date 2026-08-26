@@ -16,7 +16,52 @@ import type {
   TaxaMeioPagamentoCarteiraInput,
   TransferenciaCarteira,
   TransferenciaCarteiraInput,
+  Caixa,
+  PesquisaPaginadaCaixas,
+  ResultadoPaginadoCaixas,
 } from '@/shared/lib/types/domain';
+
+export function listCashRegisters(
+  query: PesquisaPaginadaCaixas,
+): Promise<ResultadoPaginadoCaixas> {
+  return httpClient.get<ResultadoPaginadoCaixas>('/financeiro/caixas', query);
+}
+
+export function getCashRegisterById(id: number): Promise<Caixa> {
+  return httpClient.get<Caixa>(`/financeiro/caixas/${id}`);
+}
+
+export function getOpenCashRegister(idFeira: number): Promise<Caixa | null> {
+  return httpClient.get<Caixa | null>('/financeiro/caixas/aberto', { idFeira });
+}
+
+export function openCashRegister(input: {
+  idFeira: number;
+  carteiras: Array<{ idCarteira: number; valorAbertura: number }>;
+  observacao?: string;
+}): Promise<Caixa> {
+  return httpClient.post<Caixa>('/financeiro/caixas/abrir', input);
+}
+
+export function updateCashRegister(
+  id: number,
+  input: {
+    idFeira: number;
+    carteiras: Array<{ idCarteira: number; valorAbertura: number }>;
+    observacao?: string;
+  },
+): Promise<Caixa> {
+  return httpClient.put<Caixa>(`/financeiro/caixas/${id}`, input);
+}
+
+export function closeCashRegister(
+  id: number,
+  input: {
+    carteiras: Array<{ idCarteira: number; valorInformadoFechamento: number }>;
+  },
+): Promise<Caixa> {
+  return httpClient.post<Caixa>(`/financeiro/caixas/${id}/fechar`, input);
+}
 
 export function listWallets(): Promise<Carteira[]> {
   return httpClient.get<Carteira[]>('/financeiro/carteiras');

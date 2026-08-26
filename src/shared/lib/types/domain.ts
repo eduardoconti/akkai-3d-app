@@ -91,6 +91,37 @@ export interface FeiraInput {
   ativa?: boolean;
 }
 
+export interface ConferenciaCarteiraCaixa {
+  id: number;
+  idCaixa: number;
+  idCarteira: number;
+  valorAbertura: number;
+  totalEntradas?: number | null;
+  valorEsperadoFechamento?: number | null;
+  valorInformadoFechamento?: number | null;
+  diferenca?: number | null;
+  carteira?: Carteira;
+}
+
+export interface Caixa {
+  id: number;
+  idFeira: number;
+  status: 'ABERTO' | 'FECHADO';
+  dataAbertura: string;
+  dataFechamento?: string | null;
+  observacao?: string;
+  feira?: Feira;
+  conferencias: ConferenciaCarteiraCaixa[];
+}
+
+export interface PesquisaPaginadaCaixas extends PesquisaPaginada {
+  dataInicio?: string;
+  dataFim?: string;
+  idFeira?: number;
+}
+
+export type ResultadoPaginadoCaixas = ResultadoPaginado<Caixa>;
+
 export interface PrecoProdutoFeira {
   id: number;
   idFeira: number;
@@ -263,6 +294,7 @@ export interface InserirVendaInput {
   dataVenda: string;
   tipo: TipoVenda;
   idFeira?: number;
+  idCaixa?: number;
   idOrcamento?: number;
   desconto?: number;
   itens: InserirVendaItemInput[];
@@ -339,8 +371,7 @@ export interface PesquisaPaginadaVendas extends PesquisaPaginada {
   dataFim?: string;
 }
 
-export interface PesquisaPaginadaMovimentacoesEstoque
-  extends PesquisaPaginada {
+export interface PesquisaPaginadaMovimentacoesEstoque extends PesquisaPaginada {
   dataInicio?: string;
   dataFim?: string;
   tipos?: TipoMovimentacaoEstoque[];

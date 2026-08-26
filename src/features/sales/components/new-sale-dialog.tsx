@@ -38,6 +38,7 @@ import {
 } from '@mui/icons-material';
 import { listAllProducts } from '@/features/products/api/products-api';
 import { listFairProductPrices } from '@/features/sales/api/sales-api';
+import { getOpenCashRegister } from '@/features/finance/api/finance-api';
 import {
   saleStoreSelectors,
   useSaleStore,
@@ -76,6 +77,7 @@ import {
   type Produto,
   type TipoVenda,
   type Venda,
+  type Caixa,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -264,6 +266,16 @@ function mapSaleToForm(sale: Venda): SaleFormState {
   };
 }
 
+function getSaleDateForApi(formDate: string, sale?: Venda | null): string {
+  if (sale && formDate === formatLocalDate(sale.dataVenda)) {
+    return sale.dataVenda;
+  }
+
+  return sale
+    ? formatLocalDate(formDate, 'api-date-time')
+    : formatLocalDate(formDate, 'api-current-date-time');
+}
+
 export default function NewSaleDialog({
   draftKey,
   initialForm,
@@ -306,6 +318,14 @@ export default function NewSaleDialog({
   );
 
   const [form, setInternalForm] = useState<SaleFormState>(initialSaleFormState);
+  const [caixaAberto, setCaixaAberto] = useState<Caixa | null>(null);
+  const carteirasDisponiveis = useMemo(() => {
+    if (form.tipo !== 'FEIRA' || !caixaAberto) return carteiras;
+    const ids = new Set(
+      caixaAberto.conferencias.map((item) => item.idCarteira),
+    );
+    return carteiras.filter((carteira) => ids.has(carteira.id));
+  }, [caixaAberto, carteiras, form.tipo]);
   const [persistedConfig, setPersistedConfig] = useState<PersistedSaleConfig>({
     tipo: initialSaleFormState.tipo,
     idFeira: initialSaleFormState.idFeira,
@@ -423,7 +443,9 @@ export default function NewSaleDialog({
   ]);
 
   useEffect(() => {
-    const carteiraPadrao = carteiras.find((carteira) => carteira.ativa);
+    const carteiraPadrao = carteirasDisponiveis.find(
+      (carteira) => carteira.ativa,
+    );
     const primeiroPagamento = form.pagamentos[0];
 
     if (
@@ -446,7 +468,7 @@ export default function NewSaleDialog({
         ),
       }));
     }
-  }, [open, isEditMode, carteiras, form.pagamentos]);
+  }, [open, isEditMode, carteirasDisponiveis, form.pagamentos]);
 
   useEffect(() => {
     window.__AKKAI_PRODUCTS__ = catalogProducts;
@@ -507,8 +529,26 @@ export default function NewSaleDialog({
     };
   }, [form.idFeira, form.tipo, open]);
 
+  useEffect(() => {
+    if (!open || form.tipo !== 'FEIRA' || form.idFeira === '' || !isOnline) {
+      setCaixaAberto(null);
+      return;
+    }
+    let active = true;
+    void getOpenCashRegister(form.idFeira)
+      .then((caixa) => {
+        if (active) setCaixaAberto(caixa);
+      })
+      .catch(() => {
+        if (active) setCaixaAberto(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [form.idFeira, form.tipo, isOnline, open]);
+
   const getAvailableMeiosPagamento = (idCarteira: number | '') => {
-    const carteira = carteiras.find((c) => c.id === idCarteira);
+    const carteira = carteirasDisponiveis.find((c) => c.id === idCarteira);
     if (!carteira?.meiosPagamento?.length)
       return ['DIN', 'DEB', 'CRE', 'PIX'] as MeioPagamento[];
     return carteira.meiosPagamento;
@@ -834,6 +874,17 @@ export default function NewSaleDialog({
     setPaymentErrors(nextPaymentErrors);
     setProblem(null);
 
+    if (!isEditMode && form.tipo === 'FEIRA' && !caixaAberto) {
+      setLocalErrors((current) => ({
+        ...current,
+        idFeira: isOnline
+          ? 'Abra o caixa desta feira antes de registrar vendas.'
+          : 'Conecte-se para validar o caixa aberto antes de registrar a venda.',
+      }));
+      setShowConfig(true);
+      return;
+    }
+
     const hasItemErrors = nextItemErrors.some(
       (item) => Object.keys(item).length > 0,
     );
@@ -857,14 +908,16 @@ export default function NewSaleDialog({
       return;
     }
 
-    const dataVendaFormatoApi = isEditMode
-      ? formatLocalDate(form.dataVenda, 'api-date-time')
-      : formatLocalDate(form.dataVenda, 'api-current-date-time');
+    const dataVendaFormatoApi = getSaleDateForApi(
+      form.dataVenda,
+      isEditMode ? sale : null,
+    );
 
     const payload = {
       dataVenda: dataVendaFormatoApi,
       tipo: form.tipo,
       idFeira: form.idFeira === '' ? undefined : form.idFeira,
+      idCaixa: form.tipo === 'FEIRA' ? caixaAberto?.id : undefined,
       idOrcamento: form.idOrcamento,
       desconto: totals.saleDiscount,
       pagamentos: form.pagamentos.map((pagamento) => ({
@@ -1609,7 +1662,7 @@ export default function NewSaleDialog({
                   <Stack spacing={1.25} sx={{ mb: 1.5 }}>
                     <WalletToggleGroup
                       value={primaryPayment.idCarteira}
-                      wallets={carteiras}
+                      wallets={carteirasDisponiveis}
                       onChange={(idCarteira) =>
                         handleChangePaymentWallet(0, idCarteira)
                       }
@@ -1690,7 +1743,7 @@ export default function NewSaleDialog({
                         <Stack spacing={1.25}>
                           <WalletToggleGroup
                             value={pagamento.idCarteira}
-                            wallets={carteiras}
+                            wallets={carteirasDisponiveis}
                             onChange={(idCarteira) =>
                               handleChangePaymentWallet(index, idCarteira)
                             }

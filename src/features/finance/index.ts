@@ -5,6 +5,8 @@ export { default as NewWalletDialog } from './components/new-wallet-dialog';
 export { default as PaymentMethodWalletFeeDialog } from './components/payment-method-wallet-fee-dialog';
 export { default as WalletAdjustmentDialog } from './components/wallet-adjustment-dialog';
 export { default as WalletTransferDialog } from './components/wallet-transfer-dialog';
+export { default as CashRegisterOpeningDialog } from './components/cash-register-opening-dialog';
+export { default as CashRegisterDetailsDialog } from './components/cash-register-details-dialog';
 export { default as FinanceExpenseCategoriesPage } from './pages/finance-expense-categories-page';
 export { default as FinanceExpensesPage } from './pages/finance-expenses-page';
 export { default as FinancePaymentMethodWalletFeesPage } from './pages/finance-payment-method-wallet-fees-page';
