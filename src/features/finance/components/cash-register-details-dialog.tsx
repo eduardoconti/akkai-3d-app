@@ -45,6 +45,9 @@ export default function CashRegisterDetailsDialog({
 }: CashRegisterDetailsDialogProps) {
   const [caixa, setCaixa] = useState<Caixa | null>(null);
   const [valores, setValores] = useState<Record<number, number>>({});
+  const [carteirasInformadas, setCarteirasInformadas] = useState<Set<number>>(
+    new Set(),
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -67,6 +70,7 @@ export default function CashRegisterDetailsDialog({
             resultado.conferencias.map((item) => [item.idCarteira, 0]),
           ),
         );
+        setCarteirasInformadas(new Set());
       })
       .catch((error) => setErro(getProblemDetailsFromError(error).detail))
       .finally(() => setCarregando(false));
@@ -77,6 +81,7 @@ export default function CashRegisterDetailsDialog({
     setEditando(false);
     setCaixa(null);
     setValores({});
+    setCarteirasInformadas(new Set());
     setErro(null);
     onClose();
   };
@@ -154,65 +159,105 @@ export default function CashRegisterDetailsDialog({
                   label={caixa.status === 'ABERTO' ? 'Caixa aberto' : 'Fechado'}
                 />
                 <Grid container spacing={2}>
-                  {caixa.conferencias.map((item) => (
-                    <Grid key={item.idCarteira} size={{ xs: 12, md: 6 }}>
-                      <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                        <Stack spacing={1.5}>
-                          <Typography fontWeight={700}>
-                            {item.carteira?.nome ??
-                              `Carteira ${item.idCarteira}`}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Abertura: {formatCurrency(item.valorAbertura)}
-                          </Typography>
-                          <Divider />
-                          {caixa.status === 'ABERTO' ? (
-                            <CurrencyField
-                              fullWidth
-                              label="Valor contado"
-                              value={valores[item.idCarteira] ?? 0}
-                              onValueChange={(valor) =>
-                                setValores((atual) => ({
-                                  ...atual,
-                                  [item.idCarteira]: valor,
-                                }))
-                              }
-                              disabled={salvando}
-                            />
-                          ) : (
-                            <Stack spacing={0.5}>
-                              <Typography variant="body2">
-                                Entradas:{' '}
-                                {formatCurrency(item.totalEntradas ?? 0)}
-                              </Typography>
-                              <Typography variant="body2">
-                                Esperado:{' '}
-                                {formatCurrency(
-                                  item.valorEsperadoFechamento ?? 0,
-                                )}
-                              </Typography>
-                              <Typography variant="body2">
-                                Informado:{' '}
-                                {formatCurrency(
-                                  item.valorInformadoFechamento ?? 0,
-                                )}
-                              </Typography>
-                              <Typography
-                                fontWeight={700}
-                                color={
-                                  (item.diferenca ?? 0) === 0
-                                    ? 'success.main'
-                                    : 'warning.main'
-                                }
-                              >
-                                Diferença: {formatCurrency(item.diferenca ?? 0)}
-                              </Typography>
-                            </Stack>
-                          )}
-                        </Stack>
-                      </Paper>
-                    </Grid>
-                  ))}
+                  {caixa.conferencias.map((item) => {
+                    const valorEsperado =
+                      item.valorEsperadoFechamento ??
+                      item.valorAbertura + (item.totalEntradas ?? 0);
+                    const valorInformado = Math.round(
+                      (valores[item.idCarteira] ?? 0) * 100,
+                    );
+                    const diferenca = valorInformado - valorEsperado;
+
+                    return (
+                      <Grid key={item.idCarteira} size={{ xs: 12, md: 6 }}>
+                        <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
+                          <Stack spacing={1.5}>
+                            <Typography fontWeight={700}>
+                              {item.carteira?.nome ??
+                                `Carteira ${item.idCarteira}`}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Abertura: {formatCurrency(item.valorAbertura)}
+                            </Typography>
+                            <Divider />
+                            {caixa.status === 'ABERTO' ? (
+                              <Stack spacing={1.25}>
+                                <Typography variant="body2">
+                                  Entradas líquidas:{' '}
+                                  {formatCurrency(item.totalEntradas ?? 0)}
+                                </Typography>
+                                <Typography fontWeight={700}>
+                                  Esperado agora:{' '}
+                                  {formatCurrency(valorEsperado)}
+                                </Typography>
+                                <CurrencyField
+                                  fullWidth
+                                  label="Valor contado"
+                                  value={valores[item.idCarteira] ?? 0}
+                                  onValueChange={(valor) => {
+                                    setValores((atual) => ({
+                                      ...atual,
+                                      [item.idCarteira]: valor,
+                                    }));
+                                    setCarteirasInformadas((atuais) => {
+                                      const atualizadas = new Set(atuais);
+                                      atualizadas.add(item.idCarteira);
+                                      return atualizadas;
+                                    });
+                                  }}
+                                  disabled={salvando}
+                                />
+                                {carteirasInformadas.has(item.idCarteira) ? (
+                                  <Typography
+                                    fontWeight={700}
+                                    color={
+                                      diferenca === 0
+                                        ? 'success.main'
+                                        : diferenca < 0
+                                          ? 'error.main'
+                                          : 'warning.main'
+                                    }
+                                  >
+                                    Diferença: {formatCurrency(diferenca)}
+                                  </Typography>
+                                ) : null}
+                              </Stack>
+                            ) : (
+                              <Stack spacing={0.5}>
+                                <Typography variant="body2">
+                                  Entradas:{' '}
+                                  {formatCurrency(item.totalEntradas ?? 0)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Esperado:{' '}
+                                  {formatCurrency(
+                                    item.valorEsperadoFechamento ?? 0,
+                                  )}
+                                </Typography>
+                                <Typography variant="body2">
+                                  Informado:{' '}
+                                  {formatCurrency(
+                                    item.valorInformadoFechamento ?? 0,
+                                  )}
+                                </Typography>
+                                <Typography
+                                  fontWeight={700}
+                                  color={
+                                    (item.diferenca ?? 0) === 0
+                                      ? 'success.main'
+                                      : 'warning.main'
+                                  }
+                                >
+                                  Diferença:{' '}
+                                  {formatCurrency(item.diferenca ?? 0)}
+                                </Typography>
+                              </Stack>
+                            )}
+                          </Stack>
+                        </Paper>
+                      </Grid>
+                    );
+                  })}
                 </Grid>
               </>
             )}
