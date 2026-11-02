@@ -1,23 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import WalletTransferDialog from '@/features/finance/components/wallet-transfer-dialog';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -29,20 +12,17 @@ import {
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
 import {
-  AppTablePagination,
   CurrencyValue,
   DateRangePickerField,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
+  type DataTableColumn,
   type TransferenciaCarteira,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceWalletTransfersPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     carteiras,
     fetchCarteiras,
@@ -114,6 +94,36 @@ export default function FinanceWalletTransfersPage() {
   const handleOpenEdit = (transferencia: TransferenciaCarteira) => {
     setEditingTransferencia(transferencia);
   };
+
+  const colunasTransferencias: DataTableColumn<TransferenciaCarteira>[] = [
+    {
+      id: 'data',
+      header: 'Data',
+      mobile: 'title',
+      cell: (transferencia) =>
+        formatApiDateToDisplay(transferencia.dataTransferencia),
+    },
+    {
+      id: 'origem',
+      header: 'Carteira de origem',
+      cell: (transferencia) => transferencia.carteiraOrigem?.nome ?? '-',
+    },
+    {
+      id: 'destino',
+      header: 'Carteira de destino',
+      cell: (transferencia) => transferencia.carteiraDestino?.nome ?? '-',
+    },
+    {
+      id: 'valor',
+      header: 'Valor',
+      align: 'right',
+      cell: (transferencia) => (
+        <Typography component="span" variant="inherit" fontWeight={700}>
+          <CurrencyValue value={transferencia.valor} />
+        </Typography>
+      ),
+    },
+  ];
 
   useEffect(() => {
     void fetchCarteiras();
@@ -192,142 +202,29 @@ export default function FinanceWalletTransfersPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de transferências"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : transferenciasCarteira.length > 0 ? (
-              transferenciasCarteira.map((transferencia) => (
-                <Box
-                  key={transferencia.id}
-                  onClick={() => handleOpenEdit(transferencia)}
-                  sx={{
-                    px: 2,
-                    py: 2,
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                >
-                  <Stack spacing={1.25}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      spacing={1}
-                    >
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatApiDateToDisplay(
-                            transferencia.dataTransferencia,
-                          )}
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          {transferencia.carteiraOrigem?.nome ?? '-'} para{' '}
-                          {transferencia.carteiraDestino?.nome ?? '-'}
-                        </Typography>
-                      </Box>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        <CurrencyValue value={transferencia.valor} />
-                      </Typography>
-                    </Stack>
-
-                    <Typography variant="body2" color="text.secondary">
-                      Origem: {transferencia.carteiraOrigem?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Destino: {transferencia.carteiraDestino?.nome ?? '-'}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma transferência encontrada para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de transferências">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Data</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Carteira de origem</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Carteira de destino</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Valor</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : transferenciasCarteira.length > 0 ? (
-                  transferenciasCarteira.map((transferencia) => (
-                    <TableRow
-                      key={transferencia.id}
-                      hover
-                      onClick={() => handleOpenEdit(transferencia)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>
-                        {formatApiDateToDisplay(
-                          transferencia.dataTransferencia,
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {transferencia.carteiraOrigem?.nome ?? '-'}
-                      </TableCell>
-                      <TableCell>
-                        {transferencia.carteiraDestino?.nome ?? '-'}
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>
-                        <CurrencyValue value={transferencia.valor} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma transferência encontrada para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalItensTransferencias}
-          page={Math.max(0, paginacaoTransferencias.pagina - 1)}
-          rowsPerPage={paginacaoTransferencias.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
-            void fetchTransferenciasCarteira({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
+      <ResponsiveDataTable
+        rows={transferenciasCarteira}
+        columns={colunasTransferencias}
+        getRowId={(transferencia) => transferencia.id}
+        ariaLabel="tabela de transferências"
+        emptyMessage="Nenhuma transferência encontrada para os filtros informados."
+        isLoading={isFetching}
+        onRowClick={handleOpenEdit}
+        pagination={{
+          count: totalItensTransferencias,
+          page: Math.max(0, paginacaoTransferencias.pagina - 1),
+          rowsPerPage: paginacaoTransferencias.tamanhoPagina,
+          onPageChange: (novaPagina) => {
+            void fetchTransferenciasCarteira({ pagina: novaPagina + 1 });
+          },
+          onRowsPerPageChange: (novoTamanho) => {
             void fetchTransferenciasCarteira({
               pagina: 1,
-              tamanhoPagina: Number(event.target.value),
+              tamanhoPagina: novoTamanho,
             });
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <WalletTransferDialog
         open={Boolean(editingTransferencia)}

@@ -1,40 +1,19 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Chip, IconButton, Stack, Tooltip } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import FairDialog from '../components/fair-dialog';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
-  AppTablePagination,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
+  type Feira,
   PageHeader,
+  ResponsiveDataTable,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FairsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     feirasPaginadas,
     fetchErrorMessage,
@@ -60,6 +39,53 @@ export default function FairsPage() {
     void fetchFeirasPaginadas();
   }, [fetchFeirasPaginadas]);
 
+  const fairColumns: DataTableColumn<Feira>[] = [
+    {
+      id: 'nome',
+      header: 'Nome',
+      mobile: 'title',
+      cell: (feira) => feira.nome,
+    },
+    { id: 'local', header: 'Local', cell: (feira) => feira.local ?? '-' },
+    {
+      id: 'descricao',
+      header: 'Descrição',
+      cell: (feira) => feira.descricao ?? '-',
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (feira) => (
+        <Chip
+          size="small"
+          color={feira.ativa ? 'success' : 'default'}
+          variant="outlined"
+          label={feira.ativa ? 'Ativa' : 'Inativa'}
+        />
+      ),
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (feira) => (
+        <Tooltip title="Preços da feira">
+          <IconButton
+            aria-label={`Preços da feira ${feira.nome}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              setPricingFairId(feira.id);
+            }}
+          >
+            <LocalOffer />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -74,146 +100,29 @@ export default function FairsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de feiras">
-            {isFetching ? (
-              <LoadingState />
-            ) : feirasPaginadas.length > 0 ? (
-              feirasPaginadas.map((feira) => (
-                <Box
-                  key={feira.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingFairId(feira.id)}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {feira.nome}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Local: {feira.local ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {feira.descricao?.trim()
-                        ? feira.descricao
-                        : 'Sem descrição'}
-                    </Typography>
-                    <Box>
-                      <Chip
-                        size="small"
-                        color={feira.ativa ? 'success' : 'default'}
-                        variant="outlined"
-                        label={feira.ativa ? 'Ativa' : 'Inativa'}
-                      />
-                    </Box>
-                    <Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<LocalOffer />}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPricingFairId(feira.id);
-                        }}
-                      >
-                        Preços
-                      </Button>
-                    </Box>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma feira cadastrada até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de feiras">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Local</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Descrição</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell width={72} />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : feirasPaginadas.length > 0 ? (
-                  feirasPaginadas.map((feira) => (
-                    <TableRow
-                      key={feira.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingFairId(feira.id)}
-                    >
-                      <TableCell>{feira.nome}</TableCell>
-                      <TableCell>{feira.local ?? '-'}</TableCell>
-                      <TableCell>{feira.descricao ?? '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          color={feira.ativa ? 'success' : 'default'}
-                          variant="outlined"
-                          label={feira.ativa ? 'Ativa' : 'Inativa'}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Tooltip title="Preços da feira">
-                          <IconButton
-                            aria-label={`Preços da feira ${feira.nome}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setPricingFairId(feira.id);
-                            }}
-                          >
-                            <LocalOffer />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma feira cadastrada até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalFeiras}
-          page={Math.max(0, paginacaoFeiras.pagina - 1)}
-          rowsPerPage={paginacaoFeiras.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={feirasPaginadas}
+        columns={fairColumns}
+        getRowId={(feira) => feira.id}
+        ariaLabel="tabela de feiras"
+        emptyMessage="Nenhuma feira cadastrada até o momento."
+        isLoading={isFetching}
+        onRowClick={(feira) => setEditingFairId(feira.id)}
+        pagination={{
+          count: totalFeiras,
+          page: Math.max(0, paginacaoFeiras.pagina - 1),
+          rowsPerPage: paginacaoFeiras.tamanhoPagina,
+          onPageChange: (newPage) => {
             void fetchFeirasPaginadas({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
             void fetchFeirasPaginadas({
               pagina: 1,
-              tamanhoPagina: Number(event.target.value),
+              tamanhoPagina: newRowsPerPage,
             });
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <FairDialog
         open={editingFairId !== null}

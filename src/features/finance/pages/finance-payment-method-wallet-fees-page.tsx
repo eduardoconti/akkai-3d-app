@@ -1,21 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Alert, Chip, Stack, Typography } from '@mui/material';
 import { useShallow } from 'zustand/react/shallow';
 import {
   financeStoreSelectors,
@@ -24,17 +8,52 @@ import {
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import { MEIO_PAGAMENTO_LABEL } from '@/features/finance/types/finance-form';
 import {
-  AppTablePagination,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
 } from '@/shared';
+import type { TaxaMeioPagamentoCarteira } from '@/shared/lib/types/domain';
 import PaymentMethodWalletFeeDialog from '../components/payment-method-wallet-fee-dialog';
 
+const colunasTaxas: DataTableColumn<TaxaMeioPagamentoCarteira>[] = [
+  {
+    id: 'carteira',
+    header: 'Carteira',
+    mobile: 'title',
+    cell: (taxa) => taxa.carteira?.nome ?? '-',
+  },
+  {
+    id: 'pagamento',
+    header: 'Pagamento',
+    cell: (taxa) => MEIO_PAGAMENTO_LABEL[taxa.meioPagamento],
+  },
+  {
+    id: 'taxa',
+    header: 'Taxa',
+    align: 'right',
+    cell: (taxa) => (
+      <Typography component="span" variant="inherit" fontWeight={700}>
+        {taxa.percentual.toFixed(2)}%
+      </Typography>
+    ),
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    mobile: 'badge',
+    cell: (taxa) => (
+      <Chip
+        size="small"
+        label={taxa.ativa ? 'Ativa' : 'Inativa'}
+        color={taxa.ativa ? 'success' : 'default'}
+        variant="outlined"
+      />
+    ),
+  },
+];
+
 export default function FinancePaymentMethodWalletFeesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     fetchCarteiras,
     fetchErrorMessage,
@@ -102,119 +121,25 @@ export default function FinancePaymentMethodWalletFeesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de taxas">
-            {isFetching ? (
-              <LoadingState />
-            ) : paginatedFees.length > 0 ? (
-              paginatedFees.map((taxa) => (
-                <Box
-                  key={taxa.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingFeeId(taxa.id)}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {taxa.carteira?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pagamento: {MEIO_PAGAMENTO_LABEL[taxa.meioPagamento]}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Taxa: {taxa.percentual.toFixed(2)}%
-                    </Typography>
-                    <Box>
-                      <Chip
-                        size="small"
-                        label={taxa.ativa ? 'Ativa' : 'Inativa'}
-                        color={taxa.ativa ? 'success' : 'default'}
-                        variant="outlined"
-                      />
-                    </Box>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma taxa cadastrada até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de taxas por pagamento">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Carteira</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Pagamento</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Taxa</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedFees.length > 0 ? (
-                  paginatedFees.map((taxa) => (
-                    <TableRow
-                      key={taxa.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingFeeId(taxa.id)}
-                    >
-                      <TableCell>{taxa.carteira?.nome ?? '-'}</TableCell>
-                      <TableCell>
-                        {MEIO_PAGAMENTO_LABEL[taxa.meioPagamento]}
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 700 }}>
-                        {taxa.percentual.toFixed(2)}%
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={taxa.ativa ? 'Ativa' : 'Inativa'}
-                          color={taxa.ativa ? 'success' : 'default'}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma taxa cadastrada até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={fees.length}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_event, newPage) => {
-            setPage(newPage);
-          }}
-          onRowsPerPageChange={(event) => {
-            setRowsPerPage(Number(event.target.value));
+      <ResponsiveDataTable
+        rows={paginatedFees}
+        columns={colunasTaxas}
+        getRowId={(taxa) => taxa.id}
+        ariaLabel="tabela de taxas por pagamento"
+        emptyMessage="Nenhuma taxa cadastrada até o momento."
+        isLoading={isFetching}
+        onRowClick={(taxa) => setEditingFeeId(taxa.id)}
+        pagination={{
+          count: fees.length,
+          page,
+          rowsPerPage,
+          onPageChange: setPage,
+          onRowsPerPageChange: (novoTamanho) => {
+            setRowsPerPage(novoTamanho);
             setPage(0);
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <PaymentMethodWalletFeeDialog
         open={editingFeeId !== null}

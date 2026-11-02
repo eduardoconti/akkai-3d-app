@@ -1,23 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
 import {
@@ -25,13 +8,12 @@ import {
   searchFairProductPrices,
 } from '@/features/sales/api/sales-api';
 import {
-  AppTablePagination,
   CurrencyValue,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   getProblemDetailsFromError,
+  type DataTableColumn,
   type DirecaoOrdenacao,
   type Feira,
   type OrdenacaoPrecoProdutoFeira,
@@ -48,8 +30,6 @@ function getProductCode(price: PrecoProdutoFeira) {
 }
 
 export default function FairProductPricesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [prices, setPrices] = useState<PrecoProdutoFeira[]>([]);
   const [fairs, setFairs] = useState<Feira[]>([]);
   const { pagination, setPagination } = useSaleStore(
@@ -155,6 +135,39 @@ export default function FairProductPricesPage() {
     });
   };
 
+  const priceColumns: DataTableColumn<PrecoProdutoFeira>[] = [
+    {
+      id: 'codigo',
+      header: 'Código',
+      mobile: 'eyebrow',
+      cell: (price) => getProductCode(price),
+    },
+    {
+      id: 'produto',
+      header: 'Produto',
+      mobile: 'title',
+      cell: (price) => getProductName(price),
+    },
+    {
+      id: 'feira',
+      header: 'Feira',
+      cell: (price) => price.feira?.nome ?? price.idFeira,
+    },
+    {
+      id: 'precoPadrao',
+      header: 'Preço padrão',
+      align: 'right',
+      cell: (price) =>
+        price.produto ? <CurrencyValue value={price.produto.valor} /> : '-',
+    },
+    {
+      id: 'precoFeira',
+      header: 'Preço na feira',
+      align: 'right',
+      cell: (price) => <CurrencyValue value={price.valor} />,
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -233,133 +246,27 @@ export default function FairProductPricesPage() {
 
       {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de preços por feira"
-          >
-            {isLoading ? (
-              <LoadingState />
-            ) : prices.length > 0 ? (
-              prices.map((price) => (
-                <Box
-                  key={price.id}
-                  onClick={() => setEditingPrice(price)}
-                  sx={{ cursor: 'pointer', px: 2, py: 2 }}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="caption" color="text.secondary">
-                      Código: {getProductCode(price)}
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {getProductName(price)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Feira: {price.feira?.nome ?? price.idFeira}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Preço padrão:{' '}
-                      {price.produto ? (
-                        <CurrencyValue value={price.produto.valor} />
-                      ) : (
-                        '-'
-                      )}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Preço na feira: <CurrencyValue value={price.valor} />
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum preço específico encontrado." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table
-              sx={{ minWidth: 860 }}
-              aria-label="tabela de preços por feira"
-            >
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Código</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Produto</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Feira</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Preço padrão</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Preço na feira</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : prices.length > 0 ? (
-                  prices.map((price) => (
-                    <TableRow
-                      key={price.id}
-                      hover
-                      onClick={() => setEditingPrice(price)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>{getProductCode(price)}</TableCell>
-                      <TableCell>{getProductName(price)}</TableCell>
-                      <TableCell>
-                        {price.feira?.nome ?? price.idFeira}
-                      </TableCell>
-                      <TableCell align="right">
-                        {price.produto ? (
-                          <CurrencyValue value={price.produto.valor} />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        <CurrencyValue value={price.valor} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum preço específico encontrado." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalItems}
-          page={Math.max(0, pagination.pagina - 1)}
-          rowsPerPage={pagination.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={prices}
+        columns={priceColumns}
+        getRowId={(price) => price.id}
+        ariaLabel="tabela de preços por feira"
+        emptyMessage="Nenhum preço específico encontrado."
+        isLoading={isLoading}
+        onRowClick={setEditingPrice}
+        minTableWidth={860}
+        pagination={{
+          count: totalItems,
+          page: Math.max(0, pagination.pagina - 1),
+          rowsPerPage: pagination.tamanhoPagina,
+          onPageChange: (newPage) => {
             setPagination({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            setPagination({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
+            setPagination({ pagina: 1, tamanhoPagina: newRowsPerPage });
+          },
+        }}
+      />
 
       <FairProductPricesDialog
         open={editingPrice !== null}

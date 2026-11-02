@@ -1,24 +1,20 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
   Box,
   Button,
   Chip,
-  Collapse,
-  Divider,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
   MenuItem,
-  Paper,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
@@ -53,15 +49,14 @@ import {
   useConsignacaoStore,
 } from '@/features/consignacao/store/use-consignacao-store';
 import {
-  AppTablePagination,
   CurrencyValue,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   getProblemDetailsFromError,
   useFeedbackStore,
   type Consignacao,
+  type DataTableColumn,
   type ItemConsignacao,
   type Revendedor,
   type StatusConsignacao,
@@ -101,19 +96,124 @@ function obterStatusColor(status: StatusConsignacao) {
   return 'default' as const;
 }
 
-function DetalheItens({
+interface DetalheItensProps {
+  consignacao: Consignacao;
+  compacto: boolean;
+  onAdicionar: () => void;
+  onDevolucao: (item: ItemConsignacao) => void;
+  onAlterar: (item: ItemConsignacao) => void;
+  onExcluir: (item: ItemConsignacao) => void;
+}
+
+type AcoesItemProps = Pick<
+  DetalheItensProps,
+  'consignacao' | 'onDevolucao' | 'onAlterar' | 'onExcluir'
+> & { item: ItemConsignacao };
+
+function AcoesItem({
+  consignacao,
+  item,
+  onDevolucao,
+  onAlterar,
+  onExcluir,
+}: AcoesItemProps) {
+  return (
+    <>
+      <Button
+        size="small"
+        startIcon={<Edit />}
+        onClick={() => onAlterar(item)}
+        disabled={consignacao.status !== 'ABERTA'}
+      >
+        Alterar
+      </Button>
+      <Button
+        size="small"
+        color="error"
+        startIcon={<DeleteIcon />}
+        onClick={() => onExcluir(item)}
+        disabled={
+          consignacao.status !== 'ABERTA' ||
+          item.quantidadeVendida > 0 ||
+          item.quantidadeDevolvida > 0
+        }
+      >
+        Excluir
+      </Button>
+      <Button
+        size="small"
+        startIcon={<AssignmentReturn />}
+        onClick={() => onDevolucao(item)}
+        disabled={
+          consignacao.status !== 'ABERTA' || item.quantidadeDisponivel <= 0
+        }
+      >
+        Devolver
+      </Button>
+    </>
+  );
+}
+
+function DetalheItensLista({
   consignacao,
   onAdicionar,
   onDevolucao,
   onAlterar,
   onExcluir,
-}: {
-  consignacao: Consignacao;
-  onAdicionar: () => void;
-  onDevolucao: (item: ItemConsignacao) => void;
-  onAlterar: (item: ItemConsignacao) => void;
-  onExcluir: (item: ItemConsignacao) => void;
-}) {
+}: Omit<DetalheItensProps, 'compacto'>) {
+  return (
+    <Box>
+      {consignacao.status === 'ABERTA' ? (
+        <Box sx={{ py: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Add />}
+            onClick={onAdicionar}
+          >
+            Adicionar item
+          </Button>
+        </Box>
+      ) : null}
+
+      {(consignacao.itens ?? []).map((item) => (
+        <Box key={item.id} sx={{ py: 1 }}>
+          <Typography variant="body2" fontWeight={700}>
+            {obterNomeProduto(item)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Enviado {item.quantidadeEnviada} · Vendido {item.quantidadeVendida}{' '}
+            · Devolvido {item.quantidadeDevolvida} · Disponível{' '}
+            {item.quantidadeDisponivel}
+          </Typography>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ mt: 0.5 }}
+          >
+            <AcoesItem
+              consignacao={consignacao}
+              item={item}
+              onDevolucao={onDevolucao}
+              onAlterar={onAlterar}
+              onExcluir={onExcluir}
+            />
+          </Stack>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function DetalheItensTabela({
+  consignacao,
+  onAdicionar,
+  onDevolucao,
+  onAlterar,
+  onExcluir,
+}: Omit<DetalheItensProps, 'compacto'>) {
   return (
     <Box
       sx={{
@@ -202,38 +302,13 @@ function DetalheItens({
                   flexWrap="wrap"
                   useFlexGap
                 >
-                  <Button
-                    size="small"
-                    startIcon={<Edit />}
-                    onClick={() => onAlterar(item)}
-                    disabled={consignacao.status !== 'ABERTA'}
-                  >
-                    Alterar
-                  </Button>
-                  <Button
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => onExcluir(item)}
-                    disabled={
-                      consignacao.status !== 'ABERTA' ||
-                      item.quantidadeVendida > 0 ||
-                      item.quantidadeDevolvida > 0
-                    }
-                  >
-                    Excluir
-                  </Button>
-                  <Button
-                    size="small"
-                    startIcon={<AssignmentReturn />}
-                    onClick={() => onDevolucao(item)}
-                    disabled={
-                      consignacao.status !== 'ABERTA' ||
-                      item.quantidadeDisponivel <= 0
-                    }
-                  >
-                    Devolver
-                  </Button>
+                  <AcoesItem
+                    consignacao={consignacao}
+                    item={item}
+                    onDevolucao={onDevolucao}
+                    onAlterar={onAlterar}
+                    onExcluir={onExcluir}
+                  />
                 </Stack>
               </TableCell>
             </TableRow>
@@ -241,6 +316,14 @@ function DetalheItens({
         </TableBody>
       </Table>
     </Box>
+  );
+}
+
+function DetalheItens({ compacto, ...props }: DetalheItensProps) {
+  return compacto ? (
+    <DetalheItensLista {...props} />
+  ) : (
+    <DetalheItensTabela {...props} />
   );
 }
 
@@ -505,35 +588,154 @@ export default function ConsignacoesPage() {
     }
   };
 
-  return (
-    <Stack spacing={3}>
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        alignItems={{ xs: 'stretch', md: 'flex-start' }}
-        spacing={2}
-      >
-        <PageHeader
-          title="Consignações"
-          description="Controle as peças enviadas, vendidas, devolvidas e ainda disponíveis com revendedores."
-        />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<AddCircleOutline />}
-            onClick={() => setDialogOpen(true)}
+  const colunasConsignacoes: DataTableColumn<Consignacao>[] = [
+    {
+      id: 'expandir',
+      header: '',
+      mobile: 'actions',
+      cell: (consignacao) => {
+        const expanded = expandedId === consignacao.id;
+
+        return (
+          <IconButton
+            size="small"
+            onClick={(event) => {
+              event.stopPropagation();
+              void handleExpand(consignacao.id);
+            }}
+            aria-label={
+              expanded
+                ? 'Fechar itens da consignação'
+                : 'Abrir itens da consignação'
+            }
           >
-            Nova consignação
+            {expanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+          </IconButton>
+        );
+      },
+    },
+    {
+      id: 'revendedor',
+      header: 'Revendedor',
+      mobile: 'title',
+      cell: (consignacao) => consignacao.revendedor.nome,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (consignacao) => (
+        <Chip
+          size="small"
+          label={obterStatusLabel(consignacao.status)}
+          color={obterStatusColor(consignacao.status)}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'dataInclusao',
+      header: 'Data inclusão',
+      cell: (consignacao) => formatDateTime(consignacao.dataInclusao),
+    },
+    {
+      id: 'quantidadeEnviada',
+      header: 'Enviado',
+      align: 'right',
+      cell: (consignacao) => consignacao.quantidadeEnviada,
+    },
+    {
+      id: 'quantidadeVendida',
+      header: 'Vendido',
+      align: 'right',
+      cell: (consignacao) => consignacao.quantidadeVendida,
+    },
+    {
+      id: 'quantidadeDisponivel',
+      header: 'Disponível',
+      align: 'right',
+      cell: (consignacao) => consignacao.quantidadeDisponivel,
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (consignacao) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+          <Button
+            size="small"
+            startIcon={<FileDownload />}
+            onClick={(event) => {
+              event.stopPropagation();
+              void handleDownloadRelatorio(consignacao.id);
+            }}
+          >
+            PDF
           </Button>
           <Button
+            size="small"
             variant="contained"
-            startIcon={<PointOfSale />}
-            onClick={() => setVendasRevendedorDialogOpen(true)}
+            startIcon={<TaskAlt />}
+            aria-label="Fechar consignação"
+            onClick={(event) => {
+              event.stopPropagation();
+              void handleOpenFechamento(consignacao);
+            }}
+            disabled={
+              consignacao.status !== 'ABERTA' ||
+              consignacao.quantidadeDisponivel <= 0
+            }
           >
-            Registrar vendas
+            Fechar
           </Button>
         </Stack>
-      </Stack>
+      ),
+    },
+  ];
+
+  const renderDetalhe = (consignacao: Consignacao) => {
+    const detalhe =
+      expandedId === consignacao.id && consignacaoExpandida
+        ? consignacaoExpandida
+        : consignacao;
+
+    return (
+      <DetalheItens
+        consignacao={detalhe}
+        compacto={isMobile}
+        onAdicionar={() => handleOpenAdicionarItem(detalhe)}
+        onDevolucao={(item) => handleOpenDevolucao(detalhe, item)}
+        onAlterar={(item) => handleOpenAlterarItem(detalhe, item)}
+        onExcluir={(item) => handleOpenExcluirItem(detalhe, item)}
+      />
+    );
+  };
+
+  return (
+    <Stack spacing={3}>
+      <PageHeader
+        title="Consignações"
+        description="Controle as peças enviadas, vendidas, devolvidas e ainda disponíveis com revendedores."
+        actions={
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<AddCircleOutline />}
+              onClick={() => setDialogOpen(true)}
+            >
+              Nova consignação
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PointOfSale />}
+              onClick={() => setVendasRevendedorDialogOpen(true)}
+            >
+              Registrar vendas
+            </Button>
+          </>
+        }
+      />
 
       <SearchFilterPanel
         onSearch={handleSearch}
@@ -609,358 +811,29 @@ export default function ConsignacoesPage() {
         <Alert severity="error">{itemErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de consignações"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : consignacoes.length > 0 ? (
-              consignacoes.map((consignacao) => {
-                const expanded = expandedId === consignacao.id;
-                const detalhe =
-                  expanded && consignacaoExpandida
-                    ? consignacaoExpandida
-                    : consignacao;
-
-                return (
-                  <Box key={consignacao.id} sx={{ px: 2, py: 2 }}>
-                    <Stack spacing={1.5}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="flex-start"
-                        spacing={1.5}
-                      >
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            {consignacao.revendedor.nome}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {formatDateTime(consignacao.dataInclusao)}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          size="small"
-                          label={obterStatusLabel(consignacao.status)}
-                          color={obterStatusColor(consignacao.status)}
-                          variant="outlined"
-                        />
-                      </Stack>
-
-                      <Stack direction="row" spacing={2} flexWrap="wrap">
-                        <Typography variant="body2" color="text.secondary">
-                          Enviado:{' '}
-                          <strong>{consignacao.quantidadeEnviada}</strong>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Vendido:{' '}
-                          <strong>{consignacao.quantidadeVendida}</strong>
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Disponível:{' '}
-                          <strong>{consignacao.quantidadeDisponivel}</strong>
-                        </Typography>
-                      </Stack>
-
-                      <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Button
-                          size="small"
-                          onClick={() => void handleExpand(consignacao.id)}
-                          endIcon={
-                            expanded ? (
-                              <KeyboardArrowUp />
-                            ) : (
-                              <KeyboardArrowDown />
-                            )
-                          }
-                        >
-                          Itens
-                        </Button>
-                        <Button
-                          size="small"
-                          startIcon={<FileDownload />}
-                          onClick={() =>
-                            void handleDownloadRelatorio(consignacao.id)
-                          }
-                        >
-                          PDF
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          startIcon={<TaskAlt />}
-                          onClick={() =>
-                            void handleOpenFechamento(consignacao)
-                          }
-                          disabled={
-                            consignacao.status !== 'ABERTA' ||
-                            consignacao.quantidadeDisponivel <= 0
-                          }
-                        >
-                          Fechar consignação
-                        </Button>
-                      </Stack>
-
-                      <Collapse in={expanded} timeout="auto" unmountOnExit>
-                        {detalhe.status === 'ABERTA' ? (
-                          <Box sx={{ py: 1 }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<Add />}
-                              onClick={() => handleOpenAdicionarItem(detalhe)}
-                            >
-                              Adicionar item
-                            </Button>
-                          </Box>
-                        ) : null}
-
-                        {(detalhe.itens ?? []).map((item) => (
-                          <Box key={item.id} sx={{ py: 1 }}>
-                            <Typography variant="body2" fontWeight={700}>
-                              {obterNomeProduto(item)}
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              Enviado {item.quantidadeEnviada} · Vendido{' '}
-                              {item.quantidadeVendida} · Devolvido{' '}
-                              {item.quantidadeDevolvida} · Disponível{' '}
-                              {item.quantidadeDisponivel}
-                            </Typography>
-                            <Stack
-                              direction="row"
-                              spacing={0.5}
-                              flexWrap="wrap"
-                              useFlexGap
-                              sx={{ mt: 0.5 }}
-                            >
-                              <Button
-                                size="small"
-                                startIcon={<Edit />}
-                                onClick={() =>
-                                  handleOpenAlterarItem(detalhe, item)
-                                }
-                                disabled={detalhe.status !== 'ABERTA'}
-                              >
-                                Alterar
-                              </Button>
-                              <Button
-                                size="small"
-                                color="error"
-                                startIcon={<DeleteIcon />}
-                                onClick={() =>
-                                  handleOpenExcluirItem(detalhe, item)
-                                }
-                                disabled={
-                                  detalhe.status !== 'ABERTA' ||
-                                  item.quantidadeVendida > 0 ||
-                                  item.quantidadeDevolvida > 0
-                                }
-                              >
-                                Excluir
-                              </Button>
-                              <Button
-                                size="small"
-                                startIcon={<AssignmentReturn />}
-                                onClick={() =>
-                                  handleOpenDevolucao(detalhe, item)
-                                }
-                                disabled={
-                                  detalhe.status !== 'ABERTA' ||
-                                  item.quantidadeDisponivel <= 0
-                                }
-                              >
-                                Devolver
-                              </Button>
-                            </Stack>
-                          </Box>
-                        ))}
-                      </Collapse>
-                    </Stack>
-                  </Box>
-                );
-              })
-            ) : (
-              <EmptyState message="Nenhuma consignação cadastrada até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de consignações">
-              <TableHead>
-                <TableRow>
-                  <TableCell />
-                  <TableCell>
-                    <strong>Revendedor</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Data inclusão</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Enviado</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Vendido</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Disponível</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Ações</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={8} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : consignacoes.length > 0 ? (
-                  consignacoes.map((consignacao) => {
-                    const expanded = expandedId === consignacao.id;
-                    const detalhe =
-                      expanded && consignacaoExpandida
-                        ? consignacaoExpandida
-                        : consignacao;
-
-                    return (
-                      <Fragment key={consignacao.id}>
-                        <TableRow hover>
-                          <TableCell>
-                            <IconButton
-                              size="small"
-                              onClick={() => void handleExpand(consignacao.id)}
-                              aria-label={
-                                expanded
-                                  ? 'Fechar itens da consignação'
-                                  : 'Abrir itens da consignação'
-                              }
-                            >
-                              {expanded ? (
-                                <KeyboardArrowUp />
-                              ) : (
-                                <KeyboardArrowDown />
-                              )}
-                            </IconButton>
-                          </TableCell>
-                          <TableCell>{consignacao.revendedor.nome}</TableCell>
-                          <TableCell>
-                            <Chip
-                              size="small"
-                              label={obterStatusLabel(consignacao.status)}
-                              color={obterStatusColor(consignacao.status)}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {formatDateTime(consignacao.dataInclusao)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {consignacao.quantidadeEnviada}
-                          </TableCell>
-                          <TableCell align="right">
-                            {consignacao.quantidadeVendida}
-                          </TableCell>
-                          <TableCell align="right">
-                            {consignacao.quantidadeDisponivel}
-                          </TableCell>
-                          <TableCell align="right">
-                            <Stack
-                              direction="row"
-                              spacing={0.5}
-                              justifyContent="flex-end"
-                            >
-                              <Button
-                                size="small"
-                                startIcon={<FileDownload />}
-                                onClick={() =>
-                                  void handleDownloadRelatorio(consignacao.id)
-                                }
-                              >
-                                PDF
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="contained"
-                                startIcon={<TaskAlt />}
-                                onClick={() =>
-                                  void handleOpenFechamento(consignacao)
-                                }
-                                disabled={
-                                  consignacao.status !== 'ABERTA' ||
-                                  consignacao.quantidadeDisponivel <= 0
-                                }
-                              >
-                                Fechar
-                              </Button>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell colSpan={8} sx={{ p: 0, borderBottom: 0 }}>
-                            <Collapse
-                              in={expanded}
-                              timeout="auto"
-                              unmountOnExit
-                            >
-                              <DetalheItens
-                                consignacao={detalhe}
-                                onAdicionar={() =>
-                                  handleOpenAdicionarItem(detalhe)
-                                }
-                                onDevolucao={(item) =>
-                                  handleOpenDevolucao(detalhe, item)
-                                }
-                                onAlterar={(item) =>
-                                  handleOpenAlterarItem(detalhe, item)
-                                }
-                                onExcluir={(item) =>
-                                  handleOpenExcluirItem(detalhe, item)
-                                }
-                              />
-                            </Collapse>
-                          </TableCell>
-                        </TableRow>
-                      </Fragment>
-                    );
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={8} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma consignação cadastrada até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalConsignacoes}
-          page={Math.max(0, paginacao.pagina - 1)}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
-            void fetchConsignacoes({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchConsignacoes({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+      <ResponsiveDataTable
+        rows={consignacoes}
+        columns={colunasConsignacoes}
+        getRowId={(consignacao) => consignacao.id}
+        ariaLabel="tabela de consignações"
+        emptyMessage="Nenhuma consignação cadastrada até o momento."
+        isLoading={isFetching}
+        expandedRow={{
+          isExpanded: (consignacao) => expandedId === consignacao.id,
+          render: renderDetalhe,
+        }}
+        pagination={{
+          count: totalConsignacoes,
+          page: Math.max(0, paginacao.pagina - 1),
+          rowsPerPage: paginacao.tamanhoPagina,
+          onPageChange: (novaPagina) => {
+            void fetchConsignacoes({ pagina: novaPagina + 1 });
+          },
+          onRowsPerPageChange: (novoTamanho) => {
+            void fetchConsignacoes({ pagina: 1, tamanhoPagina: novoTamanho });
+          },
+        }}
+      />
 
       <ConsignacaoDialog
         open={dialogOpen}

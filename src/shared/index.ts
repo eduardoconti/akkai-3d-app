@@ -8,6 +8,12 @@ export { default as EmptyState } from './components/feedback/empty-state';
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
 export { default as LoadingState } from './components/feedback/loading-state';
 export { default as PageHeader } from './components/page-header';
+export { default as ResponsiveDataTable } from './components/data-table/responsive-data-table';
+export type {
+  DataTableColumn,
+  DataTableMobileRole,
+  DataTablePagination,
+} from './components/data-table/responsive-data-table';
 export { default as SearchFilterPanel } from './components/search-filter-panel';
 export { default as TableColumnVisibilityButton } from './components/table-column-visibility-button';
 export { default as DatePickerField } from './components/form/date-picker-field';

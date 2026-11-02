@@ -590,6 +590,30 @@ export default function NewSaleDialog({
     return item.nomeProduto.trim().length > 0 || item.valorUnitario > 0;
   });
 
+  const isSplitPayment = form.pagamentos.length > 1;
+  const paymentsRemaining = isSplitPayment
+    ? totals.total -
+      form.pagamentos.reduce(
+        (total, pagamento) => total + Math.round(pagamento.valor * 100),
+        0,
+      )
+    : 0;
+
+  const handleFillPaymentRemaining = () => {
+    const lastIndex = form.pagamentos.length - 1;
+    const lastPayment = form.pagamentos[lastIndex];
+
+    if (!lastPayment) {
+      return;
+    }
+
+    updatePayment(lastIndex, {
+      valor:
+        Math.max(0, Math.round(lastPayment.valor * 100) + paymentsRemaining) /
+        100,
+    });
+  };
+
   const handleClose = () => {
     preservedDraftRef.current = false;
     preservedDraftSaleIdRef.current = null;
@@ -647,6 +671,50 @@ export default function NewSaleDialog({
     setItemErrors((current) =>
       current.filter((_, currentIndex) => currentIndex !== index),
     );
+  };
+
+  const handleSelectCatalogProduct = (
+    index: number,
+    product: { id: number; nome: string; valor: number } | null,
+  ) => {
+    const duplicatedIndex = product
+      ? form.itens.findIndex(
+          (item, currentIndex) =>
+            currentIndex !== index &&
+            item.tipoItem === 'CATALOGO' &&
+            item.idProduto === product.id &&
+            !item.brinde &&
+            !form.itens[index]?.brinde,
+        )
+      : -1;
+
+    if (product && duplicatedIndex >= 0) {
+      const addedQuantity = Math.max(1, form.itens[index]?.quantidade ?? 1);
+
+      setForm((current) => ({
+        ...current,
+        itens: current.itens
+          .map((item, currentIndex) =>
+            currentIndex === duplicatedIndex
+              ? { ...item, quantidade: item.quantidade + addedQuantity }
+              : item,
+          )
+          .filter((_, currentIndex) => currentIndex !== index),
+      }));
+      setItemErrors((current) =>
+        current.filter((_, currentIndex) => currentIndex !== index),
+      );
+      showSuccess(
+        `${product.nome}: quantidade somada a um item já adicionado à venda.`,
+      );
+      return;
+    }
+
+    updateItem(index, {
+      idProduto: product?.id ?? null,
+      nomeProduto: product?.nome ?? '',
+      valorUnitario: product ? product.valor / 100 : 0,
+    });
   };
 
   const updateItem = (index: number, partial: Partial<SaleFormItem>) => {
@@ -1276,14 +1344,13 @@ export default function NewSaleDialog({
                                 loading={isFetching}
                                 size="small"
                                 required
+                                autoFocus={
+                                  !isEditMode &&
+                                  item.idProduto === null &&
+                                  index === form.itens.length - 1
+                                }
                                 onChange={(newValue) => {
-                                  updateItem(index, {
-                                    idProduto: newValue?.id ?? null,
-                                    nomeProduto: newValue?.nome ?? '',
-                                    valorUnitario: newValue
-                                      ? newValue.valor / 100
-                                      : 0,
-                                  });
+                                  handleSelectCatalogProduct(index, newValue);
                                 }}
                                 error={Boolean(
                                   itemErrors[index]?.idProduto ||
@@ -1856,6 +1923,42 @@ export default function NewSaleDialog({
                       </Paper>
                     );
                   })}
+
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={1}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <Typography
+                      variant="body2"
+                      fontWeight={700}
+                      color={
+                        paymentsRemaining === 0
+                          ? 'success.main'
+                          : paymentsRemaining > 0
+                            ? 'warning.main'
+                            : 'error.main'
+                      }
+                    >
+                      {paymentsRemaining === 0
+                        ? 'Pagamentos conferem com o total'
+                        : paymentsRemaining > 0
+                          ? `Falta ${formatCurrency(paymentsRemaining)}`
+                          : `Excede ${formatCurrency(Math.abs(paymentsRemaining))}`}
+                    </Typography>
+                    {paymentsRemaining !== 0 ? (
+                      <Button
+                        size="small"
+                        onClick={handleFillPaymentRemaining}
+                        disabled={isBusy}
+                      >
+                        Ajustar último valor
+                      </Button>
+                    ) : null}
+                  </Stack>
                 </Stack>
               </Collapse>
             </Box>

@@ -1,26 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Button, Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AutoAwesome } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import { EditKitDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -29,19 +10,17 @@ import {
 } from '@/features/assinatura/store/use-assinatura-store';
 import { MESES_LABEL } from '@/features/assinatura/types/assinatura-form';
 import {
-  AppTablePagination,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
+  type KitMensal,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   useFeedbackStore,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function KitsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     fetchErrorMessage,
     fetchKits,
@@ -135,6 +114,57 @@ export default function KitsPage() {
   const currentYear = new Date().getFullYear();
   const ANOS = Array.from({ length: 6 }, (_, i) => currentYear - 2 + i);
 
+  const kitColumns: DataTableColumn<KitMensal>[] = [
+    {
+      id: 'plano',
+      header: 'Plano',
+      mobile: 'title',
+      cell: (k) => k.plano?.nome ?? `Plano #${k.idPlano}`,
+    },
+    {
+      id: 'referencia',
+      header: 'Referência',
+      cell: (k) => `${MESES_LABEL[k.mesReferencia]} / ${k.anoReferencia}`,
+    },
+    {
+      id: 'itens',
+      header: 'Itens',
+      cell: (k) =>
+        `${k.itens?.length ?? 0} ${k.itens?.length === 1 ? 'item' : 'itens'}`,
+    },
+    {
+      id: 'vitrine',
+      header: 'Vitrine',
+      mobile: 'hidden',
+      cell: (k) =>
+        k.ativo ? (
+          <Chip size="small" label="Ativo" color="success" variant="outlined" />
+        ) : k.titulo ? (
+          <Chip size="small" label="Inativo" variant="outlined" />
+        ) : null,
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (k) => (
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<AutoAwesome />}
+          disabled={isSubmitting}
+          onClick={(event) => {
+            event.stopPropagation();
+            void handleGerarCiclos(k.id);
+          }}
+        >
+          Gerar ciclos
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -216,174 +246,26 @@ export default function KitsPage() {
         <Alert severity="error">{submitErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de kits mensais"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : kits.length > 0 ? (
-              kits.map((kit) => (
-                <Box
-                  key={kit.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingKitId(kit.id)}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                    spacing={1.5}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {kit.plano?.nome ?? `Plano #${kit.idPlano}`}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {MESES_LABEL[kit.mesReferencia]} / {kit.anoReferencia}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {kit.itens?.length ?? 0}{' '}
-                        {kit.itens?.length === 1 ? 'item' : 'itens'}
-                      </Typography>
-                    </Box>
-                    <Stack alignItems="flex-end" spacing={1}>
-                      <Chip
-                        size="small"
-                        label={`${kit.itens?.length ?? 0} itens`}
-                        variant="outlined"
-                        sx={{ flexShrink: 0 }}
-                      />
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<AutoAwesome />}
-                        disabled={isSubmitting}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void handleGerarCiclos(kit.id);
-                        }}
-                      >
-                        Gerar ciclos
-                      </Button>
-                    </Stack>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum kit encontrado para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de kits mensais">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Plano</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Referência</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Itens</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Vitrine</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Ações</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : kits.length > 0 ? (
-                  kits.map((kit) => (
-                    <TableRow
-                      key={kit.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingKitId(kit.id)}
-                    >
-                      <TableCell>
-                        {kit.plano?.nome ?? `Plano #${kit.idPlano}`}
-                      </TableCell>
-                      <TableCell>
-                        {MESES_LABEL[kit.mesReferencia]} / {kit.anoReferencia}
-                      </TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {kit.itens?.length ?? 0}{' '}
-                        {kit.itens?.length === 1 ? 'item' : 'itens'}
-                      </TableCell>
-                      <TableCell>
-                        {kit.ativo ? (
-                          <Chip
-                            size="small"
-                            label="Ativo"
-                            color="success"
-                            variant="outlined"
-                          />
-                        ) : kit.titulo ? (
-                          <Chip
-                            size="small"
-                            label="Inativo"
-                            variant="outlined"
-                          />
-                        ) : null}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<AutoAwesome />}
-                          disabled={isSubmitting}
-                          onClick={() => {
-                            void handleGerarCiclos(kit.id);
-                          }}
-                        >
-                          Gerar ciclos
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum kit encontrado para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalKits}
-          page={Math.max(0, (paginacaoKits.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoKits.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={kits}
+        columns={kitColumns}
+        getRowId={(kit) => kit.id}
+        ariaLabel="tabela de kits mensais"
+        emptyMessage="Nenhum kit encontrado para os filtros informados."
+        isLoading={isFetching}
+        onRowClick={(kit) => setEditingKitId(kit.id)}
+        pagination={{
+          count: totalKits,
+          page: Math.max(0, (paginacaoKits.pagina ?? 1) - 1),
+          rowsPerPage: paginacaoKits.tamanhoPagina ?? DEFAULT_PAGE_SIZE,
+          onPageChange: (newPage) => {
             void fetchKits({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchKits({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
+            void fetchKits({ pagina: 1, tamanhoPagina: newRowsPerPage });
+          },
+        }}
+      />
 
       <EditKitDialog
         open={editingKitId !== null}

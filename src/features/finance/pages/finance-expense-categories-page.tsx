@@ -1,20 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Divider,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Alert, Stack } from '@mui/material';
 import {
   financeStoreSelectors,
   useFinanceStore,
@@ -22,17 +7,19 @@ import {
 import EditExpenseCategoryDialog from '../components/edit-expense-category-dialog';
 import NewExpenseCategoryDialog from '../components/new-expense-category-dialog';
 import {
-  AppTablePagination,
+  type CategoriaDespesa,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
+const colunasCategorias: DataTableColumn<CategoriaDespesa>[] = [
+  { id: 'nome', header: 'Nome', mobile: 'title', cell: (c) => c.nome },
+];
+
 export default function FinanceExpenseCategoriesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     categoriasDespesa,
     fetchCategoriasDespesa,
@@ -86,83 +73,25 @@ export default function FinanceExpenseCategoriesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de categorias de despesa"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : paginatedCategorias.length > 0 ? (
-              paginatedCategorias.map((categoria) => (
-                <Box
-                  key={categoria.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingCategoryId(categoria.id)}
-                >
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    {categoria.nome}
-                  </Typography>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma categoria cadastrada." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de categorias de despesa">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={1} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedCategorias.length > 0 ? (
-                  paginatedCategorias.map((categoria) => (
-                    <TableRow
-                      key={categoria.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingCategoryId(categoria.id)}
-                    >
-                      <TableCell>{categoria.nome}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={1} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma categoria cadastrada." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={categoriasDespesa.length}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_event, newPage) => {
-            setPage(newPage);
-          }}
-          onRowsPerPageChange={(event) => {
-            setRowsPerPage(Number(event.target.value));
+      <ResponsiveDataTable
+        rows={paginatedCategorias}
+        columns={colunasCategorias}
+        getRowId={(categoria) => categoria.id}
+        ariaLabel="tabela de categorias de despesa"
+        emptyMessage="Nenhuma categoria cadastrada."
+        isLoading={isFetching}
+        onRowClick={(categoria) => setEditingCategoryId(categoria.id)}
+        pagination={{
+          count: categoriasDespesa.length,
+          page,
+          rowsPerPage,
+          onPageChange: setPage,
+          onRowsPerPageChange: (novoTamanho) => {
+            setRowsPerPage(novoTamanho);
             setPage(0);
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <NewExpenseCategoryDialog
         open={dialogOpen}

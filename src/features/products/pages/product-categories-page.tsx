@@ -1,22 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Divider,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import EditCategoryDialog from '../components/edit-category-dialog';
 import {
   productStoreSelectors,
@@ -24,12 +8,11 @@ import {
 } from '../store/use-product-store';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
-  AppTablePagination,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   type Categoria,
+  type DataTableColumn,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -44,8 +27,6 @@ function getParentCategoryName(category: Categoria, categories: Categoria[]) {
 }
 
 export default function ProductCategoriesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     categorias,
     categoriasPaginadas,
@@ -91,6 +72,20 @@ export default function ProductCategoriesPage() {
     void fetchCategoriasPaginadas();
   }, [fetchCategorias, fetchCategoriasPaginadas]);
 
+  const categoryColumns: DataTableColumn<Categoria>[] = [
+    {
+      id: 'nome',
+      header: 'Nome',
+      mobile: 'title',
+      cell: (category) => category.nome,
+    },
+    {
+      id: 'categoriaSuperior',
+      header: 'Categoria Superior',
+      cell: (category) => getParentCategoryName(category, categorias),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -116,97 +111,29 @@ export default function ProductCategoriesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de categorias"
-          >
-            {isFetchingCategoriesPage ? (
-              <LoadingState />
-            ) : categoriasPaginadas.length > 0 ? (
-              categoriasPaginadas.map((category) => (
-                <Box
-                  key={category.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingCategoryId(category.id)}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {category.nome}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Categoria superior:{' '}
-                      {getParentCategoryName(category, categorias)}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma categoria encontrada para a pesquisa informada." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de categorias">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Categoria Superior</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetchingCategoriesPage ? (
-                  <TableRow>
-                    <TableCell colSpan={2} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : categoriasPaginadas.length > 0 ? (
-                  categoriasPaginadas.map((category) => (
-                    <TableRow
-                      key={category.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingCategoryId(category.id)}
-                    >
-                      <TableCell>{category.nome}</TableCell>
-                      <TableCell>
-                        {getParentCategoryName(category, categorias)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={2} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma categoria encontrada para a pesquisa informada." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalCategorias}
-          page={Math.max(0, paginacaoCategorias.pagina - 1)}
-          rowsPerPage={paginacaoCategorias.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={categoriasPaginadas}
+        columns={categoryColumns}
+        getRowId={(category) => category.id}
+        ariaLabel="tabela de categorias"
+        emptyMessage="Nenhuma categoria encontrada para a pesquisa informada."
+        isLoading={isFetchingCategoriesPage}
+        onRowClick={(category) => setEditingCategoryId(category.id)}
+        pagination={{
+          count: totalCategorias,
+          page: Math.max(0, paginacaoCategorias.pagina - 1),
+          rowsPerPage: paginacaoCategorias.tamanhoPagina,
+          onPageChange: (newPage) => {
             void fetchCategoriasPaginadas({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
             void fetchCategoriasPaginadas({
               pagina: 1,
-              tamanhoPagina: Number(event.target.value),
+              tamanhoPagina: newRowsPerPage,
             });
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <EditCategoryDialog
         open={editingCategoryId !== null}

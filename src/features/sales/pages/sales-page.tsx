@@ -1,16 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   Chip,
-  CircularProgress,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   IconButton,
   Menu,
   MenuItem,
@@ -22,22 +19,18 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   TextField,
   Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
-  Add,
   Close,
   KeyboardArrowDown,
   KeyboardArrowUp,
   MoreVert,
   SwapHoriz,
 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import ExchangeReturnDialog from '../components/exchange-return-dialog';
 import NewSaleDialog from '../components/new-sale-dialog';
 import { saleStoreSelectors, useSaleStore } from '../store/use-sale-store';
@@ -49,8 +42,9 @@ import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
   ProductAutocompleteField,
+  ResponsiveDataTable,
   SearchFilterPanel,
   TableColumnVisibilityButton,
   formatCurrencyWithVisibility,
@@ -60,6 +54,8 @@ import {
   useFeedbackStore,
   useOnlineStatus,
   useValueVisibilityStore,
+  type DataTableColumn,
+  type DataTablePagination,
   type TableColumnOption,
   type MeioPagamento,
   type Feira,
@@ -171,235 +167,116 @@ const DEFAULT_SALE_TABLE_COLUMN_IDS: readonly SaleTableColumnId[] = [
   'liquido',
 ];
 
-interface SaleRowProps {
+const EXPAND_COLUMN_ID = 'expandir';
+const ACTIONS_COLUMN_ID = 'acoes';
+
+interface SaleDetailsProps {
   venda: Venda;
   hideValues: boolean;
-  isColumnVisible: (columnId: SaleTableColumnId) => boolean;
-  visibleColumnCount: number;
-  onOpenActions: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    venda: Venda,
-  ) => void;
 }
 
-function SaleRow({
-  venda,
-  hideValues,
-  isColumnVisible,
-  visibleColumnCount,
-  onOpenActions,
-}: SaleRowProps) {
-  const [open, setOpen] = useState(false);
+function SaleDetails({ venda, hideValues }: SaleDetailsProps) {
   const pagamentos = getSalePayments(venda);
   const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
   const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
 
   return (
-    <>
-      <TableRow
-        sx={{ '& > *': { borderBottom: 'unset' }, cursor: 'pointer' }}
-        onClick={() => setOpen((current) => !current)}
+    <Box
+      sx={{
+        m: { xs: 0, md: 2 },
+        mt: { xs: 1.5, md: 2 },
+        bgcolor: (theme) =>
+          theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'grey.50',
+        p: { xs: 1.5, md: 2 },
+        borderRadius: 2,
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+        Itens da Venda #{venda.id}
+      </Typography>
+      <Stack
+        direction="row"
+        spacing={2}
+        flexWrap="wrap"
+        useFlexGap
+        sx={{ mb: 2 }}
       >
-        <TableCell>
-          <IconButton size="small">
-            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-          </IconButton>
-        </TableCell>
-        {isColumnVisible('id') ? (
-          <TableCell component="th" scope="row">
-            #{venda.id}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('data') ? (
-          <TableCell>
-            {formatLocalDate(
-              venda.dataVenda ?? venda.dataInclusao,
-              'display-date-time',
-            )}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('tipo') ? (
-          <TableCell>
-            <Chip
-              label={getSaleTypeLabel(venda.tipo)}
-              size="small"
-              color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
-              variant="outlined"
-            />
-          </TableCell>
-        ) : null}
-        {isColumnVisible('feira') ? (
-          <TableCell>{venda.feira?.nome ?? '-'}</TableCell>
-        ) : null}
-        {isColumnVisible('carteira') ? (
-          <TableCell>{getSaleWalletLabel(venda)}</TableCell>
-        ) : null}
-        {isColumnVisible('pagamento') ? (
-          <TableCell>{getSalePaymentMethodLabel(venda)}</TableCell>
-        ) : null}
-        {isColumnVisible('desconto') ? (
-          <TableCell align="right">
-            {venda.desconto > 0
-              ? formatSaleValue(venda.desconto, hideValues)
-              : '-'}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('taxa') ? (
-          <TableCell align="right">
-            {valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-'}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('imposto') ? (
-          <TableCell align="right">
-            {valorImposto != null
-              ? formatSaleValue(valorImposto, hideValues)
-              : '-'}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('total') ? (
-          <TableCell align="right" sx={{ fontWeight: 700 }}>
-            {formatSaleValue(venda.valorTotal, hideValues)}
-          </TableCell>
-        ) : null}
-        {isColumnVisible('liquido') ? (
-          <TableCell
-            align="right"
-            sx={{ fontWeight: 700, color: 'success.main' }}
-          >
-            {formatSaleValue(
-              venda.valorLiquido ?? venda.valorTotal,
-              hideValues,
-            )}
-          </TableCell>
-        ) : null}
-        <TableCell align="center">
-          <IconButton
-            size="small"
-            aria-label={`Ações da venda ${venda.id}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpenActions(event, venda);
-            }}
-          >
-            <MoreVert fontSize="small" />
-          </IconButton>
-        </TableCell>
-      </TableRow>
-
-      <TableRow>
-        <TableCell
-          style={{ paddingBottom: 0, paddingTop: 0 }}
-          colSpan={visibleColumnCount + 2}
-        >
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box
-              sx={{
-                m: 2,
-                bgcolor: (theme) =>
-                  theme.palette.mode === 'dark'
-                    ? 'rgba(255,255,255,0.03)'
-                    : 'grey.50',
-                p: 2,
-                borderRadius: 2,
-              }}
-            >
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
-                Itens da Venda #{venda.id}
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={2}
-                flexWrap="wrap"
-                useFlexGap
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Taxa:{' '}
-                  {valorTaxa != null
-                    ? formatSaleValue(valorTaxa, hideValues)
-                    : '-'}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Imposto:{' '}
-                  {valorImposto != null
-                    ? formatSaleValue(valorImposto, hideValues)
-                    : '-'}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  fontWeight={700}
-                  color="success.main"
-                >
-                  Líquido:{' '}
-                  {formatSaleValue(
-                    venda.valorLiquido ?? venda.valorTotal,
-                    hideValues,
-                  )}
-                </Typography>
-              </Stack>
-              <Table size="small" sx={{ mb: 2 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Carteira</TableCell>
-                    <TableCell>Meio</TableCell>
-                    <TableCell align="right">Valor</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {pagamentos.map((pagamento) => (
-                    <TableRow key={pagamento.id}>
-                      <TableCell>
-                        {pagamento.carteira?.nome ??
-                          `Carteira #${pagamento.idCarteira}`}
-                      </TableCell>
-                      <TableCell>
-                        {getPaymentMethodLabel(pagamento.meioPagamento)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {formatSaleValue(pagamento.valor, hideValues)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID Produto</TableCell>
-                    <TableCell>Nome</TableCell>
-                    <TableCell align="right">Qtd</TableCell>
-                    <TableCell align="right">Unitário</TableCell>
-                    <TableCell align="right">Total Item</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {venda.itens.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.idProduto ?? '-'}</TableCell>
-                      <TableCell>{getSaleItemName(item)}</TableCell>
-                      <TableCell align="right">{item.quantidade}</TableCell>
-                      <TableCell align="right">
-                        {formatSaleValue(item.valorUnitario, hideValues)}
-                      </TableCell>
-                      <TableCell align="right">
-                        {formatSaleValue(item.valorTotal, hideValues)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </Collapse>
-        </TableCell>
-      </TableRow>
-    </>
+        <Typography variant="body2" color="text.secondary">
+          Taxa:{' '}
+          {valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-'}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Imposto:{' '}
+          {valorImposto != null
+            ? formatSaleValue(valorImposto, hideValues)
+            : '-'}
+        </Typography>
+        <Typography variant="body2" fontWeight={700} color="success.main">
+          Líquido:{' '}
+          {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
+        </Typography>
+      </Stack>
+      <TableContainer sx={{ mb: 2 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Carteira</TableCell>
+              <TableCell>Meio</TableCell>
+              <TableCell align="right">Valor</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {pagamentos.map((pagamento) => (
+              <TableRow key={pagamento.id}>
+                <TableCell>
+                  {pagamento.carteira?.nome ??
+                    `Carteira #${pagamento.idCarteira}`}
+                </TableCell>
+                <TableCell>
+                  {getPaymentMethodLabel(pagamento.meioPagamento)}
+                </TableCell>
+                <TableCell align="right">
+                  {formatSaleValue(pagamento.valor, hideValues)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <TableContainer>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>ID Produto</TableCell>
+              <TableCell>Nome</TableCell>
+              <TableCell align="right">Qtd</TableCell>
+              <TableCell align="right">Unitário</TableCell>
+              <TableCell align="right">Total Item</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {venda.itens.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{item.idProduto ?? '-'}</TableCell>
+                <TableCell>{getSaleItemName(item)}</TableCell>
+                <TableCell align="right">{item.quantidade}</TableCell>
+                <TableCell align="right">
+                  {formatSaleValue(item.valorUnitario, hideValues)}
+                </TableCell>
+                <TableCell align="right">
+                  {formatSaleValue(item.valorTotal, hideValues)}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 }
 
 export default function SalesPage() {
   const { openNewSaleDialog } = useMainLayoutActions();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isOnline = useOnlineStatus();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const hideValues = useValueVisibilityStore((state) => state.hideValues);
@@ -464,19 +341,35 @@ export default function SalesPage() {
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
   const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
-  const {
-    visibleColumnIds,
-    isColumnVisible,
-    toggleColumnVisibility,
-    resetColumnVisibility,
-  } = useTableColumnVisibility<SaleTableColumnId>(
-    'akkai:sales-page:vendas:columns',
-    SALE_TABLE_COLUMNS,
-    DEFAULT_SALE_TABLE_COLUMN_IDS,
+  const [expandedSaleIds, setExpandedSaleIds] = useState<Set<number>>(
+    () => new Set(),
   );
-  const visibleColumnCount = SALE_TABLE_COLUMNS.filter((column) =>
-    isColumnVisible(column.id),
-  ).length;
+  const { visibleColumnIds, toggleColumnVisibility, resetColumnVisibility } =
+    useTableColumnVisibility<SaleTableColumnId>(
+      'akkai:sales-page:vendas:columns',
+      SALE_TABLE_COLUMNS,
+      DEFAULT_SALE_TABLE_COLUMN_IDS,
+    );
+  const tableVisibleColumnIds = useMemo(
+    () => [EXPAND_COLUMN_ID, ...visibleColumnIds, ACTIONS_COLUMN_ID],
+    [visibleColumnIds],
+  );
+
+  const handleToggleExpanded = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    venda: Venda,
+  ) => {
+    event.stopPropagation();
+    setExpandedSaleIds((current) => {
+      const next = new Set(current);
+
+      if (!next.delete(venda.id)) {
+        next.add(venda.id);
+      }
+
+      return next;
+    });
+  };
 
   const handleSearch = () => {
     void fetchVendas({
@@ -612,6 +505,170 @@ export default function SalesPage() {
     setSaleToDelete(null);
   };
 
+  const tablePagination: DataTablePagination = {
+    count: totalItens,
+    page: Math.max(0, paginacao.pagina - 1),
+    rowsPerPage: paginacao.tamanhoPagina,
+    onPageChange: (novaPagina) => {
+      void fetchVendas({ pagina: novaPagina + 1 });
+    },
+    onRowsPerPageChange: (novoTamanho) => {
+      void fetchVendas({ pagina: 1, tamanhoPagina: novoTamanho });
+    },
+  };
+
+  const saleColumns: DataTableColumn<Venda>[] = [
+    {
+      id: EXPAND_COLUMN_ID,
+      header: '',
+      mobile: 'actions',
+      cell: (venda) => {
+        const isExpanded = expandedSaleIds.has(venda.id);
+
+        return (
+          <IconButton
+            size="small"
+            aria-label={`${isExpanded ? 'Recolher' : 'Expandir'} detalhes da venda ${venda.id}`}
+            aria-expanded={isExpanded}
+            onClick={(event) => handleToggleExpanded(event, venda)}
+          >
+            {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+          </IconButton>
+        );
+      },
+    },
+    {
+      id: 'id',
+      header: 'ID',
+      mobile: 'eyebrow',
+      cell: (venda) => `Venda #${venda.id}`,
+    },
+    {
+      id: 'data',
+      header: 'Data',
+      mobile: 'title',
+      cell: (venda) =>
+        formatLocalDate(
+          venda.dataVenda ?? venda.dataInclusao,
+          'display-date-time',
+        ),
+    },
+    {
+      id: 'tipo',
+      header: 'Tipo',
+      mobile: 'badge',
+      cell: (venda) => (
+        <Chip
+          label={getSaleTypeLabel(venda.tipo)}
+          size="small"
+          color={venda.tipo === 'FEIRA' ? 'secondary' : 'primary'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'pagamento',
+      header: 'Pagamento',
+      mobile: 'badge',
+      cell: (venda) => (
+        <Chip
+          label={getSalePaymentMethodLabel(venda)}
+          size="small"
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'total',
+      header: 'Total',
+      mobile: 'aside',
+      align: 'right',
+      cell: (venda) => (
+        <Typography
+          component="span"
+          variant="inherit"
+          fontWeight={700}
+          sx={{ fontSize: { xs: '1rem', md: 'inherit' } }}
+        >
+          {formatSaleValue(venda.valorTotal, hideValues)}
+        </Typography>
+      ),
+    },
+    {
+      id: 'feira',
+      header: 'Feira',
+      cell: (venda) => venda.feira?.nome ?? '-',
+    },
+    {
+      id: 'carteira',
+      header: 'Carteira',
+      cell: (venda) => getSaleWalletLabel(venda),
+    },
+    {
+      id: 'desconto',
+      header: 'Desconto',
+      align: 'right',
+      cell: (venda) =>
+        venda.desconto > 0 ? formatSaleValue(venda.desconto, hideValues) : '-',
+    },
+    {
+      id: 'taxa',
+      header: 'Taxa',
+      align: 'right',
+      cell: (venda) => {
+        const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
+        return valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-';
+      },
+    },
+    {
+      id: 'imposto',
+      header: 'Imposto',
+      align: 'right',
+      cell: (venda) => {
+        const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
+        return valorImposto != null
+          ? formatSaleValue(valorImposto, hideValues)
+          : '-';
+      },
+    },
+    {
+      id: 'liquido',
+      header: 'Líquido',
+      align: 'right',
+      cell: (venda) => (
+        <Typography
+          component="span"
+          variant="inherit"
+          fontWeight={700}
+          color="success.main"
+        >
+          {formatSaleValue(venda.valorLiquido ?? venda.valorTotal, hideValues)}
+        </Typography>
+      ),
+    },
+    {
+      // Exibida apenas nos cartões mobile: fica fora de `tableVisibleColumnIds`.
+      id: 'itens',
+      header: 'Itens',
+      cell: (venda) => venda.itens.map(getSaleItemName).join(', '),
+    },
+    {
+      id: ACTIONS_COLUMN_ID,
+      header: 'Ações',
+      mobile: 'actions',
+      align: 'center',
+      cell: (venda) => (
+        <IconButton
+          size="small"
+          aria-label={`Ações da venda ${venda.id}`}
+          onClick={(event) => handleOpenActions(event, venda)}
+        >
+          <MoreVert fontSize="small" />
+        </IconButton>
+      ),
+    },
+  ];
+
   const handleCardMouseMove =
     (lines: CardTooltipLine[]) => (event: React.MouseEvent<HTMLDivElement>) => {
       setCardTooltip({ x: event.clientX, y: event.clientY, lines });
@@ -656,22 +713,12 @@ export default function SalesPage() {
         </Portal>
       ) : null}
 
-      <Stack
-        direction={{ xs: 'column', md: 'row' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Vendas
-          </Typography>
-          <Typography color="text.secondary">
-            Acompanhe as últimas vendas com contexto de feira, pagamento e
-            itens.
-          </Typography>
-        </Box>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+      <PageHeader
+        title="Vendas"
+        description="Acompanhe as últimas vendas com contexto de feira, pagamento e itens."
+        actionLabel="Nova venda"
+        onAction={openNewSaleDialog}
+        actions={
           <Button
             variant="outlined"
             startIcon={<SwapHoriz />}
@@ -680,15 +727,8 @@ export default function SalesPage() {
           >
             Troca/devolução
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={openNewSaleDialog}
-          >
-            Nova venda
-          </Button>
-        </Stack>
-      </Stack>
+        }
+      />
 
       <Box>
         <SearchFilterPanel
@@ -884,273 +924,30 @@ export default function SalesPage() {
         <Alert severity="error">{submitErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de vendas">
-            {isFetching ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                <CircularProgress />
-              </Box>
-            ) : vendas.length > 0 ? (
-              vendas.map((venda) => {
-                const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
-                const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
-
-                return (
-                  <Box key={venda.id} sx={{ px: 2, py: 2 }}>
-                    <Stack spacing={1.25}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="flex-start"
-                        spacing={1}
-                      >
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Venda #{venda.id}
-                          </Typography>
-                          <Typography variant="body2">
-                            {formatLocalDate(
-                              venda.dataVenda ?? venda.dataInclusao,
-                              'display-date-time',
-                            )}
-                          </Typography>
-                        </Box>
-                        <Stack
-                          direction="row"
-                          spacing={0.5}
-                          alignItems="center"
-                        >
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            {formatSaleValue(venda.valorTotal, hideValues)}
-                          </Typography>
-                          <IconButton
-                            size="small"
-                            aria-label={`Ações da venda ${venda.id}`}
-                            onClick={(event) => handleOpenActions(event, venda)}
-                          >
-                            <MoreVert fontSize="small" />
-                          </IconButton>
-                        </Stack>
-                      </Stack>
-
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        flexWrap="wrap"
-                        useFlexGap
-                      >
-                        <Chip
-                          label={getSaleTypeLabel(venda.tipo)}
-                          size="small"
-                          color={
-                            venda.tipo === 'FEIRA' ? 'secondary' : 'primary'
-                          }
-                          variant="outlined"
-                        />
-                        <Chip
-                          label={getSalePaymentMethodLabel(venda)}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </Stack>
-
-                      <Typography variant="body2" color="text.secondary">
-                        Feira: {venda.feira?.nome ?? '-'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Carteira: {getSaleWalletLabel(venda)}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Desconto:{' '}
-                        {venda.desconto > 0
-                          ? formatSaleValue(venda.desconto, hideValues)
-                          : '-'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Taxa:{' '}
-                        {valorTaxa != null
-                          ? formatSaleValue(valorTaxa, hideValues)
-                          : '-'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Imposto:{' '}
-                        {valorImposto != null
-                          ? formatSaleValue(valorImposto, hideValues)
-                          : '-'}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        fontWeight={700}
-                        color="success.main"
-                      >
-                        Líquido:{' '}
-                        {formatSaleValue(
-                          venda.valorLiquido ?? venda.valorTotal,
-                          hideValues,
-                        )}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Itens: {venda.itens.map(getSaleItemName).join(', ')}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                );
-              })
-            ) : (
-              <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                Nenhuma venda encontrada para os filtros informados.
-              </Box>
-            )}
-          </Stack>
-        ) : (
-          <>
-            <Stack
-              direction="row"
-              justifyContent="flex-end"
-              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}
-            >
-              <TableColumnVisibilityButton
-                columns={SALE_TABLE_COLUMNS}
-                visibleColumnIds={visibleColumnIds}
-                onToggleColumn={toggleColumnVisibility}
-                onResetColumns={resetColumnVisibility}
-              />
-            </Stack>
-
-            <TableContainer>
-              <Table aria-label="tabela de vendas">
-                <TableHead>
-                  <TableRow>
-                    <TableCell width={48} />
-                    {isColumnVisible('id') ? (
-                      <TableCell>
-                        <strong>ID</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('data') ? (
-                      <TableCell>
-                        <strong>Data</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('tipo') ? (
-                      <TableCell>
-                        <strong>Tipo</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('feira') ? (
-                      <TableCell>
-                        <strong>Feira</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('carteira') ? (
-                      <TableCell>
-                        <strong>Carteira</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('pagamento') ? (
-                      <TableCell>
-                        <strong>Pagamento</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('desconto') ? (
-                      <TableCell align="right">
-                        <strong>Desconto</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('taxa') ? (
-                      <TableCell align="right">
-                        <strong>Taxa</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('imposto') ? (
-                      <TableCell align="right">
-                        <strong>Imposto</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('total') ? (
-                      <TableCell align="right">
-                        <strong>Total</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('liquido') ? (
-                      <TableCell align="right">
-                        <strong>Líquido</strong>
-                      </TableCell>
-                    ) : null}
-                    <TableCell align="center" width={80}>
-                      <strong>Ações</strong>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {isFetching ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={visibleColumnCount + 2}
-                        align="center"
-                        sx={{ py: 6 }}
-                      >
-                        <CircularProgress />
-                      </TableCell>
-                    </TableRow>
-                  ) : vendas.length > 0 ? (
-                    vendas.map((venda) => (
-                      <SaleRow
-                        key={venda.id}
-                        venda={venda}
-                        hideValues={hideValues}
-                        isColumnVisible={isColumnVisible}
-                        visibleColumnCount={visibleColumnCount}
-                        onOpenActions={handleOpenActions}
-                      />
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={visibleColumnCount + 2}
-                        align="center"
-                        sx={{ py: 6 }}
-                      >
-                        Nenhuma venda encontrada para os filtros informados.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-
-        <TablePagination
-          component="div"
-          count={totalItens}
-          page={Math.max(0, paginacao.pagina - 1)}
-          onPageChange={(_event, newPage) => {
-            void fetchVendas({ pagina: newPage + 1 });
-          }}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onRowsPerPageChange={(event) => {
-            void fetchVendas({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-          rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
-          }}
-        />
-      </Paper>
+      <ResponsiveDataTable
+        rows={vendas}
+        columns={saleColumns}
+        getRowId={(venda) => venda.id}
+        ariaLabel="tabela de vendas"
+        emptyMessage="Nenhuma venda encontrada para os filtros informados."
+        isLoading={isFetching}
+        visibleColumnIds={tableVisibleColumnIds}
+        toolbar={
+          <TableColumnVisibilityButton
+            columns={SALE_TABLE_COLUMNS}
+            visibleColumnIds={visibleColumnIds}
+            onToggleColumn={toggleColumnVisibility}
+            onResetColumns={resetColumnVisibility}
+          />
+        }
+        expandedRow={{
+          isExpanded: (venda) => expandedSaleIds.has(venda.id),
+          render: (venda) => (
+            <SaleDetails venda={venda} hideValues={hideValues} />
+          ),
+        }}
+        pagination={tablePagination}
+      />
 
       <Menu
         anchorEl={actionsAnchorEl}

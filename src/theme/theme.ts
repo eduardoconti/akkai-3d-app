@@ -36,6 +36,47 @@ export function getActiveSubmenuStyles(theme: Theme) {
   };
 }
 
+/**
+ * Barra de rolagem fina que só se destaca quando o ponteiro está sobre a
+ * área rolável (ex.: menu lateral).
+ */
+export function getDiscreetScrollbarStyles(theme: Theme) {
+  const thumb = alpha(theme.palette.text.secondary, 0.4);
+
+  return {
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'transparent transparent',
+    '&:hover': {
+      scrollbarColor: `${thumb} transparent`,
+    },
+    '@supports not (scrollbar-color: auto)': {
+      '&::-webkit-scrollbar': { width: 6 },
+      '&::-webkit-scrollbar-track': { background: 'transparent' },
+      '&::-webkit-scrollbar-thumb': {
+        borderRadius: 999,
+        backgroundColor: 'transparent',
+      },
+      '&:hover::-webkit-scrollbar-thumb': { backgroundColor: thumb },
+    },
+  } as const;
+}
+
+function fullScreenOnMobile(theme: Theme) {
+  // `&&` eleva a especificidade acima de `fullWidth`/`maxWidth` do próprio MUI.
+  return {
+    '&&': {
+      [theme.breakpoints.down('sm')]: {
+        margin: 0,
+        width: '100%',
+        maxWidth: '100%',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        borderRadius: 0,
+      },
+    },
+  };
+}
+
 export function buildTheme(mode: PaletteMode) {
   const isDark = mode === 'dark';
 
@@ -97,9 +138,18 @@ export function buildTheme(mode: PaletteMode) {
             backgroundImage: 'none',
             border: `1px solid ${alpha(isDark ? '#b487ff' : '#6f35c7', isDark ? 0.14 : 0.08)}`,
             boxShadow: isDark
-              ? '0 16px 44px rgba(6, 2, 18, 0.42)'
-              : '0 16px 44px rgba(72, 20, 132, 0.12)',
+              ? '0 4px 16px rgba(6, 2, 18, 0.32)'
+              : '0 2px 12px rgba(72, 20, 132, 0.08)',
           },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          // Formulários (sm/md/lg) ocupam a tela inteira no celular;
+          // confirmações (xs) continuam como janela centralizada.
+          paperWidthSm: ({ theme }) => fullScreenOnMobile(theme),
+          paperWidthMd: ({ theme }) => fullScreenOnMobile(theme),
+          paperWidthLg: ({ theme }) => fullScreenOnMobile(theme),
         },
       },
       MuiTableContainer: {
@@ -131,6 +181,7 @@ export function buildTheme(mode: PaletteMode) {
       MuiTableCell: {
         styleOverrides: {
           head: {
+            fontWeight: 700,
             color: isDark ? '#f5edff' : '#261743',
             borderBottomColor: alpha(
               isDark ? '#b487ff' : '#6f35c7',
@@ -191,10 +242,19 @@ export function buildTheme(mode: PaletteMode) {
             textTransform: 'none',
             fontWeight: 700,
             borderRadius: 14,
+            // Alvo de toque confortável em telas sensíveis ao toque.
+            '@media (pointer: coarse)': {
+              minHeight: 44,
+            },
           },
           containedPrimary: {
             background: 'linear-gradient(135deg, #18a8e5 0%, #0d7cbc 100%)',
-            boxShadow: '0 10px 24px rgba(18, 150, 212, 0.28)',
+            boxShadow: '0 2px 8px rgba(18, 150, 212, 0.24)',
+          },
+          sizeSmall: {
+            '@media (pointer: coarse)': {
+              minHeight: 36,
+            },
           },
           containedSecondary: {
             background: 'linear-gradient(135deg, #ffd451 0%, #ffbf0f 100%)',
@@ -205,6 +265,16 @@ export function buildTheme(mode: PaletteMode) {
               isDark ? '#171224' : '#ffffff',
               isDark ? 0.72 : 0.72,
             ),
+          },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: {
+            '@media (pointer: coarse)': {
+              minWidth: 40,
+              minHeight: 40,
+            },
           },
         },
       },

@@ -2,24 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
-  Box,
   Chip,
-  Divider,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import {
   listAllProducts,
   listProductStockMovements,
@@ -27,12 +15,12 @@ import {
 import {
   DateRangePickerField,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
   FormFeedbackAlert,
-  LoadingState,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   getProblemDetailsFromError,
+  type DataTableColumn,
   type DateRangeValue,
   type MovimentacaoEstoque,
   type OrigemMovimentacaoEstoque,
@@ -110,8 +98,6 @@ function formatProductOption(produto: Produto) {
 }
 
 export default function ProductStockMovementsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     startValue: '',
     endValue: '',
@@ -129,33 +115,27 @@ export default function ProductStockMovementsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-  const selectedTipos = useMemo(
-    () => tipos.map((tipo) => tipo.value),
-    [tipos],
-  );
+  const selectedTipos = useMemo(() => tipos.map((tipo) => tipo.value), [tipos]);
   const selectedOrigens = useMemo(
     () => origens.map((origem) => origem.value),
     [origens],
   );
 
-  const fetchMovimentacoes = useCallback(
-    async (query: FiltrosAplicados) => {
-      setProblem(null);
-      setIsLoading(true);
+  const fetchMovimentacoes = useCallback(async (query: FiltrosAplicados) => {
+    setProblem(null);
+    setIsLoading(true);
 
-      try {
-        const response = await listProductStockMovements(query);
-        setResultado(response);
-        setFiltrosAplicados(query);
-      } catch (error) {
-        setProblem(getProblemDetailsFromError(error));
-        setResultado(null);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+    try {
+      const response = await listProductStockMovements(query);
+      setResultado(response);
+      setFiltrosAplicados(query);
+    } catch (error) {
+      setProblem(getProblemDetailsFromError(error));
+      setResultado(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     setIsLoadingProducts(true);
@@ -210,60 +190,55 @@ export default function ProductStockMovementsPage() {
     </Stack>
   );
 
-  const renderCard = (movimentacao: MovimentacaoEstoque) => (
-    <Box key={movimentacao.id} sx={{ px: 2, py: 2 }}>
-      <Stack spacing={1.25}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          spacing={1}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {movimentacao.produto?.nome ?? `Produto #${movimentacao.idProduto}`}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {movimentacao.produto
-                ? `Código ${movimentacao.produto.codigo}`
-                : `ID ${movimentacao.idProduto}`}
-            </Typography>
-          </Box>
-
-          <Chip
-            label={getTipoLabel(movimentacao.tipo)}
-            size="small"
-            color={getTipoColor(movimentacao.tipo)}
-          />
+  const movimentacaoColumns: DataTableColumn<MovimentacaoEstoque>[] = [
+    {
+      id: 'data',
+      header: 'Data',
+      cell: (movimentacao) => formatDateTime(movimentacao.dataInclusao),
+    },
+    {
+      id: 'produto',
+      header: 'Produto',
+      mobile: 'title',
+      cell: (movimentacao) => (
+        <Stack spacing={0.25}>
+          <Typography fontWeight={600}>
+            {movimentacao.produto?.nome ?? `Produto #${movimentacao.idProduto}`}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {movimentacao.produto
+              ? `Código ${movimentacao.produto.codigo}`
+              : `ID ${movimentacao.idProduto}`}
+          </Typography>
         </Stack>
-
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Data
-            </Typography>
-            <Typography fontWeight={600}>
-              {formatDateTime(movimentacao.dataInclusao)}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Quantidade
-            </Typography>
-            <Typography fontWeight={700}>{movimentacao.quantidade}</Typography>
-          </Grid>
-
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="caption" color="text.secondary">
-              Origem
-            </Typography>
-            {renderOrigem(movimentacao)}
-          </Grid>
-        </Grid>
-      </Stack>
-    </Box>
-  );
+      ),
+    },
+    {
+      id: 'tipo',
+      header: 'Tipo',
+      mobile: 'badge',
+      cell: (movimentacao) => (
+        <Chip
+          label={getTipoLabel(movimentacao.tipo)}
+          size="small"
+          color={getTipoColor(movimentacao.tipo)}
+        />
+      ),
+    },
+    { id: 'origem', header: 'Origem', cell: renderOrigem },
+    {
+      id: 'quantidade',
+      header: 'Quantidade',
+      align: 'right',
+      cell: (movimentacao) => movimentacao.quantidade,
+    },
+    {
+      id: 'usuario',
+      header: 'Usuário',
+      mobile: 'hidden',
+      cell: (movimentacao) => movimentacao.usuario,
+    },
+  ];
 
   const totalItens = resultado?.totalItens ?? 0;
   const paginaAtual = resultado?.pagina ?? filtrosAplicados.pagina;
@@ -273,17 +248,14 @@ export default function ProductStockMovementsPage() {
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Movimentações de estoque
-        </Typography>
-        <Typography color="text.secondary">
-          Consulte entradas, saídas e ajustes dos produtos por período, origem e
-          produto.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Movimentações de estoque"
+        description="Consulte entradas, saídas e ajustes dos produtos por período, origem e produto."
+      />
 
-      {productsMessage ? <Alert severity="warning">{productsMessage}</Alert> : null}
+      {productsMessage ? (
+        <Alert severity="warning">{productsMessage}</Alert>
+      ) : null}
 
       <SearchFilterPanel
         onSearch={handleSearch}
@@ -348,121 +320,32 @@ export default function ProductStockMovementsPage() {
 
       <FormFeedbackAlert message={problem?.detail} />
 
-      <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-        {isLoading ? (
-          <LoadingState />
-        ) : isMobile ? (
-          <Stack divider={<Divider flexItem />}>
-            {movimentacoes.length > 0 ? (
-              movimentacoes.map(renderCard)
-            ) : (
-              <EmptyState message="Nenhuma movimentação encontrada para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de movimentações de estoque">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Data</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Produto</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Tipo</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Origem</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Quantidade</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Usuário</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {movimentacoes.length > 0 ? (
-                  movimentacoes.map((movimentacao) => (
-                    <TableRow key={movimentacao.id}>
-                      <TableCell>
-                        {formatDateTime(movimentacao.dataInclusao)}
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.25}>
-                          <Typography fontWeight={600}>
-                            {movimentacao.produto?.nome ??
-                              `Produto #${movimentacao.idProduto}`}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {movimentacao.produto
-                              ? `Código ${movimentacao.produto.codigo}`
-                              : `ID ${movimentacao.idProduto}`}
-                          </Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={getTipoLabel(movimentacao.tipo)}
-                          size="small"
-                          color={getTipoColor(movimentacao.tipo)}
-                        />
-                      </TableCell>
-                      <TableCell>{renderOrigem(movimentacao)}</TableCell>
-                      <TableCell align="right">
-                        {movimentacao.quantidade}
-                      </TableCell>
-                      <TableCell>{movimentacao.usuario}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma movimentação encontrada para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <TablePagination
-          component="div"
-          count={totalItens}
-          page={Math.max(0, paginaAtual - 1)}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={movimentacoes}
+        columns={movimentacaoColumns}
+        getRowId={(movimentacao) => movimentacao.id}
+        ariaLabel="tabela de movimentações de estoque"
+        emptyMessage="Nenhuma movimentação encontrada para os filtros informados."
+        isLoading={isLoading}
+        pagination={{
+          count: totalItens,
+          page: Math.max(0, paginaAtual - 1),
+          rowsPerPage: tamanhoPagina,
+          onPageChange: (newPage) => {
             void fetchMovimentacoes({
               ...filtrosAplicados,
               pagina: newPage + 1,
             });
-          }}
-          rowsPerPage={tamanhoPagina}
-          onRowsPerPageChange={(event) => {
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
             void fetchMovimentacoes({
               ...filtrosAplicados,
               pagina: 1,
-              tamanhoPagina: Number(event.target.value),
+              tamanhoPagina: newRowsPerPage,
             });
-          }}
-          rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-          labelRowsPerPage="Itens por página"
-          labelDisplayedRows={({ from, to, count }) =>
-            `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-          }
-          sx={{
-            '.MuiTablePagination-toolbar': {
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              gap: 1,
-              px: { xs: 1, sm: 2 },
-            },
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
     </Stack>
   );
 }

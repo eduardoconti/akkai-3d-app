@@ -1,46 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Box,
   Chip,
-  Divider,
   IconButton,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Tooltip,
   Typography,
-  useMediaQuery,
 } from '@mui/material';
 import { AccountBalanceWallet, Edit } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
-import {
-  EditWalletDialog,
-  WalletAdjustmentDialog,
-} from '@/features/finance';
+import { EditWalletDialog, WalletAdjustmentDialog } from '@/features/finance';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   financeStoreSelectors,
   useFinanceStore,
 } from '@/features/finance/store/use-finance-store';
 import {
-  AppTablePagination,
+  type Carteira,
   CurrencyValue,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceWalletsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { carteiras, fetchCarteiras, fetchErrorMessage, isFetching } =
     useFinanceStore(
       useShallow((state) => ({
@@ -86,6 +70,73 @@ export default function FinanceWalletsPage() {
     }
   }, [page, rowsPerPage, wallets.length]);
 
+  const walletColumns: DataTableColumn<Carteira>[] = [
+    { id: 'nome', header: 'Nome', mobile: 'title', cell: (c) => c.nome },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (c) => (
+        <Chip
+          size="small"
+          label={c.ativa ? 'Ativa' : 'Inativa'}
+          color={c.ativa ? 'success' : 'default'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'saldo',
+      header: 'Saldo atual',
+      align: 'right',
+      cell: (c) => (
+        <Typography
+          component="span"
+          variant="inherit"
+          fontWeight={700}
+          color={c.saldoAtual < 0 ? 'error.main' : 'success.main'}
+        >
+          <CurrencyValue value={c.saldoAtual} />
+        </Typography>
+      ),
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (c) => (
+        <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+          <Tooltip title="Editar carteira">
+            <IconButton
+              size="small"
+              aria-label={`Editar carteira ${c.nome}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                setEditingWalletId(c.id);
+              }}
+            >
+              <Edit fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Ajustar saldo">
+            <IconButton
+              size="small"
+              color="primary"
+              aria-label={`Ajustar saldo da carteira ${c.nome}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                setAdjustingWalletId(c.id);
+              }}
+            >
+              <AccountBalanceWallet fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -99,207 +150,25 @@ export default function FinanceWalletsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de carteiras">
-            {isFetching ? (
-              <LoadingState />
-            ) : paginatedWallets.length > 0 ? (
-              paginatedWallets.map((carteira) => (
-                <Box
-                  key={carteira.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingWalletId(carteira.id)}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    spacing={1.5}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700}>
-                        {carteira.nome}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={carteira.ativa ? 'Ativa' : 'Inativa'}
-                        color={carteira.ativa ? 'success' : 'default'}
-                        variant="outlined"
-                        sx={{ mt: 1 }}
-                      />
-                    </Box>
-
-                    <Box sx={{ textAlign: 'right' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Saldo atual
-                      </Typography>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight={700}
-                        color={
-                          carteira.saldoAtual < 0
-                            ? 'error.main'
-                            : 'success.main'
-                        }
-                      >
-                        <CurrencyValue value={carteira.saldoAtual} />
-                      </Typography>
-                      <Stack
-                        direction="row"
-                        justifyContent="flex-end"
-                        spacing={0.5}
-                        sx={{ mt: 1 }}
-                      >
-                        <Tooltip title="Editar carteira">
-                          <IconButton
-                            size="small"
-                            aria-label={`Editar carteira ${carteira.nome}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setEditingWalletId(carteira.id);
-                            }}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Ajustar saldo">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            aria-label={`Ajustar saldo da carteira ${carteira.nome}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setAdjustingWalletId(carteira.id);
-                            }}
-                          >
-                            <AccountBalanceWallet fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Box>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma carteira cadastrada até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de carteiras">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Saldo Atual</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Ações</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedWallets.length > 0 ? (
-                  paginatedWallets.map((carteira) => (
-                    <TableRow
-                      key={carteira.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingWalletId(carteira.id)}
-                    >
-                      <TableCell>{carteira.nome}</TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={carteira.ativa ? 'Ativa' : 'Inativa'}
-                          color={carteira.ativa ? 'success' : 'default'}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{
-                          fontWeight: 700,
-                          color:
-                            carteira.saldoAtual < 0
-                              ? 'error.main'
-                              : 'success.main',
-                        }}
-                      >
-                        <CurrencyValue value={carteira.saldoAtual} />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Stack
-                          direction="row"
-                          justifyContent="flex-end"
-                          spacing={0.5}
-                        >
-                          <Tooltip title="Editar carteira">
-                            <IconButton
-                              size="small"
-                              aria-label={`Editar carteira ${carteira.nome}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setEditingWalletId(carteira.id);
-                              }}
-                            >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Ajustar saldo">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              aria-label={`Ajustar saldo da carteira ${carteira.nome}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                setAdjustingWalletId(carteira.id);
-                              }}
-                            >
-                              <AccountBalanceWallet fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma carteira cadastrada até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={wallets.length}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_event, newPage) => {
-            setPage(newPage);
-          }}
-          onRowsPerPageChange={(event) => {
-            setRowsPerPage(Number(event.target.value));
+      <ResponsiveDataTable
+        rows={paginatedWallets}
+        columns={walletColumns}
+        getRowId={(carteira) => carteira.id}
+        ariaLabel="tabela de carteiras"
+        emptyMessage="Nenhuma carteira cadastrada até o momento."
+        isLoading={isFetching}
+        onRowClick={(carteira) => setEditingWalletId(carteira.id)}
+        pagination={{
+          count: wallets.length,
+          page,
+          rowsPerPage,
+          onPageChange: setPage,
+          onRowsPerPageChange: (newRowsPerPage) => {
+            setRowsPerPage(newRowsPerPage);
             setPage(0);
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <EditWalletDialog
         open={editingWalletId !== null}

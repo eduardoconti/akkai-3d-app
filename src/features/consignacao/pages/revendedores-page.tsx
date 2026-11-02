@@ -1,34 +1,16 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import RevendedorDialog from '@/features/consignacao/components/revendedor-dialog';
 import {
   consignacaoStoreSelectors,
   useConsignacaoStore,
 } from '@/features/consignacao/store/use-consignacao-store';
 import {
-  AppTablePagination,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
+  type Revendedor,
   SearchFilterPanel,
   type StatusRevendedor,
 } from '@/shared';
@@ -48,8 +30,6 @@ function formatPercentual(value?: number | null): string {
 }
 
 export default function RevendedoresPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     fetchErrorMessage,
     fetchRevendedores,
@@ -107,6 +87,35 @@ export default function RevendedoresPage() {
   const handleDialogSaved = async () => {
     await fetchRevendedores();
   };
+
+  const revendedorColumns: DataTableColumn<Revendedor>[] = [
+    { id: 'nome', header: 'Nome', mobile: 'title', cell: (r) => r.nome },
+    { id: 'telefone', header: 'Telefone', cell: (r) => r.telefone || '-' },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (r) => (
+        <Chip
+          size="small"
+          label={r.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
+          color={r.status === 'ATIVO' ? 'success' : 'default'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'desconto',
+      header: 'Desconto',
+      align: 'right',
+      cell: (r) => formatPercentual(r.percentualDesconto),
+    },
+    {
+      id: 'dataInclusao',
+      header: 'Data inclusão',
+      cell: (r) => formatDateTime(r.dataInclusao),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -169,149 +178,29 @@ export default function RevendedoresPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de revendedores"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : revendedores.length > 0 ? (
-              revendedores.map((revendedor) => (
-                <Box
-                  key={revendedor.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingRevendedorId(revendedor.id)}
-                >
-                  <Stack spacing={1}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      spacing={1.5}
-                    >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          {revendedor.nome}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {revendedor.telefone || 'Sem telefone'}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        size="small"
-                        label={
-                          revendedor.status === 'ATIVO' ? 'Ativo' : 'Inativo'
-                        }
-                        color={
-                          revendedor.status === 'ATIVO' ? 'success' : 'default'
-                        }
-                        variant="outlined"
-                      />
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      Desconto:{' '}
-                      {formatPercentual(revendedor.percentualDesconto)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Incluído em {formatDateTime(revendedor.dataInclusao)}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum revendedor cadastrado até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de revendedores">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Telefone</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Desconto</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Data inclusão</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : revendedores.length > 0 ? (
-                  revendedores.map((revendedor) => (
-                    <TableRow
-                      key={revendedor.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingRevendedorId(revendedor.id)}
-                    >
-                      <TableCell>{revendedor.nome}</TableCell>
-                      <TableCell>{revendedor.telefone || '-'}</TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={
-                            revendedor.status === 'ATIVO' ? 'Ativo' : 'Inativo'
-                          }
-                          color={
-                            revendedor.status === 'ATIVO'
-                              ? 'success'
-                              : 'default'
-                          }
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        {formatPercentual(revendedor.percentualDesconto)}
-                      </TableCell>
-                      <TableCell>
-                        {formatDateTime(revendedor.dataInclusao)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum revendedor cadastrado até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalRevendedores}
-          page={Math.max(0, paginacao.pagina - 1)}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={revendedores}
+        columns={revendedorColumns}
+        getRowId={(revendedor) => revendedor.id}
+        ariaLabel="tabela de revendedores"
+        emptyMessage="Nenhum revendedor cadastrado até o momento."
+        isLoading={isFetching}
+        onRowClick={(revendedor) => setEditingRevendedorId(revendedor.id)}
+        pagination={{
+          count: totalRevendedores,
+          page: Math.max(0, paginacao.pagina - 1),
+          rowsPerPage: paginacao.tamanhoPagina,
+          onPageChange: (newPage) => {
             void fetchRevendedores({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
             void fetchRevendedores({
               pagina: 1,
-              tamanhoPagina: Number(event.target.value),
+              tamanhoPagina: newRowsPerPage,
             });
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <RevendedorDialog
         open={dialogOpen}

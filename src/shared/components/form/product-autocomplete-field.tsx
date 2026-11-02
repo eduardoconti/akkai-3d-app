@@ -13,6 +13,7 @@ interface ProductAutocompleteFieldProps {
   fullWidth?: boolean;
   size?: 'small' | 'medium';
   required?: boolean;
+  autoFocus?: boolean;
 }
 
 export default function ProductAutocompleteField({
@@ -27,10 +28,15 @@ export default function ProductAutocompleteField({
   fullWidth = true,
   size = 'medium',
   required = false,
+  autoFocus = false,
 }: ProductAutocompleteFieldProps) {
   return (
     <Autocomplete
       options={products}
+      openOnFocus
+      autoHighlight
+      noOptionsText="Nenhum produto encontrado"
+      loadingText="Carregando produtos..."
       getOptionLabel={(option) => `${option.nome} (${option.codigo})`}
       value={products.find((product) => product.id === productId) ?? null}
       loading={loading}
@@ -44,6 +50,7 @@ export default function ProductAutocompleteField({
           size={size}
           label={label}
           required={required}
+          autoFocus={autoFocus}
           error={error}
           helperText={helperText}
         />

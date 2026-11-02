@@ -2,23 +2,13 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Autocomplete,
-  Box,
-  Divider,
   MenuItem,
   Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { NewExpenseDialog } from '@/features/finance';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -30,21 +20,18 @@ import {
   formatApiDateToDisplay,
 } from '@/features/finance/types/finance-form';
 import {
-  AppTablePagination,
   CurrencyValue,
   DateRangePickerField,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
+  type DataTableColumn,
   type Despesa,
 } from '@/shared';
 import { getPaymentMethodLabel } from '@/features/sales/utils/format-sale-labels';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function FinanceExpensesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     carteiras,
     categoriasDespesa,
@@ -127,6 +114,56 @@ export default function FinanceExpensesPage() {
     if (isSubmitting) return;
     setEditingDespesa(despesa);
   };
+
+  const colunasDespesas: DataTableColumn<Despesa>[] = [
+    {
+      id: 'data',
+      header: 'Data',
+      mobile: 'eyebrow',
+      cell: (despesa) => formatApiDateToDisplay(despesa.dataLancamento),
+    },
+    {
+      id: 'descricao',
+      header: 'Descrição',
+      mobile: 'title',
+      cell: (despesa) => despesa.descricao,
+    },
+    {
+      id: 'categoria',
+      header: 'Categoria',
+      cell: (despesa) => despesa.categoria?.nome ?? '-',
+    },
+    {
+      id: 'pagamento',
+      header: 'Pagamento',
+      cell: (despesa) => getPaymentMethodLabel(despesa.meioPagamento),
+    },
+    {
+      id: 'carteira',
+      header: 'Carteira',
+      cell: (despesa) => despesa.carteira?.nome ?? '-',
+    },
+    {
+      id: 'feira',
+      header: 'Feira',
+      cell: (despesa) => despesa.feira?.nome ?? '-',
+    },
+    {
+      id: 'valor',
+      header: 'Valor',
+      align: 'right',
+      cell: (despesa) => (
+        <Typography
+          component="span"
+          variant="inherit"
+          fontWeight={700}
+          color="error.main"
+        >
+          <CurrencyValue value={despesa.valor} />
+        </Typography>
+      ),
+    },
+  ];
 
   useEffect(() => {
     void fetchCarteiras();
@@ -248,157 +285,26 @@ export default function FinanceExpensesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de despesas">
-            {isFetching ? (
-              <LoadingState />
-            ) : despesas.length > 0 ? (
-              despesas.map((despesa) => (
-                <Box
-                  key={despesa.id}
-                  onClick={() => handleOpenEdit(despesa)}
-                  sx={{
-                    px: 2,
-                    py: 2,
-                    cursor: isSubmitting ? 'progress' : 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                >
-                  <Stack spacing={1.25}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      spacing={1}
-                    >
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {formatApiDateToDisplay(despesa.dataLancamento)}
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          {despesa.descricao}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight={700}
-                        color="error.main"
-                      >
-                        <CurrencyValue value={despesa.valor} />
-                      </Typography>
-                    </Stack>
-
-                    <Typography variant="body2" color="text.secondary">
-                      Categoria: {despesa.categoria?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Pagamento: {getPaymentMethodLabel(despesa.meioPagamento)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Carteira: {despesa.carteira?.nome ?? '-'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Feira: {despesa.feira?.nome ?? '-'}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhuma despesa encontrada para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de despesas">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Data</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Descrição</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Categoria</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Pagamento</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Carteira</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Feira</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Valor</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : despesas.length > 0 ? (
-                  despesas.map((despesa) => (
-                    <TableRow
-                      key={despesa.id}
-                      hover
-                      onClick={() => handleOpenEdit(despesa)}
-                      sx={{ cursor: isSubmitting ? 'progress' : 'pointer' }}
-                    >
-                      <TableCell>
-                        {formatApiDateToDisplay(despesa.dataLancamento)}
-                      </TableCell>
-                      <TableCell>{despesa.descricao}</TableCell>
-                      <TableCell>{despesa.categoria?.nome ?? '-'}</TableCell>
-                      <TableCell>
-                        {getPaymentMethodLabel(despesa.meioPagamento)}
-                      </TableCell>
-                      <TableCell>{despesa.carteira?.nome ?? '-'}</TableCell>
-                      <TableCell>{despesa.feira?.nome ?? '-'}</TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ color: 'error.main', fontWeight: 700 }}
-                      >
-                        <CurrencyValue value={despesa.valor} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhuma despesa encontrada para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalItens}
-          page={Math.max(0, paginacao.pagina - 1)}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
-            void fetchDespesas({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchDespesas({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+      <ResponsiveDataTable
+        rows={despesas}
+        columns={colunasDespesas}
+        getRowId={(despesa) => despesa.id}
+        ariaLabel="tabela de despesas"
+        emptyMessage="Nenhuma despesa encontrada para os filtros informados."
+        isLoading={isFetching}
+        onRowClick={handleOpenEdit}
+        pagination={{
+          count: totalItens,
+          page: Math.max(0, paginacao.pagina - 1),
+          rowsPerPage: paginacao.tamanhoPagina,
+          onPageChange: (novaPagina) => {
+            void fetchDespesas({ pagina: novaPagina + 1 });
+          },
+          onRowsPerPageChange: (novoTamanho) => {
+            void fetchDespesas({ pagina: 1, tamanhoPagina: novoTamanho });
+          },
+        }}
+      />
 
       <NewExpenseDialog
         open={Boolean(editingDespesa)}

@@ -1,24 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import CashRegisterDetailsDialog from '@/features/finance/components/cash-register-details-dialog';
 import { listCashRegisters } from '@/features/finance/api/finance-api';
@@ -28,13 +10,12 @@ import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import { getMonthRangeInput } from '@/shared/utils/date-range';
 import {
-  AppTablePagination,
   DateRangePickerField,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   type Caixa,
+  type DataTableColumn,
   type Feira,
   type PesquisaPaginadaCaixas,
 } from '@/shared';
@@ -50,8 +31,6 @@ const pesquisaInicial: PesquisaPaginadaCaixas = {
 };
 
 export default function FinanceCashRegistersPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { openCashRegisterDialog } = useMainLayoutActions();
   const [caixas, setCaixas] = useState<Caixa[]>([]);
   const [feiras, setFeiras] = useState<Feira[]>([]);
@@ -130,6 +109,38 @@ export default function FinanceCashRegistersPage() {
   const formatarDataHora = (valor?: string | null) =>
     valor ? new Date(valor).toLocaleString('pt-BR') : '-';
 
+  const colunasCaixas: DataTableColumn<Caixa>[] = [
+    {
+      id: 'abertura',
+      header: 'Abertura',
+      cell: (caixa) => formatarDataHora(caixa.dataAbertura),
+    },
+    {
+      id: 'feira',
+      header: 'Feira',
+      mobile: 'title',
+      cell: (caixa) => caixa.feira?.nome ?? `Feira ${caixa.idFeira}`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (caixa) => (
+        <Chip
+          size="small"
+          color={caixa.status === 'ABERTO' ? 'success' : 'default'}
+          label={caixa.status === 'ABERTO' ? 'Aberto' : 'Fechado'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'fechamento',
+      header: 'Fechamento',
+      cell: (caixa) => formatarDataHora(caixa.dataFechamento),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -177,137 +188,24 @@ export default function FinanceCashRegistersPage() {
 
       {erro ? <Alert severity="error">{erro}</Alert> : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de caixas">
-            {carregando ? (
-              <LoadingState />
-            ) : caixas.length > 0 ? (
-              caixas.map((caixa) => (
-                <Box
-                  key={caixa.id}
-                  onClick={() => setCaixaSelecionadoId(caixa.id)}
-                  sx={{
-                    px: 2,
-                    py: 2,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
-                  }}
-                >
-                  <Stack spacing={1}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      spacing={1}
-                    >
-                      <Typography fontWeight={700}>
-                        {caixa.feira?.nome ?? `Feira ${caixa.idFeira}`}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        color={
-                          caixa.status === 'ABERTO' ? 'success' : 'default'
-                        }
-                        label={caixa.status === 'ABERTO' ? 'Aberto' : 'Fechado'}
-                      />
-                    </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      Abertura: {formatarDataHora(caixa.dataAbertura)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Fechamento: {formatarDataHora(caixa.dataFechamento)}
-                    </Typography>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum caixa encontrado para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de caixas">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Abertura</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Feira</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Fechamento</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {carregando ? (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : caixas.length > 0 ? (
-                  caixas.map((caixa) => (
-                    <TableRow
-                      key={caixa.id}
-                      hover
-                      onClick={() => setCaixaSelecionadoId(caixa.id)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>
-                        {formatarDataHora(caixa.dataAbertura)}
-                      </TableCell>
-                      <TableCell>
-                        {caixa.feira?.nome ?? `Feira ${caixa.idFeira}`}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          color={
-                            caixa.status === 'ABERTO' ? 'success' : 'default'
-                          }
-                          label={
-                            caixa.status === 'ABERTO' ? 'Aberto' : 'Fechado'
-                          }
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {formatarDataHora(caixa.dataFechamento)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum caixa encontrado para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalItens}
-          page={Math.max(0, pesquisa.pagina - 1)}
-          rowsPerPage={pesquisa.tamanhoPagina}
-          onPageChange={(_event, novaPagina) =>
-            void carregarCaixas({ pagina: novaPagina + 1 })
-          }
-          onRowsPerPageChange={(event) =>
-            void carregarCaixas({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            })
-          }
-        />
-      </Paper>
+      <ResponsiveDataTable
+        rows={caixas}
+        columns={colunasCaixas}
+        getRowId={(caixa) => caixa.id}
+        ariaLabel="tabela de caixas"
+        emptyMessage="Nenhum caixa encontrado para os filtros informados."
+        isLoading={carregando}
+        onRowClick={(caixa) => setCaixaSelecionadoId(caixa.id)}
+        pagination={{
+          count: totalItens,
+          page: Math.max(0, pesquisa.pagina - 1),
+          rowsPerPage: pesquisa.tamanhoPagina,
+          onPageChange: (novaPagina) =>
+            void carregarCaixas({ pagina: novaPagina + 1 }),
+          onRowsPerPageChange: (novoTamanho) =>
+            void carregarCaixas({ pagina: 1, tamanhoPagina: novoTamanho }),
+        }}
+      />
 
       <CashRegisterDetailsDialog
         open={caixaSelecionadoId !== null}

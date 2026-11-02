@@ -1,11 +1,14 @@
+import type { ReactNode } from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { AddCircleOutline } from '@mui/icons-material';
 
 interface PageHeaderProps {
   title: string;
-  description: string;
+  description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** Ações extras (botões) exibidas ao lado da ação principal. */
+  actions?: ReactNode;
   breakpoint?: 'md' | 'lg';
 }
 
@@ -14,39 +17,49 @@ export default function PageHeader({
   description,
   actionLabel,
   onAction,
+  actions,
   breakpoint = 'md',
 }: PageHeaderProps) {
   const titleBlock = (
-    <Box>
-      <Typography variant="h5" fontWeight={700}>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="h5" component="h1">
         {title}
       </Typography>
-      <Typography color="text.secondary">{description}</Typography>
+      {description ? (
+        <Typography color="text.secondary">{description}</Typography>
+      ) : null}
     </Box>
   );
 
-  if (!actionLabel) {
+  if (!actionLabel && !actions) {
     return titleBlock;
   }
 
   return (
     <Stack
-      direction={
-        breakpoint === 'lg'
-          ? { xs: 'column', lg: 'row' }
-          : { xs: 'column', md: 'row' }
-      }
+      direction={{ xs: 'column', [breakpoint]: 'row' }}
       justifyContent="space-between"
+      alignItems={{ xs: 'stretch', [breakpoint]: 'center' }}
       spacing={2}
     >
       {titleBlock}
-      <Button
-        variant="contained"
-        startIcon={<AddCircleOutline />}
-        onClick={onAction}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        sx={{ flexShrink: 0 }}
       >
-        {actionLabel}
-      </Button>
+        {actions}
+        {actionLabel ? (
+          <Button
+            variant="contained"
+            startIcon={<AddCircleOutline />}
+            onClick={onAction}
+          >
+            {actionLabel}
+          </Button>
+        ) : null}
+      </Stack>
     </Stack>
   );
 }

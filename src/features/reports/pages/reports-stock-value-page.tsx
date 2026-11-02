@@ -1,24 +1,6 @@
 import { useState } from 'react';
-import {
-  MenuItem,
-  Box,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import {
   getStockValueReport,
   type StockValueProductItem,
@@ -28,11 +10,13 @@ import {
   CurrencyValue,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   formatCurrencyWithVisibility,
   getProblemDetailsFromError,
   useValueVisibilityStore,
+  type DataTableColumn,
   type ProblemDetails,
 } from '@/shared';
 
@@ -49,8 +33,6 @@ interface AppliedFilters {
 }
 
 export default function ReportsStockValuePage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const [result, setResult] = useState<StockValueReportResponse | null>(null);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
@@ -101,61 +83,46 @@ export default function ReportsStockValuePage() {
     setAppliedFilters(null);
   };
 
-  const renderProductCard = (item: StockValueProductItem) => (
-    <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
-      <Stack spacing={1.25}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          spacing={1}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {item.nome}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Codigo: {item.codigo}
-            </Typography>
-          </Box>
-
-          <Chip label={`${formatQuantity(item.quantidade)} un`} size="small" />
-        </Stack>
-
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Valor unitario
-            </Typography>
-            <Typography fontWeight={600}>
-              <CurrencyValue value={item.valor} />
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Valor total
-            </Typography>
-            <Typography fontWeight={700}>
-              <CurrencyValue value={item.valorTotal} />
-            </Typography>
-          </Grid>
-        </Grid>
-      </Stack>
-    </Box>
-  );
+  const stockColumns: DataTableColumn<StockValueProductItem>[] = [
+    {
+      id: 'codigo',
+      header: 'Codigo',
+      mobile: 'eyebrow',
+      cell: (item) => item.codigo,
+    },
+    {
+      id: 'nome',
+      header: 'Nome',
+      mobile: 'title',
+      cell: (item) => item.nome,
+    },
+    {
+      id: 'quantidade',
+      header: 'Quantidade',
+      align: 'right',
+      mobile: 'aside',
+      cell: (item) => formatQuantity(item.quantidade),
+    },
+    {
+      id: 'valor',
+      header: 'Valor',
+      align: 'right',
+      cell: (item) => <CurrencyValue value={item.valor} />,
+    },
+    {
+      id: 'valorTotal',
+      header: 'Valor total',
+      align: 'right',
+      cell: (item) => <CurrencyValue value={item.valorTotal} />,
+    },
+  ];
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Valor dos produtos em estoque
-        </Typography>
-        <Typography color="text.secondary">
-          Consulte o saldo positivo do estoque com valor unitario, valor total
-          por item e totalizadores globais do relatorio.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Valor dos produtos em estoque"
+        description="Consulte o saldo positivo do estoque com valor unitario, valor total por item e totalizadores globais do relatorio."
+      />
 
       <SearchFilterPanel
         onSearch={() => {
@@ -219,73 +186,18 @@ export default function ReportsStockValuePage() {
             />
           </Stack>
 
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-            {isMobile ? (
-              <Stack divider={<Divider flexItem />}>
-                {result.itens.length > 0 ? (
-                  result.itens.map(renderProductCard)
-                ) : (
-                  <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                    Nenhum produto com estoque positivo foi encontrado.
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <TableContainer>
-                <Table aria-label="relatorio de valor dos produtos em estoque">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Codigo</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Nome</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Quantidade</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Valor</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Valor total</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {result.itens.length > 0 ? (
-                      result.itens.map((item) => (
-                        <TableRow key={item.codigo}>
-                          <TableCell>{item.codigo}</TableCell>
-                          <TableCell>{item.nome}</TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.quantidade)}
-                          </TableCell>
-                          <TableCell align="right">
-                            <CurrencyValue value={item.valor} />
-                          </TableCell>
-                          <TableCell align="right">
-                            <CurrencyValue value={item.valorTotal} />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
-                          Nenhum produto com estoque positivo foi encontrado.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            <TablePagination
-              component="div"
-              count={result.totalItens}
-              page={Math.max(0, result.pagina - 1)}
-              onPageChange={(_event, newPage) => {
+          <ResponsiveDataTable
+            rows={result.itens}
+            columns={stockColumns}
+            getRowId={(item) => item.codigo}
+            ariaLabel="relatorio de valor dos produtos em estoque"
+            emptyMessage="Nenhum produto com estoque positivo foi encontrado."
+            isLoading={isLoading}
+            pagination={{
+              count: result.totalItens,
+              page: Math.max(0, result.pagina - 1),
+              rowsPerPage: result.tamanhoPagina,
+              onPageChange: (newPage) => {
                 if (appliedFilters) {
                   void fetchReport(
                     newPage + 1,
@@ -293,32 +205,14 @@ export default function ReportsStockValuePage() {
                     appliedFilters,
                   );
                 }
-              }}
-              rowsPerPage={result.tamanhoPagina}
-              onRowsPerPageChange={(event) => {
+              },
+              onRowsPerPageChange: (newRowsPerPage) => {
                 if (appliedFilters) {
-                  void fetchReport(
-                    1,
-                    Number(event.target.value),
-                    appliedFilters,
-                  );
+                  void fetchReport(1, newRowsPerPage, appliedFilters);
                 }
-              }}
-              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-              labelRowsPerPage="Itens por pagina"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-              }
-              sx={{
-                '.MuiTablePagination-toolbar': {
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', sm: 'flex-end' },
-                  gap: 1,
-                  px: { xs: 1, sm: 2 },
-                },
-              }}
-            />
-          </Paper>
+              },
+            }}
+          />
         </Stack>
       ) : null}
     </Stack>

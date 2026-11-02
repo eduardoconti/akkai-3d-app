@@ -2,25 +2,12 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Autocomplete,
-  Box,
   Chip,
-  Divider,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
-  Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { listAllCategories } from '@/features/products/api/products-api';
 import {
   getBestSellingProducts,
@@ -33,11 +20,13 @@ import {
   DateRangePickerField,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   getMonthRangeInput,
   getProblemDetailsFromError,
   type Categoria,
+  type DataTableColumn,
   type Feira,
   type ProblemDetails,
   type TipoVenda,
@@ -102,8 +91,6 @@ interface AppliedFilters {
 }
 
 export default function ReportsBestSellingProductsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tipoVenda, setTipoVenda] = useState<'TODOS' | TipoVenda>('TODOS');
   const [idFeira, setIdFeira] = useState<number | ''>('');
@@ -251,49 +238,39 @@ export default function ReportsBestSellingProductsPage() {
   const periodoLabel = getPeriodoLabel(result);
   const visibleFilters = appliedFilters ?? getCurrentFilters();
 
-  const renderProductCard = (item: BestSellingProductItem, index: number) => (
-    <Box
-      key={getProductRowKey(item, index, result?.pagina ?? 1)}
-      sx={{ px: 2, py: 2 }}
-    >
-      <Stack spacing={1.25}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          spacing={1}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {item.nomeProduto}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Codigo: {item.codigo ?? '-'} ·{' '}
-              {item.categoria?.nome ?? 'Sem categoria'}
-            </Typography>
-          </Box>
-
-          <Chip
-            label={`${item.quantidadeVendida} un`}
-            color="primary"
-            size="small"
-          />
-        </Stack>
-      </Stack>
-    </Box>
-  );
+  const productColumns: DataTableColumn<BestSellingProductItem>[] = [
+    {
+      id: 'codigo',
+      header: 'Codigo',
+      mobile: 'eyebrow',
+      cell: (item) => item.codigo ?? '-',
+    },
+    {
+      id: 'produto',
+      header: 'Produto',
+      mobile: 'title',
+      cell: (item) => item.nomeProduto,
+    },
+    {
+      id: 'categoria',
+      header: 'Categoria',
+      cell: (item) => item.categoria?.nome ?? '-',
+    },
+    {
+      id: 'quantidade',
+      header: 'Quantidade vendida',
+      align: 'right',
+      mobile: 'aside',
+      cell: (item) => item.quantidadeVendida,
+    },
+  ];
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Produtos mais vendidos
-        </Typography>
-        <Typography color="text.secondary">
-          Identifique os produtos com maior giro em todo o histórico ou filtre
-          por período, tipo de venda, feira e categorias.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Produtos mais vendidos"
+        description="Identifique os produtos com maior giro em todo o histórico ou filtre por período, tipo de venda, feira e categorias."
+      />
 
       <SearchFilterPanel
         onSearch={() => {
@@ -402,67 +379,20 @@ export default function ReportsBestSellingProductsPage() {
             ) : null}
           </Stack>
 
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-            {isMobile ? (
-              <Stack divider={<Divider flexItem />}>
-                {result.itens.length > 0 ? (
-                  result.itens.map(renderProductCard)
-                ) : (
-                  <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                    Nenhum produto encontrado para os filtros informados.
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <TableContainer>
-                <Table aria-label="ranking de produtos mais vendidos">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Codigo</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Produto</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Categoria</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Quantidade vendida</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {result.itens.length > 0 ? (
-                      result.itens.map((item, index) => (
-                        <TableRow
-                          key={getProductRowKey(item, index, result.pagina)}
-                        >
-                          <TableCell>{item.codigo ?? '-'}</TableCell>
-                          <TableCell>{item.nomeProduto}</TableCell>
-                          <TableCell>{item.categoria?.nome ?? '-'}</TableCell>
-                          <TableCell align="right">
-                            {item.quantidadeVendida}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                          Nenhum produto encontrado para os filtros informados.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            <TablePagination
-              component="div"
-              count={result.totalItens}
-              page={Math.max(0, result.pagina - 1)}
-              onPageChange={(_event, newPage) => {
+          <ResponsiveDataTable
+            rows={result.itens}
+            columns={productColumns}
+            getRowId={(item) =>
+              getProductRowKey(item, result.itens.indexOf(item), result.pagina)
+            }
+            ariaLabel="ranking de produtos mais vendidos"
+            emptyMessage="Nenhum produto encontrado para os filtros informados."
+            isLoading={isLoading}
+            pagination={{
+              count: result.totalItens,
+              page: Math.max(0, result.pagina - 1),
+              rowsPerPage: result.tamanhoPagina,
+              onPageChange: (newPage) => {
                 if (appliedFilters) {
                   void buscarRelatorio(
                     newPage + 1,
@@ -470,32 +400,14 @@ export default function ReportsBestSellingProductsPage() {
                     appliedFilters,
                   );
                 }
-              }}
-              rowsPerPage={result.tamanhoPagina}
-              onRowsPerPageChange={(event) => {
+              },
+              onRowsPerPageChange: (newRowsPerPage) => {
                 if (appliedFilters) {
-                  void buscarRelatorio(
-                    1,
-                    Number(event.target.value),
-                    appliedFilters,
-                  );
+                  void buscarRelatorio(1, newRowsPerPage, appliedFilters);
                 }
-              }}
-              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-              labelRowsPerPage="Itens por página"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-              }
-              sx={{
-                '.MuiTablePagination-toolbar': {
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', sm: 'flex-end' },
-                  gap: 1,
-                  px: { xs: 1, sm: 2 },
-                },
-              }}
-            />
-          </Paper>
+              },
+            }}
+          />
         </Stack>
       ) : null}
     </Stack>

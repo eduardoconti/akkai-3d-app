@@ -1,21 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { Alert, Chip, Stack, Typography } from '@mui/material';
 import { EditPlanDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -23,18 +7,16 @@ import {
   useAssinaturaStore,
 } from '@/features/assinatura/store/use-assinatura-store';
 import {
-  AppTablePagination,
   CurrencyValue,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  type PlanoAssinatura,
+  ResponsiveDataTable,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function PlanosPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { fetchErrorMessage, fetchPlanos, isFetching, planos } =
     useAssinaturaStore(
       useShallow((state) => ({
@@ -72,6 +54,43 @@ export default function PlanosPage() {
     if (page > maxPage) setPage(maxPage);
   }, [page, rowsPerPage, sortedPlanos.length]);
 
+  const planoColumns: DataTableColumn<PlanoAssinatura>[] = [
+    { id: 'nome', header: 'Nome', mobile: 'title', cell: (p) => p.nome },
+    {
+      id: 'descricao',
+      header: 'Descrição',
+      cell: (p) => p.descricao ?? '—',
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (p) => (
+        <Chip
+          size="small"
+          label={p.ativo ? 'Ativo' : 'Inativo'}
+          color={p.ativo ? 'success' : 'default'}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'valor',
+      header: 'Valor/mês',
+      align: 'right',
+      cell: (p) => (
+        <Typography
+          component="span"
+          variant="inherit"
+          fontWeight={700}
+          color="primary.main"
+        >
+          <CurrencyValue value={p.valor} />
+        </Typography>
+      ),
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <PageHeader
@@ -85,141 +104,25 @@ export default function PlanosPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de planos">
-            {isFetching ? (
-              <LoadingState />
-            ) : paginatedPlanos.length > 0 ? (
-              paginatedPlanos.map((plano) => (
-                <Box
-                  key={plano.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingPlanId(plano.id)}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    spacing={1.5}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {plano.nome}
-                      </Typography>
-                      {plano.descricao ? (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                        >
-                          {plano.descricao}
-                        </Typography>
-                      ) : null}
-                      <Chip
-                        size="small"
-                        label={plano.ativo ? 'Ativo' : 'Inativo'}
-                        color={plano.ativo ? 'success' : 'default'}
-                        variant="outlined"
-                        sx={{ mt: 1 }}
-                      />
-                    </Box>
-                    <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight={700}
-                        color="primary.main"
-                      >
-                        <CurrencyValue value={plano.valor} />
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        /mês
-                      </Typography>
-                    </Box>
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum plano cadastrado até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de planos">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Descrição</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Valor/mês</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedPlanos.length > 0 ? (
-                  paginatedPlanos.map((plano) => (
-                    <TableRow
-                      key={plano.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingPlanId(plano.id)}
-                    >
-                      <TableCell>{plano.nome}</TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {plano.descricao ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={plano.ativo ? 'Ativo' : 'Inativo'}
-                          color={plano.ativo ? 'success' : 'default'}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        sx={{ fontWeight: 700, color: 'primary.main' }}
-                      >
-                        <CurrencyValue value={plano.valor} />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum plano cadastrado até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={sortedPlanos.length}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_event, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(event) => {
-            setRowsPerPage(Number(event.target.value));
+      <ResponsiveDataTable
+        rows={paginatedPlanos}
+        columns={planoColumns}
+        getRowId={(plano) => plano.id}
+        ariaLabel="tabela de planos"
+        emptyMessage="Nenhum plano cadastrado até o momento."
+        isLoading={isFetching}
+        onRowClick={(plano) => setEditingPlanId(plano.id)}
+        pagination={{
+          count: sortedPlanos.length,
+          page,
+          rowsPerPage,
+          onPageChange: setPage,
+          onRowsPerPageChange: (newRowsPerPage) => {
+            setRowsPerPage(newRowsPerPage);
             setPage(0);
-          }}
-        />
-      </Paper>
+          },
+        }}
+      />
 
       <EditPlanDialog
         open={editingPlanId !== null}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Box,
   MenuItem,
   Paper,
   Stack,
@@ -18,6 +17,7 @@ import {
   CurrencyValue,
   DateRangePickerField,
   FormFeedbackAlert,
+  PageHeader,
   SearchFilterPanel,
   getProblemDetailsFromError,
   getMonthRangeInput,
@@ -176,17 +176,41 @@ export default function ReportsSummaryPage() {
     setAppliedFilters(null);
   };
 
+  const summaryCards = summary
+    ? [
+        {
+          id: 'quantidadeItens',
+          label: 'Quantidade de itens',
+          color: undefined,
+          value: summary.quantidadeItens,
+        },
+        {
+          id: 'descontoTotal',
+          label: 'Desconto total',
+          color: 'warning.dark',
+          value: <CurrencyValue value={summary.descontoTotal} />,
+        },
+        {
+          id: 'valorTotal',
+          label: 'Valor total',
+          color: 'success.main',
+          value: <CurrencyValue value={summary.valorTotal} />,
+        },
+        {
+          id: 'valorLiquido',
+          label: 'Valor líquido',
+          color: 'success.main',
+          value: <CurrencyValue value={summary.valorLiquido} />,
+        },
+      ]
+    : [];
+
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Resumo de vendas
-        </Typography>
-        <Typography color="text.secondary">
-          Consulte a quantidade de itens vendidos, o desconto total e o valor
-          total em um período.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Resumo de vendas"
+        description="Consulte a quantidade de itens vendidos, o desconto total e o valor total em um período."
+      />
 
       <SearchFilterPanel
         onSearch={() => {
@@ -259,73 +283,30 @@ export default function ReportsSummaryPage() {
           {periodoLabel ? <Alert severity="info">{periodoLabel}</Alert> : null}
 
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper
-                variant="outlined"
-                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Quantidade de itens
-                </Typography>
-                <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
-                  {summary.quantidadeItens}
-                </Typography>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper
-                variant="outlined"
-                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Desconto total
-                </Typography>
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
-                  sx={{ mt: 1, color: 'warning.dark' }}
+            {summaryCards.map((card) => (
+              <Grid key={card.id} size={{ xs: 12, sm: 6, lg: 3 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
                 >
-                  <CurrencyValue value={summary.descontoTotal} />
-                </Typography>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper
-                variant="outlined"
-                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Valor total
-                </Typography>
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
-                  sx={{ mt: 1, color: 'success.main' }}
-                >
-                  <CurrencyValue value={summary.valorTotal} />
-                </Typography>
-              </Paper>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 3 }}>
-              <Paper
-                variant="outlined"
-                sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Valor líquido
-                </Typography>
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
-                  sx={{ mt: 1, color: 'success.main' }}
-                >
-                  <CurrencyValue value={summary.valorLiquido} />
-                </Typography>
-              </Paper>
-            </Grid>
+                  <Typography variant="body2" color="text.secondary">
+                    {card.label}
+                  </Typography>
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{
+                      mt: 1,
+                      color: card.color,
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {card.value}
+                  </Typography>
+                </Paper>
+              </Grid>
+            ))}
           </Grid>
         </Stack>
       ) : null}

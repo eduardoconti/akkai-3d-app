@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import {
   Alert,
   Box,
@@ -39,7 +39,13 @@ export default function LoginPage() {
   const state = location.state as LocationState | null;
   const redirectTo = state?.from?.pathname ?? '/vendas';
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting || isLoading) {
+      return;
+    }
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
@@ -59,11 +65,14 @@ export default function LoginPage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         px: 2,
+        py: 2,
+        boxSizing: 'border-box',
+        overflowX: 'hidden',
       }}
     >
       <Paper
@@ -71,16 +80,34 @@ export default function LoginPage() {
         sx={{
           width: '100%',
           maxWidth: 440,
-          p: 4,
+          minWidth: 0,
+          p: { xs: 3, sm: 4 },
           borderRadius: 4,
         }}
       >
-        <Stack spacing={3}>
+        <Stack
+          component="form"
+          spacing={3}
+          noValidate
+          onSubmit={(event: FormEvent<HTMLFormElement>) => {
+            void handleSubmit(event);
+          }}
+        >
           <Box>
-            <Typography variant="h4" fontWeight={900} color="primary.main">
+            <Typography
+              variant="h4"
+              component="h1"
+              fontWeight={900}
+              color="primary.main"
+            >
               AKKAI 3D
             </Typography>
-            <Typography variant="h6" fontWeight={700} sx={{ mt: 1 }}>
+            <Typography
+              variant="h6"
+              component="h2"
+              fontWeight={700}
+              sx={{ mt: 1 }}
+            >
               Entrar no ERP
             </Typography>
             <Typography color="text.secondary">
@@ -88,14 +115,27 @@ export default function LoginPage() {
             </Typography>
           </Box>
 
-          {errorMessage ? <Alert severity="error">{errorMessage}</Alert> : null}
+          {errorMessage ? (
+            <Alert severity="error" role="alert">
+              {errorMessage}
+            </Alert>
+          ) : null}
 
           <TextField
             fullWidth
             label="Login"
             value={loginValue}
             onChange={(event) => setLoginValue(event.target.value)}
+            name="username"
             autoComplete="username"
+            slotProps={{
+              htmlInput: {
+                inputMode: 'text',
+                autoCapitalize: 'none',
+                autoCorrect: 'off',
+                spellCheck: false,
+              },
+            }}
             helperText="Apenas letras, com no minimo 3 caracteres."
           />
 
@@ -105,6 +145,7 @@ export default function LoginPage() {
             type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            name="password"
             autoComplete="current-password"
             slotProps={{
               input: {
@@ -137,9 +178,7 @@ export default function LoginPage() {
                 <LoginIcon />
               )
             }
-            onClick={() => {
-              void handleSubmit();
-            }}
+            type="submit"
             disabled={isSubmitting || isLoading}
           >
             {isSubmitting ? 'Entrando...' : 'Entrar'}

@@ -2,26 +2,14 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import {
   Alert,
   Autocomplete,
-  Box,
   Button,
   Chip,
-  Divider,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
-  Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Inventory2 } from '@mui/icons-material';
-import { useTheme } from '@mui/material/styles';
 import EditProductDialog from '../components/edit-product-dialog';
 import StockManagementDialog from '../components/stock-management-dialog';
 import {
@@ -30,14 +18,13 @@ import {
 } from '../store/use-product-store';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
-  AppTablePagination,
   CurrencyValue,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   TableColumnVisibilityButton,
   type Categoria,
+  type DataTableColumn,
   type DirecaoOrdenacao,
   type OrdenacaoProduto,
   type Produto,
@@ -108,8 +95,6 @@ function getStatusProductColor(produto: Produto): 'success' | 'default' {
 }
 
 export default function ProductsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     categorias,
     fetchCategorias,
@@ -143,15 +128,11 @@ export default function ProductsPage() {
   const [direcao, setDirecao] = useState<DirecaoOrdenacao>(
     paginacao.direcao ?? 'desc',
   );
-  const {
-    visibleColumnIds,
-    isColumnVisible,
-    toggleColumnVisibility,
-    resetColumnVisibility,
-  } = useTableColumnVisibility<ProductTableColumnId>(
-    'akkai:products-page:produtos:columns',
-    PRODUCT_TABLE_COLUMNS,
-  );
+  const { visibleColumnIds, toggleColumnVisibility, resetColumnVisibility } =
+    useTableColumnVisibility<ProductTableColumnId>(
+      'akkai:products-page:produtos:columns',
+      PRODUCT_TABLE_COLUMNS,
+    );
   const { openNewProductDialog } = useMainLayoutActions();
 
   const handleSearch = () => {
@@ -199,6 +180,85 @@ export default function ProductsPage() {
     event.stopPropagation();
     setStockProduct(produto);
   };
+
+  const productColumns: DataTableColumn<Produto>[] = [
+    {
+      id: 'codigo',
+      header: 'Código',
+      mobile: 'eyebrow',
+      cell: (produto) => produto.codigo,
+    },
+    {
+      id: 'nome',
+      header: 'Nome',
+      mobile: 'title',
+      cell: (produto) => produto.nome,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (produto) => (
+        <Chip
+          label={getStatusProductLabel(produto)}
+          size="small"
+          color={getStatusProductColor(produto)}
+          variant={produto.status === 'ATIVO' ? 'filled' : 'outlined'}
+        />
+      ),
+    },
+    {
+      id: 'categoria',
+      header: 'Categoria',
+      cell: (produto) => produto.categoria?.nome ?? '-',
+    },
+    {
+      id: 'descricao',
+      header: 'Descrição',
+      cell: (produto) => produto.descricao || '-',
+    },
+    {
+      id: 'estoque',
+      header: 'Estoque',
+      align: 'center',
+      cell: (produto) => (
+        <Chip
+          label={getStockQuantity(produto)}
+          size="medium"
+          color={getStockColor(produto)}
+          variant={getStockVariant(produto)}
+          sx={{
+            minWidth: 44,
+            fontWeight: 700,
+            '& .MuiChip-label': { px: 1.5 },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'valor',
+      header: 'Valor',
+      align: 'right',
+      cell: (produto) => <CurrencyValue value={produto.valor} />,
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (produto) => (
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
+          startIcon={<Inventory2 fontSize="small" />}
+          onClick={(event) => openStockDialog(event, produto)}
+        >
+          Movimentar
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -274,285 +334,36 @@ export default function ProductsPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de produtos">
-            {isFetchingProducts ? (
-              <LoadingState />
-            ) : produtos.length > 0 ? (
-              produtos.map((produto) => {
-                return (
-                  <Box
-                    key={produto.id}
-                    onClick={() => setEditingProductId(produto.id)}
-                    sx={{
-                      cursor: 'pointer',
-                      px: 2,
-                      py: 2,
-                      transition: 'background-color 0.2s ease',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  >
-                    <Stack spacing={1.5}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="flex-start"
-                        spacing={1.5}
-                      >
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {produto.codigo}
-                          </Typography>
-                          <Typography variant="subtitle1" fontWeight={700}>
-                            {produto.nome}
-                          </Typography>
-                          <Chip
-                            label={getStatusProductLabel(produto)}
-                            size="small"
-                            color={getStatusProductColor(produto)}
-                            variant={
-                              produto.status === 'ATIVO'
-                                ? 'filled'
-                                : 'outlined'
-                            }
-                            sx={{ mt: 0.75 }}
-                          />
-                        </Box>
-
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          size="small"
-                          startIcon={<Inventory2 fontSize="small" />}
-                          onClick={(event) => openStockDialog(event, produto)}
-                        >
-                          Movimentar
-                        </Button>
-                      </Stack>
-
-                      <Stack spacing={0.75}>
-                        <Typography variant="body2" color="text.secondary">
-                          Categoria: {produto.categoria?.nome ?? '-'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Descrição: {produto.descricao || '-'}
-                        </Typography>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          flexWrap="wrap"
-                          useFlexGap
-                        >
-                          <Typography variant="body2" color="text.secondary">
-                            Estoque atual:
-                          </Typography>
-                          <Chip
-                            label={getStockQuantity(produto)}
-                            size="medium"
-                            color={getStockColor(produto)}
-                            variant={getStockVariant(produto)}
-                            sx={{
-                              minWidth: 44,
-                              fontWeight: 700,
-                              '& .MuiChip-label': { px: 1.5 },
-                            }}
-                          />
-                        </Stack>
-                        <Typography variant="body2" color="text.secondary">
-                          Valor: <CurrencyValue value={produto.valor} />
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                  </Box>
-                );
-              })
-            ) : (
-              <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
-            )}
-          </Stack>
-        ) : (
-          <>
-            <Stack
-              direction="row"
-              justifyContent="flex-end"
-              sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}
-            >
-              <TableColumnVisibilityButton
-                columns={PRODUCT_TABLE_COLUMNS}
-                visibleColumnIds={visibleColumnIds}
-                onToggleColumn={toggleColumnVisibility}
-                onResetColumns={resetColumnVisibility}
-              />
-            </Stack>
-
-            <TableContainer>
-              <Table sx={{ minWidth: 780 }} aria-label="tabela de produtos">
-                <TableHead>
-                  <TableRow>
-                    {isColumnVisible('codigo') ? (
-                      <TableCell>
-                        <strong>Código</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('nome') ? (
-                      <TableCell>
-                        <strong>Nome</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('status') ? (
-                      <TableCell>
-                        <strong>Status</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('categoria') ? (
-                      <TableCell>
-                        <strong>Categoria</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('descricao') ? (
-                      <TableCell>
-                        <strong>Descrição</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('estoque') ? (
-                      <TableCell align="center">
-                        <strong>Estoque</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('valor') ? (
-                      <TableCell align="right">
-                        <strong>Valor</strong>
-                      </TableCell>
-                    ) : null}
-                    {isColumnVisible('acoes') ? (
-                      <TableCell align="right">
-                        <strong>Ações</strong>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {isFetchingProducts ? (
-                    <TableRow>
-                      <TableCell colSpan={visibleColumnIds.length} sx={{ p: 0 }}>
-                        <LoadingState />
-                      </TableCell>
-                    </TableRow>
-                  ) : produtos.length > 0 ? (
-                    produtos.map((produto) => {
-                      return (
-                        <TableRow
-                          key={produto.id}
-                          onClick={() => setEditingProductId(produto.id)}
-                          sx={{
-                            '&:last-child td, &:last-child th': { border: 0 },
-                            cursor: 'pointer',
-                            '&:hover': {
-                              bgcolor: 'action.hover',
-                            },
-                          }}
-                        >
-                          {isColumnVisible('codigo') ? (
-                            <TableCell component="th" scope="row">
-                              {produto.codigo}
-                            </TableCell>
-                          ) : null}
-                          {isColumnVisible('nome') ? (
-                            <TableCell>{produto.nome}</TableCell>
-                          ) : null}
-                          {isColumnVisible('status') ? (
-                            <TableCell>
-                              <Chip
-                                label={getStatusProductLabel(produto)}
-                                size="small"
-                                color={getStatusProductColor(produto)}
-                                variant={
-                                  produto.status === 'ATIVO'
-                                    ? 'filled'
-                                    : 'outlined'
-                                }
-                              />
-                            </TableCell>
-                          ) : null}
-                          {isColumnVisible('categoria') ? (
-                            <TableCell>
-                              {produto.categoria?.nome ?? '-'}
-                            </TableCell>
-                          ) : null}
-                          {isColumnVisible('descricao') ? (
-                            <TableCell>{produto.descricao || '-'}</TableCell>
-                          ) : null}
-                          {isColumnVisible('estoque') ? (
-                            <TableCell align="center">
-                              <Chip
-                                label={getStockQuantity(produto)}
-                                size="medium"
-                                color={getStockColor(produto)}
-                                variant={getStockVariant(produto)}
-                                sx={{
-                                  minWidth: 44,
-                                  fontWeight: 700,
-                                  '& .MuiChip-label': { px: 1.5 },
-                                }}
-                              />
-                            </TableCell>
-                          ) : null}
-                          {isColumnVisible('valor') ? (
-                            <TableCell align="right">
-                              <CurrencyValue value={produto.valor} />
-                            </TableCell>
-                          ) : null}
-                          {isColumnVisible('acoes') ? (
-                            <TableCell align="right">
-                              <Button
-                                variant="outlined"
-                                color="primary"
-                                size="small"
-                                startIcon={<Inventory2 fontSize="small" />}
-                                onClick={(event) =>
-                                  openStockDialog(event, produto)
-                                }
-                              >
-                                Movimentar
-                              </Button>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={visibleColumnIds.length} sx={{ p: 0 }}>
-                        <EmptyState message="Nenhum produto encontrado para a pesquisa informada." />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-
-        <AppTablePagination
-          count={totalItens}
-          page={Math.max(0, paginacao.pagina - 1)}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={produtos}
+        columns={productColumns}
+        getRowId={(produto) => produto.id}
+        ariaLabel="tabela de produtos"
+        emptyMessage="Nenhum produto encontrado para a pesquisa informada."
+        isLoading={isFetchingProducts}
+        onRowClick={(produto) => setEditingProductId(produto.id)}
+        visibleColumnIds={visibleColumnIds}
+        minTableWidth={780}
+        toolbar={
+          <TableColumnVisibilityButton
+            columns={PRODUCT_TABLE_COLUMNS}
+            visibleColumnIds={visibleColumnIds}
+            onToggleColumn={toggleColumnVisibility}
+            onResetColumns={resetColumnVisibility}
+          />
+        }
+        pagination={{
+          count: totalItens,
+          page: Math.max(0, paginacao.pagina - 1),
+          rowsPerPage: paginacao.tamanhoPagina,
+          onPageChange: (newPage) => {
             void fetchProdutos({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchProdutos({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
+            void fetchProdutos({ pagina: 1, tamanhoPagina: newRowsPerPage });
+          },
+        }}
+      />
 
       <EditProductDialog
         open={editingProductId !== null}

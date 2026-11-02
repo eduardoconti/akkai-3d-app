@@ -1,24 +1,6 @@
 import { useState } from 'react';
-import {
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import {
   getProductionReport,
   type ProductionReportItem,
@@ -29,12 +11,14 @@ import {
   DateRangePickerField,
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   formatCurrencyWithVisibility,
   getMonthRangeInput,
   getProblemDetailsFromError,
   useValueVisibilityStore,
+  type DataTableColumn,
   type ProblemDetails,
 } from '@/shared';
 
@@ -59,8 +43,6 @@ interface AppliedFilters {
 }
 
 export default function ReportsProductionPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const hideValues = useValueVisibilityStore((state) => state.hideValues);
   const [dateRange, setDateRange] = useState(getMonthRangeInput);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
@@ -135,82 +117,58 @@ export default function ReportsProductionPage() {
     setAppliedFilters(null);
   };
 
-  const renderCard = (item: ProductionReportItem) => (
-    <Box key={item.codigo} sx={{ px: 2, py: 2 }}>
-      <Stack spacing={1.25}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          spacing={1}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {item.nome}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Codigo: {item.codigo}
-            </Typography>
-          </Box>
-
-          <Chip
-            label={`${formatQuantity(item.quantidadeProduzida)} un`}
-            size="small"
-          />
-        </Stack>
-
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Valor unitario
-            </Typography>
-            <Typography fontWeight={600}>
-              <CurrencyValue value={item.valorUnitario} />
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Valor estimado
-            </Typography>
-            <Typography fontWeight={700}>
-              <CurrencyValue value={item.valorEstimado} />
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Media de pecas por dia
-            </Typography>
-            <Typography>
-              {formatQuantity(item.mediaQuantidadePorDia)}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Media de valor por dia
-            </Typography>
-            <Typography>
-              <CurrencyValue value={item.mediaValorPorDia} />
-            </Typography>
-          </Grid>
-        </Grid>
-      </Stack>
-    </Box>
-  );
+  const productionColumns: DataTableColumn<ProductionReportItem>[] = [
+    {
+      id: 'codigo',
+      header: 'Codigo',
+      mobile: 'eyebrow',
+      cell: (item) => item.codigo,
+    },
+    {
+      id: 'nome',
+      header: 'Nome',
+      mobile: 'title',
+      cell: (item) => item.nome,
+    },
+    {
+      id: 'quantidade',
+      header: 'Quantidade',
+      align: 'right',
+      mobile: 'aside',
+      cell: (item) => formatQuantity(item.quantidadeProduzida),
+    },
+    {
+      id: 'valorUnitario',
+      header: 'Valor unitario',
+      align: 'right',
+      cell: (item) => <CurrencyValue value={item.valorUnitario} />,
+    },
+    {
+      id: 'valorEstimado',
+      header: 'Valor estimado',
+      align: 'right',
+      cell: (item) => <CurrencyValue value={item.valorEstimado} />,
+    },
+    {
+      id: 'mediaQuantidade',
+      header: 'Media pecas/dia',
+      align: 'right',
+      cell: (item) => formatQuantity(item.mediaQuantidadePorDia),
+    },
+    {
+      id: 'mediaValor',
+      header: 'Media valor/dia',
+      align: 'right',
+      cell: (item) => <CurrencyValue value={item.mediaValorPorDia} />,
+    },
+  ];
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Relatorio de producao
-        </Typography>
-        <Typography color="text.secondary">
-          Consulte as pecas produzidas no período, o valor estimado com base no
-          valor atual dos produtos e as medias diarias de quantidade e valor.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Relatorio de producao"
+        description="Consulte as pecas produzidas no período, o valor estimado com base no valor atual dos produtos e as medias diarias de quantidade e valor."
+      />
 
       <SearchFilterPanel
         onSearch={() => {
@@ -291,86 +249,18 @@ export default function ReportsProductionPage() {
             />
           </Stack>
 
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-            {isMobile ? (
-              <Stack divider={<Divider flexItem />}>
-                {result.itens.length > 0 ? (
-                  result.itens.map(renderCard)
-                ) : (
-                  <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                    Nenhuma produção foi encontrada no período selecionado.
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <TableContainer>
-                <Table aria-label="relatorio de producao">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Codigo</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Nome</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Quantidade</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Valor unitario</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Valor estimado</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Media pecas/dia</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Media valor/dia</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {result.itens.length > 0 ? (
-                      result.itens.map((item) => (
-                        <TableRow key={item.codigo}>
-                          <TableCell>{item.codigo}</TableCell>
-                          <TableCell>{item.nome}</TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.quantidadeProduzida)}
-                          </TableCell>
-                          <TableCell align="right">
-                            <CurrencyValue value={item.valorUnitario} />
-                          </TableCell>
-                          <TableCell align="right">
-                            <CurrencyValue value={item.valorEstimado} />
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.mediaQuantidadePorDia)}
-                          </TableCell>
-                          <TableCell align="right">
-                            <CurrencyValue value={item.mediaValorPorDia} />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                          Nenhuma produção foi encontrada no período
-                          selecionado.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            <TablePagination
-              component="div"
-              count={result.totalItens}
-              page={Math.max(0, result.pagina - 1)}
-              onPageChange={(_event, newPage) => {
+          <ResponsiveDataTable
+            rows={result.itens}
+            columns={productionColumns}
+            getRowId={(item) => item.codigo}
+            ariaLabel="relatorio de producao"
+            emptyMessage="Nenhuma produção foi encontrada no período selecionado."
+            isLoading={isLoading}
+            pagination={{
+              count: result.totalItens,
+              page: Math.max(0, result.pagina - 1),
+              rowsPerPage: result.tamanhoPagina,
+              onPageChange: (newPage) => {
                 if (appliedFilters) {
                   void fetchReport(
                     newPage + 1,
@@ -378,32 +268,14 @@ export default function ReportsProductionPage() {
                     appliedFilters,
                   );
                 }
-              }}
-              rowsPerPage={result.tamanhoPagina}
-              onRowsPerPageChange={(event) => {
+              },
+              onRowsPerPageChange: (newRowsPerPage) => {
                 if (appliedFilters) {
-                  void fetchReport(
-                    1,
-                    Number(event.target.value),
-                    appliedFilters,
-                  );
+                  void fetchReport(1, newRowsPerPage, appliedFilters);
                 }
-              }}
-              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-              labelRowsPerPage="Itens por pagina"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-              }
-              sx={{
-                '.MuiTablePagination-toolbar': {
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', sm: 'flex-end' },
-                  gap: 1,
-                  px: { xs: 1, sm: 2 },
-                },
-              }}
-            />
-          </Paper>
+              },
+            }}
+          />
         </Stack>
       ) : null}
     </Stack>

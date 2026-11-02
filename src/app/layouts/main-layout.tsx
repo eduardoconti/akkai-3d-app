@@ -82,6 +82,11 @@ import {
   type SaleFormState,
 } from '@/features/sales/types/sale-form';
 import {
+  loadQuickSaleDrafts,
+  saveQuickSaleDrafts,
+  type QuickSaleDraft,
+} from '@/features/sales/utils/quick-sale-draft-storage';
+import {
   CurrencyValue,
   formatLocalDate,
   GlobalFeedbackSnackbar,
@@ -90,7 +95,11 @@ import {
   useSwUpdate,
   useValueVisibilityStore,
 } from '@/shared';
-import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
+import {
+  getActiveMenuStyles,
+  getActiveSubmenuStyles,
+  getDiscreetScrollbarStyles,
+} from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -120,12 +129,6 @@ const MENU_ACTION_BUTTON_SX = {
   },
 };
 const PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE = 'estoque.ler';
-
-type QuickSaleDraft = {
-  id: string;
-  label: string;
-  form: SaleFormState;
-};
 
 type QuickSaleDefaultConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
 
@@ -220,7 +223,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
-  const [quickSaleDrafts, setQuickSaleDrafts] = useState<QuickSaleDraft[]>([]);
+  const [recoveredQuickSales] = useState(() => loadQuickSaleDrafts(user?.id));
+  const [quickSaleDrafts, setQuickSaleDrafts] = useState<QuickSaleDraft[]>(
+    recoveredQuickSales.drafts,
+  );
   const [activeQuickSaleDraftId, setActiveQuickSaleDraftId] = useState<
     string | null
   >(null);
@@ -256,13 +262,32 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
   );
-  const quickSaleDraftSequenceRef = useRef(0);
+  const quickSaleDraftSequenceRef = useRef(recoveredQuickSales.sequence);
   const podeListarMovimentacoesEstoque =
     user?.permissions.includes(PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE) ?? false;
 
   useEffect(() => {
     void hydrateOfflineState();
   }, [hydrateOfflineState]);
+
+  useEffect(() => {
+    saveQuickSaleDrafts(user?.id, {
+      sequence: quickSaleDraftSequenceRef.current,
+      drafts: quickSaleDrafts,
+    });
+  }, [quickSaleDrafts, user?.id]);
+
+  useEffect(() => {
+    const recoveredCount = recoveredQuickSales.drafts.length;
+
+    if (recoveredCount > 0) {
+      showSuccess(
+        recoveredCount === 1
+          ? '1 atendimento em andamento foi recuperado.'
+          : `${recoveredCount} atendimentos em andamento foram recuperados.`,
+      );
+    }
+  }, [recoveredQuickSales, showSuccess]);
 
   const productsSectionActive = useMemo(
     () => location.pathname.startsWith('/produtos'),
@@ -552,7 +577,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </Toolbar>
       <Divider />
       <List
-        sx={{ px: 1.5, py: 2, flexGrow: 1, minHeight: 0, overflowY: 'auto' }}
+        sx={(theme) => ({
+          px: 1.5,
+          py: 2,
+          flexGrow: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          ...getDiscreetScrollbarStyles(theme),
+        })}
       >
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton
@@ -1271,7 +1303,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'transparent' }}>
+    <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: 'transparent' }}>
       <AppBar
         position="fixed"
         color="inherit"
@@ -1602,12 +1634,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
         }}
       >
         <Box sx={{ height: { xs: `${MOBILE_APPBAR_MIN_HEIGHT}px`, md: 64 } }} />
         <MainLayoutActionsContext.Provider value={layoutActions}>
-          <Box sx={{ p: { xs: 2, md: 4 } }}>{children}</Box>
+          <Box
+            sx={{
+              p: { xs: 2, md: 4 },
+              // Reserva espaço para a barra de atendimentos minimizados.
+              pb:
+                quickSaleDrafts.length > 0 && !activeQuickSaleDraft
+                  ? 14
+                  : undefined,
+            }}
+          >
+            {children}
+          </Box>
         </MainLayoutActionsContext.Provider>
       </Box>
 

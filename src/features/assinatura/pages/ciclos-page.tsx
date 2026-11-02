@@ -1,24 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { EditCicloDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -31,19 +13,17 @@ import {
   STATUS_CICLO_LABEL,
 } from '@/features/assinatura/types/assinatura-form';
 import {
-  AppTablePagination,
+  type CicloAssinatura,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   type StatusCiclo,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function CiclosPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     assinantes,
     ciclos,
@@ -115,6 +95,44 @@ export default function CiclosPage() {
 
   const currentYear = new Date().getFullYear();
   const ANOS = Array.from({ length: 6 }, (_, i) => currentYear - 2 + i);
+
+  const cicloColumns: DataTableColumn<CicloAssinatura>[] = [
+    {
+      id: 'assinante',
+      header: 'Assinante',
+      mobile: 'title',
+      cell: (c) => c.assinante?.nome ?? `Assinante #${c.idAssinante}`,
+    },
+    {
+      id: 'referencia',
+      header: 'Referência',
+      cell: (c) => `${MESES_LABEL[c.mesReferencia]} / ${c.anoReferencia}`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (c) => (
+        <Chip
+          size="small"
+          label={STATUS_CICLO_LABEL[c.status]}
+          color={STATUS_CICLO_COLOR[c.status]}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      id: 'itens',
+      header: 'Itens',
+      cell: (c) =>
+        `${c.itens?.length ?? 0} ${c.itens?.length === 1 ? 'item' : 'itens'}`,
+    },
+    {
+      id: 'rastreio',
+      header: 'Rastreio',
+      cell: (c) => c.codigoRastreio ?? '—',
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -213,142 +231,26 @@ export default function CiclosPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack divider={<Divider flexItem />} aria-label="lista de ciclos">
-            {isFetching ? (
-              <LoadingState />
-            ) : ciclos.length > 0 ? (
-              ciclos.map((ciclo) => (
-                <Box
-                  key={ciclo.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingCicloId(ciclo.id)}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                    spacing={1.5}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {ciclo.assinante?.nome ??
-                          `Assinante #${ciclo.idAssinante}`}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {MESES_LABEL[ciclo.mesReferencia]} /{' '}
-                        {ciclo.anoReferencia}
-                      </Typography>
-                      {ciclo.codigoRastreio ? (
-                        <Typography variant="caption" color="text.secondary">
-                          Rastreio: {ciclo.codigoRastreio}
-                        </Typography>
-                      ) : null}
-                    </Box>
-                    <Chip
-                      size="small"
-                      label={STATUS_CICLO_LABEL[ciclo.status]}
-                      color={STATUS_CICLO_COLOR[ciclo.status]}
-                      variant="outlined"
-                      sx={{ flexShrink: 0 }}
-                    />
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum ciclo encontrado para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de ciclos">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Assinante</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Referência</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Itens</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Rastreio</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : ciclos.length > 0 ? (
-                  ciclos.map((ciclo) => (
-                    <TableRow
-                      key={ciclo.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingCicloId(ciclo.id)}
-                    >
-                      <TableCell>
-                        {ciclo.assinante?.nome ??
-                          `Assinante #${ciclo.idAssinante}`}
-                      </TableCell>
-                      <TableCell>
-                        {MESES_LABEL[ciclo.mesReferencia]} /{' '}
-                        {ciclo.anoReferencia}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={STATUS_CICLO_LABEL[ciclo.status]}
-                          color={STATUS_CICLO_COLOR[ciclo.status]}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {ciclo.itens?.length ?? 0}{' '}
-                        {ciclo.itens?.length === 1 ? 'item' : 'itens'}
-                      </TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {ciclo.codigoRastreio ?? '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum ciclo encontrado para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalCiclos}
-          page={Math.max(0, (paginacaoCiclos.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoCiclos.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={ciclos}
+        columns={cicloColumns}
+        getRowId={(ciclo) => ciclo.id}
+        ariaLabel="tabela de ciclos"
+        emptyMessage="Nenhum ciclo encontrado para os filtros informados."
+        isLoading={isFetching}
+        onRowClick={(ciclo) => setEditingCicloId(ciclo.id)}
+        pagination={{
+          count: totalCiclos,
+          page: Math.max(0, (paginacaoCiclos.pagina ?? 1) - 1),
+          rowsPerPage: paginacaoCiclos.tamanhoPagina ?? DEFAULT_PAGE_SIZE,
+          onPageChange: (newPage) => {
             void fetchCiclos({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchCiclos({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
+            void fetchCiclos({ pagina: 1, tamanhoPagina: newRowsPerPage });
+          },
+        }}
+      />
 
       <EditCicloDialog
         open={editingCicloId !== null}

@@ -1,24 +1,6 @@
 import { useState } from 'react';
-import {
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import {
   getProductionSuggestionReport,
   type ProductionSuggestionReportItem,
@@ -27,9 +9,11 @@ import {
 import {
   DEFAULT_PAGE_SIZE,
   FormFeedbackAlert,
-  PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
+  PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   getProblemDetailsFromError,
+  type DataTableColumn,
   type ProblemDetails,
 } from '@/shared';
 
@@ -62,8 +46,6 @@ interface AppliedFilters {
 }
 
 export default function ReportsProductionSuggestionPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [feirasHistorico, setFeirasHistorico] = useState(8);
   const [feirasPlanejamento, setFeirasPlanejamento] = useState(2);
   const [feirasEstoqueSeguranca, setFeirasEstoqueSeguranca] = useState(1);
@@ -143,82 +125,74 @@ export default function ReportsProductionSuggestionPage() {
     />
   );
 
-  const renderCard = (item: ProductionSuggestionReportItem) => (
-    <Box key={item.idProduto} sx={{ px: 2, py: 2 }}>
-      <Stack spacing={1.25}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-start"
-          spacing={1}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              {item.nome}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Codigo: {item.codigo}
-            </Typography>
-          </Box>
-
-          {renderPriorityChip(item.prioridade)}
-        </Stack>
-
-        <Chip
-          label={`Produzir ${formatQuantity(item.sugestaoProducao)} un`}
-          color="primary"
-          size="small"
-          sx={{ alignSelf: 'flex-start' }}
-        />
-
-        <Grid container spacing={1.5}>
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Estoque atual
-            </Typography>
-            <Typography fontWeight={600}>
-              {formatQuantity(item.estoqueAtual)}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Vendido
-            </Typography>
-            <Typography fontWeight={600}>
-              {formatQuantity(item.quantidadeVendida)}
-            </Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Cobertura
-            </Typography>
-            <Typography>{formatCoverage(item.feirasCobertura)}</Typography>
-          </Grid>
-
-          <Grid size={{ xs: 6 }}>
-            <Typography variant="caption" color="text.secondary">
-              Alvo
-            </Typography>
-            <Typography>{formatQuantity(item.estoqueAlvo)}</Typography>
-          </Grid>
-        </Grid>
-      </Stack>
-    </Box>
-  );
+  const suggestionColumns: DataTableColumn<ProductionSuggestionReportItem>[] = [
+    {
+      id: 'codigo',
+      header: 'Codigo',
+      mobile: 'eyebrow',
+      cell: (item) => item.codigo,
+    },
+    {
+      id: 'produto',
+      header: 'Produto',
+      mobile: 'title',
+      cell: (item) => item.nome,
+    },
+    {
+      id: 'prioridade',
+      header: 'Prioridade',
+      mobile: 'badge',
+      cell: (item) => renderPriorityChip(item.prioridade),
+    },
+    {
+      id: 'estoque',
+      header: 'Estoque',
+      align: 'right',
+      cell: (item) => formatQuantity(item.estoqueAtual),
+    },
+    {
+      id: 'vendido',
+      header: 'Vendido',
+      align: 'right',
+      cell: (item) => formatQuantity(item.quantidadeVendida),
+    },
+    {
+      id: 'mediaFeira',
+      header: 'Média/feira',
+      align: 'right',
+      cell: (item) => formatQuantity(item.mediaVendaPorFeira),
+    },
+    {
+      id: 'cobertura',
+      header: 'Cobertura',
+      align: 'right',
+      cell: (item) => formatCoverage(item.feirasCobertura),
+    },
+    {
+      id: 'alvo',
+      header: 'Alvo',
+      align: 'right',
+      cell: (item) => formatQuantity(item.estoqueAlvo),
+    },
+    {
+      id: 'sugestao',
+      header: 'Sugestão',
+      align: 'right',
+      mobile: 'aside',
+      cell: (item) => (
+        <Typography component="span" variant="inherit" fontWeight={700}>
+          {formatQuantity(item.sugestaoProducao)}
+        </Typography>
+      ),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
-      <Box>
-        <Typography variant="h5" fontWeight={700}>
-          Sugestão de produção
-        </Typography>
-        <Typography color="text.secondary">
-          Compare as últimas vendas de feira, estoque atual e estoque mínimo
-          para decidir o que produzir para os próximos eventos.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Sugestão de produção"
+        description="Compare as últimas vendas de feira, estoque atual e estoque mínimo para decidir o que produzir para os próximos eventos."
+      />
 
       <SearchFilterPanel
         onSearch={() => {
@@ -335,100 +309,18 @@ export default function ReportsProductionSuggestionPage() {
             />
           </Stack>
 
-          <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
-            {isMobile ? (
-              <Stack divider={<Divider flexItem />}>
-                {result.itens.length > 0 ? (
-                  result.itens.map(renderCard)
-                ) : (
-                  <Box sx={{ py: 6, px: 2, textAlign: 'center' }}>
-                    Nenhuma produção foi sugerida para o período selecionado.
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <TableContainer>
-                <Table aria-label="sugestao de producao">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        <strong>Codigo</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Produto</strong>
-                      </TableCell>
-                      <TableCell>
-                        <strong>Prioridade</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Estoque</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Vendido</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Média/feira</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Cobertura</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Alvo</strong>
-                      </TableCell>
-                      <TableCell align="right">
-                        <strong>Sugestão</strong>
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {result.itens.length > 0 ? (
-                      result.itens.map((item) => (
-                        <TableRow key={item.idProduto}>
-                          <TableCell>{item.codigo}</TableCell>
-                          <TableCell>{item.nome}</TableCell>
-                          <TableCell>
-                            {renderPriorityChip(item.prioridade)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.estoqueAtual)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.quantidadeVendida)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.mediaVendaPorFeira)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatCoverage(item.feirasCobertura)}
-                          </TableCell>
-                          <TableCell align="right">
-                            {formatQuantity(item.estoqueAlvo)}
-                          </TableCell>
-                          <TableCell align="right">
-                            <strong>
-                              {formatQuantity(item.sugestaoProducao)}
-                            </strong>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
-                          Nenhuma produção foi sugerida para o período
-                          selecionado.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-
-            <TablePagination
-              component="div"
-              count={result.totalItens}
-              page={Math.max(0, result.pagina - 1)}
-              onPageChange={(_event, newPage) => {
+          <ResponsiveDataTable
+            rows={result.itens}
+            columns={suggestionColumns}
+            getRowId={(item) => item.idProduto}
+            ariaLabel="sugestao de producao"
+            emptyMessage="Nenhuma produção foi sugerida para o período selecionado."
+            isLoading={isLoading}
+            pagination={{
+              count: result.totalItens,
+              page: Math.max(0, result.pagina - 1),
+              rowsPerPage: result.tamanhoPagina,
+              onPageChange: (newPage) => {
                 if (appliedFilters) {
                   void fetchReport(
                     newPage + 1,
@@ -436,32 +328,14 @@ export default function ReportsProductionSuggestionPage() {
                     appliedFilters,
                   );
                 }
-              }}
-              rowsPerPage={result.tamanhoPagina}
-              onRowsPerPageChange={(event) => {
+              },
+              onRowsPerPageChange: (newRowsPerPage) => {
                 if (appliedFilters) {
-                  void fetchReport(
-                    1,
-                    Number(event.target.value),
-                    appliedFilters,
-                  );
+                  void fetchReport(1, newRowsPerPage, appliedFilters);
                 }
-              }}
-              rowsPerPageOptions={PAGINATED_SEARCH_PAGE_SIZE_OPTIONS}
-              labelRowsPerPage="Itens por pagina"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
-              }
-              sx={{
-                '.MuiTablePagination-toolbar': {
-                  flexWrap: 'wrap',
-                  justifyContent: { xs: 'center', sm: 'flex-end' },
-                  gap: 1,
-                  px: { xs: 1, sm: 2 },
-                },
-              }}
-            />
-          </Paper>
+              },
+            }}
+          />
         </Stack>
       ) : null}
     </Stack>

@@ -1,26 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Alert,
   Autocomplete,
   Box,
   Button,
   Chip,
-  Divider,
   Link,
   Menu,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
-  useMediaQuery,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { PointOfSale } from '@mui/icons-material';
@@ -45,12 +36,11 @@ import {
   type SaleFormState,
 } from '@/features/sales/types/sale-form';
 import {
-  AppTablePagination,
   CurrencyValue,
-  EmptyState,
-  LoadingState,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
+  type DataTableColumn,
 } from '@/shared';
 import type {
   CanalAtendimentoOrcamento,
@@ -150,6 +140,30 @@ const STATUS_PADRAO_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
   (status) => status !== 'FINALIZADO',
 );
 
+const COLUNAS_VISIVEIS_DESKTOP = [
+  'id',
+  'cliente',
+  'descricao',
+  'telefone',
+  'tipo',
+  'status',
+  'valor',
+  'dataInclusao',
+  'acoes',
+] as const;
+
+function SemPropagacao({ children }: { children: ReactNode }) {
+  return (
+    <Box
+      component="span"
+      sx={{ display: 'inline-flex' }}
+      onClick={(event) => event.stopPropagation()}
+    >
+      {children}
+    </Box>
+  );
+}
+
 interface StatusChipProps {
   orcamento: Orcamento;
   onStatusChange: (id: number, status: StatusOrcamento) => void;
@@ -219,8 +233,6 @@ function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
 }
 
 export default function BudgetsPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     atualizarOrcamento,
     fetchErrorMessage,
@@ -322,6 +334,126 @@ export default function BudgetsPage() {
           : undefined,
     });
   };
+
+  const colunasOrcamentos: DataTableColumn<Orcamento>[] = [
+    {
+      id: 'id',
+      header: 'ID',
+      mobile: 'eyebrow',
+      cell: (orcamento) => `#${orcamento.id}`,
+    },
+    {
+      id: 'cliente',
+      header: 'Cliente',
+      mobile: 'title',
+      cell: (orcamento) => orcamento.nomeCliente,
+    },
+    {
+      id: 'descricao',
+      header: 'Descrição',
+      cell: (orcamento) => orcamento.descricao?.trim() || '-',
+    },
+    {
+      id: 'telefone',
+      header: 'Telefone',
+      cell: (orcamento) => orcamento.telefoneCliente ?? '-',
+    },
+    {
+      id: 'tipo',
+      header: 'Tipo',
+      cell: (orcamento) => (
+        <Stack spacing={0.5}>
+          <Typography variant="body2">{TIPO_LABEL[orcamento.tipo]}</Typography>
+          {orcamento.tipo === 'FEIRA' && orcamento.feira ? (
+            <Typography variant="caption" color="text.secondary">
+              {orcamento.feira.nome}
+            </Typography>
+          ) : null}
+          {orcamento.tipo === 'ONLINE' && orcamento.canalAtendimento ? (
+            <Typography variant="caption" color="text.secondary">
+              {CANAL_ATENDIMENTO_ORCAMENTO_LABEL[orcamento.canalAtendimento]}
+            </Typography>
+          ) : null}
+        </Stack>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (orcamento) => (
+        <SemPropagacao>
+          <StatusChip
+            orcamento={orcamento}
+            onStatusChange={handleStatusChange}
+            disabled={isSubmitting || orcamento.status === 'FINALIZADO'}
+          />
+        </SemPropagacao>
+      ),
+    },
+    {
+      id: 'valor',
+      header: 'Valor',
+      cell: (orcamento) =>
+        orcamento.valor != null ? (
+          <CurrencyValue value={orcamento.valor} />
+        ) : (
+          '-'
+        ),
+    },
+    {
+      id: 'dataInclusao',
+      header: 'Data de inclusão',
+      cell: (orcamento) => formatDateTime(orcamento.dataInclusao),
+    },
+    {
+      id: 'stl',
+      header: 'STL',
+      cell: (orcamento) =>
+        orcamento.linkSTL ? (
+          <Link
+            href={orcamento.linkSTL}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+          >
+            Abrir link
+          </Link>
+        ) : null,
+    },
+    {
+      id: 'acoes',
+      header: 'Ações',
+      align: 'right',
+      mobile: 'actions',
+      cell: (orcamento) => (
+        <SemPropagacao>
+          <Tooltip
+            title={
+              orcamento.status === 'FINALIZADO'
+                ? 'Orçamento já finalizado'
+                : 'Finalizar orçamento com venda'
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PointOfSale />}
+                disabled={isSubmitting || orcamento.status === 'FINALIZADO'}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleOpenFinalizeDialog(orcamento);
+                }}
+              >
+                Finalizar
+              </Button>
+            </span>
+          </Tooltip>
+        </SemPropagacao>
+      ),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -425,310 +557,27 @@ export default function BudgetsPage() {
         </Grid>
       </SearchFilterPanel>
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de orçamentos"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : orcamentos.length > 0 ? (
-              orcamentos.map((orcamento) => (
-                <Box
-                  key={orcamento.id}
-                  sx={{
-                    px: 2,
-                    py: 2,
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                  onClick={() => handleOpenEditDialog(orcamento)}
-                >
-                  <Stack spacing={1}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      spacing={1.5}
-                    >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          Orçamento #{orcamento.id}
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={700}>
-                          {orcamento.nomeCliente}
-                        </Typography>
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ flexShrink: 0 }}
-                      >
-                        {formatDateTime(orcamento.dataInclusao)}
-                      </Typography>
-                    </Stack>
-
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      flexWrap="wrap"
-                    >
-                      <Box onClick={(event) => event.stopPropagation()}>
-                        <StatusChip
-                          orcamento={orcamento}
-                          onStatusChange={handleStatusChange}
-                          disabled={
-                            isSubmitting || orcamento.status === 'FINALIZADO'
-                          }
-                        />
-                      </Box>
-                      <Chip
-                        label={TIPO_LABEL[orcamento.tipo]}
-                        size="small"
-                        variant="outlined"
-                      />
-                      {orcamento.tipo === 'ONLINE' &&
-                      orcamento.canalAtendimento ? (
-                        <Chip
-                          label={
-                            CANAL_ATENDIMENTO_ORCAMENTO_LABEL[
-                              orcamento.canalAtendimento
-                            ]
-                          }
-                          size="small"
-                          variant="outlined"
-                        />
-                      ) : null}
-                    </Stack>
-
-                    <Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<PointOfSale />}
-                        disabled={
-                          isSubmitting || orcamento.status === 'FINALIZADO'
-                        }
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleOpenFinalizeDialog(orcamento);
-                        }}
-                      >
-                        Finalizar
-                      </Button>
-                    </Box>
-
-                    {orcamento.telefoneCliente ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Telefone: {orcamento.telefoneCliente}
-                      </Typography>
-                    ) : null}
-
-                    {orcamento.tipo === 'FEIRA' && orcamento.feira ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Feira: {orcamento.feira.nome}
-                      </Typography>
-                    ) : null}
-
-                    <Stack direction="row" spacing={2}>
-                      {orcamento.valor != null ? (
-                        <Typography variant="body2" color="text.secondary">
-                          Valor: <CurrencyValue value={orcamento.valor} />
-                        </Typography>
-                      ) : null}
-                    </Stack>
-
-                    {orcamento.descricao ? (
-                      <Typography variant="body2" color="text.secondary">
-                        Descrição: {orcamento.descricao}
-                      </Typography>
-                    ) : null}
-
-                    {orcamento.linkSTL ? (
-                      <Typography variant="body2" color="text.secondary">
-                        STL:{' '}
-                        <Link
-                          href={orcamento.linkSTL}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                        >
-                          Abrir link
-                        </Link>
-                      </Typography>
-                    ) : null}
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum orçamento cadastrado até o momento." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de orçamentos">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>ID</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Cliente</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Descrição</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Telefone</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Tipo</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Valor</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Data de inclusão</strong>
-                  </TableCell>
-                  <TableCell align="right">
-                    <strong>Ações</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={9} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : orcamentos.length > 0 ? (
-                  orcamentos.map((orcamento) => (
-                    <TableRow
-                      key={orcamento.id}
-                      hover
-                      onClick={() => handleOpenEditDialog(orcamento)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>#{orcamento.id}</TableCell>
-                      <TableCell>{orcamento.nomeCliente}</TableCell>
-                      <TableCell>
-                        {orcamento.descricao?.trim() || '-'}
-                      </TableCell>
-                      <TableCell>{orcamento.telefoneCliente ?? '-'}</TableCell>
-                      <TableCell>
-                        <Stack spacing={0.5}>
-                          <Typography variant="body2">
-                            {TIPO_LABEL[orcamento.tipo]}
-                          </Typography>
-                          {orcamento.tipo === 'FEIRA' && orcamento.feira ? (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {orcamento.feira.nome}
-                            </Typography>
-                          ) : null}
-                          {orcamento.tipo === 'ONLINE' &&
-                          orcamento.canalAtendimento ? (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {
-                                CANAL_ATENDIMENTO_ORCAMENTO_LABEL[
-                                  orcamento.canalAtendimento
-                                ]
-                              }
-                            </Typography>
-                          ) : null}
-                        </Stack>
-                      </TableCell>
-                      <TableCell onClick={(event) => event.stopPropagation()}>
-                        <StatusChip
-                          orcamento={orcamento}
-                          onStatusChange={handleStatusChange}
-                          disabled={
-                            isSubmitting || orcamento.status === 'FINALIZADO'
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {orcamento.valor != null ? (
-                          <CurrencyValue value={orcamento.valor} />
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {formatDateTime(orcamento.dataInclusao)}
-                      </TableCell>
-                      <TableCell
-                        align="right"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <Tooltip
-                          title={
-                            orcamento.status === 'FINALIZADO'
-                              ? 'Orçamento já finalizado'
-                              : 'Finalizar orçamento com venda'
-                          }
-                        >
-                          <span>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<PointOfSale />}
-                              disabled={
-                                isSubmitting ||
-                                orcamento.status === 'FINALIZADO'
-                              }
-                              onClick={() =>
-                                handleOpenFinalizeDialog(orcamento)
-                              }
-                            >
-                              Finalizar
-                            </Button>
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={10} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum orçamento cadastrado até o momento." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalItens}
-          page={Math.max(0, paginacao.pagina - 1)}
-          rowsPerPage={paginacao.tamanhoPagina}
-          onPageChange={(_event, newPage) => {
-            void fetchOrcamentos({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchOrcamentos({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+      <ResponsiveDataTable
+        rows={orcamentos}
+        columns={colunasOrcamentos}
+        visibleColumnIds={COLUNAS_VISIVEIS_DESKTOP}
+        getRowId={(orcamento) => orcamento.id}
+        ariaLabel="tabela de orçamentos"
+        emptyMessage="Nenhum orçamento cadastrado até o momento."
+        isLoading={isFetching}
+        onRowClick={handleOpenEditDialog}
+        pagination={{
+          count: totalItens,
+          page: Math.max(0, paginacao.pagina - 1),
+          rowsPerPage: paginacao.tamanhoPagina,
+          onPageChange: (novaPagina) => {
+            void fetchOrcamentos({ pagina: novaPagina + 1 });
+          },
+          onRowsPerPageChange: (novoTamanho) => {
+            void fetchOrcamentos({ pagina: 1, tamanhoPagina: novoTamanho });
+          },
+        }}
+      />
 
       <NewBudgetDialog
         open={selectedBudget !== null}

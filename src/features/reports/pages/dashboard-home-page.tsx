@@ -29,6 +29,7 @@ import {
   formatCurrencyWithVisibility,
   formatValueWithVisibility,
   getProblemDetailsFromError,
+  PageHeader,
   useValueVisibilityStore,
   type ProblemDetails,
 } from '@/shared';
@@ -450,6 +451,10 @@ function DashboardMonthlyChart({
   );
 }
 
+const touchTargetSx = {
+  '@media (pointer: coarse)': { minWidth: 44, minHeight: 44 },
+} as const;
+
 function DashboardWidget({
   children,
   isDragging,
@@ -493,7 +498,8 @@ function DashboardWidget({
   return (
     <Paper
       sx={{
-        p: 3,
+        p: { xs: 2, sm: 3 },
+        minWidth: 0,
         borderRadius: 3,
         opacity: isDragging ? 0.55 : 1,
         border: '1px solid',
@@ -514,7 +520,7 @@ function DashboardWidget({
           spacing={1}
           alignItems="flex-start"
         >
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
             <Typography variant="h6" fontWeight={800}>
               {title}
             </Typography>
@@ -523,10 +529,15 @@ function DashboardWidget({
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{ flexShrink: 0, mt: { xs: -0.5, sm: 0 } }}
+          >
             {!isMobile ? (
               <IconButton
                 size="small"
+                sx={touchTargetSx}
                 onClick={() => onToggleWidth(id)}
                 aria-label={
                   widthMode === 'full'
@@ -539,6 +550,7 @@ function DashboardWidget({
             ) : null}
             <IconButton
               size="small"
+              sx={touchTargetSx}
               onClick={() => onToggleCollapse(id)}
               aria-label={
                 isCollapsed ? 'Expandir gráfico' : 'Minimizar gráfico'
@@ -552,7 +564,7 @@ function DashboardWidget({
               draggable
               onDragStart={(event) => onDragStart(event, id)}
               onDragEnd={onDragEnd}
-              sx={{ cursor: 'grab' }}
+              sx={{ ...touchTargetSx, cursor: 'grab', touchAction: 'none' }}
             >
               <DragIndicator />
             </IconButton>
@@ -939,7 +951,7 @@ export default function DashboardHomePage() {
                       spacing={2}
                       sx={{ mb: 0.75 }}
                     >
-                      <Box sx={{ minWidth: 0 }}>
+                      <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
                         <Typography fontWeight={700}>
                           {index + 1}. {item.nomeProduto}
                         </Typography>
@@ -951,7 +963,7 @@ export default function DashboardHomePage() {
                         </Typography>
                       </Box>
 
-                      <Typography fontWeight={700}>
+                      <Typography fontWeight={700} sx={{ flexShrink: 0 }}>
                         {item.quantidadeVendida} un
                       </Typography>
                     </Stack>
@@ -1042,11 +1054,18 @@ export default function DashboardHomePage() {
                     spacing={2}
                     sx={{ mb: 0.75 }}
                   >
-                    <Typography fontWeight={700}>
+                    <Typography
+                      fontWeight={700}
+                      sx={{ minWidth: 0, overflowWrap: 'anywhere' }}
+                    >
                       {index + 1}. {item.nomeCategoria}
                     </Typography>
 
-                    <Typography fontWeight={700} color="error.main">
+                    <Typography
+                      fontWeight={700}
+                      color="error.main"
+                      sx={{ flexShrink: 0 }}
+                    >
                       {formatCurrencyWithVisibility(
                         item.valorTotal,
                         hideValues,
@@ -1161,20 +1180,10 @@ export default function DashboardHomePage() {
       ) : null}
 
       <Stack spacing={3}>
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          justifyContent="space-between"
-          spacing={2}
-        >
-          <Box>
-            <Typography variant="h5" fontWeight={700}>
-              Visão geral
-            </Typography>
-            <Typography color="text.secondary">
-              Acompanhe a evolução mensal de vendas, despesas e saldo.
-            </Typography>
-          </Box>
-        </Stack>
+        <PageHeader
+          title="Visão geral"
+          description="Acompanhe a evolução mensal de vendas, despesas e saldo."
+        />
 
         {problem?.detail ? (
           <Alert severity="error">{problem.detail}</Alert>
@@ -1187,10 +1196,15 @@ export default function DashboardHomePage() {
         ) : result ? (
           <Stack spacing={3}>
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, md: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
                 <Paper
                   variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    cursor: 'default',
+                    height: '100%',
+                  }}
                   onMouseMove={handleCardMouseMove([
                     {
                       label: 'Catálogo',
@@ -1210,7 +1224,15 @@ export default function DashboardHomePage() {
                   <Typography variant="body2" color="text.secondary">
                     Itens vendidos em {result.ano}
                   </Typography>
-                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{
+                      mt: 1,
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
                     {formatValueWithVisibility(
                       String(result.totalQuantidadeItensVendidos),
                       hideValues,
@@ -1219,10 +1241,15 @@ export default function DashboardHomePage() {
                 </Paper>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
                 <Paper
                   variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    cursor: 'default',
+                    height: '100%',
+                  }}
                   onMouseMove={handleCardMouseMove([
                     {
                       label: 'Taxas',
@@ -1253,7 +1280,15 @@ export default function DashboardHomePage() {
                   <Typography variant="body2" color="text.secondary">
                     Total de vendas em {result.ano}
                   </Typography>
-                  <Typography variant="h4" fontWeight={800} sx={{ mt: 1 }}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={800}
+                    sx={{
+                      mt: 1,
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
                     {formatCurrencyWithVisibility(
                       result.totalVendas,
                       hideValues,
@@ -1262,15 +1297,23 @@ export default function DashboardHomePage() {
                 </Paper>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
+                <Paper
+                  variant="outlined"
+                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Total de despesas em {result.ano}
                   </Typography>
                   <Typography
                     variant="h4"
                     fontWeight={800}
-                    sx={{ mt: 1, color: 'error.main' }}
+                    sx={{
+                      mt: 1,
+                      color: 'error.main',
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      overflowWrap: 'anywhere',
+                    }}
                   >
                     {formatCurrencyWithVisibility(
                       result.totalDespesas,
@@ -1280,10 +1323,15 @@ export default function DashboardHomePage() {
                 </Paper>
               </Grid>
 
-              <Grid size={{ xs: 12, md: 3 }}>
+              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
                 <Paper
                   variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, cursor: 'default' }}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 3,
+                    cursor: 'default',
+                    height: '100%',
+                  }}
                   onMouseMove={handleCardMouseMove([
                     {
                       label: 'Fórmula',
@@ -1345,6 +1393,8 @@ export default function DashboardHomePage() {
                     sx={{
                       mt: 1,
                       color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
+                      overflowWrap: 'anywhere',
                     }}
                   >
                     {formatCurrencyWithVisibility(result.saldo, hideValues)}
@@ -1356,9 +1406,9 @@ export default function DashboardHomePage() {
             <Box
               sx={{
                 display: 'grid',
-                gap: 3,
+                gap: { xs: 2, sm: 3 },
                 gridTemplateColumns: {
-                  xs: '1fr',
+                  xs: 'minmax(0, 1fr)',
                   lg: 'repeat(2, minmax(0, 1fr))',
                 },
                 alignItems: 'start',
@@ -1368,6 +1418,7 @@ export default function DashboardHomePage() {
                 <Box
                   key={widgetId}
                   sx={{
+                    minWidth: 0,
                     gridColumn: {
                       xs: 'auto',
                       lg:

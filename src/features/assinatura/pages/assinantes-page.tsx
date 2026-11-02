@@ -1,24 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Chip,
-  Divider,
-  MenuItem,
-  Paper,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-  useMediaQuery,
-} from '@mui/material';
+import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
-import { useTheme } from '@mui/material/styles';
 import { EditAssinanteDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -30,19 +12,17 @@ import {
   STATUS_ASSINANTE_LABEL,
 } from '@/features/assinatura/types/assinatura-form';
 import {
-  AppTablePagination,
+  type Assinante,
   DEFAULT_PAGE_SIZE,
-  EmptyState,
-  LoadingState,
+  type DataTableColumn,
   PageHeader,
+  ResponsiveDataTable,
   SearchFilterPanel,
   type StatusAssinante,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
 export default function AssinantesPage() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const {
     assinantes,
     fetchAssinantes,
@@ -105,6 +85,38 @@ export default function AssinantesPage() {
       idPlano: undefined,
     });
   };
+
+  const assinanteColumns: DataTableColumn<Assinante>[] = [
+    { id: 'nome', header: 'Nome', mobile: 'title', cell: (a) => a.nome },
+    {
+      id: 'email',
+      header: 'E-mail',
+      cell: (a) => a.email ?? '—',
+    },
+    {
+      id: 'telefone',
+      header: 'Telefone',
+      cell: (a) => a.telefone ?? '—',
+    },
+    {
+      id: 'plano',
+      header: 'Plano',
+      cell: (a) => a.plano?.nome ?? `Plano #${a.idPlano}`,
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      mobile: 'badge',
+      cell: (a) => (
+        <Chip
+          size="small"
+          label={STATUS_ASSINANTE_LABEL[a.status]}
+          color={STATUS_ASSINANTE_COLOR[a.status]}
+          variant="outlined"
+        />
+      ),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -177,147 +189,26 @@ export default function AssinantesPage() {
         <Alert severity="error">{fetchErrorMessage}</Alert>
       ) : null}
 
-      <Paper sx={{ overflow: 'hidden' }}>
-        {isMobile ? (
-          <Stack
-            divider={<Divider flexItem />}
-            aria-label="lista de assinantes"
-          >
-            {isFetching ? (
-              <LoadingState />
-            ) : assinantes.length > 0 ? (
-              assinantes.map((assinante) => (
-                <Box
-                  key={assinante.id}
-                  sx={{ px: 2, py: 2, cursor: 'pointer' }}
-                  onClick={() => setEditingAssinanteId(assinante.id)}
-                >
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="flex-start"
-                    spacing={1.5}
-                  >
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="subtitle1" fontWeight={700} noWrap>
-                        {assinante.nome}
-                      </Typography>
-                      {assinante.email ? (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                        >
-                          {assinante.email}
-                        </Typography>
-                      ) : null}
-                      {assinante.telefone ? (
-                        <Typography variant="body2" color="text.secondary">
-                          {assinante.telefone}
-                        </Typography>
-                      ) : null}
-                      <Typography variant="caption" color="text.secondary">
-                        {assinante.plano?.nome ?? `Plano #${assinante.idPlano}`}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      size="small"
-                      label={STATUS_ASSINANTE_LABEL[assinante.status]}
-                      color={STATUS_ASSINANTE_COLOR[assinante.status]}
-                      variant="outlined"
-                      sx={{ flexShrink: 0 }}
-                    />
-                  </Stack>
-                </Box>
-              ))
-            ) : (
-              <EmptyState message="Nenhum assinante encontrado para os filtros informados." />
-            )}
-          </Stack>
-        ) : (
-          <TableContainer>
-            <Table aria-label="tabela de assinantes">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    <strong>Nome</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>E-mail</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Telefone</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Plano</strong>
-                  </TableCell>
-                  <TableCell>
-                    <strong>Status</strong>
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isFetching ? (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <LoadingState />
-                    </TableCell>
-                  </TableRow>
-                ) : assinantes.length > 0 ? (
-                  assinantes.map((assinante) => (
-                    <TableRow
-                      key={assinante.id}
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => setEditingAssinanteId(assinante.id)}
-                    >
-                      <TableCell>{assinante.nome}</TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {assinante.email ?? '—'}
-                      </TableCell>
-                      <TableCell sx={{ color: 'text.secondary' }}>
-                        {assinante.telefone ?? '—'}
-                      </TableCell>
-                      <TableCell>
-                        {assinante.plano?.nome ?? `Plano #${assinante.idPlano}`}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={STATUS_ASSINANTE_LABEL[assinante.status]}
-                          color={STATUS_ASSINANTE_COLOR[assinante.status]}
-                          variant="outlined"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ p: 0 }}>
-                      <EmptyState message="Nenhum assinante encontrado para os filtros informados." />
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        <AppTablePagination
-          count={totalAssinantes}
-          page={Math.max(0, (paginacaoAssinantes.pagina ?? 1) - 1)}
-          rowsPerPage={paginacaoAssinantes.tamanhoPagina ?? DEFAULT_PAGE_SIZE}
-          onPageChange={(_event, newPage) => {
+      <ResponsiveDataTable
+        rows={assinantes}
+        columns={assinanteColumns}
+        getRowId={(assinante) => assinante.id}
+        ariaLabel="tabela de assinantes"
+        emptyMessage="Nenhum assinante encontrado para os filtros informados."
+        isLoading={isFetching}
+        onRowClick={(assinante) => setEditingAssinanteId(assinante.id)}
+        pagination={{
+          count: totalAssinantes,
+          page: Math.max(0, (paginacaoAssinantes.pagina ?? 1) - 1),
+          rowsPerPage: paginacaoAssinantes.tamanhoPagina ?? DEFAULT_PAGE_SIZE,
+          onPageChange: (newPage) => {
             void fetchAssinantes({ pagina: newPage + 1 });
-          }}
-          onRowsPerPageChange={(event) => {
-            void fetchAssinantes({
-              pagina: 1,
-              tamanhoPagina: Number(event.target.value),
-            });
-          }}
-        />
-      </Paper>
+          },
+          onRowsPerPageChange: (newRowsPerPage) => {
+            void fetchAssinantes({ pagina: 1, tamanhoPagina: newRowsPerPage });
+          },
+        }}
+      />
 
       <EditAssinanteDialog
         open={editingAssinanteId !== null}
