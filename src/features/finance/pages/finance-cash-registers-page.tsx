@@ -151,6 +151,7 @@ export default function FinanceCashRegistersPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClear}
         isLoading={carregando}

@@ -328,7 +328,7 @@ export default function CashRegisterOpeningDialog({
               Carteiras conferidas: <strong>{carteiras.length}</strong>
             </Typography>
             {editando ? (
-              <Typography variant="body2" color="warning.main">
+              <Typography variant="body2" color="warning.dark">
                 Os novos valores substituirão os dados atuais da abertura.
               </Typography>
             ) : null}

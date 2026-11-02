@@ -19,6 +19,7 @@ import {
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
   CurrencyValue,
+  formatCentsForCsv,
   PageHeader,
   ResponsiveDataTable,
   SearchFilterPanel,
@@ -186,18 +187,21 @@ export default function ProductsPage() {
       id: 'codigo',
       header: 'Código',
       mobile: 'eyebrow',
+      exportValue: (produto) => produto.codigo,
       cell: (produto) => produto.codigo,
     },
     {
       id: 'nome',
       header: 'Nome',
       mobile: 'title',
+      exportValue: (produto) => produto.nome,
       cell: (produto) => produto.nome,
     },
     {
       id: 'status',
       header: 'Status',
       mobile: 'badge',
+      exportValue: (produto) => getStatusProductLabel(produto),
       cell: (produto) => (
         <Chip
           label={getStatusProductLabel(produto)}
@@ -210,17 +214,20 @@ export default function ProductsPage() {
     {
       id: 'categoria',
       header: 'Categoria',
+      exportValue: (produto) => produto.categoria?.nome ?? '',
       cell: (produto) => produto.categoria?.nome ?? '-',
     },
     {
       id: 'descricao',
       header: 'Descrição',
+      exportValue: (produto) => produto.descricao ?? '',
       cell: (produto) => produto.descricao || '-',
     },
     {
       id: 'estoque',
       header: 'Estoque',
       align: 'center',
+      exportValue: (produto) => getStockQuantity(produto),
       cell: (produto) => (
         <Chip
           label={getStockQuantity(produto)}
@@ -239,6 +246,7 @@ export default function ProductsPage() {
       id: 'valor',
       header: 'Valor',
       align: 'right',
+      exportValue: (produto) => formatCentsForCsv(produto.valor),
       cell: (produto) => <CurrencyValue value={produto.valor} />,
     },
     {
@@ -269,7 +277,11 @@ export default function ProductsPage() {
         onAction={openNewProductDialog}
       />
 
-      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+      <SearchFilterPanel
+        defaultCollapsedOnMobile
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+      >
         <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <TextField
             select
@@ -344,6 +356,7 @@ export default function ProductsPage() {
         onRowClick={(produto) => setEditingProductId(produto.id)}
         visibleColumnIds={visibleColumnIds}
         minTableWidth={780}
+        exportFileName="produtos"
         toolbar={
           <TableColumnVisibilityButton
             columns={PRODUCT_TABLE_COLUMNS}

@@ -1,4 +1,5 @@
-import { Autocomplete, TextField } from '@mui/material';
+import { useMemo, type Ref } from 'react';
+import { Autocomplete, Box, TextField, Typography } from '@mui/material';
 import type { Produto } from '@/shared/lib/types/domain';
 
 interface ProductAutocompleteFieldProps {
@@ -14,6 +15,9 @@ interface ProductAutocompleteFieldProps {
   size?: 'small' | 'medium';
   required?: boolean;
   autoFocus?: boolean;
+  inputRef?: Ref<HTMLInputElement>;
+  /** Exibe o estoque atual ao lado de cada produto na lista. */
+  showStock?: boolean;
 }
 
 export default function ProductAutocompleteField({
@@ -29,11 +33,25 @@ export default function ProductAutocompleteField({
   size = 'medium',
   required = false,
   autoFocus = false,
+  inputRef,
+  showStock = false,
 }: ProductAutocompleteFieldProps) {
+  // Com o estoque visível, produtos disponíveis vêm primeiro na lista.
+  const options = useMemo(
+    () =>
+      showStock
+        ? [...products].sort(
+            (a, b) =>
+              Number((b.quantidadeEstoque ?? 1) > 0) -
+              Number((a.quantidadeEstoque ?? 1) > 0),
+          )
+        : products,
+    [products, showStock],
+  );
+
   return (
     <Autocomplete
-      options={products}
-      openOnFocus
+      options={options}
       autoHighlight
       noOptionsText="Nenhum produto encontrado"
       loadingText="Carregando produtos..."
@@ -43,6 +61,39 @@ export default function ProductAutocompleteField({
       disabled={disabled}
       onChange={(_event, newValue) => onChange(newValue)}
       isOptionEqualToValue={(option, value) => option.id === value.id}
+      renderOption={
+        showStock
+          ? (props, option) => {
+              const { key, ...optionProps } = props;
+              const stock = option.quantidadeEstoque;
+              const isOut = stock !== undefined && stock <= 0;
+
+              return (
+                <Box
+                  component="li"
+                  key={key}
+                  {...optionProps}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                  }}
+                >
+                  <span>{`${option.nome} (${option.codigo})`}</span>
+                  {stock !== undefined ? (
+                    <Typography
+                      variant="caption"
+                      color={isOut ? 'warning.dark' : 'text.secondary'}
+                      sx={{ flexShrink: 0, fontWeight: isOut ? 700 : 400 }}
+                    >
+                      {isOut ? 'Sem estoque' : `Estoque: ${stock}`}
+                    </Typography>
+                  ) : null}
+                </Box>
+              );
+            }
+          : undefined
+      }
       renderInput={(params) => (
         <TextField
           {...params}
@@ -51,6 +102,7 @@ export default function ProductAutocompleteField({
           label={label}
           required={required}
           autoFocus={autoFocus}
+          inputRef={inputRef}
           error={error}
           helperText={helperText}
         />

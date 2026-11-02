@@ -115,10 +115,9 @@ export default function FecharConsignacaoDialog({
     () => carteiras.find((carteira) => carteira.id === idCarteira) ?? null,
     [carteiras, idCarteira],
   );
-  const meiosDisponiveis =
-    carteiraSelecionada?.meiosPagamento.length
-      ? carteiraSelecionada.meiosPagamento
-      : meiosPagamento;
+  const meiosDisponiveis = carteiraSelecionada?.meiosPagamento.length
+    ? carteiraSelecionada.meiosPagamento
+    : meiosPagamento;
   const resumo = useMemo(
     () =>
       itensComSaldo.reduce(
@@ -215,7 +214,12 @@ export default function FecharConsignacaoDialog({
   };
 
   return (
-    <Dialog open={open} onClose={isSubmitting ? undefined : onClose} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={isSubmitting ? undefined : onClose}
+      fullWidth
+      maxWidth="md"
+    >
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Lock color="primary" />
@@ -227,7 +231,11 @@ export default function FecharConsignacaoDialog({
               O saldo começa integralmente vendido; reduza para devolver peças.
             </Typography>
           </Box>
-          <IconButton onClick={onClose} disabled={isSubmitting} aria-label="Fechar">
+          <IconButton
+            onClick={onClose}
+            disabled={isSubmitting}
+            aria-label="Fechar"
+          >
             <Close />
           </IconButton>
         </Stack>
@@ -250,7 +258,12 @@ export default function FecharConsignacaoDialog({
                 direction={{ xs: 'column', sm: 'row' }}
                 alignItems={{ xs: 'stretch', sm: 'center' }}
                 spacing={2}
-                sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 2 }}
+                sx={{
+                  p: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                }}
               >
                 <Box sx={{ flex: 1 }}>
                   <Typography fontWeight={700}>
@@ -285,10 +298,17 @@ export default function FecharConsignacaoDialog({
           })}
 
           <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
-            <Typography>Vendido: <strong>{resumo.vendida}</strong></Typography>
-            <Typography>Devolvido: <strong>{resumo.devolvida}</strong></Typography>
             <Typography>
-              Total da venda: <strong><CurrencyValue value={resumo.valor} /></strong>
+              Vendido: <strong>{resumo.vendida}</strong>
+            </Typography>
+            <Typography>
+              Devolvido: <strong>{resumo.devolvida}</strong>
+            </Typography>
+            <Typography>
+              Total da venda:{' '}
+              <strong>
+                <CurrencyValue value={resumo.valor} />
+              </strong>
             </Typography>
           </Stack>
 
@@ -345,7 +365,9 @@ export default function FecharConsignacaoDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+        <Button onClick={onClose} disabled={isSubmitting}>
+          Cancelar
+        </Button>
         <Button
           variant="contained"
           color={confirmando ? 'warning' : 'primary'}

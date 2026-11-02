@@ -4,6 +4,9 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { App } from '@/app';
 import { AuthProvider } from '@/features/auth';
 import { ThemeModeProvider } from '@/theme/theme-mode-context';
+import '@fontsource/roboto/latin-400.css';
+import '@fontsource/roboto/latin-500.css';
+import '@fontsource/roboto/latin-700.css';
 import '@/index.css';
 import 'dayjs/locale/pt-br';
 

@@ -18,7 +18,8 @@ const fallbackProblems = {
     type: 'about:blank',
     title: 'Network Error',
     status: 0,
-    detail: 'Não foi possível se comunicar com a API.',
+    detail:
+      'Sem conexão com o servidor. Verifique a internet e tente novamente.',
     instance: '',
   },
   unknown: {
@@ -60,6 +61,26 @@ async function parseResponse(response: Response): Promise<unknown> {
   return response.text();
 }
 
+function friendlyDetailForStatus(status: number): string {
+  if (status === 403) {
+    return 'Você não tem permissão para realizar esta ação.';
+  }
+
+  if (status === 404) {
+    return 'O registro solicitado não foi encontrado.';
+  }
+
+  if (status === 429) {
+    return 'Muitas tentativas em pouco tempo. Aguarde um instante e tente novamente.';
+  }
+
+  if (status >= 500) {
+    return 'O servidor encontrou um problema. Tente novamente em instantes.';
+  }
+
+  return 'A solicitação não pôde ser processada.';
+}
+
 function buildProblemFromResponse(
   status: number,
   instance: string,
@@ -83,7 +104,7 @@ function buildProblemFromResponse(
     type: 'about:blank',
     title: 'Request Error',
     status,
-    detail: 'A solicitação não pôde ser processada.',
+    detail: friendlyDetailForStatus(status),
     instance,
   };
 }

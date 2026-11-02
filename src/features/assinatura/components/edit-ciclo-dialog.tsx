@@ -32,6 +32,7 @@ import {
   type ItemCicloFormState,
 } from '@/features/assinatura/types/assinatura-form';
 import {
+  ConfirmDialog,
   FormFeedbackAlert,
   getFieldMessage,
   ProductAutocompleteField,
@@ -536,36 +537,19 @@ export default function EditCicloDialog({
         {discardChangesDialog}
       </Dialog>
 
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir ciclo"
+        message="Este ciclo será excluído permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={() => setConfirmDeleteOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir ciclo</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir este ciclo? Essa ação não pode ser
-            desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={() => setConfirmDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void handleConfirmDelete()}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

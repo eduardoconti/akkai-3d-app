@@ -128,7 +128,7 @@ export default function ReportsProductionSuggestionPage() {
   const suggestionColumns: DataTableColumn<ProductionSuggestionReportItem>[] = [
     {
       id: 'codigo',
-      header: 'Codigo',
+      header: 'Código',
       mobile: 'eyebrow',
       cell: (item) => item.codigo,
     },
@@ -263,7 +263,7 @@ export default function ReportsProductionSuggestionPage() {
             <MenuItem value="quantidadeVendida">Quantidade vendida</MenuItem>
             <MenuItem value="mediaVendaPorFeira">Média por feira</MenuItem>
             <MenuItem value="estoqueAtual">Estoque atual</MenuItem>
-            <MenuItem value="codigo">Codigo</MenuItem>
+            <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
           </TextField>
         </Grid>
@@ -313,7 +313,7 @@ export default function ReportsProductionSuggestionPage() {
             rows={result.itens}
             columns={suggestionColumns}
             getRowId={(item) => item.idProduto}
-            ariaLabel="sugestao de producao"
+            ariaLabel="sugestão de produção"
             emptyMessage="Nenhuma produção foi sugerida para o período selecionado."
             isLoading={isLoading}
             pagination={{

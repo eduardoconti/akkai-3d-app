@@ -194,12 +194,15 @@ export default function ProductStockMovementsPage() {
     {
       id: 'data',
       header: 'Data',
+      exportValue: (movimentacao) => formatDateTime(movimentacao.dataInclusao),
       cell: (movimentacao) => formatDateTime(movimentacao.dataInclusao),
     },
     {
       id: 'produto',
       header: 'Produto',
       mobile: 'title',
+      exportValue: (movimentacao) =>
+        movimentacao.produto?.nome ?? `Produto #${movimentacao.idProduto}`,
       cell: (movimentacao) => (
         <Stack spacing={0.25}>
           <Typography fontWeight={600}>
@@ -217,6 +220,7 @@ export default function ProductStockMovementsPage() {
       id: 'tipo',
       header: 'Tipo',
       mobile: 'badge',
+      exportValue: (movimentacao) => getTipoLabel(movimentacao.tipo),
       cell: (movimentacao) => (
         <Chip
           label={getTipoLabel(movimentacao.tipo)}
@@ -225,17 +229,27 @@ export default function ProductStockMovementsPage() {
         />
       ),
     },
-    { id: 'origem', header: 'Origem', cell: renderOrigem },
+    {
+      id: 'origem',
+      header: 'Origem',
+      exportValue: (movimentacao) =>
+        movimentacao.brinde
+          ? `${getOrigemLabel(movimentacao)} (Brinde)`
+          : getOrigemLabel(movimentacao),
+      cell: renderOrigem,
+    },
     {
       id: 'quantidade',
       header: 'Quantidade',
       align: 'right',
+      exportValue: (movimentacao) => movimentacao.quantidade,
       cell: (movimentacao) => movimentacao.quantidade,
     },
     {
       id: 'usuario',
       header: 'Usuário',
       mobile: 'hidden',
+      exportValue: (movimentacao) => movimentacao.usuario,
       cell: (movimentacao) => movimentacao.usuario,
     },
   ];
@@ -258,6 +272,7 @@ export default function ProductStockMovementsPage() {
       ) : null}
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isLoading}
@@ -327,6 +342,7 @@ export default function ProductStockMovementsPage() {
         ariaLabel="tabela de movimentações de estoque"
         emptyMessage="Nenhuma movimentação encontrada para os filtros informados."
         isLoading={isLoading}
+        exportFileName="movimentacoes-estoque"
         pagination={{
           count: totalItens,
           page: Math.max(0, paginaAtual - 1),

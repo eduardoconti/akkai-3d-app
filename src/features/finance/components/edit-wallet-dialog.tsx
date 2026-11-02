@@ -31,6 +31,7 @@ import {
 } from '@/features/finance/types/finance-form';
 import type { MeioPagamento } from '@/shared';
 import {
+  ConfirmDialog,
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
@@ -455,38 +456,19 @@ export default function EditWalletDialog({
         </DialogActions>
         {discardChangesDialog}
       </Dialog>
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir carteira"
+        message="Esta carteira será excluída permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={() => setConfirmDeleteOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir carteira</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir esta carteira? Essa ação não pode ser
-            desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={() => setConfirmDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmDelete();
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { AddCircleOutline } from '@mui/icons-material';
+import { usePageTitle } from '../hooks/use-page-title';
 
 interface PageHeaderProps {
   title: string;
@@ -20,6 +21,8 @@ export default function PageHeader({
   actions,
   breakpoint = 'md',
 }: PageHeaderProps) {
+  usePageTitle(title);
+
   const titleBlock = (
     <Box sx={{ minWidth: 0 }}>
       <Typography variant="h5" component="h1">

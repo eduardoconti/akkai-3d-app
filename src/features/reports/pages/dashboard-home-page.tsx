@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
+  ArrowDownward,
+  ArrowUpward,
   DragIndicator,
   ExpandLess,
   ExpandMore,
@@ -383,7 +385,7 @@ function DashboardMonthlyChart({
             const expenseY = baselineY - expenseHeight;
             const balanceY =
               item.saldo >= 0 ? baselineY - balanceHeight : baselineY;
-            const balanceColor = item.saldo >= 0 ? '#D4AF37' : '#EF6C00';
+            const balanceColor = item.saldo >= 0 ? '#0B7FC0' : '#E08A00';
 
             return (
               <g key={item.mes}>
@@ -393,11 +395,11 @@ function DashboardMonthlyChart({
                   width="14"
                   height={salesHeight}
                   rx="4"
-                  fill="#2E7D32"
+                  fill="#16A06A"
                   onMouseMove={handleOpenTooltip(
                     `${monthLabel} · Vendas`,
                     item.valorVendas,
-                    '#2E7D32',
+                    '#16A06A',
                   )}
                   onMouseLeave={() => setTooltip(null)}
                 />
@@ -408,11 +410,11 @@ function DashboardMonthlyChart({
                   width="14"
                   height={expenseHeight}
                   rx="4"
-                  fill="#C62828"
+                  fill="#D9363E"
                   onMouseMove={handleOpenTooltip(
                     `${monthLabel} · Despesas`,
                     item.valorDespesas,
-                    '#C62828',
+                    '#D9363E',
                   )}
                   onMouseLeave={() => setTooltip(null)}
                 />
@@ -466,6 +468,7 @@ function DashboardWidget({
   onDragEnd,
   onDragStart,
   onDrop,
+  onMove,
   onToggleCollapse,
   subtitle,
   title,
@@ -487,6 +490,7 @@ function DashboardWidget({
     widgetId: DashboardWidgetId,
   ) => void;
   onDrop: (targetId: DashboardWidgetId) => void;
+  onMove: (widgetId: DashboardWidgetId, direction: -1 | 1) => void;
   onToggleCollapse: (widgetId: DashboardWidgetId) => void;
   subtitle: string;
   title: string;
@@ -500,12 +504,12 @@ function DashboardWidget({
       sx={{
         p: { xs: 2, sm: 3 },
         minWidth: 0,
-        borderRadius: 3,
+        borderRadius: 2,
         opacity: isDragging ? 0.55 : 1,
         border: '1px solid',
         borderColor: isDropTarget ? 'primary.main' : 'divider',
         boxShadow: isDropTarget
-          ? '0 0 0 2px rgba(25, 118, 210, 0.12)'
+          ? '0 0 0 2px rgba(11, 127, 192, 0.14)'
           : undefined,
         transition:
           'opacity 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
@@ -521,7 +525,7 @@ function DashboardWidget({
           alignItems="flex-start"
         >
           <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-            <Typography variant="h6" fontWeight={800}>
+            <Typography variant="h6" component="h2" fontWeight={800}>
               {title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -557,6 +561,23 @@ function DashboardWidget({
               }
             >
               {isCollapsed ? <ExpandMore /> : <ExpandLess />}
+            </IconButton>
+            {/* Alternativa ao arrastar: funciona em telas de toque e no teclado. */}
+            <IconButton
+              size="small"
+              sx={touchTargetSx}
+              onClick={() => onMove(id, -1)}
+              aria-label="Mover para cima"
+            >
+              <ArrowUpward />
+            </IconButton>
+            <IconButton
+              size="small"
+              sx={touchTargetSx}
+              onClick={() => onMove(id, 1)}
+              aria-label="Mover para baixo"
+            >
+              <ArrowDownward />
             </IconButton>
             <IconButton
               size="small"
@@ -766,6 +787,21 @@ export default function DashboardHomePage() {
     setDropTargetWidgetId(null);
   };
 
+  const handleMoveWidget = (widgetId: DashboardWidgetId, direction: -1 | 1) => {
+    setWidgetOrder((current) => {
+      const fromIndex = current.indexOf(widgetId);
+      const toIndex = fromIndex + direction;
+
+      if (fromIndex === -1 || toIndex < 0 || toIndex >= current.length) {
+        return current;
+      }
+
+      const next = [...current];
+      [next[fromIndex], next[toIndex]] = [next[toIndex]!, next[fromIndex]!];
+      return next;
+    });
+  };
+
   const handleToggleCollapse = (widgetId: DashboardWidgetId) => {
     setCollapsedWidgets((current) => ({
       ...current,
@@ -815,6 +851,7 @@ export default function DashboardHomePage() {
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onMove={handleMoveWidget}
           onToggleCollapse={handleToggleCollapse}
         >
           <Stack spacing={2.5}>
@@ -832,7 +869,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#2E7D32',
+                    bgcolor: '#16A06A',
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -845,7 +882,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#C62828',
+                    bgcolor: '#D9363E',
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -858,7 +895,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#D4AF37',
+                    bgcolor: '#0B7FC0',
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -871,7 +908,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#EF6C00',
+                    bgcolor: '#E08A00',
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -912,6 +949,7 @@ export default function DashboardHomePage() {
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
+          onMove={handleMoveWidget}
           onToggleCollapse={handleToggleCollapse}
         >
           {topProducts && topProducts.itens.length > 0 ? (
@@ -935,7 +973,7 @@ export default function DashboardHomePage() {
                   <Box
                     key={`${item.idProduto ?? item.nomeProduto}-${index}`}
                     onMouseMove={handleOpenRankingTooltip({
-                      color: '#1565C0',
+                      color: '#0B7FC0',
                       label: `${index + 1}. ${item.nomeProduto}`,
                       valueLabel: `${item.quantidadeVendida} un`,
                       percentageLabel: `${formatPercentage(monthShare)} do total vendido no mes`,
@@ -982,7 +1020,7 @@ export default function DashboardHomePage() {
                           height: '100%',
                           borderRadius: 999,
                           background:
-                            'linear-gradient(90deg, #1565C0 0%, #42A5F5 100%)',
+                            'linear-gradient(90deg, #0B7FC0 0%, #5BB8EA 100%)',
                         }}
                       />
                     </Box>
@@ -1015,6 +1053,7 @@ export default function DashboardHomePage() {
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
+        onMove={handleMoveWidget}
         onToggleCollapse={handleToggleCollapse}
       >
         {expenseCategories && expenseCategories.itens.length > 0 ? (
@@ -1035,7 +1074,7 @@ export default function DashboardHomePage() {
                 <Box
                   key={`${item.idCategoria ?? item.nomeCategoria}-${index}`}
                   onMouseMove={handleOpenRankingTooltip({
-                    color: '#C62828',
+                    color: '#D9363E',
                     label: `${index + 1}. ${item.nomeCategoria}`,
                     valueLabel: formatCurrencyWithVisibility(
                       item.valorTotal,
@@ -1087,7 +1126,7 @@ export default function DashboardHomePage() {
                         height: '100%',
                         borderRadius: 999,
                         background:
-                          'linear-gradient(90deg, #C62828 0%, #EF5350 100%)',
+                          'linear-gradient(90deg, #D9363E 0%, #F0686E 100%)',
                       }}
                     />
                   </Box>
@@ -1201,7 +1240,7 @@ export default function DashboardHomePage() {
                   variant="outlined"
                   sx={{
                     p: 2.5,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     cursor: 'default',
                     height: '100%',
                   }}
@@ -1226,6 +1265,7 @@ export default function DashboardHomePage() {
                   </Typography>
                   <Typography
                     variant="h4"
+                    component="div"
                     fontWeight={800}
                     sx={{
                       mt: 1,
@@ -1246,7 +1286,7 @@ export default function DashboardHomePage() {
                   variant="outlined"
                   sx={{
                     p: 2.5,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     cursor: 'default',
                     height: '100%',
                   }}
@@ -1282,6 +1322,7 @@ export default function DashboardHomePage() {
                   </Typography>
                   <Typography
                     variant="h4"
+                    component="div"
                     fontWeight={800}
                     sx={{
                       mt: 1,
@@ -1300,13 +1341,14 @@ export default function DashboardHomePage() {
               <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
                 <Paper
                   variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
+                  sx={{ p: 2.5, borderRadius: 2, height: '100%' }}
                 >
                   <Typography variant="body2" color="text.secondary">
                     Total de despesas em {result.ano}
                   </Typography>
                   <Typography
                     variant="h4"
+                    component="div"
                     fontWeight={800}
                     sx={{
                       mt: 1,
@@ -1328,7 +1370,7 @@ export default function DashboardHomePage() {
                   variant="outlined"
                   sx={{
                     p: 2.5,
-                    borderRadius: 3,
+                    borderRadius: 2,
                     cursor: 'default',
                     height: '100%',
                   }}
@@ -1389,10 +1431,11 @@ export default function DashboardHomePage() {
                   </Typography>
                   <Typography
                     variant="h4"
+                    component="div"
                     fontWeight={800}
                     sx={{
                       mt: 1,
-                      color: result.saldo >= 0 ? '#D4AF37' : 'warning.dark',
+                      color: result.saldo >= 0 ? 'primary.main' : 'error.main',
                       fontSize: { xs: '1.75rem', sm: '2.125rem' },
                       overflowWrap: 'anywhere',
                     }}

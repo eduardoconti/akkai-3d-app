@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  MenuItem,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
   getSalesSummary,
@@ -18,6 +11,7 @@ import {
   DateRangePickerField,
   FormFeedbackAlert,
   PageHeader,
+  StatCard,
   SearchFilterPanel,
   getProblemDetailsFromError,
   getMonthRangeInput,
@@ -181,25 +175,25 @@ export default function ReportsSummaryPage() {
         {
           id: 'quantidadeItens',
           label: 'Quantidade de itens',
-          color: undefined,
+          tone: 'default' as const,
           value: summary.quantidadeItens,
         },
         {
           id: 'descontoTotal',
           label: 'Desconto total',
-          color: 'warning.dark',
+          tone: 'warning' as const,
           value: <CurrencyValue value={summary.descontoTotal} />,
         },
         {
           id: 'valorTotal',
           label: 'Valor total',
-          color: 'success.main',
+          tone: 'primary' as const,
           value: <CurrencyValue value={summary.valorTotal} />,
         },
         {
           id: 'valorLiquido',
           label: 'Valor líquido',
-          color: 'success.main',
+          tone: 'success' as const,
           value: <CurrencyValue value={summary.valorLiquido} />,
         },
       ]
@@ -285,26 +279,11 @@ export default function ReportsSummaryPage() {
           <Grid container spacing={2}>
             {summaryCards.map((card) => (
               <Grid key={card.id} size={{ xs: 12, sm: 6, lg: 3 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 3, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    {card.label}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      color: card.color,
-                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {card.value}
-                  </Typography>
-                </Paper>
+                <StatCard
+                  label={card.label}
+                  value={card.value}
+                  tone={card.tone}
+                />
               </Grid>
             ))}
           </Grid>

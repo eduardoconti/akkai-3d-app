@@ -25,6 +25,7 @@ import {
   type ExpenseFormState,
 } from '@/features/finance/types/finance-form';
 import {
+  ConfirmDialog,
   DatePickerField,
   CurrencyField,
   FormFeedbackAlert,
@@ -605,38 +606,19 @@ export default function NewExpenseDialog({
         </DialogActions>
         {discardChangesDialog}
       </Dialog>
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir despesa"
+        message="Esta despesa será excluída permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={handleConfirmDeleteDialogClose}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir despesa</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir esta despesa? Essa ação não pode ser
-            desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={handleConfirmDeleteDialogClose}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmDelete();
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

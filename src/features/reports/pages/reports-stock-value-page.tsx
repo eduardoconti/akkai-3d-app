@@ -86,7 +86,7 @@ export default function ReportsStockValuePage() {
   const stockColumns: DataTableColumn<StockValueProductItem>[] = [
     {
       id: 'codigo',
-      header: 'Codigo',
+      header: 'Código',
       mobile: 'eyebrow',
       cell: (item) => item.codigo,
     },
@@ -121,7 +121,7 @@ export default function ReportsStockValuePage() {
     <Stack spacing={3}>
       <PageHeader
         title="Valor dos produtos em estoque"
-        description="Consulte o saldo positivo do estoque com valor unitario, valor total por item e totalizadores globais do relatorio."
+        description="Consulte o saldo positivo do estoque com valor unitário, valor total por item e totalizadores globais do relatório."
       />
 
       <SearchFilterPanel
@@ -141,7 +141,7 @@ export default function ReportsStockValuePage() {
               setOrdenarPor(event.target.value as StockOrderBy)
             }
           >
-            <MenuItem value="codigo">Codigo</MenuItem>
+            <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
             <MenuItem value="quantidade">Quantidade</MenuItem>
             <MenuItem value="valor">Valor</MenuItem>
@@ -190,7 +190,7 @@ export default function ReportsStockValuePage() {
             rows={result.itens}
             columns={stockColumns}
             getRowId={(item) => item.codigo}
-            ariaLabel="relatorio de valor dos produtos em estoque"
+            ariaLabel="relatório de valor dos produtos em estoque"
             emptyMessage="Nenhum produto com estoque positivo foi encontrado."
             isLoading={isLoading}
             pagination={{

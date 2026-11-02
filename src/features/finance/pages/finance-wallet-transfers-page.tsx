@@ -14,6 +14,7 @@ import {
 import {
   CurrencyValue,
   DateRangePickerField,
+  formatCentsForCsv,
   PageHeader,
   ResponsiveDataTable,
   SearchFilterPanel,
@@ -100,23 +101,28 @@ export default function FinanceWalletTransfersPage() {
       id: 'data',
       header: 'Data',
       mobile: 'title',
+      exportValue: (transferencia) =>
+        formatApiDateToDisplay(transferencia.dataTransferencia),
       cell: (transferencia) =>
         formatApiDateToDisplay(transferencia.dataTransferencia),
     },
     {
       id: 'origem',
       header: 'Carteira de origem',
+      exportValue: (transferencia) => transferencia.carteiraOrigem?.nome ?? '',
       cell: (transferencia) => transferencia.carteiraOrigem?.nome ?? '-',
     },
     {
       id: 'destino',
       header: 'Carteira de destino',
+      exportValue: (transferencia) => transferencia.carteiraDestino?.nome ?? '',
       cell: (transferencia) => transferencia.carteiraDestino?.nome ?? '-',
     },
     {
       id: 'valor',
       header: 'Valor',
       align: 'right',
+      exportValue: (transferencia) => formatCentsForCsv(transferencia.valor),
       cell: (transferencia) => (
         <Typography component="span" variant="inherit" fontWeight={700}>
           <CurrencyValue value={transferencia.valor} />
@@ -141,6 +147,7 @@ export default function FinanceWalletTransfersPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}
@@ -210,6 +217,7 @@ export default function FinanceWalletTransfersPage() {
         emptyMessage="Nenhuma transferência encontrada para os filtros informados."
         isLoading={isFetching}
         onRowClick={handleOpenEdit}
+        exportFileName="transferencias"
         pagination={{
           count: totalItensTransferencias,
           page: Math.max(0, paginacaoTransferencias.pagina - 1),

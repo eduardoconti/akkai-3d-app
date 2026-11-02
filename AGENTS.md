@@ -17,7 +17,9 @@ O app conversa com uma API HTTP. Em desenvolvimento, a base padrao e `VITE_API_U
 - `npm run format`: roda Prettier escrevendo alteracoes.
 - `npm run preview`: serve o build localmente.
 
-Nao ha script de testes automatizados configurado no `package.json` neste momento. Para mudancas de codigo, priorize ao menos `npm run typecheck` e, quando fizer sentido, `npm run lint` ou `npm run build`.
+- `npm run test`: roda os testes unitarios com Vitest + Testing Library (`src/**/*.test.ts(x)`); `npm run test:watch` para modo continuo.
+
+Para mudancas de codigo, priorize `npm run typecheck`, `npm run test` e, quando fizer sentido, `npm run lint` ou `npm run build`.
 
 ## Stack e convencoes tecnicas
 

@@ -20,6 +20,7 @@ import {
 } from '@/features/sales/api/sales-api';
 import { saveCachedFairProductPrices } from '@/shared/lib/offline/indexed-db';
 import {
+  ConfirmDialog,
   CurrencyField,
   FormFeedbackAlert,
   ProductAutocompleteField,
@@ -58,6 +59,7 @@ export default function FairProductPricesDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const cleanFormRef = useRef({
     selectedProductId: null as number | null,
@@ -158,12 +160,8 @@ export default function FairProductPricesDialog({
       selectedProductId !== cleanFormRef.current.selectedProductId ||
       value !== cleanFormRef.current.value;
 
-    if (
-      isDirty &&
-      !window.confirm(
-        'As informações preenchidas serão descartadas. Deseja descartar?',
-      )
-    ) {
+    if (isDirty) {
+      setConfirmDiscardOpen(true);
       return;
     }
 
@@ -383,35 +381,32 @@ export default function FairProductPricesDialog({
         </DialogActions>
       </Dialog>
 
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir preço da feira"
+        message="O preço específico deste produto nesta feira será removido e o valor padrão do produto voltará a valer. Essa ação não pode ser desfeita."
+        confirmLabel="Excluir preço"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={handleDeleteDialogClose}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir preço da feira</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir este preço de feira? Essa ação não
-            pode ser desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleDeleteDialogClose} disabled={isDeleting}>
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmDelete();
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
+
+      <ConfirmDialog
+        open={confirmDiscardOpen}
+        title="Descartar alterações?"
+        message="As informações preenchidas serão perdidas."
+        confirmLabel="Descartar"
+        destructive
+        onConfirm={() => {
+          setConfirmDiscardOpen(false);
+          handleClose();
+        }}
+        onClose={() => setConfirmDiscardOpen(false)}
+      />
     </>
   );
 }

@@ -1,9 +1,22 @@
-import { Box, CircularProgress } from '@mui/material';
+import { Skeleton, Stack } from '@mui/material';
 
-export default function LoadingState() {
+interface LoadingStateProps {
+  /** Quantidade de linhas do esqueleto. */
+  rows?: number;
+}
+
+/** Esqueleto de lista exibido enquanto os dados carregam. */
+export default function LoadingState({ rows = 4 }: LoadingStateProps) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-      <CircularProgress />
-    </Box>
+    <Stack spacing={1.5} sx={{ p: 2 }} aria-busy="true" aria-label="Carregando">
+      {Array.from({ length: rows }, (_, index) => (
+        <Skeleton
+          key={index}
+          variant="rounded"
+          height={index === 0 ? 20 : 44}
+          width={index === 0 ? '35%' : '100%'}
+        />
+      ))}
+    </Stack>
   );
 }

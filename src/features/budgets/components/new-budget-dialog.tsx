@@ -14,7 +14,6 @@ import {
   Paper,
   Stack,
   Typography,
-  DialogContentText,
   MenuItem,
   TextField,
   ToggleButton,
@@ -46,6 +45,7 @@ import {
   useSaleStore,
 } from '@/features/sales/store/use-sale-store';
 import {
+  ConfirmDialog,
   CurrencyField,
   FormFeedbackAlert,
   getFieldMessage,
@@ -369,7 +369,7 @@ export default function NewBudgetDialog({
                       }
                       error={Boolean(
                         localErrors.nomeCliente ||
-                          getFieldMessage(problem, 'nomeCliente'),
+                        getFieldMessage(problem, 'nomeCliente'),
                       )}
                       helperText={
                         localErrors.nomeCliente ??
@@ -392,7 +392,7 @@ export default function NewBudgetDialog({
                       }
                       error={Boolean(
                         localErrors.telefoneCliente ||
-                          getFieldMessage(problem, 'telefoneCliente'),
+                        getFieldMessage(problem, 'telefoneCliente'),
                       )}
                       helperText={
                         localErrors.telefoneCliente ??
@@ -493,7 +493,7 @@ export default function NewBudgetDialog({
                         }
                         error={Boolean(
                           localErrors.canalAtendimento ||
-                            getFieldMessage(problem, 'canalAtendimento'),
+                          getFieldMessage(problem, 'canalAtendimento'),
                         )}
                         helperText={
                           localErrors.canalAtendimento ??
@@ -530,7 +530,7 @@ export default function NewBudgetDialog({
                         }
                         error={Boolean(
                           localErrors.idFeira ||
-                            getFieldMessage(problem, 'idFeira'),
+                          getFieldMessage(problem, 'idFeira'),
                         )}
                         helperText={
                           localErrors.idFeira ??
@@ -630,7 +630,7 @@ export default function NewBudgetDialog({
                   }
                   error={Boolean(
                     localErrors.descricao ||
-                      getFieldMessage(problem, 'descricao'),
+                    getFieldMessage(problem, 'descricao'),
                   )}
                   helperText={
                     localErrors.descricao ??
@@ -711,35 +711,19 @@ export default function NewBudgetDialog({
         {discardChangesDialog}
       </Dialog>
 
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir orçamento"
+        message="Este orçamento será excluído permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={handleDeleteClose}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir orçamento</DialogTitle>
-        <DialogContent dividers>
-          <DialogContentText>
-            Tem certeza que deseja excluir este orçamento? Essa ação não pode
-            ser desfeita.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleDeleteClose} disabled={isDeleting}>
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmDelete();
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

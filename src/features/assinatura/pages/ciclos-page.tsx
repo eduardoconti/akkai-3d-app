@@ -144,6 +144,7 @@ export default function CiclosPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}

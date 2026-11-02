@@ -241,7 +241,7 @@ export default function ReportsBestSellingProductsPage() {
   const productColumns: DataTableColumn<BestSellingProductItem>[] = [
     {
       id: 'codigo',
-      header: 'Codigo',
+      header: 'Código',
       mobile: 'eyebrow',
       cell: (item) => item.codigo ?? '-',
     },

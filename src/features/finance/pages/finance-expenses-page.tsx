@@ -22,6 +22,7 @@ import {
 import {
   CurrencyValue,
   DateRangePickerField,
+  formatCentsForCsv,
   PageHeader,
   ResponsiveDataTable,
   SearchFilterPanel,
@@ -120,38 +121,45 @@ export default function FinanceExpensesPage() {
       id: 'data',
       header: 'Data',
       mobile: 'eyebrow',
+      exportValue: (despesa) => formatApiDateToDisplay(despesa.dataLancamento),
       cell: (despesa) => formatApiDateToDisplay(despesa.dataLancamento),
     },
     {
       id: 'descricao',
       header: 'Descrição',
       mobile: 'title',
+      exportValue: (despesa) => despesa.descricao,
       cell: (despesa) => despesa.descricao,
     },
     {
       id: 'categoria',
       header: 'Categoria',
+      exportValue: (despesa) => despesa.categoria?.nome ?? '',
       cell: (despesa) => despesa.categoria?.nome ?? '-',
     },
     {
       id: 'pagamento',
       header: 'Pagamento',
+      exportValue: (despesa) => getPaymentMethodLabel(despesa.meioPagamento),
       cell: (despesa) => getPaymentMethodLabel(despesa.meioPagamento),
     },
     {
       id: 'carteira',
       header: 'Carteira',
+      exportValue: (despesa) => despesa.carteira?.nome ?? '',
       cell: (despesa) => despesa.carteira?.nome ?? '-',
     },
     {
       id: 'feira',
       header: 'Feira',
+      exportValue: (despesa) => despesa.feira?.nome ?? '',
       cell: (despesa) => despesa.feira?.nome ?? '-',
     },
     {
       id: 'valor',
       header: 'Valor',
       align: 'right',
+      exportValue: (despesa) => formatCentsForCsv(despesa.valor),
       cell: (despesa) => (
         <Typography
           component="span"
@@ -191,7 +199,11 @@ export default function FinanceExpensesPage() {
         breakpoint="lg"
       />
 
-      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+      <SearchFilterPanel
+        defaultCollapsedOnMobile
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+      >
         <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <DateRangePickerField
             label="Período"
@@ -293,6 +305,7 @@ export default function FinanceExpensesPage() {
         emptyMessage="Nenhuma despesa encontrada para os filtros informados."
         isLoading={isFetching}
         onRowClick={handleOpenEdit}
+        exportFileName="despesas"
         pagination={{
           count: totalItens,
           page: Math.max(0, paginacao.pagina - 1),

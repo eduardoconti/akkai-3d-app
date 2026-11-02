@@ -297,6 +297,8 @@ export interface InserirVendaInput {
   idCaixa?: number;
   idOrcamento?: number;
   desconto?: number;
+  /** Identifica a tentativa de venda; reenvios com a mesma chave não duplicam. */
+  chaveIdempotencia?: string;
   itens: InserirVendaItemInput[];
   pagamentos: Array<{
     idCarteira: number;

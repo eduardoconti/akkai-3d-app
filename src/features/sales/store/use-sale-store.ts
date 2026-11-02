@@ -9,6 +9,7 @@ import {
   getCachedSales,
   getCachedWallets,
   listPendingSales,
+  type PendingSaleRecord,
   removePendingSale,
   saveCachedFairs,
   saveCachedSales,
@@ -134,6 +135,29 @@ function getCatalogProductValue(
 
   const product = produtos.find((current) => current.id === item.idProduto);
   return product?.valor ?? 0;
+}
+
+/**
+ * Vendas enfileiradas antes da chave de idempotência existir recebem uma agora
+ * e a gravam antes do envio, para que reenvios futuros não dupliquem a venda.
+ */
+async function ensureIdempotencyKey(
+  pendingSale: PendingSaleRecord,
+): Promise<PendingSaleRecord> {
+  if (pendingSale.payload.chaveIdempotencia) {
+    return pendingSale;
+  }
+
+  const updated = {
+    ...pendingSale,
+    payload: {
+      ...pendingSale.payload,
+      chaveIdempotencia: window.crypto.randomUUID(),
+    },
+  };
+  await addPendingSale(updated);
+
+  return updated;
 }
 
 function buildOfflineSale(
@@ -585,23 +609,33 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
 
     try {
       const pendingSales = await listPendingSales();
+      let syncedCount = 0;
+      let failedCount = 0;
 
-      const results = await Promise.allSettled(
-        pendingSales.map(async (pendingSale) => {
+      // Envio em sequência: preserva a ordem das vendas e evita disputa pelo
+      // bloqueio de estoque, que fazia vendas válidas falharem de forma arbitrária.
+      for (const pendingSale of pendingSales) {
+        const sale = await ensureIdempotencyKey(pendingSale);
+
+        try {
           await createSale({
-            ...pendingSale.payload,
+            ...sale.payload,
             dataVenda:
-              pendingSale.payload.dataVenda ??
-              formatLocalDate(new Date(pendingSale.createdAt), 'api-date-time'),
+              sale.payload.dataVenda ??
+              formatLocalDate(new Date(sale.createdAt), 'api-date-time'),
           });
-          await removePendingSale(pendingSale.id);
-        }),
-      );
+          await removePendingSale(sale.id);
+          syncedCount += 1;
+        } catch (error) {
+          // Sem conexão, as demais vendas também falhariam: tenta no próximo ciclo.
+          if (getProblemDetailsFromError(error).status === 0) {
+            failedCount = pendingSales.length - syncedCount;
+            break;
+          }
 
-      const syncedCount = results.filter(
-        (r) => r.status === 'fulfilled',
-      ).length;
-      const failedCount = results.filter((r) => r.status === 'rejected').length;
+          failedCount += 1;
+        }
+      }
 
       const remainingSales = await listPendingSales();
       set({

@@ -5,9 +5,13 @@ export {
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
 } from './lib/constants/pagination';
 export { default as EmptyState } from './components/feedback/empty-state';
+export { default as ConfirmDialog } from './components/feedback/confirm-dialog';
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
 export { default as LoadingState } from './components/feedback/loading-state';
 export { default as PageHeader } from './components/page-header';
+export { BrandLogo, BrandMark } from './components/brand/brand-mark';
+export { usePageTitle } from './hooks/use-page-title';
+export { default as StatCard } from './components/stat-card';
 export { default as ResponsiveDataTable } from './components/data-table/responsive-data-table';
 export type {
   DataTableColumn,
@@ -143,6 +147,13 @@ export {
   HIDDEN_VALUE,
 } from './utils/format-currency';
 export { formatLocalDate, type LocalDateFormat } from './utils/date';
+export {
+  buildCsv,
+  downloadCsv,
+  formatCentsForCsv,
+  type CsvColumn,
+  type CsvValue,
+} from './utils/csv';
 export {
   getMonthStartInput,
   getMonthEndInput,

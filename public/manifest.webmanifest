@@ -4,8 +4,8 @@
   "description": "Operação de estoque e vendas da AKKAI 3D.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f6efff",
-  "theme_color": "#1f96d1",
+  "background_color": "#f6f8fb",
+  "theme_color": "#0b7fc0",
   "icons": [
     {
       "src": "/icons/icon-192.png",

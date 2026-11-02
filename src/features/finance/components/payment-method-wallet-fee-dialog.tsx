@@ -29,6 +29,7 @@ import {
   useFinanceStore,
 } from '@/features/finance/store/use-finance-store';
 import {
+  ConfirmDialog,
   FormFeedbackAlert,
   getFieldMessage,
   getProblemDetailsFromError,
@@ -513,38 +514,19 @@ export default function PaymentMethodWalletFeeDialog({
         {discardChangesDialog}
       </Dialog>
 
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir taxa"
+        message="Esta taxa será excluída permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={() => setConfirmDeleteOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir taxa</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir esta taxa? Essa ação não pode ser
-            desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={() => setConfirmDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmDelete();
-            }}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

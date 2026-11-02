@@ -1,9 +1,11 @@
 import { Fragment, type KeyboardEvent, type ReactNode, useMemo } from 'react';
 import {
   Box,
+  Button,
   Collapse,
   Divider,
   Paper,
+  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -14,10 +16,26 @@ import {
   Typography,
   useMediaQuery,
 } from '@mui/material';
+import { FileDownloadOutlined } from '@mui/icons-material';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
+import { buildCsv, downloadCsv } from '../../utils/csv';
 import AppTablePagination from '../app-table-pagination';
 import EmptyState from '../feedback/empty-state';
-import LoadingState from '../feedback/loading-state';
+
+const SKELETON_ROWS = 6;
+
+/** Oculta visualmente, mas mantém o texto disponível para leitores de tela. */
+const visuallyHidden = {
+  border: 0,
+  clip: 'rect(0 0 0 0)',
+  height: '1px',
+  margin: '-1px',
+  overflow: 'hidden',
+  padding: 0,
+  position: 'absolute',
+  whiteSpace: 'nowrap',
+  width: '1px',
+} as const;
 
 /**
  * Papel da coluna na visão mobile (cartão):
@@ -45,6 +63,14 @@ export interface DataTableColumn<TRow> {
   cell: (row: TRow) => ReactNode;
   align?: 'left' | 'center' | 'right';
   mobile?: DataTableMobileRole;
+  /** Evita quebra de linha no desktop (ex.: datas e identificadores). */
+  nowrap?: boolean;
+  /**
+   * Valor em texto simples usado na exportação CSV. Colunas sem `exportValue`
+   * (ex.: ações) não entram no arquivo. Números são exportados com vírgula
+   * decimal; valores monetários devem ser convertidos para reais antes.
+   */
+  exportValue?: (row: TRow) => string | number | null | undefined;
 }
 
 export interface DataTablePagination {
@@ -68,6 +94,11 @@ interface ResponsiveDataTableProps<TRow> {
   pagination?: DataTablePagination;
   /** Conteúdo exibido acima da tabela apenas no desktop (ex.: seletor de colunas). */
   toolbar?: ReactNode;
+  /**
+   * Nome do arquivo CSV. Quando informado e houver ao menos uma coluna com
+   * `exportValue`, exibe o botão "Exportar CSV" (linhas da página atual).
+   */
+  exportFileName?: string;
   /** Largura mínima da tabela antes de ativar a rolagem horizontal. */
   minTableWidth?: number;
   /**
@@ -107,6 +138,7 @@ export default function ResponsiveDataTable<TRow>({
   visibleColumnIds,
   pagination,
   toolbar,
+  exportFileName,
   minTableWidth,
   expandedRow,
   cardsBelow = 'md',
@@ -122,25 +154,65 @@ export default function ResponsiveDataTable<TRow>({
     [columns, visibleColumnIds],
   );
 
+  const canExport =
+    Boolean(exportFileName) && columns.some((column) => column.exportValue);
+
+  const handleExport = () => {
+    if (!exportFileName) {
+      return;
+    }
+
+    downloadCsv(
+      exportFileName,
+      buildCsv(rows, isCardLayout ? columns : visibleColumns),
+    );
+  };
+
+  const exportButton = canExport ? (
+    <Button
+      size="small"
+      variant="text"
+      startIcon={<FileDownloadOutlined fontSize="small" />}
+      onClick={handleExport}
+      disabled={isLoading || rows.length === 0}
+    >
+      Exportar CSV
+    </Button>
+  ) : null;
+
   const content = isCardLayout ? (
-    <CardList
-      rows={rows}
-      columns={columns}
-      getRowId={getRowId}
-      ariaLabel={ariaLabel}
-      emptyMessage={emptyMessage}
-      isLoading={isLoading}
-      onRowClick={onRowClick}
-      expandedRow={expandedRow}
-    />
-  ) : (
     <>
-      {toolbar ? (
+      {exportButton ? (
         <Stack
           direction="row"
           justifyContent="flex-end"
+          sx={{ px: 2, py: 0.5, borderBottom: 1, borderColor: 'divider' }}
+        >
+          {exportButton}
+        </Stack>
+      ) : null}
+      <CardList
+        rows={rows}
+        columns={columns}
+        getRowId={getRowId}
+        ariaLabel={ariaLabel}
+        emptyMessage={emptyMessage}
+        isLoading={isLoading}
+        onRowClick={onRowClick}
+        expandedRow={expandedRow}
+      />
+    </>
+  ) : (
+    <>
+      {toolbar || exportButton ? (
+        <Stack
+          direction="row"
+          justifyContent="flex-end"
+          alignItems="center"
+          spacing={1}
           sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}
         >
+          {exportButton}
           {toolbar}
         </Stack>
       ) : null}
@@ -153,18 +225,33 @@ export default function ResponsiveDataTable<TRow>({
             <TableRow>
               {visibleColumns.map((column) => (
                 <TableCell key={column.id} align={column.align}>
-                  {column.header}
+                  {column.header || (
+                    <Box component="span" sx={visuallyHidden}>
+                      Detalhes
+                    </Box>
+                  )}
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length} sx={{ p: 0 }}>
-                  <LoadingState />
-                </TableCell>
-              </TableRow>
+              Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                <TableRow key={`skeleton-${rowIndex}`} aria-busy="true">
+                  {visibleColumns.map((column) => (
+                    <TableCell key={column.id} align={column.align}>
+                      <Skeleton
+                        variant="text"
+                        width={column.align === 'right' ? '60%' : '80%'}
+                        sx={{
+                          ml: column.align === 'right' ? 'auto' : 0,
+                          fontSize: '1rem',
+                        }}
+                      />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : rows.length > 0 ? (
               rows.map((row) => (
                 <Fragment key={getRowId(row)}>
@@ -183,7 +270,13 @@ export default function ResponsiveDataTable<TRow>({
                     }}
                   >
                     {visibleColumns.map((column) => (
-                      <TableCell key={column.id} align={column.align}>
+                      <TableCell
+                        key={column.id}
+                        align={column.align}
+                        sx={
+                          column.nowrap ? { whiteSpace: 'nowrap' } : undefined
+                        }
+                      >
                         {column.cell(row)}
                       </TableCell>
                     ))}
@@ -260,7 +353,17 @@ function CardList<TRow>({
   expandedRow,
 }: CardListProps<TRow>) {
   if (isLoading) {
-    return <LoadingState />;
+    return (
+      <Stack divider={<Divider flexItem />} aria-busy="true">
+        {Array.from({ length: 3 }, (_, index) => (
+          <Stack key={index} spacing={1} sx={{ px: 2, py: 2 }}>
+            <Skeleton variant="text" width="30%" />
+            <Skeleton variant="text" width="60%" sx={{ fontSize: '1.25rem' }} />
+            <Skeleton variant="rounded" height={56} />
+          </Stack>
+        ))}
+      </Stack>
+    );
   }
 
   if (rows.length === 0) {

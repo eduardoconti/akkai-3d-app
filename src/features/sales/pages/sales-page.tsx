@@ -43,10 +43,12 @@ import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
   PageHeader,
+  StatCard,
   ProductAutocompleteField,
   ResponsiveDataTable,
   SearchFilterPanel,
   TableColumnVisibilityButton,
+  formatCentsForCsv,
   formatCurrencyWithVisibility,
   formatValueWithVisibility,
   formatLocalDate,
@@ -541,12 +543,20 @@ export default function SalesPage() {
       id: 'id',
       header: 'ID',
       mobile: 'eyebrow',
+      nowrap: true,
+      exportValue: (venda) => venda.id,
       cell: (venda) => `Venda #${venda.id}`,
     },
     {
       id: 'data',
       header: 'Data',
       mobile: 'title',
+      nowrap: true,
+      exportValue: (venda) =>
+        formatLocalDate(
+          venda.dataVenda ?? venda.dataInclusao,
+          'display-date-time',
+        ),
       cell: (venda) =>
         formatLocalDate(
           venda.dataVenda ?? venda.dataInclusao,
@@ -557,6 +567,7 @@ export default function SalesPage() {
       id: 'tipo',
       header: 'Tipo',
       mobile: 'badge',
+      exportValue: (venda) => getSaleTypeLabel(venda.tipo),
       cell: (venda) => (
         <Chip
           label={getSaleTypeLabel(venda.tipo)}
@@ -570,6 +581,7 @@ export default function SalesPage() {
       id: 'pagamento',
       header: 'Pagamento',
       mobile: 'badge',
+      exportValue: (venda) => getSalePaymentMethodLabel(venda),
       cell: (venda) => (
         <Chip
           label={getSalePaymentMethodLabel(venda)}
@@ -583,6 +595,7 @@ export default function SalesPage() {
       header: 'Total',
       mobile: 'aside',
       align: 'right',
+      exportValue: (venda) => formatCentsForCsv(venda.valorTotal),
       cell: (venda) => (
         <Typography
           component="span"
@@ -597,17 +610,20 @@ export default function SalesPage() {
     {
       id: 'feira',
       header: 'Feira',
+      exportValue: (venda) => venda.feira?.nome ?? '',
       cell: (venda) => venda.feira?.nome ?? '-',
     },
     {
       id: 'carteira',
       header: 'Carteira',
+      exportValue: (venda) => getSaleWalletLabel(venda),
       cell: (venda) => getSaleWalletLabel(venda),
     },
     {
       id: 'desconto',
       header: 'Desconto',
       align: 'right',
+      exportValue: (venda) => formatCentsForCsv(venda.desconto ?? 0),
       cell: (venda) =>
         venda.desconto > 0 ? formatSaleValue(venda.desconto, hideValues) : '-',
     },
@@ -615,6 +631,8 @@ export default function SalesPage() {
       id: 'taxa',
       header: 'Taxa',
       align: 'right',
+      exportValue: (venda) =>
+        formatCentsForCsv(getSalePaymentTotal(venda, 'valorTaxa')),
       cell: (venda) => {
         const valorTaxa = getSalePaymentTotal(venda, 'valorTaxa');
         return valorTaxa != null ? formatSaleValue(valorTaxa, hideValues) : '-';
@@ -624,6 +642,8 @@ export default function SalesPage() {
       id: 'imposto',
       header: 'Imposto',
       align: 'right',
+      exportValue: (venda) =>
+        formatCentsForCsv(getSalePaymentTotal(venda, 'valorImposto')),
       cell: (venda) => {
         const valorImposto = getSalePaymentTotal(venda, 'valorImposto');
         return valorImposto != null
@@ -635,6 +655,8 @@ export default function SalesPage() {
       id: 'liquido',
       header: 'Líquido',
       align: 'right',
+      exportValue: (venda) =>
+        formatCentsForCsv(venda.valorLiquido ?? venda.valorTotal),
       cell: (venda) => (
         <Typography
           component="span"
@@ -732,6 +754,7 @@ export default function SalesPage() {
 
       <Box>
         <SearchFilterPanel
+          defaultCollapsedOnMobile
           onSearch={handleSearch}
           onClear={handleClearFilters}
           columns={{ xs: 12, md: 12, lg: 24 }}
@@ -853,10 +876,14 @@ export default function SalesPage() {
       </Box>
 
       <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Paper
-            variant="outlined"
-            sx={{ p: 2, cursor: 'default' }}
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            label="Itens"
+            value={formatValueWithVisibility(
+              String(totalizadores.quantidadeItensVendidos ?? 0),
+              hideValues,
+            )}
+            sx={{ cursor: 'default' }}
             onMouseMove={handleCardMouseMove([
               {
                 label: 'Catálogo',
@@ -872,47 +899,28 @@ export default function SalesPage() {
               },
             ])}
             onMouseLeave={() => setCardTooltip(null)}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Itens
-            </Typography>
-            <Typography variant="h6" fontWeight={700}>
-              {formatValueWithVisibility(
-                String(totalizadores.quantidadeItensVendidos ?? 0),
-                hideValues,
-              )}
-            </Typography>
-          </Paper>
+          />
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Desconto total
-            </Typography>
-            <Typography variant="h6" fontWeight={700}>
-              {formatSaleValue(totalizadores.descontoTotal, hideValues)}
-            </Typography>
-          </Paper>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            label="Desconto total"
+            value={formatSaleValue(totalizadores.descontoTotal, hideValues)}
+            tone="warning"
+          />
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Valor total das vendas
-            </Typography>
-            <Typography variant="h6" fontWeight={700}>
-              {formatSaleValue(totalizadores.valorTotal, hideValues)}
-            </Typography>
-          </Paper>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            label="Valor total das vendas"
+            value={formatSaleValue(totalizadores.valorTotal, hideValues)}
+            tone="primary"
+          />
         </Grid>
-        <Grid size={{ xs: 12, md: 3 }}>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Valor líquido das vendas
-            </Typography>
-            <Typography variant="h6" fontWeight={700} color="success.main">
-              {formatSaleValue(totalizadores.valorLiquido, hideValues)}
-            </Typography>
-          </Paper>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            label="Valor líquido das vendas"
+            value={formatSaleValue(totalizadores.valorLiquido, hideValues)}
+            tone="success"
+          />
         </Grid>
       </Grid>
 
@@ -932,6 +940,7 @@ export default function SalesPage() {
         emptyMessage="Nenhuma venda encontrada para os filtros informados."
         isLoading={isFetching}
         visibleColumnIds={tableVisibleColumnIds}
+        exportFileName="vendas"
         toolbar={
           <TableColumnVisibilityButton
             columns={SALE_TABLE_COLUMNS}

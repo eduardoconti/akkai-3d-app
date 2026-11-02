@@ -52,12 +52,17 @@ import {
   Menu as MenuIcon,
   PointOfSale,
   RequestQuote,
+  Search as SearchIcon,
   ShoppingCart as SaleIcon,
   Sync,
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import CommandPalette, {
+  type CommandItem,
+} from '../components/command-palette';
+import { useGlobalShortcuts } from '../hooks/use-global-shortcuts';
 import { MainLayoutActionsContext } from './main-layout-actions';
 import { EditProfileDialog, useAuth } from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
@@ -84,9 +89,13 @@ import {
 import {
   loadQuickSaleDrafts,
   saveQuickSaleDrafts,
+  loadQuickSaleDefaults,
+  saveQuickSaleDefaults,
+  type QuickSaleDefaults,
   type QuickSaleDraft,
 } from '@/features/sales/utils/quick-sale-draft-storage';
 import {
+  BrandLogo,
   CurrencyValue,
   formatLocalDate,
   GlobalFeedbackSnackbar,
@@ -116,21 +125,21 @@ const MENU_ITEM_ICON_SX = {
   minWidth: 34,
 };
 const MENU_ACTION_BUTTON_SX = {
-  border: '1px solid',
-  borderColor: 'divider',
-  borderRadius: 2,
-  bgcolor: 'background.default',
-  boxShadow: (theme: Theme) =>
-    theme.palette.mode === 'dark'
-      ? '0 4px 10px rgba(0,0,0,0.28)'
-      : '0 6px 14px rgba(15, 23, 42, 0.12)',
+  borderRadius: 1.5,
+  color: 'text.secondary',
+  // Atalhos "novo" aparecem ao passar o mouse; em telas de toque ficam sempre visíveis.
+  '@media (hover: hover) and (pointer: fine)': {
+    opacity: 0,
+    '.MuiListItem-root:hover &, &:focus-visible, &.Mui-focusVisible': {
+      opacity: 1,
+    },
+  },
   '&:hover': {
-    bgcolor: 'action.hover',
+    bgcolor: 'action.selected',
+    color: 'primary.main',
   },
 };
 const PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE = 'estoque.ler';
-
-type QuickSaleDefaultConfig = Pick<SaleFormState, 'tipo' | 'idFeira'>;
 
 function cloneSaleFormState(form: SaleFormState): SaleFormState {
   return {
@@ -140,12 +149,17 @@ function cloneSaleFormState(form: SaleFormState): SaleFormState {
   };
 }
 
-function createQuickSaleForm(config: QuickSaleDefaultConfig): SaleFormState {
+function createQuickSaleForm(config: QuickSaleDefaults): SaleFormState {
   return {
     ...cloneSaleFormState(initialSaleFormState),
     dataVenda: formatLocalDate(),
     tipo: config.tipo,
     idFeira: config.tipo === 'FEIRA' ? config.idFeira : '',
+    pagamentos: initialSaleFormState.pagamentos.map((pagamento) => ({
+      ...pagamento,
+      idCarteira: config.idCarteira ?? pagamento.idCarteira,
+      meioPagamento: config.meioPagamento ?? pagamento.meioPagamento,
+    })),
   };
 }
 
@@ -193,6 +207,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { mode, toggleColorMode } = useThemeMode();
   const isOnline = useOnlineStatus();
@@ -219,6 +234,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     })),
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
@@ -234,10 +250,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
     string | null
   >(null);
   const [quickSaleDefaultConfig, setQuickSaleDefaultConfig] =
-    useState<QuickSaleDefaultConfig>({
-      tipo: initialSaleFormState.tipo,
-      idFeira: initialSaleFormState.idFeira,
-    });
+    useState<QuickSaleDefaults>(
+      () =>
+        loadQuickSaleDefaults(user?.id) ?? {
+          tipo: initialSaleFormState.tipo,
+          idFeira: initialSaleFormState.idFeira,
+        },
+    );
   const [fairDialogOpen, setFairDialogOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
   const [cashRegisterDialogOpen, setCashRegisterDialogOpen] = useState(false);
@@ -354,7 +373,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       return 'Relatórios';
     }
 
-    return 'Painel Operacional';
+    return 'AKKAI 3D';
   }, [location.pathname]);
 
   const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
@@ -453,16 +472,115 @@ export default function MainLayout({ children }: MainLayoutProps) {
     [openDialog, openQuickSaleDraft],
   );
 
+  const commandItems = useMemo<CommandItem[]>(() => {
+    const go = (group: string, label: string, path: string, keywords = '') => ({
+      id: path,
+      group,
+      label,
+      keywords,
+      onSelect: () => navigate(path),
+    });
+
+    return [
+      {
+        id: 'acao-nova-venda',
+        group: 'Ação',
+        label: 'Nova venda',
+        keywords: 'vender atendimento',
+        onSelect: layoutActions.openNewSaleDialog,
+      },
+      {
+        id: 'acao-abertura-caixa',
+        group: 'Ação',
+        label: 'Abertura de caixa',
+        keywords: 'caixa abrir',
+        onSelect: layoutActions.openCashRegisterDialog,
+      },
+      {
+        id: 'acao-novo-produto',
+        group: 'Ação',
+        label: 'Novo produto',
+        onSelect: layoutActions.openNewProductDialog,
+      },
+      {
+        id: 'acao-nova-despesa',
+        group: 'Ação',
+        label: 'Nova despesa',
+        keywords: 'gasto',
+        onSelect: layoutActions.openNewExpenseDialog,
+      },
+      {
+        id: 'acao-novo-orcamento',
+        group: 'Ação',
+        label: 'Novo orçamento',
+        onSelect: layoutActions.openNewBudgetDialog,
+      },
+      go('Navegação', 'Início', '/', 'painel dashboard visão geral'),
+      go('Vendas', 'Vendas', '/vendas'),
+      go('Vendas', 'Feiras', '/vendas/feiras', 'eventos'),
+      go('Vendas', 'Preços por feira', '/vendas/precos-feira'),
+      go('Produtos', 'Produtos', '/produtos', 'estoque catálogo'),
+      go('Produtos', 'Categorias de produtos', '/produtos/categorias'),
+      go('Produtos', 'Movimentações de estoque', '/produtos/movimentacoes'),
+      go('Orçamentos', 'Orçamentos', '/orcamentos'),
+      go('Financeiro', 'Caixas', '/financeiro/caixas'),
+      go('Financeiro', 'Carteiras', '/financeiro/carteiras', 'saldo'),
+      go('Financeiro', 'Transferências', '/financeiro/transferencias'),
+      go('Financeiro', 'Despesas', '/financeiro/despesas'),
+      go(
+        'Financeiro',
+        'Categorias de despesa',
+        '/financeiro/categorias-despesa',
+      ),
+      go(
+        'Financeiro',
+        'Taxas por meio de pagamento',
+        '/financeiro/taxas-meio-pagamento-carteira',
+      ),
+      go('Consignação', 'Consignações', '/consignacao'),
+      go('Consignação', 'Revendedores', '/consignacao/revendedores'),
+      go('Assinatura', 'Planos', '/assinatura/planos'),
+      go('Assinatura', 'Assinantes', '/assinatura/assinantes'),
+      go('Assinatura', 'Ciclos', '/assinatura/ciclos'),
+      go('Assinatura', 'Kits mensais', '/assinatura/kits'),
+      go('Relatórios', 'Resumo de vendas', '/relatorios/resumo'),
+      go(
+        'Relatórios',
+        'Produtos mais vendidos',
+        '/relatorios/produtos-mais-vendidos',
+      ),
+      go(
+        'Relatórios',
+        'Valor dos produtos em estoque',
+        '/relatorios/valor-produtos-estoque',
+      ),
+      go('Relatórios', 'Relatório de produção', '/relatorios/producao'),
+      go('Relatórios', 'Sugestão de produção', '/relatorios/sugestao-producao'),
+    ];
+  }, [layoutActions, navigate]);
+
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  useGlobalShortcuts({
+    onSearch: openPalette,
+    onNewSale: layoutActions.openNewSaleDialog,
+  });
+
   const handleQuickSaleDraftChange = useCallback(
     (form: SaleFormState) => {
       if (!activeQuickSaleDraftId) {
         return;
       }
 
-      setQuickSaleDefaultConfig({
+      const primeiroPagamento = form.pagamentos[0];
+      const nextDefaults: QuickSaleDefaults = {
         tipo: form.tipo,
         idFeira: form.idFeira,
-      });
+        idCarteira: primeiroPagamento?.idCarteira,
+        meioPagamento: primeiroPagamento?.meioPagamento,
+      };
+
+      setQuickSaleDefaultConfig(nextDefaults);
+      saveQuickSaleDefaults(user?.id, nextDefaults);
       setQuickSaleDrafts((current) =>
         current.map((draft) =>
           draft.id === activeQuickSaleDraftId
@@ -474,7 +592,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         ),
       );
     },
-    [activeQuickSaleDraftId],
+    [activeQuickSaleDraftId, user?.id],
   );
 
   const handleMinimizeQuickSaleDraft = useCallback(() => {
@@ -549,30 +667,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
     >
       <Toolbar>
         <Box>
-          <Typography
-            variant="h6"
-            sx={{ color: 'primary.main', fontWeight: 900 }}
-          >
-            AKKAI 3D
-          </Typography>
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ mt: 0.5 }}
-          >
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: isOnline ? 'success.main' : 'warning.main',
-              }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {isOnline ? 'online' : 'offline'}
-            </Typography>
-          </Stack>
+          <BrandLogo
+            size={36}
+            caption={
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <Box
+                  sx={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    bgcolor: isOnline ? 'success.main' : 'warning.main',
+                  }}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  {isOnline ? 'online' : 'offline'}
+                </Typography>
+              </Stack>
+            }
+          />
         </Box>
       </Toolbar>
       <Divider />
@@ -594,6 +706,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={closeMobileMenu}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               '&.active': getActiveMenuStyles(theme),
               ...(homeSectionActive ? getActiveMenuStyles(theme) : {}),
@@ -609,11 +722,29 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
+        <ListItem
+          disablePadding
+          sx={{ mb: 0.5 }}
+          secondaryAction={
+            <IconButton
+              size="small"
+              aria-label="Nova venda"
+              tabIndex={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                layoutActions.openNewSaleDialog();
+              }}
+              sx={{ mr: 3.5, ...MENU_ACTION_BUTTON_SX }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
+          }
+        >
           <ListItemButton
             onClick={() => setSalesMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(salesSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -625,25 +756,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
               primary="Vendas"
               primaryTypographyProps={{ noWrap: true }}
             />
-            <IconButton
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                layoutActions.openNewSaleDialog();
-              }}
-              sx={{
-                mr: 0.5,
-                ...MENU_ACTION_BUTTON_SX,
-              }}
-            >
-              <Add fontSize="small" />
-            </IconButton>
+
             {salesMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={salesMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={salesMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -673,6 +797,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Feiras" />
                 <IconButton
                   size="small"
+                  aria-label="Nova feira"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -704,11 +830,29 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </List>
         </Collapse>
 
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
+        <ListItem
+          disablePadding
+          sx={{ mb: 0.5 }}
+          secondaryAction={
+            <IconButton
+              size="small"
+              aria-label="Novo produto"
+              tabIndex={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                layoutActions.openNewProductDialog();
+              }}
+              sx={{ mr: 3.5, ...MENU_ACTION_BUTTON_SX }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
+          }
+        >
           <ListItemButton
             onClick={() => setProductsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(productsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -720,25 +864,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
               primary="Produtos"
               primaryTypographyProps={{ noWrap: true }}
             />
-            <IconButton
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                layoutActions.openNewProductDialog();
-              }}
-              sx={{
-                mr: 0.5,
-                ...MENU_ACTION_BUTTON_SX,
-              }}
-            >
-              <Add fontSize="small" />
-            </IconButton>
+
             {productsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={productsMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={productsMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -768,6 +905,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Categorias" />
                 <IconButton
                   size="small"
+                  aria-label="Nova categoria"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -783,7 +922,24 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </ListItem>
 
             {podeListarMovimentacoesEstoque ? (
-              <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItem
+                disablePadding
+                sx={{ mb: 0.5 }}
+                secondaryAction={
+                  <IconButton
+                    size="small"
+                    aria-label="Novo orçamento"
+                    tabIndex={-1}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      layoutActions.openNewBudgetDialog();
+                    }}
+                    sx={{ mr: 3.5, ...MENU_ACTION_BUTTON_SX }}
+                  >
+                    <Add fontSize="small" />
+                  </IconButton>
+                }
+              >
                 <ListItemButton
                   component={NavLink}
                   end
@@ -806,6 +962,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setBudgetsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(budgetsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -817,25 +974,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
               primary="Orçamentos"
               primaryTypographyProps={{ noWrap: true }}
             />
-            <IconButton
-              size="small"
-              onClick={(event) => {
-                event.stopPropagation();
-                layoutActions.openNewBudgetDialog();
-              }}
-              sx={{
-                mr: 0.5,
-                ...MENU_ACTION_BUTTON_SX,
-              }}
-            >
-              <Add fontSize="small" />
-            </IconButton>
+
             {budgetsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={budgetsMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={budgetsMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -858,6 +1008,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setFinanceMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(financeSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -873,8 +1024,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={financeMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={financeMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -903,6 +1059,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Carteiras" />
                 <IconButton
                   size="small"
+                  aria-label="Nova carteira"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -931,6 +1089,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Transferências" />
                 <IconButton
                   size="small"
+                  aria-label="Nova transferência"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -959,6 +1119,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Despesas" />
                 <IconButton
                   size="small"
+                  aria-label="Nova despesa"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -987,6 +1149,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Taxas pagamento" />
                 <IconButton
                   size="small"
+                  aria-label="Nova taxa de pagamento"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1023,6 +1187,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setAssinaturaMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(assinaturaSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -1038,8 +1203,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={assinaturaMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={assinaturaMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -1054,6 +1224,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Planos" />
                 <IconButton
                   size="small"
+                  aria-label="Novo plano"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1080,6 +1252,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Assinantes" />
                 <IconButton
                   size="small"
+                  aria-label="Novo assinante"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1106,6 +1280,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Ciclos" />
                 <IconButton
                   size="small"
+                  aria-label="Novo ciclo"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1132,6 +1308,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <ListItemText primary="Kits mensais" />
                 <IconButton
                   size="small"
+                  aria-label="Novo kit mensal"
+                  tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -1151,6 +1329,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setReportsMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(reportsSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -1166,8 +1345,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={reportsMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={reportsMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding>
               <ListItemButton
                 component={NavLink}
@@ -1250,6 +1434,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             onClick={() => setConsignacaoMenuOpen((current) => !current)}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
+              '&&': { pr: 1.5 },
               borderRadius: 2,
               ...(consignacaoSectionActive ? getActiveMenuStyles(theme) : {}),
             })}
@@ -1265,8 +1450,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemButton>
         </ListItem>
 
-        <Collapse in={consignacaoMenuOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ pl: 1.5 }}>
+        <Collapse
+          in={consignacaoMenuOpen}
+          timeout="auto"
+          unmountOnExit
+          component="li"
+        >
+          <List disablePadding sx={{ pl: 1.5 }}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 component={NavLink}
@@ -1425,12 +1615,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   fontWeight: 700,
                   bgcolor: 'primary.main',
                   color: 'primary.contrastText',
-                  mr: 1,
+                  mr: { xs: 0, sm: 1 },
                 }}
               >
                 {userInitials}
               </Avatar>
-              {user?.name ?? 'Usuário'}
+              <Box
+                component="span"
+                sx={{ display: { xs: 'none', sm: 'inline' } }}
+              >
+                {user?.name ?? 'Usuário'}
+              </Box>
             </Button>
           </Stack>
         </Box>
@@ -1466,6 +1661,27 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 : `Sincronizar ${pendingSalesCount}`}
             </Button>
           ) : null}
+
+          <Divider orientation="vertical" flexItem />
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="small"
+            startIcon={<SearchIcon />}
+            onClick={openPalette}
+            aria-label="Busca rápida (Ctrl+K)"
+          >
+            Buscar
+            <Typography
+              component="span"
+              variant="caption"
+              color="text.secondary"
+              sx={{ ml: 1, display: { xs: 'none', lg: 'inline' } }}
+            >
+              Ctrl K
+            </Typography>
+          </Button>
 
           <Divider orientation="vertical" flexItem />
 
@@ -1715,75 +1931,85 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 pointerEvents: 'auto',
               }}
             >
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ overflowX: 'auto', pb: 0.25 }}
-              >
+              <Stack direction="row" spacing={1} alignItems="center">
                 <Typography
                   variant="subtitle2"
                   fontWeight={800}
-                  sx={{ flexShrink: 0, px: 0.5 }}
+                  sx={{
+                    flexShrink: 0,
+                    px: 0.5,
+                    display: { xs: 'none', sm: 'block' },
+                  }}
                 >
                   Atendimentos
                 </Typography>
 
-                {quickSaleDrafts.map((draft) => {
-                  const summary = getQuickSaleDraftSummary(draft.form);
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ flex: 1, minWidth: 0, overflowX: 'auto', pb: 0.25 }}
+                >
+                  {quickSaleDrafts.map((draft) => {
+                    const summary = getQuickSaleDraftSummary(draft.form);
 
-                  return (
-                    <Box
-                      key={draft.id}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexShrink: 0,
-                        maxWidth: 230,
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
-                        borderRadius: 2,
-                        bgcolor: 'background.default',
-                      }}
-                    >
-                      <Button
-                        color="inherit"
-                        onClick={() => handleRestoreQuickSaleDraft(draft.id)}
+                    return (
+                      <Box
+                        key={draft.id}
                         sx={{
-                          justifyContent: 'flex-start',
-                          minWidth: 0,
-                          px: 1.25,
-                          py: 0.75,
-                          textTransform: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          flexShrink: 0,
+                          maxWidth: 230,
+                          border: (theme) =>
+                            `1px solid ${theme.palette.divider}`,
+                          borderRadius: 2,
+                          bgcolor: 'background.default',
                         }}
                       >
-                        <Box sx={{ minWidth: 0, textAlign: 'left' }}>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            noWrap
-                            sx={{ display: 'block' }}
-                          >
-                            {draft.label}
-                          </Typography>
-                          <Typography variant="body2" fontWeight={800} noWrap>
-                            {summary.itemLabel} •{' '}
-                            <CurrencyValue value={summary.total} />
-                          </Typography>
-                        </Box>
-                      </Button>
+                        <Button
+                          color="inherit"
+                          onClick={() => handleRestoreQuickSaleDraft(draft.id)}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            minWidth: 0,
+                            px: 1.25,
+                            py: 0.75,
+                            textTransform: 'none',
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0, textAlign: 'left' }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              noWrap
+                              sx={{ display: 'block' }}
+                            >
+                              {draft.label}
+                            </Typography>
+                            <Typography variant="body2" fontWeight={800} noWrap>
+                              {summary.itemLabel} •{' '}
+                              <CurrencyValue value={summary.total} />
+                            </Typography>
+                          </Box>
+                        </Button>
 
-                      <IconButton
-                        size="small"
-                        aria-label={`Descartar ${draft.label}`}
-                        onClick={() => handleAskDiscardQuickSaleDraft(draft.id)}
-                        sx={{ mr: 0.25 }}
-                      >
-                        <Close fontSize="small" />
-                      </IconButton>
-                    </Box>
-                  );
-                })}
+                        <IconButton
+                          size="small"
+                          aria-label={`Descartar ${draft.label}`}
+                          onClick={() =>
+                            handleAskDiscardQuickSaleDraft(draft.id)
+                          }
+                          sx={{ mr: 0.25 }}
+                        >
+                          <Close fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    );
+                  })}
+                </Stack>
 
+                {/* Fica fora da área rolável para estar sempre ao alcance. */}
                 <Button
                   size="small"
                   variant="contained"
@@ -1838,6 +2064,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewWalletDialog
         open={walletDialogOpen}
         onClose={() => setWalletDialogOpen(false)}
+      />
+      <CommandPalette
+        open={paletteOpen}
+        items={commandItems}
+        onClose={() => setPaletteOpen(false)}
       />
       <CashRegisterOpeningDialog
         open={cashRegisterDialogOpen}

@@ -1,4 +1,7 @@
-import type { SaleFormState } from '@/features/sales/types/sale-form';
+import type {
+  SaleFormPayment,
+  SaleFormState,
+} from '@/features/sales/types/sale-form';
 
 export type QuickSaleDraft = {
   id: string;
@@ -118,5 +121,58 @@ export function saveQuickSaleDrafts(
     );
   } catch {
     // Armazenamento indisponível (modo privado, cota cheia): segue sem persistir.
+  }
+}
+
+/** Últimas escolhas usadas para pré-preencher a próxima venda rápida. */
+export type QuickSaleDefaults = Pick<SaleFormState, 'tipo' | 'idFeira'> & {
+  idCarteira?: SaleFormPayment['idCarteira'];
+  meioPagamento?: SaleFormPayment['meioPagamento'];
+};
+
+const DEFAULTS_KEY_PREFIX = 'akkai-quick-sale-defaults';
+
+export function loadQuickSaleDefaults(
+  userId: number | string | undefined,
+): QuickSaleDefaults | null {
+  if (userId === undefined) {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(`${DEFAULTS_KEY_PREFIX}:${userId}`);
+    const parsed = raw ? (JSON.parse(raw) as Partial<QuickSaleDefaults>) : null;
+
+    if (!parsed || typeof parsed.tipo !== 'string') {
+      return null;
+    }
+
+    return {
+      tipo: parsed.tipo,
+      idFeira: typeof parsed.idFeira === 'number' ? parsed.idFeira : '',
+      idCarteira:
+        typeof parsed.idCarteira === 'number' ? parsed.idCarteira : '',
+      meioPagamento: parsed.meioPagamento,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveQuickSaleDefaults(
+  userId: number | string | undefined,
+  defaults: QuickSaleDefaults,
+): void {
+  if (userId === undefined) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      `${DEFAULTS_KEY_PREFIX}:${userId}`,
+      JSON.stringify(defaults),
+    );
+  } catch {
+    // Armazenamento indisponível: as escolhas só valem nesta sessão.
   }
 }

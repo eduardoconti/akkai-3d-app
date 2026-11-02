@@ -120,7 +120,7 @@ export default function ReportsProductionPage() {
   const productionColumns: DataTableColumn<ProductionReportItem>[] = [
     {
       id: 'codigo',
-      header: 'Codigo',
+      header: 'Código',
       mobile: 'eyebrow',
       cell: (item) => item.codigo,
     },
@@ -139,7 +139,7 @@ export default function ReportsProductionPage() {
     },
     {
       id: 'valorUnitario',
-      header: 'Valor unitario',
+      header: 'Valor unitário',
       align: 'right',
       cell: (item) => <CurrencyValue value={item.valorUnitario} />,
     },
@@ -151,13 +151,13 @@ export default function ReportsProductionPage() {
     },
     {
       id: 'mediaQuantidade',
-      header: 'Media pecas/dia',
+      header: 'Média peças/dia',
       align: 'right',
       cell: (item) => formatQuantity(item.mediaQuantidadePorDia),
     },
     {
       id: 'mediaValor',
-      header: 'Media valor/dia',
+      header: 'Média valor/dia',
       align: 'right',
       cell: (item) => <CurrencyValue value={item.mediaValorPorDia} />,
     },
@@ -166,8 +166,8 @@ export default function ReportsProductionPage() {
   return (
     <Stack spacing={3}>
       <PageHeader
-        title="Relatorio de producao"
-        description="Consulte as pecas produzidas no período, o valor estimado com base no valor atual dos produtos e as medias diarias de quantidade e valor."
+        title="Relatório de produção"
+        description="Consulte as peças produzidas no período, o valor estimado com base no valor atual dos produtos e as médias diárias de quantidade e valor."
       />
 
       <SearchFilterPanel
@@ -200,7 +200,7 @@ export default function ReportsProductionPage() {
               Quantidade produzida
             </MenuItem>
             <MenuItem value="valorEstimado">Valor estimado</MenuItem>
-            <MenuItem value="codigo">Codigo</MenuItem>
+            <MenuItem value="codigo">Código</MenuItem>
             <MenuItem value="nome">Nome</MenuItem>
           </TextField>
         </Grid>
@@ -240,11 +240,11 @@ export default function ReportsProductionPage() {
               size="small"
             />
             <Chip
-              label={`Media de pecas/dia: ${formatQuantity(result.mediaQuantidadePorDia)}`}
+              label={`Média de peças/dia: ${formatQuantity(result.mediaQuantidadePorDia)}`}
               size="small"
             />
             <Chip
-              label={`Media de valor/dia: ${formatCurrencyWithVisibility(result.mediaValorPorDia, hideValues)}`}
+              label={`Média de valor/dia: ${formatCurrencyWithVisibility(result.mediaValorPorDia, hideValues)}`}
               size="small"
             />
           </Stack>
@@ -253,7 +253,7 @@ export default function ReportsProductionPage() {
             rows={result.itens}
             columns={productionColumns}
             getRowId={(item) => item.codigo}
-            ariaLabel="relatorio de producao"
+            ariaLabel="relatório de produção"
             emptyMessage="Nenhuma produção foi encontrada no período selecionado."
             isLoading={isLoading}
             pagination={{

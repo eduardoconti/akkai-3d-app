@@ -128,6 +128,7 @@ export default function AssinantesPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}

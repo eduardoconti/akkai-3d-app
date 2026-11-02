@@ -176,6 +176,7 @@ export default function FairProductPricesPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isLoading}

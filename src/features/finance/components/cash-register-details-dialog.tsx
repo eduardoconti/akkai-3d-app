@@ -215,7 +215,7 @@ export default function CashRegisterDetailsDialog({
                                         ? 'success.main'
                                         : diferenca < 0
                                           ? 'error.main'
-                                          : 'warning.main'
+                                          : 'warning.dark'
                                     }
                                   >
                                     Diferença: {formatCurrency(diferenca)}
@@ -245,7 +245,7 @@ export default function CashRegisterDetailsDialog({
                                   color={
                                     (item.diferenca ?? 0) === 0
                                       ? 'success.main'
-                                      : 'warning.main'
+                                      : 'warning.dark'
                                   }
                                 >
                                   Diferença:{' '}

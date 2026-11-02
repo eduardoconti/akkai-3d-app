@@ -95,7 +95,11 @@ export default function ProductCategoriesPage() {
         onAction={openNewCategoryDialog}
       />
 
-      <SearchFilterPanel onSearch={handleSearch} onClear={handleClearFilters}>
+      <SearchFilterPanel
+        defaultCollapsedOnMobile
+        onSearch={handleSearch}
+        onClear={handleClearFilters}
+      >
         <Grid size={{ xs: 12, md: 12, lg: 20 }}>
           <TextField
             fullWidth

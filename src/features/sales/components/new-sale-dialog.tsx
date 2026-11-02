@@ -43,6 +43,8 @@ import {
   saleStoreSelectors,
   useSaleStore,
 } from '@/features/sales/store/use-sale-store';
+import { useAuth } from '@/features/auth';
+import { getBestSellingProducts } from '@/features/reports/api/reports-api';
 import {
   emptySaleItem,
   initialSaleFormState,
@@ -195,7 +197,7 @@ function WalletToggleGroup({
       </Grid>
 
       {error ? (
-        <Typography variant="caption" color="error">
+        <Typography variant="caption" color="error" data-form-error>
           {error}
         </Typography>
       ) : null}
@@ -248,7 +250,7 @@ function mapSaleToForm(sale: Venda): SaleFormState {
   }));
 
   return {
-    dataVenda: formatLocalDate(sale.dataVenda ?? sale.dataInclusao),
+    dataVenda: getSaleLocalDate(sale.dataVenda ?? sale.dataInclusao),
     tipo: sale.tipo,
     idFeira: sale.idFeira ?? '',
     idOrcamento: sale.idOrcamento,
@@ -266,8 +268,34 @@ function mapSaleToForm(sale: Venda): SaleFormState {
   };
 }
 
+/**
+ * Converte o instante da venda para a data local (como a lista exibe).
+ * Ler apenas o prefixo do ISO usaria a data em UTC e adiantaria um dia nas
+ * vendas feitas à noite.
+ */
+/** Desfaz uma venda recém-criada (exclui e atualiza a lista). */
+async function undoCreatedSale(saleId: number): Promise<void> {
+  const { excluirVenda, fetchVendas } = useSaleStore.getState();
+  const feedback = useFeedbackStore.getState();
+  const result = await excluirVenda(saleId);
+
+  if (!result.success) {
+    feedback.showError(result.problem.detail);
+    return;
+  }
+
+  await fetchVendas();
+  feedback.showSuccess('Venda desfeita.');
+}
+
+function getSaleLocalDate(value: string): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? formatLocalDate(value)
+    : formatLocalDate(new Date(value));
+}
+
 function getSaleDateForApi(formDate: string, sale?: Venda | null): string {
-  if (sale && formDate === formatLocalDate(sale.dataVenda)) {
+  if (sale && formDate === getSaleLocalDate(sale.dataVenda)) {
     return sale.dataVenda;
   }
 
@@ -331,6 +359,7 @@ export default function NewSaleDialog({
     idFeira: initialSaleFormState.idFeira,
   });
   const [catalogProducts, setCatalogProducts] = useState<Produto[]>([]);
+  const [topSellerIds, setTopSellerIds] = useState<number[]>([]);
   const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(
     null,
   );
@@ -352,10 +381,16 @@ export default function NewSaleDialog({
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const isEditMode = sale !== null;
+  const { user } = useAuth();
+  const canDeleteSale = user?.permissions.includes('venda.excluir') ?? false;
   const persistedConfigRef = useRef(persistedConfig);
   const preservedDraftRef = useRef(false);
   const preservedDraftSaleIdRef = useRef<number | null>(null);
   const canEmitDraftChangeRef = useRef(false);
+  const firstProductInputRef = useRef<HTMLInputElement | null>(null);
+  const submissionKeyRef = useRef<{ signature: string; key: string } | null>(
+    null,
+  );
   const initialFormRef = useRef(initialForm);
 
   initialFormRef.current = initialForm;
@@ -456,8 +491,10 @@ export default function NewSaleDialog({
     ) {
       setForm((current) => ({
         ...current,
+        // Reavalia sobre o estado atual: outra atualização (restaurar rascunho)
+        // pode já ter definido a carteira desde a renderização que agendou isto.
         pagamentos: current.pagamentos.map((pagamento, index) =>
-          index === 0
+          index === 0 && pagamento.idCarteira === ''
             ? {
                 ...pagamento,
                 idCarteira: carteiraPadrao.id,
@@ -599,6 +636,32 @@ export default function NewSaleDialog({
       )
     : 0;
 
+  const hasEmptySplitPayment =
+    isSplitPayment && form.pagamentos.some((pagamento) => pagamento.valor <= 0);
+
+  const handleChangePaymentValue = (index: number, valor: number) => {
+    setForm((current) => {
+      const pagamentos = current.pagamentos.map((pagamento, currentIndex) =>
+        currentIndex === index ? { ...pagamento, valor } : pagamento,
+      );
+
+      // Com duas formas de pagamento, a outra recebe automaticamente o restante.
+      if (pagamentos.length === 2) {
+        const otherIndex = index === 0 ? 1 : 0;
+        const restanteCentavos = Math.max(
+          0,
+          totals.total - Math.round(valor * 100),
+        );
+        pagamentos[otherIndex] = {
+          ...pagamentos[otherIndex],
+          valor: restanteCentavos / 100,
+        };
+      }
+
+      return { ...current, pagamentos };
+    });
+  };
+
   const handleFillPaymentRemaining = () => {
     const lastIndex = form.pagamentos.length - 1;
     const lastPayment = form.pagamentos[lastIndex];
@@ -654,6 +717,88 @@ export default function NewSaleDialog({
 
     handleClose();
   };
+
+  useEffect(() => {
+    if (!open || isEditMode || !isOnline) {
+      return;
+    }
+
+    let cancelled = false;
+    const since = new Date();
+    since.setDate(since.getDate() - 90);
+
+    getBestSellingProducts({
+      dataInicio: formatLocalDate(since),
+      // A API só aceita 25, 50 ou 100 por página; exibimos apenas os 8 primeiros.
+      tamanhoPagina: 25,
+      pagina: 1,
+    })
+      .then((response) => {
+        if (!cancelled) {
+          setTopSellerIds(
+            response.itens
+              .map((item) => item.idProduto)
+              .filter((id): id is number => typeof id === 'number')
+              .slice(0, 8),
+          );
+        }
+      })
+      .catch(() => {
+        // Atalho opcional: sem a lista, a venda segue pelo campo de produto.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isEditMode, isOnline]);
+
+  /** Adiciona 1 unidade do produto, somando se já estiver na venda. */
+  const handleQuickAddProduct = (product: Produto) => {
+    const duplicatedIndex = form.itens.findIndex(
+      (item) =>
+        item.tipoItem === 'CATALOGO' &&
+        item.idProduto === product.id &&
+        !item.brinde,
+    );
+
+    if (duplicatedIndex >= 0) {
+      updateItem(duplicatedIndex, {
+        quantidade: form.itens[duplicatedIndex]!.quantidade + 1,
+      });
+      return;
+    }
+
+    const emptyIndex = form.itens.findIndex(
+      (item) => item.tipoItem === 'CATALOGO' && item.idProduto === null,
+    );
+
+    if (emptyIndex >= 0) {
+      updateItem(emptyIndex, {
+        idProduto: product.id,
+        nomeProduto: product.nome,
+        valorUnitario: product.valor / 100,
+      });
+      return;
+    }
+
+    setForm((current) => ({
+      ...current,
+      itens: [
+        ...current.itens,
+        {
+          ...emptySaleItem,
+          idProduto: product.id,
+          nomeProduto: product.nome,
+          valorUnitario: product.valor / 100,
+        },
+      ],
+    }));
+    setItemErrors((current) => [...current, {}]);
+  };
+
+  const topSellerProducts = topSellerIds
+    .map((id) => catalogProducts.find((product) => product.id === id))
+    .filter((product): product is Produto => product !== undefined);
 
   const handleAddItem = () => {
     setForm((current) => ({
@@ -750,6 +895,19 @@ export default function NewSaleDialog({
       idFeira: type === 'FEIRA' ? current.idFeira : '',
     }));
   };
+
+  // A feira lembrada de uma venda anterior pode ter sido inativada depois.
+  useEffect(() => {
+    if (isEditMode || form.tipo !== 'FEIRA' || form.idFeira === '') {
+      return;
+    }
+
+    const feiraSelecionada = feiras.find((feira) => feira.id === form.idFeira);
+
+    if (feiraSelecionada && !feiraSelecionada.ativa) {
+      setForm((current) => ({ ...current, idFeira: '' }));
+    }
+  }, [feiras, form.idFeira, form.tipo, isEditMode]);
 
   const handleChangeFair = (nextFairId: number | '') => {
     setPersistedConfig((current) => ({
@@ -934,6 +1092,19 @@ export default function NewSaleDialog({
     return { nextLocalErrors, nextItemErrors, nextPaymentErrors };
   };
 
+  const scrollToFirstError = () => {
+    // Aguarda a renderização dos erros antes de procurar o primeiro campo inválido.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector(
+            '.MuiDialog-paper .Mui-error, .MuiDialog-paper [aria-invalid="true"], .MuiDialog-paper [data-form-error]',
+          )
+          ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+    });
+  };
+
   const handleSubmit = async () => {
     const { nextLocalErrors, nextItemErrors, nextPaymentErrors } =
       validateForm();
@@ -950,6 +1121,7 @@ export default function NewSaleDialog({
           : 'Conecte-se para validar o caixa aberto antes de registrar a venda.',
       }));
       setShowConfig(true);
+      scrollToFirstError();
       return;
     }
 
@@ -973,6 +1145,7 @@ export default function NewSaleDialog({
       hasItemErrors ||
       hasPaymentErrors
     ) {
+      scrollToFirstError();
       return;
     }
 
@@ -1023,18 +1196,31 @@ export default function NewSaleDialog({
       return;
     }
 
+    // A mesma chave é reaproveitada enquanto o conteúdo da venda não muda, para
+    // que um reenvio (resposta perdida, timeout) não registre a venda de novo.
+    const signature = JSON.stringify({ ...payload, dataVenda: form.dataVenda });
+    if (submissionKeyRef.current?.signature !== signature) {
+      submissionKeyRef.current = {
+        signature,
+        key: window.crypto.randomUUID(),
+      };
+    }
+    const chaveIdempotencia = submissionKeyRef.current.key;
+
     setIsSaving(true);
 
     try {
       const result =
         isEditMode && sale
           ? await alterarVenda(sale.id, payload)
-          : await criarVenda(payload);
+          : await criarVenda({ ...payload, chaveIdempotencia });
 
       if (!result.success) {
         setProblem(result.problem);
         return;
       }
+
+      submissionKeyRef.current = null;
 
       if (result.data.id < 0) {
         showSuccess(
@@ -1046,10 +1232,19 @@ export default function NewSaleDialog({
 
       await fetchVendas();
       await onSaved?.();
+      const createdSaleId = result.data.id;
       showSuccess(
         isEditMode
           ? 'Venda alterada com sucesso.'
           : 'Venda cadastrada com sucesso.',
+        !isEditMode && canDeleteSale
+          ? {
+              label: 'Desfazer',
+              onClick: () => {
+                void undoCreatedSale(createdSaleId);
+              },
+            }
+          : undefined,
       );
       handleClose();
     } finally {
@@ -1080,6 +1275,11 @@ export default function NewSaleDialog({
     form.pagamentos[0] ?? initialSaleFormState.pagamentos[0];
   const selectedWallet = carteiras.find(
     (carteira) => carteira.id === primaryPayment.idCarteira,
+  );
+  // Feiras inativas não são oferecidas para novas vendas; ao alterar uma venda
+  // já existente, a feira dela continua selecionável para não ficar em branco.
+  const feirasDisponiveis = feiras.filter(
+    (feira) => feira.ativa || (isEditMode && feira.id === form.idFeira),
   );
   const selectedFair =
     form.idFeira === ''
@@ -1112,7 +1312,23 @@ export default function NewSaleDialog({
 
   return (
     <>
-      <Dialog open={open} onClose={handleDialogClose} fullWidth maxWidth="sm">
+      <Dialog
+        open={open}
+        onClose={handleDialogClose}
+        fullWidth
+        maxWidth="sm"
+        slotProps={{
+          transition: {
+            // O foco automático do campo é sobrescrito pelo trap de foco do
+            // diálogo; aplica-o novamente quando a abertura termina.
+            onEntered: () => {
+              if (!isEditMode && form.itens[0]?.idProduto === null) {
+                firstProductInputRef.current?.focus();
+              }
+            },
+          },
+        }}
+      >
         <DialogTitle sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
           <Stack direction="row" spacing={2} alignItems="flex-start">
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -1182,7 +1398,7 @@ export default function NewSaleDialog({
               </Alert>
             ) : null}
 
-            {form.tipo === 'FEIRA' && feiras.length === 0 ? (
+            {form.tipo === 'FEIRA' && feirasDisponiveis.length === 0 ? (
               <Alert severity="info">
                 Nenhuma feira cadastrada até o momento. Cadastre uma feira antes
                 de registrar vendas desse tipo.
@@ -1283,7 +1499,7 @@ export default function NewSaleDialog({
                         }
                       >
                         <MenuItem value="">Selecione uma feira</MenuItem>
-                        {feiras.map((feira) => (
+                        {feirasDisponiveis.map((feira) => (
                           <MenuItem key={feira.id} value={feira.id}>
                             {feira.nome}
                           </MenuItem>
@@ -1297,6 +1513,36 @@ export default function NewSaleDialog({
 
             <Box>
               <SectionLabel>Itens da venda</SectionLabel>
+
+              {!isEditMode && topSellerProducts.length > 0 ? (
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.75 }}
+                  >
+                    Mais vendidos — toque para adicionar
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    useFlexGap
+                    flexWrap="wrap"
+                    spacing={0.75}
+                  >
+                    {topSellerProducts.map((product) => (
+                      <Chip
+                        key={product.id}
+                        label={product.nome}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleQuickAddProduct(product)}
+                        sx={{ maxWidth: 180 }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              ) : null}
 
               {localErrors.itens ? (
                 <Alert severity="warning" sx={{ mb: 1.5 }}>
@@ -1319,6 +1565,17 @@ export default function NewSaleDialog({
                       : item.valorUnitario;
                   const itemTotal =
                     Math.round(unitValue * 100) * item.quantidade;
+                  const selectedProduct =
+                    item.tipoItem === 'CATALOGO' && item.idProduto !== null
+                      ? catalogProducts.find(
+                          (product) => product.id === item.idProduto,
+                        )
+                      : undefined;
+                  const availableStock = selectedProduct?.quantidadeEstoque;
+                  const exceedsStock =
+                    !item.brinde &&
+                    availableStock !== undefined &&
+                    item.quantidade > availableStock;
 
                   return (
                     <Paper
@@ -1341,9 +1598,13 @@ export default function NewSaleDialog({
                               <ProductAutocompleteField
                                 products={catalogProducts}
                                 productId={item.idProduto}
+                                showStock
                                 loading={isFetching}
                                 size="small"
                                 required
+                                inputRef={
+                                  index === 0 ? firstProductInputRef : undefined
+                                }
                                 autoFocus={
                                   !isEditMode &&
                                   item.idProduto === null &&
@@ -1601,6 +1862,17 @@ export default function NewSaleDialog({
                             </Typography>
                           </Box>
                         </Stack>
+
+                        {exceedsStock ? (
+                          <Typography
+                            variant="caption"
+                            color="warning.dark"
+                            role="status"
+                          >
+                            Estoque disponível: {Math.max(availableStock, 0)}. A
+                            venda é permitida e o estoque ficará negativo.
+                          </Typography>
+                        ) : null}
                       </Stack>
                     </Paper>
                   );
@@ -1880,7 +2152,7 @@ export default function NewSaleDialog({
                                 required
                                 value={paymentValue}
                                 onValueChange={(valor) => {
-                                  updatePayment(index, { valor });
+                                  handleChangePaymentValue(index, valor);
                                 }}
                                 disabled={form.pagamentos.length === 1}
                                 error={Boolean(
@@ -1936,18 +2208,22 @@ export default function NewSaleDialog({
                       variant="body2"
                       fontWeight={700}
                       color={
-                        paymentsRemaining === 0
-                          ? 'success.main'
-                          : paymentsRemaining > 0
-                            ? 'warning.main'
-                            : 'error.main'
+                        paymentsRemaining === 0 && hasEmptySplitPayment
+                          ? 'warning.dark'
+                          : paymentsRemaining === 0
+                            ? 'success.main'
+                            : paymentsRemaining > 0
+                              ? 'warning.dark'
+                              : 'error.main'
                       }
                     >
-                      {paymentsRemaining === 0
-                        ? 'Pagamentos conferem com o total'
-                        : paymentsRemaining > 0
-                          ? `Falta ${formatCurrency(paymentsRemaining)}`
-                          : `Excede ${formatCurrency(Math.abs(paymentsRemaining))}`}
+                      {paymentsRemaining === 0 && hasEmptySplitPayment
+                        ? 'Informe um valor maior que zero em cada pagamento'
+                        : paymentsRemaining === 0
+                          ? 'Pagamentos conferem com o total'
+                          : paymentsRemaining > 0
+                            ? `Falta ${formatCurrency(paymentsRemaining)}`
+                            : `Excede ${formatCurrency(Math.abs(paymentsRemaining))}`}
                     </Typography>
                     {paymentsRemaining !== 0 ? (
                       <Button

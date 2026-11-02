@@ -127,6 +127,7 @@ export default function RevendedoresPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}

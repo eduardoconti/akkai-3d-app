@@ -469,6 +469,7 @@ export default function BudgetsPage() {
       ) : null}
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}

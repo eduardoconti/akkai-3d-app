@@ -435,8 +435,7 @@ export const consignacaoStoreSelectors = {
     state.alterarItemConsignacao,
   excluirItemConsignacao: (state: ConsignacaoStoreState) =>
     state.excluirItemConsignacao,
-  fecharConsignacao: (state: ConsignacaoStoreState) =>
-    state.fecharConsignacao,
+  fecharConsignacao: (state: ConsignacaoStoreState) => state.fecharConsignacao,
   registrarVendasRevendedor: (state: ConsignacaoStoreState) =>
     state.registrarVendasRevendedor,
   registrarDevolucao: (state: ConsignacaoStoreState) =>

@@ -25,6 +25,7 @@ import {
   type AssinanteFormState,
 } from '@/features/assinatura/types/assinatura-form';
 import {
+  ConfirmDialog,
   FormFeedbackAlert,
   getFieldMessage,
   useFeedbackStore,
@@ -421,36 +422,19 @@ export default function EditAssinanteDialog({
         {discardChangesDialog}
       </Dialog>
 
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir assinante"
+        message="Este assinante será excluído permanentemente. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeleting}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmDelete();
+        }}
         onClose={() => setConfirmDeleteOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir assinante</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir este assinante? Essa ação não pode
-            ser desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button
-            onClick={() => setConfirmDeleteOpen(false)}
-            disabled={isDeleting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => void handleConfirmDelete()}
-            disabled={isDeleting}
-          >
-            {isDeleting ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

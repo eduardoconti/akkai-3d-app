@@ -1,8 +1,9 @@
 import { Suspense, lazy } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, Skeleton, Stack } from '@mui/material';
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import RouteErrorBoundary from './components/route-error-boundary';
 import MainLayout from './layouts/main-layout';
+import NotFoundPage from './not-found-page';
 import { LoginPage, ProtectedRoute } from '@/features/auth';
 
 const SalesPage = lazy(() => import('@/features/sales/pages/sales-page'));
@@ -76,16 +77,14 @@ const RevendedoresPage = lazy(
 
 function RouteFallback() {
   return (
-    <Box
-      sx={{
-        minHeight: '40vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <CircularProgress />
-    </Box>
+    <Stack spacing={3} aria-busy="true" aria-label="Carregando página">
+      <Box>
+        <Skeleton variant="text" width={220} sx={{ fontSize: '2rem' }} />
+        <Skeleton variant="text" width={340} />
+      </Box>
+      <Skeleton variant="rounded" height={110} />
+      <Skeleton variant="rounded" height={320} />
+    </Stack>
   );
 }
 
@@ -176,6 +175,7 @@ function App() {
             <Route path="/assinatura/assinantes" element={<AssinantesPage />} />
             <Route path="/assinatura/ciclos" element={<CiclosPage />} />
             <Route path="/assinatura/kits" element={<KitsPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
       </Routes>

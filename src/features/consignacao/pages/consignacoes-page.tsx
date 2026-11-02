@@ -5,10 +5,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Stack,
@@ -49,6 +45,7 @@ import {
   useConsignacaoStore,
 } from '@/features/consignacao/store/use-consignacao-store';
 import {
+  ConfirmDialog,
   CurrencyValue,
   PageHeader,
   ResponsiveDataTable,
@@ -738,6 +735,7 @@ export default function ConsignacoesPage() {
       />
 
       <SearchFilterPanel
+        defaultCollapsedOnMobile
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isFetching}
@@ -847,35 +845,19 @@ export default function ConsignacoesPage() {
         onClose={handleCloseItemDialog}
         onSaved={handleRefresh}
       />
-      <Dialog
+      <ConfirmDialog
         open={confirmDeleteOpen}
+        title="Excluir item"
+        message="Este item será removido da consignação. Essa ação não pode ser desfeita."
+        confirmLabel="Confirmar exclusão"
+        destructive
+        isLoading={isDeletingItem}
+        loadingLabel="Excluindo..."
+        onConfirm={() => {
+          void handleConfirmExcluirItem();
+        }}
         onClose={handleCloseConfirmDelete}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Excluir item</DialogTitle>
-        <DialogContent dividers>
-          <Typography>
-            Tem certeza que deseja excluir este item da consignação? Essa ação
-            não pode ser desfeita.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={handleCloseConfirmDelete} disabled={isDeletingItem}>
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => {
-              void handleConfirmExcluirItem();
-            }}
-            disabled={isDeletingItem}
-          >
-            {isDeletingItem ? 'Excluindo...' : 'Confirmar exclusão'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
       <RegistrarVendasRevendedorDialog
         open={vendasRevendedorDialogOpen}
         onClose={() => setVendasRevendedorDialogOpen(false)}
