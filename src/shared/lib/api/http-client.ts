@@ -41,7 +41,121 @@ export class ApiProblemError extends Error {
   }
 }
 
-let refreshRequestPromise: Promise<boolean> | null = null;
+const REQUEST_TIMEOUT_MS = 30_000;
+const DOWNLOAD_TIMEOUT_MS = 120_000;
+const HEALTH_TIMEOUT_MS = 5_000;
+
+type NetworkActivityListener = (reachable: boolean) => void;
+
+let networkActivityListener: NetworkActivityListener | null = null;
+
+/**
+ * Informa a cada resposta (ou falha de rede) se a API está alcançável, para que
+ * o indicador de conexão reaja sem esperar a próxima verificação periódica.
+ */
+export function setNetworkActivityListener(
+  listener: NetworkActivityListener | null,
+): void {
+  networkActivityListener = listener;
+}
+
+/**
+ * `fetch` com limite de tempo: em sinal fraco a conexão pode ficar pendurada
+ * sem nunca falhar, e o usuário ficaria preso esperando a resposta.
+ */
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit | undefined,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const externalSignal = init?.signal;
+  const abortFromExternal = () => controller.abort();
+
+  if (externalSignal?.aborted) {
+    controller.abort();
+  } else {
+    externalSignal?.addEventListener('abort', abortFromExternal);
+  }
+
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(input, { ...init, signal: controller.signal });
+    networkActivityListener?.(true);
+    return response;
+  } catch (error) {
+    if (!externalSignal?.aborted) {
+      networkActivityListener?.(false);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    externalSignal?.removeEventListener('abort', abortFromExternal);
+  }
+}
+
+type RefreshOutcome = 'ok' | 'rejected' | 'unreachable' | 'none';
+
+let refreshRequestPromise: Promise<RefreshOutcome> | null = null;
+
+/**
+ * Renova a sessão uma única vez para todas as requisições concorrentes. Só
+ * encerra a sessão quando o servidor recusa o refresh token: falha de rede ou
+ * servidor fora do ar mantém os tokens, senão uma queda de sinal deslogaria o
+ * usuário e travaria as vendas offline que ainda precisam ser sincronizadas.
+ */
+function refreshSession(): Promise<RefreshOutcome> {
+  const storedRefreshToken = getRefreshToken();
+
+  if (!storedRefreshToken) {
+    return Promise.resolve('none');
+  }
+
+  if (!refreshRequestPromise) {
+    refreshRequestPromise = (async (): Promise<RefreshOutcome> => {
+      try {
+        const refreshResponse = await fetchWithTimeout(
+          `${API_BASE_URL}/auth/refresh`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: storedRefreshToken }),
+          },
+          REQUEST_TIMEOUT_MS,
+        );
+
+        if (refreshResponse.ok) {
+          const data = (await refreshResponse.json()) as {
+            accessToken: string;
+            refreshToken: string;
+          };
+          setAccessToken(data.accessToken);
+          setRefreshToken(data.refreshToken);
+          return 'ok';
+        }
+
+        if (
+          refreshResponse.status >= 500 ||
+          refreshResponse.status === 408 ||
+          refreshResponse.status === 429
+        ) {
+          return 'unreachable';
+        }
+
+        clearTokens();
+        notifyAuthFailure();
+        return 'rejected';
+      } catch {
+        return 'unreachable';
+      } finally {
+        refreshRequestPromise = null;
+      }
+    })();
+  }
+
+  return refreshRequestPromise;
+}
 
 async function parseResponse(response: Response): Promise<unknown> {
   const contentType = response.headers.get('content-type') ?? '';
@@ -111,9 +225,11 @@ function buildProblemFromResponse(
 
 export async function checkApiConnectivity(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, {
-      method: 'GET',
-    });
+    const response = await fetchWithTimeout(
+      `${API_BASE_URL}/health`,
+      { method: 'GET' },
+      HEALTH_TIMEOUT_MS,
+    );
 
     return response.ok;
   } catch {
@@ -121,24 +237,33 @@ export async function checkApiConnectivity(): Promise<boolean> {
   }
 }
 
+interface RequestOptions {
+  timeoutMs?: number;
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
   hasRetried = false,
+  options?: RequestOptions,
 ): Promise<T> {
   let response: Response;
 
   const accessToken = getAccessToken();
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        ...(init?.headers ?? {}),
+    response = await fetchWithTimeout(
+      `${API_BASE_URL}${path}`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          ...(init?.headers ?? {}),
+        },
+        ...init,
       },
-      ...init,
-    });
+      options?.timeoutMs ?? REQUEST_TIMEOUT_MS,
+    );
   } catch {
     throw new ApiProblemError(fallbackProblems.network);
   }
@@ -149,48 +274,14 @@ async function request<T>(
     !path.startsWith('/auth/login') &&
     !path.startsWith('/auth/refresh')
   ) {
-    const storedRefreshToken = getRefreshToken();
+    const outcome = await refreshSession();
 
-    if (storedRefreshToken) {
-      try {
-        if (!refreshRequestPromise) {
-          refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: storedRefreshToken }),
-          })
-            .then(async (refreshResponse) => {
-              if (refreshResponse.ok) {
-                const data = (await refreshResponse.json()) as {
-                  accessToken: string;
-                  refreshToken: string;
-                };
-                setAccessToken(data.accessToken);
-                setRefreshToken(data.refreshToken);
-                return true;
-              }
-              clearTokens();
-              notifyAuthFailure();
-              return false;
-            })
-            .catch(() => {
-              clearTokens();
-              notifyAuthFailure();
-              return false;
-            })
-            .finally(() => {
-              refreshRequestPromise = null;
-            });
-        }
+    if (outcome === 'ok') {
+      return request<T>(path, init, true, options);
+    }
 
-        const refreshSucceeded = await refreshRequestPromise;
-
-        if (refreshSucceeded) {
-          return request<T>(path, init, true);
-        }
-      } catch {
-        throw new ApiProblemError(fallbackProblems.network);
-      }
+    if (outcome === 'unreachable') {
+      throw new ApiProblemError(fallbackProblems.network);
     }
   }
 
@@ -213,59 +304,29 @@ async function download(
   const accessToken = getAccessToken();
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'GET',
-      headers: {
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    response = await fetchWithTimeout(
+      `${API_BASE_URL}${path}`,
+      {
+        method: 'GET',
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
       },
-    });
+      DOWNLOAD_TIMEOUT_MS,
+    );
   } catch {
     throw new ApiProblemError(fallbackProblems.network);
   }
 
   if (response.status === 401 && !hasRetried) {
-    const storedRefreshToken = getRefreshToken();
+    const outcome = await refreshSession();
 
-    if (storedRefreshToken) {
-      try {
-        if (!refreshRequestPromise) {
-          refreshRequestPromise = fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: storedRefreshToken }),
-          })
-            .then(async (refreshResponse) => {
-              if (refreshResponse.ok) {
-                const data = (await refreshResponse.json()) as {
-                  accessToken: string;
-                  refreshToken: string;
-                };
-                setAccessToken(data.accessToken);
-                setRefreshToken(data.refreshToken);
-                return true;
-              }
-              clearTokens();
-              notifyAuthFailure();
-              return false;
-            })
-            .catch(() => {
-              clearTokens();
-              notifyAuthFailure();
-              return false;
-            })
-            .finally(() => {
-              refreshRequestPromise = null;
-            });
-        }
+    if (outcome === 'ok') {
+      return download(path, true);
+    }
 
-        const refreshSucceeded = await refreshRequestPromise;
-
-        if (refreshSucceeded) {
-          return download(path, true);
-        }
-      } catch {
-        throw new ApiProblemError(fallbackProblems.network);
-      }
+    if (outcome === 'unreachable') {
+      throw new ApiProblemError(fallbackProblems.network);
     }
   }
 
@@ -344,11 +405,16 @@ export function getProblemDetailsFromError(error: unknown): ProblemDetails {
 export const httpClient = {
   get: <T>(path: string, query?: object) =>
     request<T>(`${path}${buildQueryString(query)}`),
-  post: <T>(path: string, body: unknown) =>
-    request<T>(path, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
+  post: <T>(path: string, body: unknown, options?: RequestOptions) =>
+    request<T>(
+      path,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      },
+      false,
+      options,
+    ),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, {
       method: 'PUT',

@@ -4,8 +4,16 @@ import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import RouteErrorBoundary from './components/route-error-boundary';
 import MainLayout from './layouts/main-layout';
 import NotFoundPage from './not-found-page';
-import { LoginPage, ProtectedRoute } from '@/features/auth';
+import {
+  LoginPage,
+  PERMISSAO_ADMINISTRAR_PERMISSOES,
+  ProtectedRoute,
+  RequirePermission,
+} from '@/features/auth';
 
+const UserPermissionsPage = lazy(
+  () => import('@/features/auth/pages/user-permissions-page'),
+);
 const SalesPage = lazy(() => import('@/features/sales/pages/sales-page'));
 const FairsPage = lazy(() => import('@/features/sales/pages/fairs-page'));
 const FairProductPricesPage = lazy(
@@ -175,6 +183,16 @@ function App() {
             <Route path="/assinatura/assinantes" element={<AssinantesPage />} />
             <Route path="/assinatura/ciclos" element={<CiclosPage />} />
             <Route path="/assinatura/kits" element={<KitsPage />} />
+            <Route
+              path="/administracao/permissoes"
+              element={
+                <RequirePermission
+                  permission={PERMISSAO_ADMINISTRAR_PERMISSOES}
+                >
+                  <UserPermissionsPage />
+                </RequirePermission>
+              }
+            />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>

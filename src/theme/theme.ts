@@ -54,7 +54,8 @@ export function getActiveSubmenuStyles(theme: Theme) {
 
 /**
  * Barra de rolagem fina que só se destaca quando o ponteiro está sobre a
- * área rolável (ex.: menu lateral).
+ * área rolável. Aplicada a todo o app pelo `MuiCssBaseline`, para que a página,
+ * os diálogos, as tabelas e o menu lateral tenham a mesma barra.
  */
 export function getDiscreetScrollbarStyles(theme: Theme) {
   const thumb = alpha(theme.palette.text.secondary, 0.4);
@@ -163,13 +164,14 @@ export function buildTheme(mode: PaletteMode) {
     },
     components: {
       MuiCssBaseline: {
-        styleOverrides: {
+        styleOverrides: (theme: Theme) => ({
+          '*': getDiscreetScrollbarStyles(theme),
           body: {
             '& ::selection': {
               backgroundColor: alpha('#0B7FC0', 0.22),
             },
           },
-        },
+        }),
       },
       MuiPaper: {
         styleOverrides: {

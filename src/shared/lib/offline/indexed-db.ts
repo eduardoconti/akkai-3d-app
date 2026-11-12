@@ -1,4 +1,5 @@
 import type {
+  Caixa,
   Carteira,
   Categoria,
   InserirVendaInput,
@@ -21,7 +22,8 @@ type CacheKey =
   | 'fairs'
   | 'wallets'
   | 'sales'
-  | `fair-product-prices:${number}`;
+  | `fair-product-prices:${number}`
+  | `open-cash-register:${number}`;
 
 interface CacheRecord<TValue> {
   key: CacheKey;
@@ -33,6 +35,11 @@ export interface PendingSaleRecord {
   id: string;
   createdAt: string;
   payload: InserirVendaInput;
+  /** Dono da venda: só ele sincroniza, mesmo que outra pessoa use o aparelho. */
+  idUsuario?: number;
+  /** Preenchido quando o servidor recusou a venda; ela espera decisão do usuário. */
+  ultimoErro?: string;
+  tentativas?: number;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -145,6 +152,33 @@ export async function getCachedFairProductPrices(
   return getCachedValue<PrecoProdutoFeira[]>(
     getFairProductPricesCacheKey(idFeira),
   );
+}
+
+function getOpenCashRegisterCacheKey(
+  idFeira: number,
+): `open-cash-register:${number}` {
+  return `open-cash-register:${idFeira}`;
+}
+
+/** Guarda (ou limpa, se não há caixa aberto) o caixa da feira para uso offline. */
+export async function saveCachedOpenCashRegister(
+  idFeira: number,
+  caixa: Caixa | null,
+): Promise<void> {
+  const key = getOpenCashRegisterCacheKey(idFeira);
+
+  if (caixa) {
+    await saveCachedValue(key, caixa);
+    return;
+  }
+
+  await withStore(CACHE_STORE, 'readwrite', (store) => store.delete(key));
+}
+
+export async function getCachedOpenCashRegister(
+  idFeira: number,
+): Promise<Caixa | null> {
+  return getCachedValue<Caixa>(getOpenCashRegisterCacheKey(idFeira));
 }
 
 export async function saveCachedCategories(

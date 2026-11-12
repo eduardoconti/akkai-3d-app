@@ -1,4 +1,5 @@
 const REFRESH_TOKEN_KEY = 'akkai-refresh-token';
+export const AUTH_SNAPSHOT_KEY = 'akkai-auth-snapshot';
 
 let _accessToken: string | null = null;
 let _onAuthFailure: (() => void) | null = null;
@@ -34,4 +35,16 @@ export function setAuthFailureCallback(callback: () => void): void {
 
 export function notifyAuthFailure(): void {
   _onAuthFailure?.();
+}
+
+/** Id do usuário da sessão atual, lido do snapshot salvo (funciona offline). */
+export function getStoredUserId(): number | null {
+  try {
+    const snapshot = localStorage.getItem(AUTH_SNAPSHOT_KEY);
+    const id = snapshot ? (JSON.parse(snapshot) as { id?: unknown }).id : null;
+
+    return typeof id === 'number' ? id : null;
+  } catch {
+    return null;
+  }
 }

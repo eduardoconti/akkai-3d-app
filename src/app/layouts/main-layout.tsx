@@ -9,6 +9,7 @@ import {
 import {
   Alert,
   Avatar,
+  Badge,
   AppBar,
   Box,
   Button,
@@ -34,6 +35,7 @@ import {
 } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import {
+  AdminPanelSettings,
   Add,
   AddShoppingCart,
   Assessment,
@@ -64,7 +66,11 @@ import CommandPalette, {
 } from '../components/command-palette';
 import { useGlobalShortcuts } from '../hooks/use-global-shortcuts';
 import { MainLayoutActionsContext } from './main-layout-actions';
-import { EditProfileDialog, useAuth } from '@/features/auth';
+import {
+  EditProfileDialog,
+  PERMISSAO_ADMINISTRAR_PERMISSOES,
+  useAuth,
+} from '@/features/auth';
 import { NewBudgetDialog } from '@/features/budgets';
 import {
   CashRegisterOpeningDialog,
@@ -81,6 +87,8 @@ import {
 } from '@/features/assinatura';
 import { NewCategoryDialog, NewProductDialog } from '@/features/products';
 import { FairDialog, NewSaleDialog, useSaleStore } from '@/features/sales';
+import PendingSalesDialog from '@/features/sales/components/pending-sales-dialog';
+import { useSaleOfflineWarmup } from '@/features/sales/hooks/use-sale-offline-warmup';
 import { saleStoreSelectors } from '@/features/sales/store/use-sale-store';
 import {
   initialSaleFormState,
@@ -104,11 +112,7 @@ import {
   useSwUpdate,
   useValueVisibilityStore,
 } from '@/shared';
-import {
-  getActiveMenuStyles,
-  getActiveSubmenuStyles,
-  getDiscreetScrollbarStyles,
-} from '@/theme/theme';
+import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -205,6 +209,8 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
+const PENDING_SALES_RETRY_INTERVAL_MS = 60 * 1000;
+
 export default function MainLayout({ children }: MainLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -213,6 +219,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const isOnline = useOnlineStatus();
   const { needsUpdate, update } = useSwUpdate();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
+  const showError = useFeedbackStore((state) => state.showError);
   const { hideValues, toggleHideValues } = useValueVisibilityStore(
     useShallow((state) => ({
       hideValues: state.hideValues,
@@ -223,17 +230,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
     hydrateOfflineState,
     isSyncingPendingSales,
     pendingSalesCount,
+    rejectedSalesCount,
     sincronizarVendasPendentes,
   } = useSaleStore(
     useShallow((state) => ({
       hydrateOfflineState: saleStoreSelectors.hydrateOfflineState(state),
       isSyncingPendingSales: saleStoreSelectors.isSyncingPendingSales(state),
       pendingSalesCount: saleStoreSelectors.pendingSalesCount(state),
+      rejectedSalesCount: saleStoreSelectors.rejectedSalesCount(state),
       sincronizarVendasPendentes:
         saleStoreSelectors.sincronizarVendasPendentes(state),
     })),
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [pendingSalesDialogOpen, setPendingSalesDialogOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -284,10 +294,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const quickSaleDraftSequenceRef = useRef(recoveredQuickSales.sequence);
   const podeListarMovimentacoesEstoque =
     user?.permissions.includes(PERMISSAO_LISTAR_MOVIMENTACOES_ESTOQUE) ?? false;
+  const podeAdministrarPermissoes =
+    user?.permissions.includes(PERMISSAO_ADMINISTRAR_PERMISSOES) ?? false;
 
   useEffect(() => {
     void hydrateOfflineState();
   }, [hydrateOfflineState]);
+
+  useSaleOfflineWarmup(isOnline);
 
   useEffect(() => {
     saveQuickSaleDrafts(user?.id, {
@@ -326,6 +340,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
   const reportsSectionActive = useMemo(
     () => location.pathname.startsWith('/relatorios'),
+    [location.pathname],
+  );
+  const adminSectionActive = useMemo(
+    () => location.pathname.startsWith('/administracao'),
     [location.pathname],
   );
   const budgetsSectionActive = useMemo(
@@ -397,6 +415,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
   );
 
   const handleSyncPendingSales = useCallback(async () => {
+    const rejectedBefore = saleStoreSelectors.rejectedSalesCount(
+      useSaleStore.getState(),
+    );
     const syncedCount = await sincronizarVendasPendentes();
 
     if (syncedCount > 0) {
@@ -404,7 +425,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
         `${syncedCount} ${syncedCount === 1 ? 'venda sincronizada' : 'vendas sincronizadas'} com sucesso.`,
       );
     }
-  }, [sincronizarVendasPendentes, showSuccess]);
+
+    const rejectedCount = saleStoreSelectors.rejectedSalesCount(
+      useSaleStore.getState(),
+    );
+
+    if (rejectedCount > rejectedBefore) {
+      showError(
+        `${rejectedCount - rejectedBefore} ${rejectedCount - rejectedBefore === 1 ? 'venda foi recusada' : 'vendas foram recusadas'} pelo servidor. Abra as vendas pendentes para revisar.`,
+      );
+    }
+  }, [sincronizarVendasPendentes, showSuccess, showError]);
 
   const activeQuickSaleDraft = useMemo(
     () =>
@@ -481,6 +512,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
       onSelect: () => navigate(path),
     });
 
+    const administracao = podeAdministrarPermissoes
+      ? [
+          go(
+            'Administração',
+            'Permissões de usuários',
+            '/administracao/permissoes',
+            'acesso papel perfil usuário',
+          ),
+        ]
+      : [];
+
     return [
       {
         id: 'acao-nova-venda',
@@ -556,8 +598,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       ),
       go('Relatórios', 'Relatório de produção', '/relatorios/producao'),
       go('Relatórios', 'Sugestão de produção', '/relatorios/sugestao-producao'),
+      ...administracao,
     ];
-  }, [layoutActions, navigate]);
+  }, [layoutActions, navigate, podeAdministrarPermissoes]);
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   useGlobalShortcuts({
@@ -633,21 +676,48 @@ export default function MainLayout({ children }: MainLayoutProps) {
     [activeQuickSaleDraftId],
   );
 
-  const prevIsOnlineRef = useRef(isOnline);
   const pendingSalesCountRef = useRef(pendingSalesCount);
 
   useEffect(() => {
     pendingSalesCountRef.current = pendingSalesCount;
   }, [pendingSalesCount]);
 
+  // Envia a fila ao abrir o app com conexão e sempre que a conexão volta. O
+  // hidrate roda antes (efeito acima) e o estado só reflete a fila depois dele,
+  // por isso a leitura vem do banco local e não do contador em memória.
   useEffect(() => {
-    const wasOnline = prevIsOnlineRef.current;
-    prevIsOnlineRef.current = isOnline;
-
-    if (isOnline && !wasOnline && pendingSalesCountRef.current > 0) {
-      void handleSyncPendingSales();
+    if (!isOnline) {
+      return;
     }
-  }, [isOnline, handleSyncPendingSales]);
+
+    let cancelled = false;
+
+    void hydrateOfflineState().then(() => {
+      if (!cancelled && pendingSalesCountRef.current > 0) {
+        void handleSyncPendingSales();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOnline, hydrateOfflineState, handleSyncPendingSales]);
+
+  // Falhas transitórias (servidor instável, 5xx) não mudam o status de conexão,
+  // então a fila é reenviada de tempos em tempos enquanto houver o que enviar.
+  const sendablePendingSalesCount = pendingSalesCount - rejectedSalesCount;
+
+  useEffect(() => {
+    if (!isOnline || sendablePendingSalesCount <= 0) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void handleSyncPendingSales();
+    }, PENDING_SALES_RETRY_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [isOnline, sendablePendingSalesCount, handleSyncPendingSales]);
 
   const userInitials = useMemo(() => {
     const source = user?.name?.trim() || user?.login?.trim() || 'U';
@@ -689,14 +759,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
       </Toolbar>
       <Divider />
       <List
-        sx={(theme) => ({
+        sx={{
           px: 1.5,
           py: 2,
           flexGrow: 1,
           minHeight: 0,
           overflowY: 'auto',
-          ...getDiscreetScrollbarStyles(theme),
-        })}
+        }}
       >
         <ListItem disablePadding sx={{ mb: 1 }}>
           <ListItemButton
@@ -1488,6 +1557,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </ListItem>
           </List>
         </Collapse>
+
+        {podeAdministrarPermissoes ? (
+          <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+            <ListItemButton
+              component={NavLink}
+              to="/administracao/permissoes"
+              onClick={closeMobileMenu}
+              sx={(theme: Theme) => ({
+                ...MENU_ITEM_COMPACT_SX,
+                '&&': { pr: 1.5 },
+                borderRadius: 2,
+                ...(adminSectionActive ? getActiveMenuStyles(theme) : {}),
+              })}
+            >
+              <ListItemIcon sx={MENU_ITEM_ICON_SX}>
+                <AdminPanelSettings />
+              </ListItemIcon>
+              <ListItemText
+                primary="Permissões"
+                primaryTypographyProps={{ noWrap: true }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ) : null}
       </List>
     </Box>
   );
@@ -1537,19 +1630,28 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {pendingSalesCount > 0 ? (
               <IconButton
                 color="inherit"
-                onClick={() => {
-                  void handleSyncPendingSales();
-                }}
-                disabled={!isOnline || isSyncingPendingSales}
+                onClick={() => setPendingSalesDialogOpen(true)}
                 size="small"
-                aria-label={
-                  isSyncingPendingSales
-                    ? 'Sincronizando vendas'
-                    : `Sincronizar ${pendingSalesCount} vendas`
-                }
+                aria-label={`Vendas pendentes: ${pendingSalesCount}`}
                 sx={{ flexShrink: 0 }}
               >
-                <Sync />
+                <Badge
+                  badgeContent={pendingSalesCount}
+                  color={rejectedSalesCount > 0 ? 'error' : 'warning'}
+                >
+                  <Sync
+                    sx={
+                      isSyncingPendingSales
+                        ? {
+                            animation: 'ak-spin 1s linear infinite',
+                            '@keyframes ak-spin': {
+                              to: { transform: 'rotate(360deg)' },
+                            },
+                          }
+                        : undefined
+                    }
+                  />
+                </Badge>
               </IconButton>
             ) : null}
 
@@ -1648,17 +1750,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
           {pendingSalesCount > 0 ? (
             <Button
               variant="outlined"
-              color="inherit"
+              color={rejectedSalesCount > 0 ? 'error' : 'inherit'}
               size="small"
               startIcon={<Sync />}
-              onClick={() => {
-                void handleSyncPendingSales();
-              }}
-              disabled={!isOnline || isSyncingPendingSales}
+              onClick={() => setPendingSalesDialogOpen(true)}
             >
               {isSyncingPendingSales
                 ? 'Sincronizando...'
-                : `Sincronizar ${pendingSalesCount}`}
+                : `Pendentes (${pendingSalesCount})`}
             </Button>
           ) : null}
 
@@ -1886,6 +1985,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <NewBudgetDialog
         open={budgetDialogOpen}
         onClose={() => setBudgetDialogOpen(false)}
+      />
+      <PendingSalesDialog
+        open={pendingSalesDialogOpen}
+        onClose={() => setPendingSalesDialogOpen(false)}
       />
       {activeQuickSaleDraft ? (
         <NewSaleDialog

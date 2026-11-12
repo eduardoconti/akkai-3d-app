@@ -11,6 +11,7 @@ import {
 } from '@/features/auth/context/auth-context';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import {
+  AUTH_SNAPSHOT_KEY,
   clearTokens,
   getRefreshToken,
   setAccessToken,
@@ -29,8 +30,6 @@ import {
   type UpdatePasswordInput,
   type UpdateProfileInput,
 } from '@/features/auth/api/auth-api';
-
-const AUTH_SNAPSHOT_KEY = 'akkai-auth-snapshot';
 
 interface AuthProviderProps {
   children: ReactNode;

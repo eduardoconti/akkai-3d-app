@@ -92,7 +92,9 @@ export function listWallets(): Promise<Carteira[]> {
 }
 
 export function createSale(input: InserirVendaInput): Promise<Venda> {
-  return httpClient.post<Venda>('/venda', input);
+  // Limite menor que o padrão: em sinal fraco a venda cai na fila offline (a
+  // chave de idempotência garante que um reenvio não duplique a venda).
+  return httpClient.post<Venda>('/venda', input, { timeoutMs: 15_000 });
 }
 
 export function createExchangeReturn(

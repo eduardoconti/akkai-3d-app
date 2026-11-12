@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import { getStoredUserId } from '@/shared/lib/api/token-storage';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import { formatLocalDate } from '@/shared/utils/date';
 import { getMonthRangeInput } from '@/shared/utils/date-range';
@@ -160,6 +161,40 @@ async function ensureIdempotencyKey(
   return updated;
 }
 
+/** Vendas guardadas pertencem a quem as registrou; legadas (sem dono) valem para todos. */
+function belongsToCurrentUser(pendingSale: PendingSaleRecord): boolean {
+  const currentUserId = getStoredUserId();
+
+  return (
+    pendingSale.idUsuario === undefined ||
+    currentUserId === null ||
+    pendingSale.idUsuario === currentUserId
+  );
+}
+
+async function listCurrentUserPendingSales(): Promise<PendingSaleRecord[]> {
+  return (await listPendingSales()).filter(belongsToCurrentUser);
+}
+
+function summarizePendingSales(pendingSales: PendingSaleRecord[]) {
+  return {
+    pendingSales,
+    pendingSalesCount: pendingSales.length,
+    rejectedSalesCount: pendingSales.filter((sale) => sale.ultimoErro).length,
+  };
+}
+
+/** Erros que podem se resolver sozinhos: a venda continua na fila e é reenviada. */
+function isTransientSyncStatus(status: number): boolean {
+  return (
+    status === 0 ||
+    status === 401 ||
+    status === 408 ||
+    status === 429 ||
+    status >= 500
+  );
+}
+
 function buildOfflineSale(
   dados: InserirVendaInput,
   produtos: Produto[],
@@ -238,7 +273,9 @@ interface SaleStoreState {
   totalPaginas: number;
   totalFeiras: number;
   totalizadores: TotalizadoresVendas;
+  pendingSales: PendingSaleRecord[];
   pendingSalesCount: number;
+  rejectedSalesCount: number;
   isFetching: boolean;
   isSubmitting: boolean;
   isSyncingPendingSales: boolean;
@@ -273,6 +310,8 @@ interface SaleStoreState {
   excluirVenda: (id: number) => Promise<ActionResult<void>>;
   hydrateOfflineState: () => Promise<void>;
   sincronizarVendasPendentes: () => Promise<number>;
+  reenviarVendaPendente: (id: string) => Promise<void>;
+  descartarVendaPendente: (id: string) => Promise<void>;
   clearSubmitError: () => void;
 }
 
@@ -288,7 +327,9 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   totalPaginas: 1,
   totalFeiras: 0,
   totalizadores: totalizadoresVendasIniciais,
+  pendingSales: [],
   pendingSalesCount: 0,
+  rejectedSalesCount: 0,
   isFetching: false,
   isSubmitting: false,
   isSyncingPendingSales: false,
@@ -545,12 +586,13 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
           id: window.crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           payload: dados,
+          idUsuario: getStoredUserId() ?? undefined,
         });
 
-        set((current) => ({
-          pendingSalesCount: current.pendingSalesCount + 1,
+        set({
+          ...summarizePendingSales(await listCurrentUserPendingSales()),
           submitErrorMessage: null,
-        }));
+        });
 
         return { success: true, data: localSale };
       }
@@ -601,16 +643,22 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     }
   },
   hydrateOfflineState: async () => {
-    const pendingSales = await listPendingSales();
-    set({ pendingSalesCount: pendingSales.length });
+    set(summarizePendingSales(await listCurrentUserPendingSales()));
   },
   sincronizarVendasPendentes: async () => {
-    set({ isSyncingPendingSales: true, fetchErrorMessage: null });
+    if (get().isSyncingPendingSales) {
+      return 0;
+    }
+
+    set({ isSyncingPendingSales: true });
 
     try {
-      const pendingSales = await listPendingSales();
+      // Vendas já recusadas pelo servidor esperam decisão do usuário (reenviar
+      // ou descartar) em vez de falhar de novo a cada ciclo.
+      const pendingSales = (await listCurrentUserPendingSales()).filter(
+        (sale) => !sale.ultimoErro,
+      );
       let syncedCount = 0;
-      let failedCount = 0;
 
       // Envio em sequência: preserva a ordem das vendas e evita disputa pelo
       // bloqueio de estoque, que fazia vendas válidas falharem de forma arbitrária.
@@ -627,24 +675,23 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
           await removePendingSale(sale.id);
           syncedCount += 1;
         } catch (error) {
-          // Sem conexão, as demais vendas também falhariam: tenta no próximo ciclo.
-          if (getProblemDetailsFromError(error).status === 0) {
-            failedCount = pendingSales.length - syncedCount;
+          const problem = getProblemDetailsFromError(error);
+
+          // Sem conexão ou servidor indisponível, as demais também falhariam:
+          // mantém a fila intacta e tenta no próximo ciclo.
+          if (isTransientSyncStatus(problem.status)) {
             break;
           }
 
-          failedCount += 1;
+          await addPendingSale({
+            ...sale,
+            ultimoErro: problem.detail,
+            tentativas: (sale.tentativas ?? 0) + 1,
+          });
         }
       }
 
-      const remainingSales = await listPendingSales();
-      set({
-        pendingSalesCount: remainingSales.length,
-        fetchErrorMessage:
-          failedCount > 0
-            ? `${failedCount} ${failedCount === 1 ? 'venda não pôde ser sincronizada' : 'vendas não puderam ser sincronizadas'}.`
-            : null,
-      });
+      set(summarizePendingSales(await listCurrentUserPendingSales()));
 
       if (syncedCount > 0) {
         await get().fetchVendas({ pagina: 1 });
@@ -654,6 +701,21 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     } finally {
       set({ isSyncingPendingSales: false });
     }
+  },
+  reenviarVendaPendente: async (id) => {
+    const pendingSale = (await listPendingSales()).find(
+      (sale) => sale.id === id,
+    );
+
+    if (pendingSale) {
+      await addPendingSale({ ...pendingSale, ultimoErro: undefined });
+    }
+
+    await get().sincronizarVendasPendentes();
+  },
+  descartarVendaPendente: async (id) => {
+    await removePendingSale(id);
+    set(summarizePendingSales(await listCurrentUserPendingSales()));
   },
   clearSubmitError: () => {
     set({ submitErrorMessage: null });
@@ -673,7 +735,9 @@ export const saleStoreSelectors = {
   totalPaginas: (state: SaleStoreState) => state.totalPaginas,
   totalFeiras: (state: SaleStoreState) => state.totalFeiras,
   totalizadores: (state: SaleStoreState) => state.totalizadores,
+  pendingSales: (state: SaleStoreState) => state.pendingSales,
   pendingSalesCount: (state: SaleStoreState) => state.pendingSalesCount,
+  rejectedSalesCount: (state: SaleStoreState) => state.rejectedSalesCount,
   isFetching: (state: SaleStoreState) => state.isFetching,
   isSubmitting: (state: SaleStoreState) => state.isSubmitting,
   isSyncingPendingSales: (state: SaleStoreState) => state.isSyncingPendingSales,
@@ -696,6 +760,9 @@ export const saleStoreSelectors = {
   hydrateOfflineState: (state: SaleStoreState) => state.hydrateOfflineState,
   sincronizarVendasPendentes: (state: SaleStoreState) =>
     state.sincronizarVendasPendentes,
+  reenviarVendaPendente: (state: SaleStoreState) => state.reenviarVendaPendente,
+  descartarVendaPendente: (state: SaleStoreState) =>
+    state.descartarVendaPendente,
   clearSubmitError: (state: SaleStoreState) => state.clearSubmitError,
 };
 
