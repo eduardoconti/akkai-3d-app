@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import CashRegisterDetailsDialog from '@/features/finance/components/cash-register-details-dialog';
@@ -18,6 +18,7 @@ import {
   type DataTableColumn,
   type Feira,
   type PesquisaPaginadaCaixas,
+  StatusChip,
 } from '@/shared';
 
 const periodoInicial = getMonthRangeInput();
@@ -126,11 +127,9 @@ export default function FinanceCashRegistersPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (caixa) => (
-        <Chip
-          size="small"
-          color={caixa.status === 'ABERTO' ? 'success' : 'default'}
+        <StatusChip
+          tone={caixa.status === 'ABERTO' ? 'success' : 'default'}
           label={caixa.status === 'ABERTO' ? 'Aberto' : 'Fechado'}
-          variant="outlined"
         />
       ),
     },

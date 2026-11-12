@@ -8,10 +8,13 @@ export { default as EmptyState } from './components/feedback/empty-state';
 export { default as ConfirmDialog } from './components/feedback/confirm-dialog';
 export { default as GlobalFeedbackSnackbar } from './components/feedback/global-feedback-snackbar';
 export { default as LoadingState } from './components/feedback/loading-state';
+export { default as FloatingTooltip } from './components/feedback/floating-tooltip';
 export { default as PageHeader } from './components/page-header';
 export { BrandLogo, BrandMark } from './components/brand/brand-mark';
 export { usePageTitle } from './hooks/use-page-title';
 export { default as StatCard } from './components/stat-card';
+export { default as StatusChip } from './components/status-chip';
+export type { StatusChipTone } from './components/status-chip';
 export { default as ResponsiveDataTable } from './components/data-table/responsive-data-table';
 export type {
   DataTableColumn,
@@ -150,6 +153,10 @@ export {
 } from './utils/format-currency';
 export { formatLocalDate, type LocalDateFormat } from './utils/date';
 export {
+  summarizeSelection,
+  type FilterOption,
+} from './utils/summarize-selection';
+export {
   buildCsv,
   downloadCsv,
   formatCentsForCsv,
@@ -163,3 +170,12 @@ export {
   type DateRangeValue,
 } from './utils/date-range';
 export { useFormDialog } from './hooks/use-form-dialog';
+export { useFloatingTooltip } from './hooks/use-floating-tooltip';
+export { useRunOnMount } from './hooks/use-run-on-mount';
+export { useHorizontalOverflow } from './hooks/use-horizontal-overflow';
+export { getOverflowFadeSx } from './styles/overflow-fade';
+export type {
+  FloatingTooltipContent,
+  FloatingTooltipLine,
+  FloatingTooltipState,
+} from './hooks/use-floating-tooltip';

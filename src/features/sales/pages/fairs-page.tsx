@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Chip, IconButton, Stack, Tooltip } from '@mui/material';
+import { Alert, IconButton, Stack, Tooltip } from '@mui/material';
 import { LocalOffer } from '@mui/icons-material';
 import FairDialog from '../components/fair-dialog';
 import FairProductPricesDialog from '../components/fair-product-prices-dialog';
@@ -10,6 +10,7 @@ import {
   type Feira,
   PageHeader,
   ResponsiveDataTable,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -57,10 +58,8 @@ export default function FairsPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (feira) => (
-        <Chip
-          size="small"
-          color={feira.ativa ? 'success' : 'default'}
-          variant="outlined"
+        <StatusChip
+          tone={feira.ativa ? 'success' : 'default'}
           label={feira.ativa ? 'Ativa' : 'Inativa'}
         />
       ),

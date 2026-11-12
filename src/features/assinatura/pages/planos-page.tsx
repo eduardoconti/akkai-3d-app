@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Chip, Stack, Typography } from '@mui/material';
+import { Alert, Stack, Typography } from '@mui/material';
 import { EditPlanDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -13,6 +13,7 @@ import {
   PageHeader,
   type PlanoAssinatura,
   ResponsiveDataTable,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -59,18 +60,16 @@ export default function PlanosPage() {
     {
       id: 'descricao',
       header: 'Descrição',
-      cell: (p) => p.descricao ?? '—',
+      cell: (p) => p.descricao ?? '-',
     },
     {
       id: 'status',
       header: 'Status',
       mobile: 'badge',
       cell: (p) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={p.ativo ? 'Ativo' : 'Inativo'}
-          color={p.ativo ? 'success' : 'default'}
-          variant="outlined"
+          tone={p.ativo ? 'success' : 'default'}
         />
       ),
     },

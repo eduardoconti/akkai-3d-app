@@ -53,25 +53,27 @@ export function getActiveSubmenuStyles(theme: Theme) {
 }
 
 /**
- * Barra de rolagem fina que só se destaca quando o ponteiro está sobre a
- * área rolável. Aplicada a todo o app pelo `MuiCssBaseline`, para que a página,
- * os diálogos, as tabelas e o menu lateral tenham a mesma barra.
+ * Barra de rolagem fina, sempre levemente visível (para indicar que a área
+ * rola) e destacada quando o ponteiro está sobre ela. Aplicada a todo o app
+ * pelo `MuiCssBaseline`, para que a página, os diálogos, as tabelas e o menu
+ * lateral tenham a mesma barra.
  */
 export function getDiscreetScrollbarStyles(theme: Theme) {
-  const thumb = alpha(theme.palette.text.secondary, 0.4);
+  const restingThumb = alpha(theme.palette.text.secondary, 0.22);
+  const thumb = alpha(theme.palette.text.secondary, 0.45);
 
   return {
     scrollbarWidth: 'thin',
-    scrollbarColor: 'transparent transparent',
+    scrollbarColor: `${restingThumb} transparent`,
     '&:hover': {
       scrollbarColor: `${thumb} transparent`,
     },
     '@supports not (scrollbar-color: auto)': {
-      '&::-webkit-scrollbar': { width: 6 },
+      '&::-webkit-scrollbar': { width: 6, height: 6 },
       '&::-webkit-scrollbar-track': { background: 'transparent' },
       '&::-webkit-scrollbar-thumb': {
         borderRadius: 999,
-        backgroundColor: 'transparent',
+        backgroundColor: restingThumb,
       },
       '&:hover::-webkit-scrollbar-thumb': { backgroundColor: thumb },
     },

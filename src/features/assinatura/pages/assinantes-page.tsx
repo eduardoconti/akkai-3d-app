@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { EditAssinanteDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
@@ -19,6 +19,7 @@ import {
   ResponsiveDataTable,
   SearchFilterPanel,
   type StatusAssinante,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -91,12 +92,12 @@ export default function AssinantesPage() {
     {
       id: 'email',
       header: 'E-mail',
-      cell: (a) => a.email ?? '—',
+      cell: (a) => a.email ?? '-',
     },
     {
       id: 'telefone',
       header: 'Telefone',
-      cell: (a) => a.telefone ?? '—',
+      cell: (a) => a.telefone ?? '-',
     },
     {
       id: 'plano',
@@ -108,11 +109,9 @@ export default function AssinantesPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (a) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={STATUS_ASSINANTE_LABEL[a.status]}
-          color={STATUS_ASSINANTE_COLOR[a.status]}
-          variant="outlined"
+          tone={STATUS_ASSINANTE_COLOR[a.status]}
         />
       ),
     },

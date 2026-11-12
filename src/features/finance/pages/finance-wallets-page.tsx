@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Chip,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { AccountBalanceWallet, Edit } from '@mui/icons-material';
 import { EditWalletDialog, WalletAdjustmentDialog } from '@/features/finance';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
@@ -21,6 +14,7 @@ import {
   type DataTableColumn,
   PageHeader,
   ResponsiveDataTable,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -77,11 +71,9 @@ export default function FinanceWalletsPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (c) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={c.ativa ? 'Ativa' : 'Inativa'}
-          color={c.ativa ? 'success' : 'default'}
-          variant="outlined"
+          tone={c.ativa ? 'success' : 'default'}
         />
       ),
     },

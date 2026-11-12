@@ -26,6 +26,25 @@ type LocationState = {
   };
 };
 
+const LOGIN_PATTERN = /^[A-Za-z]+$/;
+
+/** Mesmas regras da API: só letras, com no mínimo 3 caracteres. */
+function getLoginError(value: string): string | null {
+  if (value.trim().length === 0) {
+    return 'Informe o login.';
+  }
+
+  if (!LOGIN_PATTERN.test(value)) {
+    return 'Use apenas letras, sem espaços, números ou acentos.';
+  }
+
+  if (value.length < 3) {
+    return 'O login deve ter no mínimo 3 caracteres.';
+  }
+
+  return null;
+}
+
 export default function LoginPage() {
   usePageTitle('Entrar');
   const navigate = useNavigate();
@@ -36,6 +55,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
+  const loginFieldError = showFieldErrors ? getLoginError(loginValue) : null;
+  const passwordFieldError =
+    showFieldErrors && password.length === 0 ? 'Informe a senha.' : null;
 
   const state = location.state as LocationState | null;
   const redirectTo = state?.from?.pathname ?? '/vendas';
@@ -48,6 +71,13 @@ export default function LoginPage() {
     }
 
     setErrorMessage(null);
+
+    // Valida aqui para explicar o problema, em vez de deixar o botão inativo.
+    if (getLoginError(loginValue) || password.length === 0) {
+      setShowFieldErrors(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -166,7 +196,10 @@ export default function LoginPage() {
                   spellCheck: false,
                 },
               }}
-              helperText="Apenas letras, com no minimo 3 caracteres."
+              error={Boolean(loginFieldError)}
+              helperText={
+                loginFieldError ?? 'Apenas letras, com no mínimo 3 caracteres.'
+              }
             />
 
             <TextField
@@ -177,6 +210,8 @@ export default function LoginPage() {
               onChange={(event) => setPassword(event.target.value)}
               name="password"
               autoComplete="current-password"
+              error={Boolean(passwordFieldError)}
+              helperText={passwordFieldError}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -211,7 +246,11 @@ export default function LoginPage() {
               type="submit"
               disabled={isSubmitting || isLoading}
             >
-              {isSubmitting ? 'Entrando...' : 'Entrar'}
+              {isSubmitting
+                ? 'Entrando...'
+                : isLoading
+                  ? 'Verificando sessão...'
+                  : 'Entrar'}
             </Button>
           </Stack>
         </Box>

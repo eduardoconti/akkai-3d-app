@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import {
   Alert,
   Box,
-  Chip,
   CircularProgress,
   Dialog,
   DialogContent,
@@ -27,6 +26,7 @@ import { useProductStore } from '../store/use-product-store';
 import {
   PAGINATED_SEARCH_PAGE_SIZE_OPTIONS,
   type MovimentacaoEstoque,
+  StatusChip,
 } from '@/shared';
 
 interface StockHistoryDialogProps {
@@ -170,18 +170,12 @@ export default function StockHistoryDialog({
                             flexWrap="wrap"
                             useFlexGap
                           >
-                            <Chip
+                            <StatusChip
                               label={getMovementOriginLabel(movimentacao)}
-                              size="small"
-                              color={getMovementTypeColor(movimentacao.tipo)}
+                              tone={getMovementTypeColor(movimentacao.tipo)}
                             />
                             {movimentacao.brinde ? (
-                              <Chip
-                                label="Brinde"
-                                size="small"
-                                color="warning"
-                                variant="outlined"
-                              />
+                              <StatusChip label="Brinde" tone="warning" />
                             ) : null}
                           </Stack>
                         </Stack>
@@ -232,12 +226,7 @@ export default function StockHistoryDialog({
                                 {getMovementOriginLabel(movimentacao)}
                               </Typography>
                               {movimentacao.brinde ? (
-                                <Chip
-                                  label="Brinde"
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                />
+                                <StatusChip label="Brinde" tone="warning" />
                               ) : null}
                             </Stack>
                           </Box>
@@ -285,10 +274,9 @@ export default function StockHistoryDialog({
                             {formatDateTime(movimentacao.dataInclusao)}
                           </TableCell>
                           <TableCell>
-                            <Chip
+                            <StatusChip
                               label={getMovementTypeLabel(movimentacao.tipo)}
-                              size="small"
-                              color={getMovementTypeColor(movimentacao.tipo)}
+                              tone={getMovementTypeColor(movimentacao.tipo)}
                             />
                           </TableCell>
                           <TableCell>
@@ -303,12 +291,7 @@ export default function StockHistoryDialog({
                                 {getMovementOriginLabel(movimentacao)}
                               </span>
                               {movimentacao.brinde ? (
-                                <Chip
-                                  label="Brinde"
-                                  size="small"
-                                  color="warning"
-                                  variant="outlined"
-                                />
+                                <StatusChip label="Brinde" tone="warning" />
                               ) : null}
                             </Stack>
                           </TableCell>

@@ -7,6 +7,7 @@ import type {
   RoleWithPermissions,
 } from '@/features/auth/api/permissions-admin-api';
 import UserPermissionsDialog from '@/features/auth/components/user-permissions-dialog';
+import { StatusChip } from '@/shared';
 
 interface UsersPermissionsPanelProps {
   users: AdminUser[];
@@ -70,10 +71,8 @@ export default function UsersPermissionsPanel({
       header: 'Status',
       mobile: 'badge',
       cell: (user) => (
-        <Chip
-          size="small"
-          color={user.isActive ? 'success' : 'default'}
-          variant="outlined"
+        <StatusChip
+          tone={user.isActive ? 'success' : 'default'}
           label={user.isActive ? 'Ativo' : 'Inativo'}
         />
       ),

@@ -20,6 +20,7 @@ import {
   useValueVisibilityStore,
   type DataTableColumn,
   type ProblemDetails,
+  useRunOnMount,
 } from '@/shared';
 
 function formatQuantity(value: number): string {
@@ -106,6 +107,9 @@ export default function ReportsProductionPage() {
       direcao,
     });
   };
+
+  // Abre já com o resultado dos filtros padrão, sem exigir "Pesquisar".
+  useRunOnMount(handleSubmit);
 
   const handleClearFilters = () => {
     setDateRange({ startValue: '', endValue: '' });

@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Autocomplete,
+  Checkbox,
   Chip,
+  ListItemText,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -29,6 +32,8 @@ import {
   type Produto,
   type ResultadoPaginado,
   type TipoMovimentacaoEstoque,
+  StatusChip,
+  summarizeSelection,
 } from '@/shared';
 
 type TipoOption = {
@@ -70,6 +75,10 @@ const FILTROS_INICIAIS: FiltrosAplicados = {
   origens: ORIGENS_PADRAO.map((origem) => origem.value),
 };
 
+const TODOS_OS_TIPOS = 'TODOS';
+type TipoFiltro = TipoMovimentacaoEstoque | typeof TODOS_OS_TIPOS;
+const ORIGENS_PADRAO_VALORES = ORIGENS_PADRAO.map((origem) => origem.value);
+
 function getTipoLabel(tipo: TipoMovimentacaoEstoque): string {
   return tipo === 'E' ? 'Entrada' : 'Saída';
 }
@@ -102,8 +111,10 @@ export default function ProductStockMovementsPage() {
     startValue: '',
     endValue: '',
   });
-  const [tipos, setTipos] = useState<TipoOption[]>(TIPO_OPTIONS);
-  const [origens, setOrigens] = useState<OrigemOption[]>(ORIGENS_PADRAO);
+  const [tipo, setTipo] = useState<TipoFiltro>(TODOS_OS_TIPOS);
+  const [origens, setOrigens] = useState<OrigemMovimentacaoEstoque[]>(
+    ORIGENS_PADRAO_VALORES,
+  );
   const [produto, setProduto] = useState<Produto | null>(null);
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [resultado, setResultado] =
@@ -115,11 +126,15 @@ export default function ProductStockMovementsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-  const selectedTipos = useMemo(() => tipos.map((tipo) => tipo.value), [tipos]);
-  const selectedOrigens = useMemo(
-    () => origens.map((origem) => origem.value),
-    [origens],
+  const selectedTipos = useMemo<TipoMovimentacaoEstoque[]>(
+    () =>
+      tipo === TODOS_OS_TIPOS
+        ? TIPO_OPTIONS.map((option) => option.value)
+        : [tipo],
+    [tipo],
   );
+  const selectedOrigens = origens;
+  const semOrigem = origens.length === 0;
 
   const fetchMovimentacoes = useCallback(async (query: FiltrosAplicados) => {
     setProblem(null);
@@ -175,8 +190,8 @@ export default function ProductStockMovementsPage() {
 
   const handleClearFilters = () => {
     setDateRange({ startValue: '', endValue: '' });
-    setTipos(TIPO_OPTIONS);
-    setOrigens(ORIGENS_PADRAO);
+    setTipo(TODOS_OS_TIPOS);
+    setOrigens(ORIGENS_PADRAO_VALORES);
     setProduto(null);
     void fetchMovimentacoes(FILTROS_INICIAIS);
   };
@@ -222,10 +237,9 @@ export default function ProductStockMovementsPage() {
       mobile: 'badge',
       exportValue: (movimentacao) => getTipoLabel(movimentacao.tipo),
       cell: (movimentacao) => (
-        <Chip
+        <StatusChip
           label={getTipoLabel(movimentacao.tipo)}
-          size="small"
-          color={getTipoColor(movimentacao.tipo)}
+          tone={getTipoColor(movimentacao.tipo)}
         />
       ),
     },
@@ -276,8 +290,9 @@ export default function ProductStockMovementsPage() {
         onSearch={handleSearch}
         onClear={handleClearFilters}
         isLoading={isLoading}
+        searchDisabled={semOrigem}
       >
-        <Grid size={{ xs: 12, md: 5, lg: 5 }}>
+        <Grid size={{ xs: 12, md: 7, lg: 5 }}>
           <DateRangePickerField
             label="Período"
             startValue={dateRange.startValue}
@@ -286,39 +301,66 @@ export default function ProductStockMovementsPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 3, lg: 4 }}>
-          <Autocomplete
-            multiple
-            options={TIPO_OPTIONS}
-            value={tipos}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) =>
-              option.value === value.value
-            }
-            onChange={(_event, value) => setTipos(value)}
-            renderInput={(params) => (
-              <TextField {...params} label="Tipo" placeholder="Tipo" />
-            )}
-          />
+        {/* Só duas opções: um select simples em vez de chips. */}
+        <Grid size={{ xs: 12, md: 5, lg: 3 }}>
+          <TextField
+            select
+            fullWidth
+            label="Tipo"
+            value={tipo}
+            onChange={(event) => setTipo(event.target.value as TipoFiltro)}
+          >
+            <MenuItem value={TODOS_OS_TIPOS}>Todos</MenuItem>
+            {TIPO_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 4, lg: 11 }}>
-          <Autocomplete
-            multiple
-            options={ORIGEM_OPTIONS}
+        {/* Várias origens: caixas de seleção, com um resumo em texto no campo. */}
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
+          <TextField
+            select
+            fullWidth
+            label="Origem"
             value={origens}
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) =>
-              option.value === value.value
+            error={semOrigem}
+            helperText={
+              semOrigem ? 'Selecione ao menos uma origem.' : undefined
             }
-            onChange={(_event, value) => setOrigens(value)}
-            renderInput={(params) => (
-              <TextField {...params} label="Origem" placeholder="Origem" />
-            )}
-          />
+            onChange={(event) => {
+              const { value } = event.target as { value: unknown };
+              setOrigens(value as OrigemMovimentacaoEstoque[]);
+            }}
+            slotProps={{
+              select: {
+                multiple: true,
+                displayEmpty: true,
+                renderValue: (selected) =>
+                  summarizeSelection(
+                    selected as OrigemMovimentacaoEstoque[],
+                    ORIGEM_OPTIONS,
+                    'origens',
+                  ) || 'Nenhuma',
+              },
+            }}
+          >
+            {ORIGEM_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value} dense>
+                <Checkbox
+                  size="small"
+                  checked={origens.includes(option.value)}
+                  sx={{ py: 0, pl: 0 }}
+                />
+                <ListItemText primary={option.label} />
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 20 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <Autocomplete
             options={produtos}
             value={produto}
@@ -327,7 +369,7 @@ export default function ProductStockMovementsPage() {
             isOptionEqualToValue={(option, value) => option.id === value.id}
             onChange={(_event, value) => setProduto(value)}
             renderInput={(params) => (
-              <TextField {...params} label="Produto" placeholder="Produto" />
+              <TextField {...params} label="Produto" placeholder="Todos" />
             )}
           />
         </Grid>

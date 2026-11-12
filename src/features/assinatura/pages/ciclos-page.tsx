@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { EditCicloDialog } from '@/features/assinatura';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
@@ -20,6 +20,7 @@ import {
   ResponsiveDataTable,
   SearchFilterPanel,
   type StatusCiclo,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -113,11 +114,9 @@ export default function CiclosPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (c) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={STATUS_CICLO_LABEL[c.status]}
-          color={STATUS_CICLO_COLOR[c.status]}
-          variant="outlined"
+          tone={STATUS_CICLO_COLOR[c.status]}
         />
       ),
     },
@@ -130,7 +129,7 @@ export default function CiclosPage() {
     {
       id: 'rastreio',
       header: 'Rastreio',
-      cell: (c) => c.codigoRastreio ?? '—',
+      cell: (c) => c.codigoRastreio ?? '-',
     },
   ];
 

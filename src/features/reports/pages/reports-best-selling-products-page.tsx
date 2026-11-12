@@ -30,6 +30,7 @@ import {
   type Feira,
   type ProblemDetails,
   type TipoVenda,
+  useRunOnMount,
 } from '@/shared';
 
 function formatApiDateToDisplay(value: string): string {
@@ -225,6 +226,9 @@ export default function ReportsBestSellingProductsPage() {
     }
   };
 
+  // Abre já com o resultado dos filtros padrão, sem exigir "Pesquisar".
+  useRunOnMount(() => buscarRelatorio());
+
   const handleClearFilters = () => {
     setDateRange({ startValue: '', endValue: '' });
     setTipoVenda('TODOS');
@@ -338,6 +342,8 @@ export default function ReportsBestSellingProductsPage() {
         <Grid size={{ xs: 12, md: 6, lg: tipoVenda === 'FEIRA' ? 5 : 10 }}>
           <Autocomplete
             multiple
+            limitTags={2}
+            getLimitTagsText={(more) => `+${more}`}
             options={categorias}
             value={categoriasSelecionadas}
             loading={isLoadingFilters}

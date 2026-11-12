@@ -11,8 +11,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Paper,
-  Portal,
   Stack,
   Table,
   TableBody,
@@ -38,14 +36,15 @@ import {
   getPaymentMethodLabel,
   getSaleTypeLabel,
 } from '../utils/format-sale-labels';
-import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import { listAllProducts } from '@/features/products/api/products-api';
 import {
   DateRangePickerField,
   PageHeader,
   StatCard,
   ProductAutocompleteField,
+  FloatingTooltip,
   ResponsiveDataTable,
+  useFloatingTooltip,
   SearchFilterPanel,
   TableColumnVisibilityButton,
   formatCentsForCsv,
@@ -73,17 +72,6 @@ function getSaleItemName(vendaItem: Venda['itens'][number]): string {
 
 function formatSaleValue(value: number, hideValues: boolean): string {
   return formatCurrencyWithVisibility(value, hideValues);
-}
-
-interface CardTooltipLine {
-  label: string;
-  value: string;
-}
-
-interface CardTooltipState {
-  x: number;
-  y: number;
-  lines: CardTooltipLine[];
 }
 
 function getSalePayments(venda: Venda): Venda['pagamentos'] {
@@ -162,9 +150,6 @@ const DEFAULT_SALE_TABLE_COLUMN_IDS: readonly SaleTableColumnId[] = [
   'feira',
   'carteira',
   'pagamento',
-  'desconto',
-  'taxa',
-  'imposto',
   'total',
   'liquido',
 ];
@@ -278,7 +263,6 @@ function SaleDetails({ venda, hideValues }: SaleDetailsProps) {
 }
 
 export default function SalesPage() {
-  const { openNewSaleDialog } = useMainLayoutActions();
   const isOnline = useOnlineStatus();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const hideValues = useValueVisibilityStore((state) => state.hideValues);
@@ -342,13 +326,13 @@ export default function SalesPage() {
     null,
   );
   const [isDeletingSale, setIsDeletingSale] = useState(false);
-  const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
+  const { tooltip, getTargetProps } = useFloatingTooltip();
   const [expandedSaleIds, setExpandedSaleIds] = useState<Set<number>>(
     () => new Set(),
   );
   const { visibleColumnIds, toggleColumnVisibility, resetColumnVisibility } =
     useTableColumnVisibility<SaleTableColumnId>(
-      'akkai:sales-page:vendas:columns',
+      'akkai:sales-page:vendas:columns:v2',
       SALE_TABLE_COLUMNS,
       DEFAULT_SALE_TABLE_COLUMN_IDS,
     );
@@ -616,6 +600,7 @@ export default function SalesPage() {
     {
       id: 'carteira',
       header: 'Carteira',
+      nowrap: true,
       exportValue: (venda) => getSaleWalletLabel(venda),
       cell: (venda) => getSaleWalletLabel(venda),
     },
@@ -691,55 +676,13 @@ export default function SalesPage() {
     },
   ];
 
-  const handleCardMouseMove =
-    (lines: CardTooltipLine[]) => (event: React.MouseEvent<HTMLDivElement>) => {
-      setCardTooltip({ x: event.clientX, y: event.clientY, lines });
-    };
-
   return (
     <Stack spacing={3}>
-      {cardTooltip ? (
-        <Portal>
-          <Paper
-            elevation={3}
-            sx={{
-              position: 'fixed',
-              left: cardTooltip.x + 14,
-              top: cardTooltip.y - 14,
-              px: 1.5,
-              py: 1,
-              pointerEvents: 'none',
-              zIndex: 1400,
-              borderRadius: 2,
-            }}
-          >
-            <Stack spacing={0.5}>
-              {cardTooltip.lines.map((line) => (
-                <Stack
-                  key={line.label}
-                  direction="row"
-                  spacing={1.5}
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="caption" color="text.secondary">
-                    {line.label}
-                  </Typography>
-                  <Typography variant="caption" fontWeight={700}>
-                    {line.value}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
-          </Paper>
-        </Portal>
-      ) : null}
+      <FloatingTooltip tooltip={tooltip} />
 
       <PageHeader
         title="Vendas"
         description="Acompanhe as últimas vendas com contexto de feira, pagamento e itens."
-        actionLabel="Nova venda"
-        onAction={openNewSaleDialog}
         actions={
           <Button
             variant="outlined"
@@ -884,21 +827,22 @@ export default function SalesPage() {
               hideValues,
             )}
             sx={{ cursor: 'default' }}
-            onMouseMove={handleCardMouseMove([
-              {
-                label: 'Catálogo',
-                value: String(totalizadores.quantidadeItensCatalogo ?? 0),
-              },
-              {
-                label: 'Brindes',
-                value: String(totalizadores.quantidadeBrindes ?? 0),
-              },
-              {
-                label: 'Avulsos',
-                value: String(totalizadores.quantidadeItensAvulsos ?? 0),
-              },
-            ])}
-            onMouseLeave={() => setCardTooltip(null)}
+            {...getTargetProps('card-itens', {
+              lines: [
+                {
+                  label: 'Catálogo',
+                  value: String(totalizadores.quantidadeItensCatalogo ?? 0),
+                },
+                {
+                  label: 'Brindes',
+                  value: String(totalizadores.quantidadeBrindes ?? 0),
+                },
+                {
+                  label: 'Avulsos',
+                  value: String(totalizadores.quantidadeItensAvulsos ?? 0),
+                },
+              ],
+            })}
           />
         </Grid>
         <Grid size={{ xs: 6, md: 3 }}>

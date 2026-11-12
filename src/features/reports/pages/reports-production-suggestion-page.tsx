@@ -15,6 +15,7 @@ import {
   getProblemDetailsFromError,
   type DataTableColumn,
   type ProblemDetails,
+  useRunOnMount,
 } from '@/shared';
 
 function formatQuantity(value: number): string {
@@ -102,6 +103,9 @@ export default function ReportsProductionSuggestionPage() {
       direcao,
     });
   };
+
+  // Abre já com o resultado dos filtros padrão, sem exigir "Pesquisar".
+  useRunOnMount(handleSubmit);
 
   const handleClearFilters = () => {
     setFeirasHistorico(8);
@@ -204,7 +208,8 @@ export default function ReportsProductionSuggestionPage() {
         <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Últimas feiras"
+            label="Feiras analisadas"
+            helperText="Quantas feiras recentes entram na média de vendas."
             type="number"
             value={feirasHistorico}
             slotProps={{
@@ -219,7 +224,8 @@ export default function ReportsProductionSuggestionPage() {
         <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Feiras planejamento"
+            label="Feiras a cobrir"
+            helperText="Para quantas próximas feiras produzir."
             type="number"
             value={feirasPlanejamento}
             slotProps={{
@@ -236,7 +242,8 @@ export default function ReportsProductionSuggestionPage() {
         <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
           <TextField
             fullWidth
-            label="Feiras segurança"
+            label="Margem de segurança"
+            helperText="Feiras extras de estoque, para imprevistos."
             type="number"
             value={feirasEstoqueSeguranca}
             slotProps={{

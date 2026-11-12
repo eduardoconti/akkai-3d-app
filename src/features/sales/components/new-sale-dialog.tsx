@@ -837,8 +837,12 @@ export default function NewSaleDialog({
       : feiras.find((feira) => feira.id === form.idFeira);
   const configSummary = [
     formatLocalDate(form.dataVenda, 'display-date'),
-    saleTypeLabels[form.tipo],
-    form.tipo === 'FEIRA' ? (selectedFair?.nome ?? 'sem feira') : null,
+    // "Feira • sem feira" era contraditório: tipo e feira viram um só trecho.
+    form.tipo === 'FEIRA'
+      ? selectedFair
+        ? `Feira ${selectedFair.nome}`
+        : 'Feira não escolhida'
+      : saleTypeLabels[form.tipo],
     selectedWallet?.nome ?? 'sem carteira',
   ]
     .filter(Boolean)

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Chip, Stack, Typography } from '@mui/material';
+import { Alert, Stack, Typography } from '@mui/material';
 import { useShallow } from 'zustand/react/shallow';
 import {
   financeStoreSelectors,
@@ -12,6 +12,7 @@ import {
   type DataTableColumn,
   PageHeader,
   ResponsiveDataTable,
+  StatusChip,
 } from '@/shared';
 import type { TaxaMeioPagamentoCarteira } from '@/shared/lib/types/domain';
 import PaymentMethodWalletFeeDialog from '../components/payment-method-wallet-fee-dialog';
@@ -43,11 +44,9 @@ const colunasTaxas: DataTableColumn<TaxaMeioPagamentoCarteira>[] = [
     header: 'Status',
     mobile: 'badge',
     cell: (taxa) => (
-      <Chip
-        size="small"
+      <StatusChip
         label={taxa.ativa ? 'Ativa' : 'Inativa'}
-        color={taxa.ativa ? 'success' : 'default'}
-        variant="outlined"
+        tone={taxa.ativa ? 'success' : 'default'}
       />
     ),
   },

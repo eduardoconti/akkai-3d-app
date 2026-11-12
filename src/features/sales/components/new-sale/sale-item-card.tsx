@@ -302,7 +302,11 @@ export default function SaleItemCard({
                   item.tipoItem === 'CATALOGO' ? 'AVULSO' : 'CATALOGO',
                 )
               }
-              sx={{ textTransform: 'none' }}
+              sx={{
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
             >
               {item.tipoItem === 'CATALOGO' ? 'Item avulso' : 'Usar catálogo'}
             </Button>

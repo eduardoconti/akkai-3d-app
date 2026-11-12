@@ -18,6 +18,7 @@ import {
   type Feira,
   type ProblemDetails,
   type TipoVenda,
+  useRunOnMount,
 } from '@/shared';
 import { getSaleTypeLabel } from '@/features/sales/utils/format-sale-labels';
 
@@ -159,6 +160,9 @@ export default function ReportsSummaryPage() {
       setIsLoading(false);
     }
   };
+
+  // Abre já com o resultado dos filtros padrão, sem exigir "Pesquisar".
+  useRunOnMount(handleSubmit);
 
   const handleClearFilters = () => {
     setDateRange({ startValue: '', endValue: '' });

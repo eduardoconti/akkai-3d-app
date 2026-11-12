@@ -8,6 +8,7 @@ import {
 import {
   Alert,
   Box,
+  Button,
   CircularProgress,
   Collapse,
   IconButton,
@@ -20,19 +21,26 @@ import Grid from '@mui/material/Grid';
 import {
   ArrowDownward,
   ArrowUpward,
+  Check,
   DragIndicator,
   ExpandLess,
   ExpandMore,
+  Tune,
   ViewAgenda,
   ViewWeek,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import {
   formatCurrencyWithVisibility,
+  FloatingTooltip,
   formatValueWithVisibility,
   getProblemDetailsFromError,
   PageHeader,
+  StatCard,
   useValueVisibilityStore,
+  getOverflowFadeSx,
+  useFloatingTooltip,
+  useHorizontalOverflow,
   type ProblemDetails,
 } from '@/shared';
 import {
@@ -45,6 +53,10 @@ import {
   type DashboardMonthlySummaryResponse,
   type DashboardTopProductsResponse,
 } from '../api/reports-api';
+import {
+  getContinuousMonthRange,
+  getNiceAxisMax,
+} from '../utils/monthly-chart';
 
 const MONTH_LABELS = [
   'Jan',
@@ -61,6 +73,20 @@ const MONTH_LABELS = [
   'Dez',
 ];
 
+/** Cores das séries do gráfico mensal (também usadas na legenda). */
+const CHART_COLORS = {
+  sales: '#16A06A',
+  expenses: '#D9363E',
+  positiveBalance: '#0B7FC0',
+  negativeBalance: '#E08A00',
+} as const;
+
+const BAR_WIDTH = 14;
+const BAR_GAP = 6;
+const BAR_CLUSTER_WIDTH = 3 * BAR_WIDTH + 2 * BAR_GAP;
+const MIN_MONTH_GROUP_WIDTH = 64;
+const MAX_MONTH_GROUP_WIDTH = 120;
+
 const DASHBOARD_WIDGET_ORDER_KEY = 'akkai.dashboard.widget-order';
 const DASHBOARD_WIDGET_COLLAPSE_KEY = 'akkai.dashboard.widget-collapse';
 const DASHBOARD_WIDGET_WIDTH_KEY = 'akkai.dashboard.widget-width';
@@ -70,34 +96,6 @@ type DashboardWidgetId =
   | 'top-products'
   | 'expense-categories';
 type DashboardWidgetWidth = 'full' | 'half';
-
-interface ChartTooltipState {
-  x: number;
-  y: number;
-  color: string;
-  label: string;
-  value: number;
-}
-
-interface RankingTooltipState {
-  x: number;
-  y: number;
-  color: string;
-  label: string;
-  valueLabel: string;
-  percentageLabel: string;
-}
-
-interface CardTooltipLine {
-  label: string;
-  value: string;
-}
-
-interface CardTooltipState {
-  x: number;
-  y: number;
-  lines: CardTooltipLine[];
-}
 
 function getBarHeight(
   value: number,
@@ -225,27 +223,46 @@ function DashboardMonthlyChart({
 }) {
   const chartHeight = 260;
   const chartTop = 24;
-  const chartLeft = 96;
-  const groupWidth = 70;
-  const chartWidth = chartLeft + items.length * groupWidth;
-  const maxPositiveValue = Math.max(
-    ...items.flatMap((item) => [
-      item.valorVendas,
-      item.valorDespesas,
-      Math.max(item.saldo, 0),
-    ]),
-    1,
+  // Largura da coluna fixa do eixo de valores (fora da área que rola).
+  const axisWidth = 96;
+  const {
+    ref: scrollRef,
+    element: scrollElement,
+    overflow,
+    width: containerWidth,
+  } = useHorizontalOverflow<HTMLDivElement>();
+  // Os meses dividem a largura do card; abaixo do mínimo, o gráfico rola.
+  const groupWidth = Math.min(
+    MAX_MONTH_GROUP_WIDTH,
+    Math.max(MIN_MONTH_GROUP_WIDTH, containerWidth / Math.max(items.length, 1)),
   );
-  const maxNegativeValue = Math.max(
-    ...items.map((item) => Math.max(item.saldo * -1, 0)),
-    0,
+  const chartWidth = items.length * groupWidth;
+  const clusterOffset = (groupWidth - BAR_CLUSTER_WIDTH) / 2;
+  // Topo do eixo arredondado (ex.: 9.632 → 10.000) para marcações legíveis.
+  const maxPositiveValue =
+    getNiceAxisMax(
+      Math.max(
+        ...items.flatMap((item) => [
+          item.valorVendas,
+          item.valorDespesas,
+          Math.max(item.saldo, 0),
+        ]),
+      ),
+    ) || 1;
+  const maxNegativeValue = getNiceAxisMax(
+    Math.max(...items.map((item) => Math.max(item.saldo * -1, 0)), 0),
   );
+
+  // Em telas estreitas, começa mostrando os meses mais recentes.
+  useEffect(() => {
+    if (scrollElement) {
+      scrollElement.scrollLeft = scrollElement.scrollWidth;
+    }
+  }, [scrollElement, items.length]);
   const totalDomain = maxPositiveValue + maxNegativeValue || 1;
   const positiveAreaHeight = (maxPositiveValue / totalDomain) * chartHeight;
   const negativeAreaHeight = (maxNegativeValue / totalDomain) * chartHeight;
   const baselineY = chartTop + positiveAreaHeight;
-  const [tooltip, setTooltip] = useState<ChartTooltipState | null>(null);
-
   const getValueY = (value: number): number => {
     if (value >= 0) {
       return baselineY - (value / maxPositiveValue) * positiveAreaHeight;
@@ -268,186 +285,197 @@ function DashboardMonthlyChart({
     maxNegativeValue > 0 ? -maxNegativeValue : null,
   ].filter((tick): tick is number => tick !== null);
 
-  const handleOpenTooltip =
-    (label: string, value: number, color: string) =>
-    (event: React.MouseEvent<SVGRectElement>) => {
-      setTooltip({
-        x: event.clientX,
-        y: event.clientY,
-        color,
-        label,
-        value,
-      });
-    };
+  const { tooltip, getTargetProps } = useFloatingTooltip();
+  const formatValue = (value: number) =>
+    formatCurrencyWithVisibility(value, hideValues);
 
   return (
-    <Box sx={{ overflowX: 'auto', pb: 1, position: 'relative' }}>
-      {tooltip ? (
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            left: tooltip.x + 12,
-            top: tooltip.y - 12,
-            px: 1.25,
-            py: 1,
-            pointerEvents: 'none',
-            zIndex: 1400,
-            borderRadius: 2,
-          }}
-        >
-          <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Box
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 1,
-                  bgcolor: tooltip.color,
-                }}
-              />
-              <Typography variant="caption" fontWeight={700}>
-                {tooltip.label}
-              </Typography>
-            </Stack>
-            <Typography variant="body2">
-              {formatCurrencyWithVisibility(tooltip.value, hideValues)}
-            </Typography>
-          </Stack>
-        </Paper>
-      ) : null}
+    <Box sx={{ display: 'flex', minWidth: 0 }}>
+      <FloatingTooltip tooltip={tooltip} />
 
-      <Box sx={{ minWidth: chartWidth }}>
-        <svg
-          width={chartWidth}
-          height={320}
-          role="img"
-          aria-label="Resumo mensal"
-        >
-          {axisTicks.map((tick) => {
-            const y = getValueY(tick);
+      {/* Eixo fixo: continua visível enquanto as barras rolam no celular. */}
+      <svg width={axisWidth} height={320} aria-hidden style={{ flexShrink: 0 }}>
+        {axisTicks.map((tick) => (
+          <text
+            key={tick}
+            x={axisWidth - 8}
+            y={getValueY(tick) + 4}
+            textAnchor="end"
+            fontSize="11"
+            fill="currentColor"
+            opacity="0.72"
+          >
+            {formatValue(tick)}
+          </text>
+        ))}
+      </svg>
 
-            return (
-              <g key={tick}>
+      <Box sx={[getOverflowFadeSx(overflow), { flexGrow: 1, minWidth: 0 }]}>
+        <Box ref={scrollRef} sx={{ overflowX: 'auto', pb: 1 }}>
+          <Box sx={{ minWidth: chartWidth }}>
+            <svg
+              width={chartWidth}
+              height={320}
+              role="group"
+              aria-label="Resumo mensal de vendas, despesas e saldo"
+            >
+              {axisTicks.map((tick) => (
                 <line
-                  x1={chartLeft - 12}
-                  y1={y}
+                  key={tick}
+                  x1={0}
+                  y1={getValueY(tick)}
                   x2={chartWidth}
-                  y2={y}
+                  y2={getValueY(tick)}
                   stroke="currentColor"
                   opacity={tick === 0 ? 0.2 : 0.08}
+                  aria-hidden
                 />
-                <text
-                  x={chartLeft - 18}
-                  y={y + 4}
-                  textAnchor="end"
-                  fontSize="11"
-                  fill="currentColor"
-                  opacity="0.72"
-                >
-                  {formatCurrencyWithVisibility(tick, hideValues)}
-                </text>
-              </g>
-            );
-          })}
+              ))}
 
-          <line
-            x1={chartLeft - 12}
-            y1={baselineY}
-            x2={chartWidth}
-            y2={baselineY}
-            stroke="currentColor"
-            opacity="0.18"
-          />
+              <line
+                x1={0}
+                y1={baselineY}
+                x2={chartWidth}
+                y2={baselineY}
+                stroke="currentColor"
+                opacity="0.18"
+                aria-hidden
+              />
 
-          {items.map((item, index) => {
-            const startX = chartLeft + index * groupWidth;
-            const monthLabel = MONTH_LABELS[item.mes - 1] ?? String(item.mes);
-            const salesHeight = getBarHeight(
-              item.valorVendas,
-              maxPositiveValue,
-              positiveAreaHeight,
-            );
-            const expenseHeight = getBarHeight(
-              item.valorDespesas,
-              maxPositiveValue,
-              positiveAreaHeight,
-            );
-            const balanceHeight =
-              item.saldo >= 0
-                ? getBarHeight(item.saldo, maxPositiveValue, positiveAreaHeight)
-                : getBarHeight(
-                    Math.abs(item.saldo),
-                    maxNegativeValue,
-                    negativeAreaHeight,
-                  );
-            const salesY = baselineY - salesHeight;
-            const expenseY = baselineY - expenseHeight;
-            const balanceY =
-              item.saldo >= 0 ? baselineY - balanceHeight : baselineY;
-            const balanceColor = item.saldo >= 0 ? '#0B7FC0' : '#E08A00';
+              {items.map((item, index) => {
+                const startX = index * groupWidth;
+                const monthLabel =
+                  MONTH_LABELS[item.mes - 1] ?? String(item.mes);
+                const salesHeight = getBarHeight(
+                  item.valorVendas,
+                  maxPositiveValue,
+                  positiveAreaHeight,
+                );
+                const expenseHeight = getBarHeight(
+                  item.valorDespesas,
+                  maxPositiveValue,
+                  positiveAreaHeight,
+                );
+                const balanceHeight =
+                  item.saldo >= 0
+                    ? getBarHeight(
+                        item.saldo,
+                        maxPositiveValue,
+                        positiveAreaHeight,
+                      )
+                    : getBarHeight(
+                        Math.abs(item.saldo),
+                        maxNegativeValue,
+                        negativeAreaHeight,
+                      );
+                const salesY = baselineY - salesHeight;
+                const expenseY = baselineY - expenseHeight;
+                const balanceY =
+                  item.saldo >= 0 ? baselineY - balanceHeight : baselineY;
+                const balanceColor =
+                  item.saldo >= 0
+                    ? CHART_COLORS.positiveBalance
+                    : CHART_COLORS.negativeBalance;
+                const monthSummary = `${monthLabel}: vendas ${formatValue(item.valorVendas)}, despesas ${formatValue(item.valorDespesas)}, saldo ${formatValue(item.saldo)}`;
 
-            return (
-              <g key={item.mes}>
-                <rect
-                  x={startX + 8}
-                  y={salesY}
-                  width="14"
-                  height={salesHeight}
-                  rx="4"
-                  fill="#16A06A"
-                  onMouseMove={handleOpenTooltip(
-                    `${monthLabel} · Vendas`,
-                    item.valorVendas,
-                    '#16A06A',
-                  )}
-                  onMouseLeave={() => setTooltip(null)}
-                />
+                // O mês inteiro é um alvo único: área de toque larga e um só ponto
+                // de parada no teclado, com as três séries no mesmo tooltip.
+                return (
+                  <Box
+                    component="g"
+                    key={item.mes}
+                    role="img"
+                    aria-label={monthSummary}
+                    {...getTargetProps(`mes-${item.mes}`, {
+                      title: monthLabel,
+                      lines: [
+                        {
+                          label: 'Vendas',
+                          value: formatValue(item.valorVendas),
+                          color: CHART_COLORS.sales,
+                        },
+                        {
+                          label: 'Despesas',
+                          value: formatValue(item.valorDespesas),
+                          color: CHART_COLORS.expenses,
+                        },
+                        {
+                          label: 'Saldo',
+                          value: formatValue(item.saldo),
+                          color: balanceColor,
+                        },
+                      ],
+                    })}
+                    sx={{
+                      outline: 'none',
+                      '& .chart-hit-area': {
+                        fill: 'currentColor',
+                        fillOpacity: 0,
+                        transition: 'fill-opacity 0.15s ease',
+                      },
+                      '&:hover .chart-hit-area, &:focus-visible .chart-hit-area':
+                        {
+                          fillOpacity: 0.06,
+                        },
+                      '&:focus-visible .chart-hit-area': {
+                        stroke: 'currentColor',
+                        strokeOpacity: 0.4,
+                        strokeWidth: 1.5,
+                      },
+                    }}
+                  >
+                    <rect
+                      className="chart-hit-area"
+                      x={startX}
+                      y={chartTop - 8}
+                      width={groupWidth}
+                      height={300 - chartTop + 16}
+                      rx="6"
+                    />
 
-                <rect
-                  x={startX + 28}
-                  y={expenseY}
-                  width="14"
-                  height={expenseHeight}
-                  rx="4"
-                  fill="#D9363E"
-                  onMouseMove={handleOpenTooltip(
-                    `${monthLabel} · Despesas`,
-                    item.valorDespesas,
-                    '#D9363E',
-                  )}
-                  onMouseLeave={() => setTooltip(null)}
-                />
+                    <rect
+                      x={startX + clusterOffset}
+                      y={salesY}
+                      width={BAR_WIDTH}
+                      height={salesHeight}
+                      rx="4"
+                      fill={CHART_COLORS.sales}
+                    />
 
-                <rect
-                  x={startX + 48}
-                  y={balanceY}
-                  width="14"
-                  height={balanceHeight}
-                  rx="4"
-                  fill={balanceColor}
-                  onMouseMove={handleOpenTooltip(
-                    `${monthLabel} · Saldo`,
-                    item.saldo,
-                    balanceColor,
-                  )}
-                  onMouseLeave={() => setTooltip(null)}
-                />
+                    <rect
+                      x={startX + clusterOffset + BAR_WIDTH + BAR_GAP}
+                      y={expenseY}
+                      width={BAR_WIDTH}
+                      height={expenseHeight}
+                      rx="4"
+                      fill={CHART_COLORS.expenses}
+                    />
 
-                <text
-                  x={startX + 35}
-                  y={300}
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill="currentColor"
-                  opacity="0.7"
-                >
-                  {monthLabel}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+                    <rect
+                      x={startX + clusterOffset + 2 * (BAR_WIDTH + BAR_GAP)}
+                      y={balanceY}
+                      width={BAR_WIDTH}
+                      height={balanceHeight}
+                      rx="4"
+                      fill={balanceColor}
+                    />
+
+                    <text
+                      x={startX + groupWidth / 2}
+                      y={300}
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="currentColor"
+                      opacity="0.7"
+                    >
+                      {monthLabel}
+                    </text>
+                  </Box>
+                );
+              })}
+            </svg>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
@@ -463,6 +491,7 @@ function DashboardWidget({
   isDropTarget,
   id,
   isCollapsed,
+  isCustomizing,
   onToggleWidth,
   onDragOver,
   onDragEnd,
@@ -479,6 +508,8 @@ function DashboardWidget({
   isDropTarget: boolean;
   id: DashboardWidgetId;
   isCollapsed: boolean;
+  /** Mostra os controles de largura e ordem (modo "Personalizar painel"). */
+  isCustomizing: boolean;
   onToggleWidth: (widgetId: DashboardWidgetId) => void;
   onDragOver: (
     event: ReactDragEvent<HTMLDivElement>,
@@ -525,7 +556,12 @@ function DashboardWidget({
           alignItems="flex-start"
         >
           <Box sx={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-            <Typography variant="h6" component="h2" fontWeight={800}>
+            <Typography
+              variant="h6"
+              component="h2"
+              fontWeight={800}
+              sx={{ lineHeight: 1.3 }}
+            >
               {title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -538,7 +574,7 @@ function DashboardWidget({
             spacing={0.5}
             sx={{ flexShrink: 0, mt: { xs: -0.5, sm: 0 } }}
           >
-            {!isMobile ? (
+            {isCustomizing && !isMobile ? (
               <IconButton
                 size="small"
                 sx={touchTargetSx}
@@ -562,33 +598,41 @@ function DashboardWidget({
             >
               {isCollapsed ? <ExpandMore /> : <ExpandLess />}
             </IconButton>
-            {/* Alternativa ao arrastar: funciona em telas de toque e no teclado. */}
-            <IconButton
-              size="small"
-              sx={touchTargetSx}
-              onClick={() => onMove(id, -1)}
-              aria-label="Mover para cima"
-            >
-              <ArrowUpward />
-            </IconButton>
-            <IconButton
-              size="small"
-              sx={touchTargetSx}
-              onClick={() => onMove(id, 1)}
-              aria-label="Mover para baixo"
-            >
-              <ArrowDownward />
-            </IconButton>
-            <IconButton
-              size="small"
-              aria-label="Arrastar gráfico"
-              draggable
-              onDragStart={(event) => onDragStart(event, id)}
-              onDragEnd={onDragEnd}
-              sx={{ ...touchTargetSx, cursor: 'grab', touchAction: 'none' }}
-            >
-              <DragIndicator />
-            </IconButton>
+            {isCustomizing ? (
+              <>
+                {/* Alternativa ao arrastar: funciona em telas de toque e no teclado. */}
+                <IconButton
+                  size="small"
+                  sx={touchTargetSx}
+                  onClick={() => onMove(id, -1)}
+                  aria-label="Mover para cima"
+                >
+                  <ArrowUpward />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  sx={touchTargetSx}
+                  onClick={() => onMove(id, 1)}
+                  aria-label="Mover para baixo"
+                >
+                  <ArrowDownward />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  aria-label="Arrastar gráfico"
+                  draggable
+                  onDragStart={(event) => onDragStart(event, id)}
+                  onDragEnd={onDragEnd}
+                  sx={{
+                    ...touchTargetSx,
+                    cursor: 'grab',
+                    touchAction: 'none',
+                  }}
+                >
+                  <DragIndicator />
+                </IconButton>
+              </>
+            ) : null}
           </Stack>
         </Stack>
 
@@ -621,9 +665,8 @@ export default function DashboardHomePage() {
     useState<DashboardWidgetId | null>(null);
   const [dropTargetWidgetId, setDropTargetWidgetId] =
     useState<DashboardWidgetId | null>(null);
-  const [rankingTooltip, setRankingTooltip] =
-    useState<RankingTooltipState | null>(null);
-  const [cardTooltip, setCardTooltip] = useState<CardTooltipState | null>(null);
+  const { tooltip, getTargetProps } = useFloatingTooltip();
+  const [isCustomizing, setIsCustomizing] = useState(false);
   const [topProductsMonthTotalQuantity, setTopProductsMonthTotalQuantity] =
     useState(0);
   const [
@@ -728,10 +771,7 @@ export default function DashboardHomePage() {
       return [];
     }
 
-    return result.itens.filter(
-      (item) =>
-        item.valorVendas !== 0 || item.valorDespesas !== 0 || item.saldo !== 0,
-    );
+    return getContinuousMonthRange(result.itens);
   }, [result]);
 
   const handleDragStart = (
@@ -816,21 +856,6 @@ export default function DashboardHomePage() {
     }));
   };
 
-  const handleOpenRankingTooltip =
-    (tooltip: Omit<RankingTooltipState, 'x' | 'y'>) =>
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      setRankingTooltip({
-        ...tooltip,
-        x: event.clientX,
-        y: event.clientY,
-      });
-    };
-
-  const handleCardMouseMove =
-    (lines: CardTooltipLine[]) => (event: React.MouseEvent<HTMLDivElement>) => {
-      setCardTooltip({ x: event.clientX, y: event.clientY, lines });
-    };
-
   const renderWidget = (widgetId: DashboardWidgetId) => {
     if (!result) {
       return null;
@@ -845,6 +870,7 @@ export default function DashboardHomePage() {
           title="Resumo mensal"
           subtitle={`Valores mensais de vendas, despesas e saldo em ${result.ano}.`}
           isCollapsed={Boolean(collapsedWidgets[widgetId])}
+          isCustomizing={isCustomizing}
           widthMode={widgetWidths[widgetId] ?? 'full'}
           onToggleWidth={handleToggleWidth}
           onDragEnd={handleDragEnd}
@@ -869,7 +895,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#16A06A',
+                    bgcolor: CHART_COLORS.sales,
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -882,7 +908,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#D9363E',
+                    bgcolor: CHART_COLORS.expenses,
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -895,7 +921,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#0B7FC0',
+                    bgcolor: CHART_COLORS.positiveBalance,
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -908,7 +934,7 @@ export default function DashboardHomePage() {
                     width: 12,
                     height: 12,
                     borderRadius: 1,
-                    bgcolor: '#E08A00',
+                    bgcolor: CHART_COLORS.negativeBalance,
                   }}
                 />
                 <Typography variant="body2" color="text.secondary">
@@ -943,6 +969,7 @@ export default function DashboardHomePage() {
           title="Top 5 produtos mais vendidos no mês"
           subtitle={`Ranking do mês ${MONTH_LABELS[(topProducts?.mes ?? 1) - 1]} de ${topProducts?.ano ?? result.ano}.`}
           isCollapsed={Boolean(collapsedWidgets[widgetId])}
+          isCustomizing={isCustomizing}
           widthMode={widgetWidths[widgetId] ?? 'half'}
           onToggleWidth={handleToggleWidth}
           onDragEnd={handleDragEnd}
@@ -972,13 +999,17 @@ export default function DashboardHomePage() {
                 return (
                   <Box
                     key={`${item.idProduto ?? item.nomeProduto}-${index}`}
-                    onMouseMove={handleOpenRankingTooltip({
+                    {...getTargetProps(`ranking-1-${index}`, {
                       color: '#0B7FC0',
-                      label: `${index + 1}. ${item.nomeProduto}`,
-                      valueLabel: `${item.quantidadeVendida} un`,
-                      percentageLabel: `${formatPercentage(monthShare)} do total vendido no mes`,
+                      title: `${index + 1}. ${item.nomeProduto}`,
+                      lines: [
+                        {
+                          label: 'Quantidade',
+                          value: `${item.quantidadeVendida} un`,
+                        },
+                      ],
+                      caption: `${formatPercentage(monthShare)} do total vendido no mês`,
                     })}
-                    onMouseLeave={() => setRankingTooltip(null)}
                     sx={{
                       cursor: 'default',
                     }}
@@ -1047,6 +1078,7 @@ export default function DashboardHomePage() {
         title="Despesas do mês por categoria"
         subtitle={`Categorias com maior peso nas despesas de ${MONTH_LABELS[(expenseCategories?.mes ?? 1) - 1]} de ${expenseCategories?.ano ?? result.ano}.`}
         isCollapsed={Boolean(collapsedWidgets[widgetId])}
+        isCustomizing={isCustomizing}
         widthMode={widgetWidths[widgetId] ?? 'half'}
         onToggleWidth={handleToggleWidth}
         onDragEnd={handleDragEnd}
@@ -1073,16 +1105,20 @@ export default function DashboardHomePage() {
               return (
                 <Box
                   key={`${item.idCategoria ?? item.nomeCategoria}-${index}`}
-                  onMouseMove={handleOpenRankingTooltip({
+                  {...getTargetProps(`ranking-2-${index}`, {
                     color: '#D9363E',
-                    label: `${index + 1}. ${item.nomeCategoria}`,
-                    valueLabel: formatCurrencyWithVisibility(
-                      item.valorTotal,
-                      hideValues,
-                    ),
-                    percentageLabel: `${formatPercentage(monthShare)} do total de despesas do mes`,
+                    title: `${index + 1}. ${item.nomeCategoria}`,
+                    lines: [
+                      {
+                        label: 'Valor',
+                        value: formatCurrencyWithVisibility(
+                          item.valorTotal,
+                          hideValues,
+                        ),
+                      },
+                    ],
+                    caption: `${formatPercentage(monthShare)} do total de despesas do mês`,
                   })}
-                  onMouseLeave={() => setRankingTooltip(null)}
                   sx={{
                     cursor: 'default',
                   }}
@@ -1147,81 +1183,22 @@ export default function DashboardHomePage() {
 
   return (
     <>
-      {rankingTooltip ? (
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            left: rankingTooltip.x + 12,
-            top: rankingTooltip.y - 12,
-            px: 1.25,
-            py: 1,
-            pointerEvents: 'none',
-            zIndex: 1400,
-            borderRadius: 2,
-          }}
-        >
-          <Stack spacing={0.5}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Box
-                sx={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: 1,
-                  bgcolor: rankingTooltip.color,
-                }}
-              />
-              <Typography variant="caption" fontWeight={700}>
-                {rankingTooltip.label}
-              </Typography>
-            </Stack>
-            <Typography variant="body2">{rankingTooltip.valueLabel}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              {rankingTooltip.percentageLabel}
-            </Typography>
-          </Stack>
-        </Paper>
-      ) : null}
-
-      {cardTooltip ? (
-        <Paper
-          elevation={3}
-          sx={{
-            position: 'fixed',
-            left: cardTooltip.x + 14,
-            top: cardTooltip.y - 14,
-            px: 1.5,
-            py: 1,
-            pointerEvents: 'none',
-            zIndex: 1400,
-            borderRadius: 2,
-          }}
-        >
-          <Stack spacing={0.5}>
-            {cardTooltip.lines.map((line) => (
-              <Stack
-                key={line.label}
-                direction="row"
-                spacing={1.5}
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography variant="caption" color="text.secondary">
-                  {line.label}
-                </Typography>
-                <Typography variant="caption" fontWeight={700}>
-                  {line.value}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-        </Paper>
-      ) : null}
+      <FloatingTooltip tooltip={tooltip} />
 
       <Stack spacing={3}>
         <PageHeader
           title="Visão geral"
           description="Acompanhe a evolução mensal de vendas, despesas e saldo."
+          actions={
+            <Button
+              variant={isCustomizing ? 'contained' : 'outlined'}
+              startIcon={isCustomizing ? <Check /> : <Tune />}
+              onClick={() => setIsCustomizing((current) => !current)}
+              aria-pressed={isCustomizing}
+            >
+              {isCustomizing ? 'Concluir' : 'Personalizar painel'}
+            </Button>
+          }
         />
 
         {problem?.detail ? (
@@ -1235,214 +1212,139 @@ export default function DashboardHomePage() {
         ) : result ? (
           <Stack spacing={3}>
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    cursor: 'default',
-                    height: '100%',
-                  }}
-                  onMouseMove={handleCardMouseMove([
-                    {
-                      label: 'Catálogo',
-                      value: String(result.totalQuantidadeItensCatalogo ?? 0),
-                    },
-                    {
-                      label: 'Brindes',
-                      value: String(result.totalQuantidadeBrindes ?? 0),
-                    },
-                    {
-                      label: 'Avulsos',
-                      value: String(result.totalQuantidadeItensAvulsos ?? 0),
-                    },
-                  ])}
-                  onMouseLeave={() => setCardTooltip(null)}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Itens vendidos em {result.ano}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {formatValueWithVisibility(
-                      String(result.totalQuantidadeItensVendidos),
-                      hideValues,
-                    )}
-                  </Typography>
-                </Paper>
+              <Grid size={{ xs: 6, lg: 3 }} sx={{ minWidth: 0 }}>
+                <StatCard
+                  label={`Itens vendidos em ${result.ano}`}
+                  value={formatValueWithVisibility(
+                    String(result.totalQuantidadeItensVendidos),
+                    hideValues,
+                  )}
+                  {...getTargetProps('card-1', {
+                    lines: [
+                      {
+                        label: 'Catálogo',
+                        value: String(result.totalQuantidadeItensCatalogo ?? 0),
+                      },
+                      {
+                        label: 'Brindes',
+                        value: String(result.totalQuantidadeBrindes ?? 0),
+                      },
+                      {
+                        label: 'Avulsos',
+                        value: String(result.totalQuantidadeItensAvulsos ?? 0),
+                      },
+                    ],
+                  })}
+                />
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    cursor: 'default',
-                    height: '100%',
-                  }}
-                  onMouseMove={handleCardMouseMove([
-                    {
-                      label: 'Taxas',
-                      value: formatCurrencyWithVisibility(
-                        result.totalTaxas,
-                        hideValues,
-                      ),
-                    },
-                    {
-                      label: 'Impostos',
-                      value: formatCurrencyWithVisibility(
-                        result.totalImpostos,
-                        hideValues,
-                      ),
-                    },
-                    {
-                      label: 'Valor líquido',
-                      value: formatCurrencyWithVisibility(
-                        result.totalVendas -
-                          result.totalTaxas -
+              <Grid size={{ xs: 6, lg: 3 }} sx={{ minWidth: 0 }}>
+                <StatCard
+                  label={`Total de vendas em ${result.ano}`}
+                  value={formatCurrencyWithVisibility(
+                    result.totalVendas,
+                    hideValues,
+                  )}
+                  tone="success"
+                  {...getTargetProps('card-2', {
+                    lines: [
+                      {
+                        label: 'Taxas',
+                        value: formatCurrencyWithVisibility(
+                          result.totalTaxas,
+                          hideValues,
+                        ),
+                      },
+                      {
+                        label: 'Impostos',
+                        value: formatCurrencyWithVisibility(
                           result.totalImpostos,
-                        hideValues,
-                      ),
-                    },
-                  ])}
-                  onMouseLeave={() => setCardTooltip(null)}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Total de vendas em {result.ano}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {formatCurrencyWithVisibility(
-                      result.totalVendas,
-                      hideValues,
-                    )}
-                  </Typography>
-                </Paper>
+                          hideValues,
+                        ),
+                      },
+                      {
+                        label: 'Valor líquido',
+                        value: formatCurrencyWithVisibility(
+                          result.totalVendas -
+                            result.totalTaxas -
+                            result.totalImpostos,
+                          hideValues,
+                        ),
+                      },
+                    ],
+                  })}
+                />
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 2.5, borderRadius: 2, height: '100%' }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Total de despesas em {result.ano}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      color: 'error.main',
-                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {formatCurrencyWithVisibility(
-                      result.totalDespesas,
-                      hideValues,
-                    )}
-                  </Typography>
-                </Paper>
+              <Grid size={{ xs: 6, lg: 3 }} sx={{ minWidth: 0 }}>
+                <StatCard
+                  label={`Total de despesas em ${result.ano}`}
+                  value={formatCurrencyWithVisibility(
+                    result.totalDespesas,
+                    hideValues,
+                  )}
+                  tone="error"
+                />
               </Grid>
 
-              <Grid size={{ xs: 12, sm: 6, lg: 3 }} sx={{ minWidth: 0 }}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    cursor: 'default',
-                    height: '100%',
-                  }}
-                  onMouseMove={handleCardMouseMove([
-                    {
-                      label: 'Fórmula',
-                      value: 'vendas - taxas - despesas + ajustes',
-                    },
-                    {
-                      label: 'Vendas',
-                      value: formatCurrencyWithVisibility(
-                        result.totalVendas,
-                        hideValues,
-                      ),
-                    },
-                    {
-                      label: 'Taxas',
-                      value: hideValues
-                        ? formatCurrencyWithVisibility(
-                            result.totalTaxas,
-                            hideValues,
-                          )
-                        : `-${formatCurrencyWithVisibility(result.totalTaxas, hideValues)}`,
-                    },
-                    {
-                      label: 'Despesas',
-                      value: hideValues
-                        ? formatCurrencyWithVisibility(
-                            result.totalDespesas,
-                            hideValues,
-                          )
-                        : `-${formatCurrencyWithVisibility(result.totalDespesas, hideValues)}`,
-                    },
-                    {
-                      label: 'Ajustes de carteira',
-                      value: hideValues
-                        ? formatCurrencyWithVisibility(
-                            Math.abs(result.totalAjusteCarteira ?? 0),
-                            hideValues,
-                          )
-                        : `${(result.totalAjusteCarteira ?? 0) >= 0 ? '+' : '-'}${formatCurrencyWithVisibility(
-                            Math.abs(result.totalAjusteCarteira ?? 0),
-                            hideValues,
-                          )}`,
-                    },
-                    {
-                      label: 'Saldo',
-                      value: formatCurrencyWithVisibility(
-                        result.saldo,
-                        hideValues,
-                      ),
-                    },
-                  ])}
-                  onMouseLeave={() => setCardTooltip(null)}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Saldo acumulado em {result.ano}
-                  </Typography>
-                  <Typography
-                    variant="h4"
-                    component="div"
-                    fontWeight={800}
-                    sx={{
-                      mt: 1,
-                      color: result.saldo >= 0 ? 'primary.main' : 'error.main',
-                      fontSize: { xs: '1.75rem', sm: '2.125rem' },
-                      overflowWrap: 'anywhere',
-                    }}
-                  >
-                    {formatCurrencyWithVisibility(result.saldo, hideValues)}
-                  </Typography>
-                </Paper>
+              <Grid size={{ xs: 6, lg: 3 }} sx={{ minWidth: 0 }}>
+                <StatCard
+                  label={`Saldo acumulado em ${result.ano}`}
+                  value={formatCurrencyWithVisibility(result.saldo, hideValues)}
+                  tone={result.saldo >= 0 ? 'primary' : 'error'}
+                  {...getTargetProps('card-3', {
+                    lines: [
+                      {
+                        label: 'Fórmula',
+                        value: 'vendas - taxas - despesas + ajustes',
+                      },
+                      {
+                        label: 'Vendas',
+                        value: formatCurrencyWithVisibility(
+                          result.totalVendas,
+                          hideValues,
+                        ),
+                      },
+                      {
+                        label: 'Taxas',
+                        value: hideValues
+                          ? formatCurrencyWithVisibility(
+                              result.totalTaxas,
+                              hideValues,
+                            )
+                          : `-${formatCurrencyWithVisibility(result.totalTaxas, hideValues)}`,
+                      },
+                      {
+                        label: 'Despesas',
+                        value: hideValues
+                          ? formatCurrencyWithVisibility(
+                              result.totalDespesas,
+                              hideValues,
+                            )
+                          : `-${formatCurrencyWithVisibility(result.totalDespesas, hideValues)}`,
+                      },
+                      {
+                        label: 'Ajustes de carteira',
+                        value: hideValues
+                          ? formatCurrencyWithVisibility(
+                              Math.abs(result.totalAjusteCarteira ?? 0),
+                              hideValues,
+                            )
+                          : `${(result.totalAjusteCarteira ?? 0) >= 0 ? '+' : '-'}${formatCurrencyWithVisibility(
+                              Math.abs(result.totalAjusteCarteira ?? 0),
+                              hideValues,
+                            )}`,
+                      },
+                      {
+                        label: 'Saldo',
+                        value: formatCurrencyWithVisibility(
+                          result.saldo,
+                          hideValues,
+                        ),
+                      },
+                    ],
+                  })}
+                />
               </Grid>
             </Grid>
 

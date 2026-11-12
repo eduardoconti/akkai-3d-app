@@ -4,7 +4,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  Chip,
   IconButton,
   MenuItem,
   Stack,
@@ -16,6 +15,7 @@ import {
   TextField,
   Typography,
   useMediaQuery,
+  Tooltip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { useTheme } from '@mui/material/styles';
@@ -57,6 +57,7 @@ import {
   type ItemConsignacao,
   type Revendedor,
   type StatusConsignacao,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -622,11 +623,9 @@ export default function ConsignacoesPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (consignacao) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={obterStatusLabel(consignacao.status)}
-          color={obterStatusColor(consignacao.status)}
-          variant="outlined"
+          tone={obterStatusColor(consignacao.status)}
         />
       ),
     },
@@ -670,22 +669,32 @@ export default function ConsignacoesPage() {
           >
             PDF
           </Button>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<TaskAlt />}
-            aria-label="Fechar consignação"
-            onClick={(event) => {
-              event.stopPropagation();
-              void handleOpenFechamento(consignacao);
-            }}
-            disabled={
-              consignacao.status !== 'ABERTA' ||
-              consignacao.quantidadeDisponivel <= 0
-            }
-          >
-            Fechar
-          </Button>
+          {/* Consignação já fechada não tem o que fechar: a ação some. */}
+          {consignacao.status === 'ABERTA' ? (
+            <Tooltip
+              title={
+                consignacao.quantidadeDisponivel <= 0
+                  ? 'Não há peças disponíveis para fechar.'
+                  : ''
+              }
+            >
+              <span>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<TaskAlt />}
+                  aria-label="Fechar consignação"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleOpenFechamento(consignacao);
+                  }}
+                  disabled={consignacao.quantidadeDisponivel <= 0}
+                >
+                  Fechar
+                </Button>
+              </span>
+            </Tooltip>
+          ) : null}
         </Stack>
       ),
     },

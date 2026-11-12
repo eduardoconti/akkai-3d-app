@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -27,6 +26,7 @@ import {
   formatCurrency,
   useFeedbackStore,
   type Caixa,
+  StatusChip,
 } from '@/shared';
 import CashRegisterOpeningDialog from './cash-register-opening-dialog';
 
@@ -153,9 +153,9 @@ export default function CashRegisterDetailsDialog({
               <LoadingState />
             ) : (
               <>
-                <Chip
+                <StatusChip
                   sx={{ alignSelf: 'flex-start' }}
-                  color={caixa.status === 'ABERTO' ? 'success' : 'default'}
+                  tone={caixa.status === 'ABERTO' ? 'success' : 'default'}
                   label={caixa.status === 'ABERTO' ? 'Caixa aberto' : 'Fechado'}
                 />
                 <Grid container spacing={2}>

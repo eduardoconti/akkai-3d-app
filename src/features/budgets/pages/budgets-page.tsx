@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Alert,
-  Autocomplete,
   Box,
   Button,
-  Chip,
   Link,
   Menu,
   MenuItem,
@@ -12,10 +10,11 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { PointOfSale } from '@mui/icons-material';
-import { alpha, useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import { buildSaleFormFromBudget } from '@/features/budgets/utils/build-sale-form-from-budget';
 import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
@@ -37,6 +36,9 @@ import {
   PageHeader,
   ResponsiveDataTable,
   SearchFilterPanel,
+  StatusChip,
+  summarizeSelection,
+  type StatusChipTone,
   type DataTableColumn,
 } from '@/shared';
 import type {
@@ -51,46 +53,21 @@ function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('pt-BR');
 }
 
-const STATUS_CHIP_COLOR: Record<
-  StatusOrcamento,
-  { background: string; border: string; text: string }
-> = {
-  PENDENTE: {
-    background: '#fee2e2',
-    border: '#ef4444',
-    text: '#991b1b',
-  },
-  ATENDIMENTO: {
-    background: '#fef3c7',
-    border: '#f59e0b',
-    text: '#92400e',
-  },
-  AGUARDANDO_APROVACAO: {
-    background: '#dbeafe',
-    border: '#3b82f6',
-    text: '#1e40af',
-  },
-  APROVADO: {
-    background: '#dcfce7',
-    border: '#22c55e',
-    text: '#166534',
-  },
-  PRODUZIDO: {
-    background: '#ccfbf1',
-    border: '#14b8a6',
-    text: '#115e59',
-  },
-  FINALIZADO: {
-    background: '#e5e7eb',
-    border: '#9ca3af',
-    text: '#374151',
-  },
-  CANCELADO: {
-    background: '#f3e8ff',
-    border: '#a855f7',
-    text: '#6b21a8',
-  },
+/** Tom de cada status: âmbar pede ação, verde é positivo, neutro encerrado. */
+const STATUS_CHIP_TONE: Record<StatusOrcamento, StatusChipTone> = {
+  PENDENTE: 'warning',
+  ATENDIMENTO: 'info',
+  AGUARDANDO_APROVACAO: 'secondary',
+  APROVADO: 'success',
+  PRODUZIDO: 'primary',
+  FINALIZADO: 'default',
+  CANCELADO: 'error',
 };
+
+const STATUS_FILTER_OPTIONS = ALL_STATUSES_ORCAMENTO.map((status) => ({
+  value: status,
+  label: STATUS_ORCAMENTO_LABEL[status],
+}));
 
 const TIPO_LABEL: Record<TipoVenda, string> = {
   FEIRA: 'Feira',
@@ -131,35 +108,19 @@ interface StatusChipProps {
   disabled?: boolean;
 }
 
-function StatusChip({ orcamento, onStatusChange, disabled }: StatusChipProps) {
-  const theme = useTheme();
+function StatusMenuChip({
+  orcamento,
+  onStatusChange,
+  disabled,
+}: StatusChipProps) {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
-  const color = STATUS_CHIP_COLOR[orcamento.status];
 
   return (
     <>
-      <Chip
+      <StatusChip
         label={STATUS_ORCAMENTO_LABEL[orcamento.status]}
-        size="small"
+        tone={STATUS_CHIP_TONE[orcamento.status]}
         clickable={!disabled}
-        sx={{
-          bgcolor:
-            theme.palette.mode === 'dark'
-              ? alpha(color.border, 0.22)
-              : color.background,
-          border: `1px solid ${alpha(color.border, theme.palette.mode === 'dark' ? 0.7 : 1)}`,
-          color: theme.palette.mode === 'dark' ? color.background : color.text,
-          fontWeight: 700,
-          '& .MuiChip-label': {
-            px: 1,
-          },
-          '&:hover': {
-            bgcolor:
-              theme.palette.mode === 'dark'
-                ? alpha(color.border, 0.32)
-                : alpha(color.border, 0.18),
-          },
-        }}
         onClick={
           disabled
             ? undefined
@@ -367,7 +328,7 @@ export default function BudgetsPage() {
       mobile: 'badge',
       cell: (orcamento) => (
         <SemPropagacao>
-          <StatusChip
+          <StatusMenuChip
             orcamento={orcamento}
             onStatusChange={handleStatusChange}
             disabled={isSubmitting || orcamento.status === 'FINALIZADO'}
@@ -459,7 +420,7 @@ export default function BudgetsPage() {
         isLoading={isFetching}
         columns={{ xs: 12, md: 12, lg: 24 }}
       >
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 7 }}>
           <TextField
             fullWidth
             label="Pesquisar orçamento"
@@ -475,6 +436,11 @@ export default function BudgetsPage() {
             fullWidth
             label="Tipo"
             value={tipoSelecionado}
+            // Mostra "Todos" quando vazio, como nos demais filtros.
+            slotProps={{
+              select: { displayEmpty: true },
+              inputLabel: { shrink: true },
+            }}
             onChange={(event) => {
               const nextTipo = event.target.value as TipoVenda | '';
               setTipoSelecionado(nextTipo);
@@ -520,25 +486,44 @@ export default function BudgetsPage() {
           size={{
             xs: 12,
             md: 12,
-            lg: tipoSelecionado === 'ONLINE' ? 13 : 17,
+            lg: tipoSelecionado === 'ONLINE' ? 10 : 14,
           }}
         >
-          <Autocomplete
-            multiple
+          {/* Caixas de seleção, com um resumo em texto no campo (sem chips). */}
+          <TextField
+            select
             fullWidth
-            options={ALL_STATUSES_ORCAMENTO}
+            label="Status"
             value={statusSelecionados}
-            onChange={(_event, value) => setStatusSelecionados(value)}
-            getOptionLabel={(option) => STATUS_ORCAMENTO_LABEL[option]}
-            disableCloseOnSelect
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Status"
-                placeholder="Selecione um ou mais status"
-              />
-            )}
-          />
+            onChange={(event) => {
+              const { value } = event.target as { value: unknown };
+              setStatusSelecionados(value as StatusOrcamento[]);
+            }}
+            slotProps={{
+              select: {
+                multiple: true,
+                displayEmpty: true,
+                renderValue: (selected) =>
+                  summarizeSelection(
+                    selected as StatusOrcamento[],
+                    STATUS_FILTER_OPTIONS,
+                    'status',
+                    'Todos',
+                  ) || 'Todos',
+              },
+            }}
+          >
+            {STATUS_FILTER_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value} dense>
+                <Checkbox
+                  size="small"
+                  checked={statusSelecionados.includes(option.value)}
+                  sx={{ py: 0, pl: 0 }}
+                />
+                <ListItemText primary={option.label} />
+              </MenuItem>
+            ))}
+          </TextField>
         </Grid>
       </SearchFilterPanel>
 

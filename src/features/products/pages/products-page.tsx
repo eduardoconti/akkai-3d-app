@@ -2,11 +2,12 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import {
   Alert,
   Autocomplete,
-  Button,
   Chip,
   MenuItem,
   Stack,
   TextField,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { Inventory2 } from '@mui/icons-material';
@@ -30,6 +31,7 @@ import {
   type OrdenacaoProduto,
   type Produto,
   useTableColumnVisibility,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -203,11 +205,9 @@ export default function ProductsPage() {
       mobile: 'badge',
       exportValue: (produto) => getStatusProductLabel(produto),
       cell: (produto) => (
-        <Chip
+        <StatusChip
           label={getStatusProductLabel(produto)}
-          size="small"
-          color={getStatusProductColor(produto)}
-          variant={produto.status === 'ATIVO' ? 'filled' : 'outlined'}
+          tone={getStatusProductColor(produto)}
         />
       ),
     },
@@ -255,15 +255,15 @@ export default function ProductsPage() {
       align: 'right',
       mobile: 'actions',
       cell: (produto) => (
-        <Button
-          variant="outlined"
-          color="primary"
-          size="small"
-          startIcon={<Inventory2 fontSize="small" />}
-          onClick={(event) => openStockDialog(event, produto)}
-        >
-          Movimentar
-        </Button>
+        <Tooltip title="Movimentar estoque">
+          <IconButton
+            color="primary"
+            aria-label={`Movimentar estoque de ${produto.nome}`}
+            onClick={(event) => openStockDialog(event, produto)}
+          >
+            <Inventory2 fontSize="small" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
@@ -316,6 +316,8 @@ export default function ProductsPage() {
         <Grid size={{ xs: 12, md: 6, lg: 6 }}>
           <Autocomplete
             multiple
+            limitTags={2}
+            getLimitTagsText={(more) => `+${more}`}
             options={categorias}
             value={categoriasSelecionadas}
             onChange={(_event, value) => setCategoriasSelecionadas(value)}

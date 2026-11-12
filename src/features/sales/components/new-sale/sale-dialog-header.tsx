@@ -7,7 +7,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Close, Minimize } from '@mui/icons-material';
+import { CloseFullscreen, Close, Tune } from '@mui/icons-material';
 
 interface SaleDialogHeaderProps {
   configSummary: string;
@@ -39,6 +39,8 @@ export default function SaleDialogHeader({
             color="inherit"
             size="small"
             onClick={onToggleConfig}
+            endIcon={<Tune fontSize="small" />}
+            aria-label={`Alterar configuração da venda: ${configSummary}`}
             sx={{
               justifyContent: 'flex-start',
               minWidth: 0,
@@ -62,7 +64,7 @@ export default function SaleDialogHeader({
                 aria-label="Minimizar venda"
                 disabled={isBusy}
               >
-                <Minimize />
+                <CloseFullscreen />
               </IconButton>
             </span>
           </Tooltip>

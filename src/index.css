@@ -30,3 +30,12 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Antes do React montar: evita o "flash" claro para quem usa modo escuro. */
+@media (prefers-color-scheme: dark) {
+  :root,
+  body {
+    color: #e6edf5;
+    background: #0e141b;
+  }
+}

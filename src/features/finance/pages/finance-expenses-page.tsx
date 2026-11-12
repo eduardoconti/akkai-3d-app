@@ -3,7 +3,6 @@ import {
   Alert,
   Autocomplete,
   MenuItem,
-  Paper,
   Stack,
   TextField,
   Typography,
@@ -21,6 +20,7 @@ import {
 } from '@/features/finance/types/finance-form';
 import {
   CurrencyValue,
+  StatCard,
   DateRangePickerField,
   formatCentsForCsv,
   PageHeader,
@@ -213,9 +213,11 @@ export default function FinanceExpensesPage() {
           />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
           <Autocomplete
             multiple
+            limitTags={2}
+            getLimitTagsText={(more) => `+${more}`}
             options={categoriasDespesa}
             value={categoriasSelecionadas}
             onChange={(_event, value) => setCategoriasSelecionadas(value)}
@@ -252,7 +254,7 @@ export default function FinanceExpensesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
           <TextField
             select
             fullWidth
@@ -273,7 +275,7 @@ export default function FinanceExpensesPage() {
           </TextField>
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6, lg: 3 }}>
+        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
           <TextField
             fullWidth
             label="Pesquisar despesa"
@@ -284,14 +286,15 @@ export default function FinanceExpensesPage() {
         </Grid>
       </SearchFilterPanel>
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          Valor total das despesas
-        </Typography>
-        <Typography variant="h6" fontWeight={700} color="error.main">
-          <CurrencyValue value={totalizadores.valorTotal} />
-        </Typography>
-      </Paper>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <StatCard
+            label="Valor total das despesas"
+            value={<CurrencyValue value={totalizadores.valorTotal} />}
+            tone="error"
+          />
+        </Grid>
+      </Grid>
 
       {fetchErrorMessage ? (
         <Alert severity="error">{fetchErrorMessage}</Alert>

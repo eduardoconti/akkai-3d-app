@@ -123,6 +123,28 @@ describe('ResponsiveDataTable', () => {
       expect(screen.getByText('Caneca')).toBeInTheDocument();
     });
 
+    it('trata traços ("-" e "—") como vazio no cartão', () => {
+      mockMatchMedia(true);
+      renderizar({
+        columns: [
+          ...colunas,
+          {
+            id: 'desconto',
+            header: 'Desconto',
+            cell: (produto) => (produto.id === 1 ? 'R$ 5' : '-'),
+          },
+          {
+            id: 'feira',
+            header: 'Feira',
+            cell: () => '—',
+          },
+        ],
+      });
+
+      expect(screen.getAllByText('Desconto')).toHaveLength(1);
+      expect(screen.queryByText('Feira')).not.toBeInTheDocument();
+    });
+
     it('omite campos vazios do cartão', () => {
       mockMatchMedia(true);
       renderizar({

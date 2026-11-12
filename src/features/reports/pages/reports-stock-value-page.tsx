@@ -18,6 +18,7 @@ import {
   useValueVisibilityStore,
   type DataTableColumn,
   type ProblemDetails,
+  useRunOnMount,
 } from '@/shared';
 
 function formatQuantity(value: number): string {
@@ -74,6 +75,9 @@ export default function ReportsStockValuePage() {
   const handleSubmit = async () => {
     await fetchReport(1, tamanhoPagina, { ordenarPor, direcao });
   };
+
+  // Abre já com o resultado dos filtros padrão, sem exigir "Pesquisar".
+  useRunOnMount(handleSubmit);
 
   const handleClearFilters = () => {
     setOrdenarPor('codigo');

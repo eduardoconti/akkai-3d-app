@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Button, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, Button, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AutoAwesome } from '@mui/icons-material';
 import { EditKitDialog } from '@/features/assinatura';
@@ -17,6 +17,7 @@ import {
   ResponsiveDataTable,
   SearchFilterPanel,
   useFeedbackStore,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -138,9 +139,9 @@ export default function KitsPage() {
       mobile: 'hidden',
       cell: (k) =>
         k.ativo ? (
-          <Chip size="small" label="Ativo" color="success" variant="outlined" />
+          <StatusChip label="Ativo" tone="success" />
         ) : k.titulo ? (
-          <Chip size="small" label="Inativo" variant="outlined" />
+          <StatusChip label="Inativo" />
         ) : null,
     },
     {

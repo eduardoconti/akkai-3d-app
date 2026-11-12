@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import { FileDownloadOutlined } from '@mui/icons-material';
 import { useTheme, type Breakpoint } from '@mui/material/styles';
+import { useHorizontalOverflow } from '../../hooks/use-horizontal-overflow';
+import { getOverflowFadeSx } from '../../styles/overflow-fade';
 import { buildCsv, downloadCsv } from '../../utils/csv';
 import AppTablePagination from '../app-table-pagination';
 import EmptyState from '../feedback/empty-state';
@@ -145,6 +147,7 @@ export default function ResponsiveDataTable<TRow>({
 }: ResponsiveDataTableProps<TRow>) {
   const theme = useTheme();
   const isCardLayout = useMediaQuery(theme.breakpoints.down(cardsBelow));
+  const { ref: scrollRef, overflow } = useHorizontalOverflow<HTMLDivElement>();
 
   const visibleColumns = useMemo(
     () =>
@@ -216,99 +219,102 @@ export default function ResponsiveDataTable<TRow>({
           {toolbar}
         </Stack>
       ) : null}
-      <TableContainer>
-        <Table
-          aria-label={ariaLabel}
-          sx={minTableWidth ? { minWidth: minTableWidth } : undefined}
-        >
-          <TableHead>
-            <TableRow>
-              {visibleColumns.map((column) => (
-                <TableCell key={column.id} align={column.align}>
-                  {column.header || (
-                    <Box component="span" sx={visuallyHidden}>
-                      Detalhes
-                    </Box>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
-                <TableRow key={`skeleton-${rowIndex}`} aria-busy="true">
-                  {visibleColumns.map((column) => (
-                    <TableCell key={column.id} align={column.align}>
-                      <Skeleton
-                        variant="text"
-                        width={column.align === 'right' ? '60%' : '80%'}
-                        sx={{
-                          ml: column.align === 'right' ? 'auto' : 0,
-                          fontSize: '1rem',
-                        }}
-                      />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : rows.length > 0 ? (
-              rows.map((row) => (
-                <Fragment key={getRowId(row)}>
-                  <TableRow
-                    hover={Boolean(onRowClick)}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    onKeyDown={
-                      onRowClick
-                        ? activateOnKeyboard(() => onRowClick(row))
-                        : undefined
-                    }
-                    sx={{
-                      cursor: onRowClick ? 'pointer' : 'default',
-                      '&:last-child td, &:last-child th': { border: 0 },
-                    }}
-                  >
+      {/* Sombras nas bordas indicam colunas escondidas além da área visível. */}
+      <Box sx={getOverflowFadeSx(overflow)}>
+        <TableContainer ref={scrollRef}>
+          <Table
+            aria-label={ariaLabel}
+            sx={minTableWidth ? { minWidth: minTableWidth } : undefined}
+          >
+            <TableHead>
+              <TableRow>
+                {visibleColumns.map((column) => (
+                  <TableCell key={column.id} align={column.align}>
+                    {column.header || (
+                      <Box component="span" sx={visuallyHidden}>
+                        Detalhes
+                      </Box>
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: SKELETON_ROWS }, (_, rowIndex) => (
+                  <TableRow key={`skeleton-${rowIndex}`} aria-busy="true">
                     {visibleColumns.map((column) => (
-                      <TableCell
-                        key={column.id}
-                        align={column.align}
-                        sx={
-                          column.nowrap ? { whiteSpace: 'nowrap' } : undefined
-                        }
-                      >
-                        {column.cell(row)}
+                      <TableCell key={column.id} align={column.align}>
+                        <Skeleton
+                          variant="text"
+                          width={column.align === 'right' ? '60%' : '80%'}
+                          sx={{
+                            ml: column.align === 'right' ? 'auto' : 0,
+                            fontSize: '1rem',
+                          }}
+                        />
                       </TableCell>
                     ))}
                   </TableRow>
-                  {expandedRow ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={visibleColumns.length}
-                        sx={{ p: 0, borderBottom: 0 }}
-                      >
-                        <Collapse
-                          in={expandedRow.isExpanded(row)}
-                          timeout="auto"
-                          unmountOnExit
+                ))
+              ) : rows.length > 0 ? (
+                rows.map((row) => (
+                  <Fragment key={getRowId(row)}>
+                    <TableRow
+                      hover={Boolean(onRowClick)}
+                      tabIndex={onRowClick ? 0 : undefined}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
+                      onKeyDown={
+                        onRowClick
+                          ? activateOnKeyboard(() => onRowClick(row))
+                          : undefined
+                      }
+                      sx={{
+                        cursor: onRowClick ? 'pointer' : 'default',
+                        '&:last-child td, &:last-child th': { border: 0 },
+                      }}
+                    >
+                      {visibleColumns.map((column) => (
+                        <TableCell
+                          key={column.id}
+                          align={column.align}
+                          sx={
+                            column.nowrap ? { whiteSpace: 'nowrap' } : undefined
+                          }
                         >
-                          {expandedRow.render(row)}
-                        </Collapse>
-                      </TableCell>
+                          {column.cell(row)}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ) : null}
-                </Fragment>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length} sx={{ p: 0 }}>
-                  <EmptyState message={emptyMessage} />
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                    {expandedRow ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={visibleColumns.length}
+                          sx={{ p: 0, borderBottom: 0 }}
+                        >
+                          <Collapse
+                            in={expandedRow.isExpanded(row)}
+                            timeout="auto"
+                            unmountOnExit
+                          >
+                            {expandedRow.render(row)}
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </Fragment>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={visibleColumns.length} sx={{ p: 0 }}>
+                    <EmptyState message={emptyMessage} />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     </>
   );
 
@@ -384,8 +390,14 @@ function CardList<TRow>({
   const asideColumns = byRole('aside');
   const fieldColumns = byRole('field');
   const actionColumns = byRole('actions');
+  // Traços usados como "sem valor" na tabela também somem do cartão.
   const isEmptyNode = (node: ReactNode) =>
-    node === null || node === undefined || node === false || node === '';
+    node === null ||
+    node === undefined ||
+    node === false ||
+    node === '' ||
+    node === '-' ||
+    node === '—';
 
   return (
     <Stack divider={<Divider flexItem />} role="list" aria-label={ariaLabel}>

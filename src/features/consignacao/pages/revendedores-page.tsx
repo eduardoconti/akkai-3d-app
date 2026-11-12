@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Chip, MenuItem, Stack, TextField } from '@mui/material';
+import { Alert, MenuItem, Stack, TextField } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import RevendedorDialog from '@/features/consignacao/components/revendedor-dialog';
 import {
@@ -13,6 +13,7 @@ import {
   type Revendedor,
   SearchFilterPanel,
   type StatusRevendedor,
+  StatusChip,
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -96,11 +97,9 @@ export default function RevendedoresPage() {
       header: 'Status',
       mobile: 'badge',
       cell: (r) => (
-        <Chip
-          size="small"
+        <StatusChip
           label={r.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
-          color={r.status === 'ATIVO' ? 'success' : 'default'}
-          variant="outlined"
+          tone={r.status === 'ATIVO' ? 'success' : 'default'}
         />
       ),
     },

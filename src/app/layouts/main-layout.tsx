@@ -8,9 +8,6 @@ import {
 } from 'react';
 import {
   Alert,
-  Avatar,
-  Badge,
-  AppBar,
   Box,
   Button,
   Collapse,
@@ -32,8 +29,9 @@ import {
   Stack,
   Toolbar,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
-import { type Theme } from '@mui/material/styles';
+import { type Theme, useTheme } from '@mui/material/styles';
 import {
   AdminPanelSettings,
   Add,
@@ -47,16 +45,12 @@ import {
   ExpandMore,
   HomeOutlined,
   Inventory as ProductIcon,
-  KeyboardArrowDown,
   LightMode,
   Loyalty,
   Logout as LogoutIcon,
-  Menu as MenuIcon,
   PointOfSale,
   RequestQuote,
-  Search as SearchIcon,
   ShoppingCart as SaleIcon,
-  Sync,
   Visibility,
   VisibilityOff,
 } from '@mui/icons-material';
@@ -66,6 +60,8 @@ import CommandPalette, {
 } from '../components/command-palette';
 import { useGlobalShortcuts } from '../hooks/use-global-shortcuts';
 import { MainLayoutActionsContext } from './main-layout-actions';
+import MainLayoutAppBar from './main-layout-app-bar';
+import { APP_BAR_HEIGHT } from './main-layout-constants';
 import {
   EditProfileDialog,
   PERMISSAO_ADMINISTRAR_PERMISSOES,
@@ -117,7 +113,31 @@ import { useThemeMode } from '@/theme/use-theme-mode';
 import { useShallow } from 'zustand/react/shallow';
 
 const DRAWER_WIDTH = 256;
-const MOBILE_APPBAR_MIN_HEIGHT = 96;
+
+type MenuSection =
+  | 'vendas'
+  | 'produtos'
+  | 'financeiro'
+  | 'assinatura'
+  | 'relatorios'
+  | 'consignacao';
+
+const MENU_SECTION_PREFIXES: ReadonlyArray<[string, MenuSection]> = [
+  ['/vendas', 'vendas'],
+  ['/produtos', 'produtos'],
+  ['/financeiro', 'financeiro'],
+  ['/assinatura', 'assinatura'],
+  ['/relatorios', 'relatorios'],
+  ['/consignacao', 'consignacao'],
+];
+
+function getMenuSection(pathname: string): MenuSection | null {
+  return (
+    MENU_SECTION_PREFIXES.find(([prefix]) =>
+      pathname.startsWith(prefix),
+    )?.[1] ?? null
+  );
+}
 const MENU_ITEM_COMPACT_SX = {
   px: 1.25,
   py: 1,
@@ -216,6 +236,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { mode, toggleColorMode } = useThemeMode();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const isOnline = useOnlineStatus();
   const { needsUpdate, update } = useSwUpdate();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
@@ -280,13 +302,22 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [assinanteDialogOpen, setAssinanteDialogOpen] = useState(false);
   const [cicloDialogOpen, setCicloDialogOpen] = useState(false);
   const [kitDialogOpen, setKitDialogOpen] = useState(false);
-  const [budgetsMenuOpen, setBudgetsMenuOpen] = useState(true);
-  const [financeMenuOpen, setFinanceMenuOpen] = useState(true);
-  const [assinaturaMenuOpen, setAssinaturaMenuOpen] = useState(true);
-  const [productsMenuOpen, setProductsMenuOpen] = useState(true);
-  const [reportsMenuOpen, setReportsMenuOpen] = useState(true);
-  const [salesMenuOpen, setSalesMenuOpen] = useState(true);
-  const [consignacaoMenuOpen, setConsignacaoMenuOpen] = useState(true);
+  // Acordeão: só o grupo da tela atual começa aberto; abrir outro fecha este.
+  const activeMenuSection = getMenuSection(location.pathname);
+  const [openMenuSection, setOpenMenuSection] = useState<MenuSection | null>(
+    activeMenuSection,
+  );
+  useEffect(() => {
+    setOpenMenuSection(activeMenuSection);
+  }, [activeMenuSection]);
+  const toggleMenuSection = (section: MenuSection) =>
+    setOpenMenuSection((current) => (current === section ? null : section));
+  const financeMenuOpen = openMenuSection === 'financeiro';
+  const assinaturaMenuOpen = openMenuSection === 'assinatura';
+  const productsMenuOpen = openMenuSection === 'produtos';
+  const reportsMenuOpen = openMenuSection === 'relatorios';
+  const salesMenuOpen = openMenuSection === 'vendas';
+  const consignacaoMenuOpen = openMenuSection === 'consignacao';
   const [editProfileDialogOpen, setEditProfileDialogOpen] = useState(false);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<HTMLElement | null>(
     null,
@@ -346,10 +377,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
     () => location.pathname.startsWith('/administracao'),
     [location.pathname],
   );
-  const budgetsSectionActive = useMemo(
-    () => location.pathname.startsWith('/orcamentos'),
-    [location.pathname],
-  );
   const financeSectionActive = useMemo(
     () => location.pathname.startsWith('/financeiro'),
     [location.pathname],
@@ -389,6 +416,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
     if (location.pathname.startsWith('/relatorios')) {
       return 'Relatórios';
+    }
+
+    if (location.pathname.startsWith('/administracao')) {
+      return 'Administração';
     }
 
     return 'AKKAI 3D';
@@ -810,7 +841,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           }
         >
           <ListItemButton
-            onClick={() => setSalesMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('vendas')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -918,7 +949,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           }
         >
           <ListItemButton
-            onClick={() => setProductsMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('produtos')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -1026,14 +1057,33 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </List>
         </Collapse>
 
-        <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
+        {/* Seção com uma única tela: link direto, sem submenu. */}
+        <ListItem
+          disablePadding
+          sx={{ mt: 1, mb: 0.5 }}
+          secondaryAction={
+            <IconButton
+              size="small"
+              aria-label="Novo orçamento"
+              tabIndex={-1}
+              onClick={(event) => {
+                event.stopPropagation();
+                layoutActions.openNewBudgetDialog();
+              }}
+              sx={{ mr: 0.5, ...MENU_ACTION_BUTTON_SX }}
+            >
+              <Add fontSize="small" />
+            </IconButton>
+          }
+        >
           <ListItemButton
-            onClick={() => setBudgetsMenuOpen((current) => !current)}
+            component={NavLink}
+            to="/orcamentos"
+            onClick={closeMobileMenu}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
-              '&&': { pr: 1.5 },
               borderRadius: 2,
-              ...(budgetsSectionActive ? getActiveMenuStyles(theme) : {}),
+              '&.active': getActiveMenuStyles(theme),
             })}
           >
             <ListItemIcon sx={MENU_ITEM_ICON_SX}>
@@ -1043,38 +1093,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
               primary="Orçamentos"
               primaryTypographyProps={{ noWrap: true }}
             />
-
-            {budgetsMenuOpen ? <ExpandLess /> : <ExpandMore />}
           </ListItemButton>
         </ListItem>
 
-        <Collapse
-          in={budgetsMenuOpen}
-          timeout="auto"
-          unmountOnExit
-          component="li"
-        >
-          <List disablePadding sx={{ pl: 1.5 }}>
-            <ListItem disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                component={NavLink}
-                end
-                to="/orcamentos"
-                onClick={closeMobileMenu}
-                sx={(theme: Theme) => ({
-                  borderRadius: 2,
-                  '&.active': getActiveSubmenuStyles(theme),
-                })}
-              >
-                <ListItemText primary="Orçamentos" />
-              </ListItemButton>
-            </ListItem>
-          </List>
-        </Collapse>
-
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
-            onClick={() => setFinanceMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('financeiro')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -1253,7 +1277,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
-            onClick={() => setAssinaturaMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('assinatura')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -1395,7 +1419,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
-            onClick={() => setReportsMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('relatorios')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -1500,7 +1524,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         <ListItem disablePadding sx={{ mt: 1, mb: 0.5 }}>
           <ListItemButton
-            onClick={() => setConsignacaoMenuOpen((current) => !current)}
+            onClick={() => toggleMenuSection('consignacao')}
             sx={(theme: Theme) => ({
               ...MENU_ITEM_COMPACT_SX,
               '&&': { pr: 1.5 },
@@ -1587,266 +1611,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100dvh', bgcolor: 'transparent' }}>
-      <AppBar
-        position="fixed"
-        color="inherit"
-        elevation={0}
-        sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <Box
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            px: 2,
-            py: 1,
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={0.5}
-            sx={{ minWidth: 0, flexWrap: 'nowrap' }}
-          >
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={() => setMobileOpen((current) => !current)}
-              sx={{ ml: -1, flexShrink: 0 }}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            <Typography
-              variant="subtitle1"
-              noWrap
-              sx={{ flexGrow: 1, minWidth: 0, fontWeight: 800 }}
-            >
-              {currentSectionTitle}
-            </Typography>
-
-            {pendingSalesCount > 0 ? (
-              <IconButton
-                color="inherit"
-                onClick={() => setPendingSalesDialogOpen(true)}
-                size="small"
-                aria-label={`Vendas pendentes: ${pendingSalesCount}`}
-                sx={{ flexShrink: 0 }}
-              >
-                <Badge
-                  badgeContent={pendingSalesCount}
-                  color={rejectedSalesCount > 0 ? 'error' : 'warning'}
-                >
-                  <Sync
-                    sx={
-                      isSyncingPendingSales
-                        ? {
-                            animation: 'ak-spin 1s linear infinite',
-                            '@keyframes ak-spin': {
-                              to: { transform: 'rotate(360deg)' },
-                            },
-                          }
-                        : undefined
-                    }
-                  />
-                </Badge>
-              </IconButton>
-            ) : null}
-
-            <Divider orientation="vertical" flexItem />
-
-            <IconButton
-              color="inherit"
-              onClick={toggleHideValues}
-              size="small"
-              aria-label={hideValues ? 'Exibir valores' : 'Ocultar valores'}
-              sx={{ flexShrink: 0 }}
-            >
-              {hideValues ? <Visibility /> : <VisibilityOff />}
-            </IconButton>
-
-            <Divider orientation="vertical" flexItem />
-
-            <IconButton
-              color="inherit"
-              size="small"
-              aria-label="Abertura de caixa"
-              onClick={layoutActions.openCashRegisterDialog}
-              sx={{ flexShrink: 0 }}
-            >
-              <PointOfSale />
-            </IconButton>
-
-            <Divider orientation="vertical" flexItem />
-
-            <IconButton
-              onClick={layoutActions.openNewSaleDialog}
-              aria-label="Nova venda"
-              sx={{
-                flexShrink: 0,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                '&:hover': { bgcolor: 'primary.dark' },
-              }}
-            >
-              <AddShoppingCart />
-            </IconButton>
-
-            <Divider orientation="vertical" flexItem />
-
-            <Button
-              color="inherit"
-              onClick={handleOpenUserMenu}
-              aria-label="Abrir menu do usuário"
-              endIcon={<KeyboardArrowDown fontSize="small" />}
-              sx={{
-                flexShrink: 0,
-                borderRadius: 999,
-                px: 1,
-                minWidth: 0,
-                textTransform: 'none',
-              }}
-            >
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  mr: { xs: 0, sm: 1 },
-                }}
-              >
-                {userInitials}
-              </Avatar>
-              <Box
-                component="span"
-                sx={{ display: { xs: 'none', sm: 'inline' } }}
-              >
-                {user?.name ?? 'Usuário'}
-              </Box>
-            </Button>
-          </Stack>
-        </Box>
-
-        <Toolbar
-          sx={{
-            display: { xs: 'none', md: 'flex' },
-            gap: 1.5,
-            py: 0,
-            minHeight: 64,
-            alignItems: 'center',
-          }}
-        >
-          <Stack spacing={0.25} sx={{ minWidth: 0, flexGrow: 1 }}>
-            <Typography variant="h6" fontWeight={800}>
-              {currentSectionTitle}
-            </Typography>
-          </Stack>
-
-          {pendingSalesCount > 0 ? (
-            <Button
-              variant="outlined"
-              color={rejectedSalesCount > 0 ? 'error' : 'inherit'}
-              size="small"
-              startIcon={<Sync />}
-              onClick={() => setPendingSalesDialogOpen(true)}
-            >
-              {isSyncingPendingSales
-                ? 'Sincronizando...'
-                : `Pendentes (${pendingSalesCount})`}
-            </Button>
-          ) : null}
-
-          <Divider orientation="vertical" flexItem />
-
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            startIcon={<SearchIcon />}
-            onClick={openPalette}
-            aria-label="Busca rápida (Ctrl+K)"
-          >
-            Buscar
-            <Typography
-              component="span"
-              variant="caption"
-              color="text.secondary"
-              sx={{ ml: 1, display: { xs: 'none', lg: 'inline' } }}
-            >
-              Ctrl K
-            </Typography>
-          </Button>
-
-          <Divider orientation="vertical" flexItem />
-
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            startIcon={hideValues ? <Visibility /> : <VisibilityOff />}
-            onClick={toggleHideValues}
-          >
-            {hideValues ? 'Exibir valores' : 'Ocultar valores'}
-          </Button>
-
-          <Divider orientation="vertical" flexItem />
-
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            startIcon={<PointOfSale />}
-            onClick={layoutActions.openCashRegisterDialog}
-          >
-            Abertura de caixa
-          </Button>
-
-          <Divider orientation="vertical" flexItem />
-
-          <Button
-            variant="contained"
-            startIcon={<AddShoppingCart />}
-            onClick={layoutActions.openNewSaleDialog}
-          >
-            Nova venda
-          </Button>
-
-          <Divider orientation="vertical" flexItem />
-
-          <Button
-            color="inherit"
-            onClick={handleOpenUserMenu}
-            aria-label="Abrir menu do usuário"
-            endIcon={<KeyboardArrowDown fontSize="small" />}
-            sx={{
-              borderRadius: 999,
-              px: 1,
-              minWidth: 0,
-              textTransform: 'none',
-            }}
-          >
-            <Avatar
-              sx={{
-                width: 34,
-                height: 34,
-                fontSize: 13,
-                fontWeight: 700,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                mr: 1,
-              }}
-            >
-              {userInitials}
-            </Avatar>
-            {user?.name ?? 'Usuário'}
-          </Button>
-        </Toolbar>
-      </AppBar>
+      <MainLayoutAppBar
+        drawerWidth={DRAWER_WIDTH}
+        sectionTitle={currentSectionTitle}
+        userName={user?.name ?? 'Usuário'}
+        userInitials={userInitials}
+        hideValues={hideValues}
+        pendingSalesCount={pendingSalesCount}
+        rejectedSalesCount={rejectedSalesCount}
+        isSyncingPendingSales={isSyncingPendingSales}
+        onToggleMobileMenu={() => setMobileOpen((current) => !current)}
+        onOpenSearch={openPalette}
+        onOpenPendingSales={() => setPendingSalesDialogOpen(true)}
+        onToggleHideValues={toggleHideValues}
+        onOpenCashRegister={layoutActions.openCashRegisterDialog}
+        onNewSale={layoutActions.openNewSaleDialog}
+        onOpenUserMenu={handleOpenUserMenu}
+      />
 
       <Box
         component="nav"
@@ -1905,6 +1686,39 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </Typography>
         </Box>
         <Divider />
+        {/* No celular essas ações saem da barra superior para liberar espaço. */}
+        {!isDesktop ? (
+          <MenuItem
+            onClick={() => {
+              toggleHideValues();
+              handleCloseUserMenu();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              {hideValues ? (
+                <Visibility fontSize="small" />
+              ) : (
+                <VisibilityOff fontSize="small" />
+              )}
+            </ListItemIcon>
+            <ListItemText
+              primary={hideValues ? 'Exibir valores' : 'Ocultar valores'}
+            />
+          </MenuItem>
+        ) : null}
+        {!isDesktop ? (
+          <MenuItem
+            onClick={() => {
+              handleCloseUserMenu();
+              layoutActions.openCashRegisterDialog();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 32 }}>
+              <PointOfSale fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary="Abertura de caixa" />
+          </MenuItem>
+        ) : null}
         <MenuItem
           onClick={() => {
             toggleColorMode();
@@ -1953,7 +1767,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
           width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
         }}
       >
-        <Box sx={{ height: { xs: `${MOBILE_APPBAR_MIN_HEIGHT}px`, md: 64 } }} />
+        <Box
+          sx={{
+            height: {
+              xs: APP_BAR_HEIGHT.mobile,
+              md: APP_BAR_HEIGHT.desktop,
+            },
+          }}
+        />
         <MainLayoutActionsContext.Provider value={layoutActions}>
           <Box
             sx={{
