@@ -94,6 +94,8 @@ export type {
   MovimentacaoEstoque,
   Orcamento,
   OrcamentoInput,
+  OrcamentoItem,
+  OrcamentoItemInput,
   OrigemEntradaEstoque,
   OrigemMovimentacaoEstoque,
   OrigemSaidaEstoque,

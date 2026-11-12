@@ -15,9 +15,13 @@ export function useFairProductPrices(fairId: number | '') {
     useState<string | null>(null);
   const [isLoadingFairProductPrices, setIsLoadingFairProductPrices] =
     useState(false);
+  // Feira cujos preços já terminaram de carregar (com sucesso ou não); quem
+  // depende dos preços espera por ela em vez de ler uma lista ainda vazia.
+  const [loadedFairId, setLoadedFairId] = useState<number | ''>('');
 
   useEffect(() => {
     if (fairId === '') {
+      setLoadedFairId('');
       setFairProductPrices([]);
       setFairProductPricesErrorMessage(null);
       setIsLoadingFairProductPrices(false);
@@ -58,6 +62,7 @@ export function useFairProductPrices(fairId: number | '') {
         }
       } finally {
         if (active) {
+          setLoadedFairId(fairId);
           setIsLoadingFairProductPrices(false);
         }
       }
@@ -74,5 +79,6 @@ export function useFairProductPrices(fairId: number | '') {
     fairProductPrices,
     fairProductPricesErrorMessage,
     isLoadingFairProductPrices,
+    loadedFairId,
   };
 }

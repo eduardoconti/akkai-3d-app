@@ -17,6 +17,7 @@ import Grid from '@mui/material/Grid';
 import { PointOfSale } from '@mui/icons-material';
 import { alpha, useTheme } from '@mui/material/styles';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
+import { buildSaleFormFromBudget } from '@/features/budgets/utils/build-sale-form-from-budget';
 import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
 import { useMainLayoutActions } from '@/app/layouts/main-layout-actions';
 import {
@@ -29,12 +30,8 @@ import {
   CANAL_ATENDIMENTO_ORCAMENTO_LABEL,
   STATUS_ORCAMENTO_LABEL,
   STATUSES_ALTERAVEIS_ORCAMENTO,
+  STATUSES_PADRAO_PESQUISA_ORCAMENTO,
 } from '@/features/budgets/types/budget-form';
-import {
-  emptySaleItem,
-  initialSaleFormState,
-  type SaleFormState,
-} from '@/features/sales/types/sale-form';
 import {
   CurrencyValue,
   PageHeader,
@@ -48,43 +45,10 @@ import type {
   StatusOrcamento,
   TipoVenda,
 } from '@/shared/lib/types/domain';
-import { formatLocalDate } from '@/shared/utils/date';
 import { useShallow } from 'zustand/react/shallow';
 
 function formatDateTime(value: string): string {
   return new Date(value).toLocaleString('pt-BR');
-}
-
-function buildSaleFormFromBudget(orcamento: Orcamento): SaleFormState {
-  const itemName =
-    orcamento.descricao?.trim() ||
-    `Orçamento #${orcamento.id} - ${orcamento.nomeCliente}`;
-  const budgetValue = orcamento.valor ?? 0;
-
-  return {
-    ...initialSaleFormState,
-    dataVenda: formatLocalDate(),
-    tipo: orcamento.tipo,
-    idFeira: orcamento.tipo === 'FEIRA' ? (orcamento.idFeira ?? '') : '',
-    idOrcamento: orcamento.id,
-    desconto: 0,
-    descontoModo: 'VALOR',
-    itens: [
-      {
-        ...emptySaleItem,
-        tipoItem: 'AVULSO',
-        nomeProduto: itemName,
-        valorUnitario: budgetValue / 100,
-        quantidade: 1,
-      },
-    ],
-    pagamentos: [
-      {
-        ...initialSaleFormState.pagamentos[0],
-        valor: budgetValue / 100,
-      },
-    ],
-  };
 }
 
 const STATUS_CHIP_COLOR: Record<
@@ -136,14 +100,11 @@ const TIPO_LABEL: Record<TipoVenda, string> = {
 };
 const TIPOS_ORCAMENTO: TipoVenda[] = ['LOJA', 'FEIRA', 'ONLINE'];
 
-const STATUS_PADRAO_ORCAMENTO = ALL_STATUSES_ORCAMENTO.filter(
-  (status) => status !== 'FINALIZADO',
-);
-
 const COLUNAS_VISIVEIS_DESKTOP = [
   'id',
   'cliente',
   'descricao',
+  'produtos',
   'telefone',
   'tipo',
   'status',
@@ -260,7 +221,7 @@ export default function BudgetsPage() {
   );
   const [statusSelecionados, setStatusSelecionados] = useState<
     StatusOrcamento[]
-  >(paginacao.status ?? STATUS_PADRAO_ORCAMENTO);
+  >(paginacao.status ?? STATUSES_PADRAO_PESQUISA_ORCAMENTO);
   const [searchInput, setSearchInput] = useState(paginacao.termo ?? '');
   const [tipoSelecionado, setTipoSelecionado] = useState<TipoVenda | ''>(
     paginacao.tipo ?? '',
@@ -309,14 +270,14 @@ export default function BudgetsPage() {
   );
 
   const handleClearFilters = () => {
-    setStatusSelecionados(STATUS_PADRAO_ORCAMENTO);
+    setStatusSelecionados(STATUSES_PADRAO_PESQUISA_ORCAMENTO);
     setSearchInput('');
     setTipoSelecionado('');
     setCanalAtendimentoSelecionado('');
     void fetchOrcamentos({
       pagina: 1,
       termo: '',
-      status: STATUS_PADRAO_ORCAMENTO,
+      status: STATUSES_PADRAO_PESQUISA_ORCAMENTO,
       tipo: undefined,
       canalAtendimento: undefined,
     });
@@ -352,6 +313,29 @@ export default function BudgetsPage() {
       id: 'descricao',
       header: 'Descrição',
       cell: (orcamento) => orcamento.descricao?.trim() || '-',
+    },
+    {
+      id: 'produtos',
+      header: 'Produtos',
+      cell: (orcamento) => {
+        const itens = orcamento.itens ?? [];
+
+        if (itens.length === 0) {
+          return '-';
+        }
+
+        const resumo = itens
+          .map((item) => `${item.quantidade}× ${item.nomeProduto}`)
+          .join(', ');
+
+        return (
+          <Tooltip title={resumo}>
+            <span>
+              {itens.length === 1 ? '1 produto' : `${itens.length} produtos`}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       id: 'telefone',
@@ -589,6 +573,7 @@ export default function BudgetsPage() {
         open={Boolean(finalizingBudget)}
         draftKey={finalizingBudget ? `orcamento-${finalizingBudget.id}` : ''}
         initialForm={finalizationSaleForm}
+        budgetTargetCents={finalizingBudget?.valor}
         onClose={handleCloseFinalizeDialog}
         onSaved={handleFinalizeSaved}
       />

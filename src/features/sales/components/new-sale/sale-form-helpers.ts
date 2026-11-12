@@ -5,10 +5,8 @@ import {
   type SaleFormPayment,
   type SaleFormState,
 } from '@/features/sales/types/sale-form';
-import { useSaleStore } from '@/features/sales/store/use-sale-store';
 import {
   formatLocalDate,
-  useFeedbackStore,
   type PrecoProdutoFeira,
   type TipoVenda,
   type Venda,
@@ -100,21 +98,6 @@ export function mapSaleToForm(sale: Venda): SaleFormState {
  * Ler apenas o prefixo do ISO usaria a data em UTC e adiantaria um dia nas
  * vendas feitas à noite.
  */
-/** Desfaz uma venda recém-criada (exclui e atualiza a lista). */
-export async function undoCreatedSale(saleId: number): Promise<void> {
-  const { excluirVenda, fetchVendas } = useSaleStore.getState();
-  const feedback = useFeedbackStore.getState();
-  const result = await excluirVenda(saleId);
-
-  if (!result.success) {
-    feedback.showError(result.problem.detail);
-    return;
-  }
-
-  await fetchVendas();
-  feedback.showSuccess('Venda desfeita.');
-}
-
 export function getSaleLocalDate(value: string): string {
   return /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? formatLocalDate(value)

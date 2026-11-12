@@ -4,6 +4,15 @@ import type {
   TipoVenda,
 } from '@/shared/lib/types/domain';
 
+/** Limites do backend (mesmos de uma venda). */
+export const MAX_BUDGET_ITEMS = 12;
+export const MAX_BUDGET_ITEM_QUANTITY = 500;
+
+export type BudgetFormItem = {
+  idProduto: number | null;
+  quantidade: number;
+};
+
 export type BudgetFormState = {
   nomeCliente: string;
   telefoneCliente: string;
@@ -14,6 +23,7 @@ export type BudgetFormState = {
   canalAtendimento: CanalAtendimentoOrcamento | '';
   idFeira: number | '';
   valor: number;
+  itens: BudgetFormItem[];
 };
 
 export type BudgetFormErrors = {
@@ -25,6 +35,7 @@ export type BudgetFormErrors = {
   canalAtendimento?: string;
   idFeira?: string;
   valor?: string;
+  itens?: string;
 };
 
 export const initialBudgetFormState: BudgetFormState = {
@@ -37,6 +48,7 @@ export const initialBudgetFormState: BudgetFormState = {
   canalAtendimento: '',
   idFeira: '',
   valor: 0,
+  itens: [],
 };
 
 export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
@@ -50,6 +62,16 @@ export const ALL_STATUSES_ORCAMENTO: StatusOrcamento[] = [
 ];
 
 export const STATUSES_ALTERAVEIS_ORCAMENTO = ALL_STATUSES_ORCAMENTO;
+
+/**
+ * Status exibidos na pesquisa de orçamentos quando nenhum filtro é escolhido:
+ * orçamentos encerrados (finalizados ou cancelados) ficam de fora, mas podem ser
+ * incluídos pelo filtro de status.
+ */
+export const STATUSES_PADRAO_PESQUISA_ORCAMENTO: StatusOrcamento[] =
+  ALL_STATUSES_ORCAMENTO.filter(
+    (status) => status !== 'FINALIZADO' && status !== 'CANCELADO',
+  );
 
 export const STATUS_ORCAMENTO_LABEL: Record<StatusOrcamento, string> = {
   ATENDIMENTO: 'Em atendimento',

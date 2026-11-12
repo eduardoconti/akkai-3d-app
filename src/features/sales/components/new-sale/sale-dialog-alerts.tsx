@@ -1,5 +1,6 @@
 import { Alert } from '@mui/material';
 import { FormFeedbackAlert } from '@/shared';
+import type { BudgetNotice } from './use-budget-total-reconciliation';
 
 interface SaleDialogAlertsProps {
   globalMessage?: string | null;
@@ -8,6 +9,8 @@ interface SaleDialogAlertsProps {
   isEditMode: boolean;
   isOnline: boolean;
   isCaixaFromCache?: boolean;
+  /** Aviso sobre o ajuste do total ao valor do orçamento finalizado. */
+  budgetNotice?: BudgetNotice | null;
 }
 
 export default function SaleDialogAlerts({
@@ -17,6 +20,7 @@ export default function SaleDialogAlerts({
   isEditMode,
   isOnline,
   isCaixaFromCache = false,
+  budgetNotice = null,
 }: SaleDialogAlertsProps) {
   return (
     <>
@@ -27,6 +31,10 @@ export default function SaleDialogAlerts({
           Você está offline. As vendas serão salvas localmente e poderão ser
           sincronizadas depois.
         </Alert>
+      ) : null}
+
+      {budgetNotice ? (
+        <Alert severity={budgetNotice.severity}>{budgetNotice.text}</Alert>
       ) : null}
 
       {isCaixaFromCache && !isEditMode ? (

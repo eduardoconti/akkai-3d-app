@@ -253,6 +253,19 @@ export interface Venda {
   pagamentos: PagamentoVenda[];
 }
 
+/** Produto do catálogo informado em um orçamento (o preço vem do catálogo). */
+export interface OrcamentoItem {
+  id: number;
+  idProduto: number;
+  nomeProduto: string;
+  quantidade: number;
+}
+
+export interface OrcamentoItemInput {
+  idProduto: number;
+  quantidade: number;
+}
+
 export interface Orcamento {
   id: number;
   nomeCliente: string;
@@ -266,6 +279,7 @@ export interface Orcamento {
   idFeira?: number;
   valor?: number;
   feira?: Feira | null;
+  itens?: OrcamentoItem[];
 }
 
 export interface ProdutoInput {
@@ -468,6 +482,7 @@ export interface OrcamentoInput {
   canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
+  itens?: OrcamentoItemInput[];
 }
 
 export interface AtualizarOrcamentoInput {
@@ -480,6 +495,8 @@ export interface AtualizarOrcamentoInput {
   canalAtendimento?: CanalAtendimentoOrcamento;
   idFeira?: number;
   valor?: number;
+  /** Omitir mantém os produtos atuais; lista vazia remove todos. */
+  itens?: OrcamentoItemInput[];
 }
 
 // ── Consignação ──────────────────────────────────────────────────────────────

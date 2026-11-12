@@ -5,7 +5,7 @@ import {
   listBudgets,
   updateBudget,
 } from '@/features/budgets/api/budgets-api';
-import { ALL_STATUSES_ORCAMENTO } from '@/features/budgets/types/budget-form';
+import { STATUSES_PADRAO_PESQUISA_ORCAMENTO } from '@/features/budgets/types/budget-form';
 import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import type { ActionResult } from '@/shared/lib/types/action-result';
@@ -21,7 +21,7 @@ const paginacaoInicial: PesquisaPaginadaOrcamentos = {
   pagina: 1,
   tamanhoPagina: DEFAULT_PAGE_SIZE,
   termo: '',
-  status: ALL_STATUSES_ORCAMENTO.filter((status) => status !== 'FINALIZADO'),
+  status: STATUSES_PADRAO_PESQUISA_ORCAMENTO,
   tipo: undefined,
   canalAtendimento: undefined,
 };

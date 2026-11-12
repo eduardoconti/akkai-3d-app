@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
@@ -27,6 +27,7 @@ import {
   RequestQuote,
   Save,
 } from '@mui/icons-material';
+import BudgetProductsSection from '@/features/budgets/components/budget-products-section';
 import {
   budgetStoreSelectors,
   useBudgetStore,
@@ -38,8 +39,18 @@ import {
   STATUSES_ALTERAVEIS_ORCAMENTO,
   initialBudgetFormState,
   type BudgetFormErrors,
+  type BudgetFormItem,
   type BudgetFormState,
 } from '@/features/budgets/types/budget-form';
+import {
+  buildBudgetItemsInput,
+  getBudgetItemsTotal,
+  hasBudgetItemsErrors,
+  suggestBudgetValue,
+  validateBudgetItems,
+  type BudgetItemsErrors,
+} from '@/features/budgets/utils/budget-items';
+import { listAllProducts } from '@/features/products/api/products-api';
 import {
   saleStoreSelectors,
   useSaleStore,
@@ -48,11 +59,16 @@ import {
   ConfirmDialog,
   CurrencyField,
   FormFeedbackAlert,
+  formatCurrency,
   getFieldMessage,
   useFeedbackStore,
   useFormDialog,
 } from '@/shared';
-import type { Orcamento, TipoVenda } from '@/shared/lib/types/domain';
+import {
+  getCachedProductCatalog,
+  saveCachedProductCatalog,
+} from '@/shared/lib/offline/indexed-db';
+import type { Orcamento, Produto, TipoVenda } from '@/shared/lib/types/domain';
 import { useShallow } from 'zustand/react/shallow';
 
 interface NewBudgetDialogProps {
@@ -115,6 +131,9 @@ export default function NewBudgetDialog({
   });
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [isLoadingProdutos, setIsLoadingProdutos] = useState(false);
+  const [itemsErrors, setItemsErrors] = useState<BudgetItemsErrors>();
 
   useEffect(() => {
     if (open) {
@@ -127,8 +146,46 @@ export default function NewBudgetDialog({
       return;
     }
 
+    let active = true;
+
+    const loadProdutos = async () => {
+      setIsLoadingProdutos(true);
+
+      try {
+        const catalog = await listAllProducts();
+
+        if (active) {
+          setProdutos(catalog);
+        }
+        await saveCachedProductCatalog(catalog).catch(() => undefined);
+      } catch {
+        const cached = await getCachedProductCatalog().catch(() => null);
+
+        if (active && cached) {
+          setProdutos(cached);
+        }
+      } finally {
+        if (active) {
+          setIsLoadingProdutos(false);
+        }
+      }
+    };
+
+    void loadProdutos();
+
+    return () => {
+      active = false;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
     setProblem(null);
     setLocalErrors({});
+    setItemsErrors(undefined);
 
     if (!budget) return;
 
@@ -142,6 +199,10 @@ export default function NewBudgetDialog({
       canalAtendimento: budget.canalAtendimento ?? '',
       idFeira: budget.idFeira ?? '',
       valor: budget.valor != null ? budget.valor / 100 : 0,
+      itens: (budget.itens ?? []).map((item) => ({
+        idProduto: item.idProduto,
+        quantidade: item.quantidade,
+      })),
     });
   }, [budget, open, setInitialForm, setLocalErrors, setProblem]);
 
@@ -152,6 +213,26 @@ export default function NewBudgetDialog({
   };
 
   const isBusy = isSubmitting || isSaving || isDeleting;
+  const isFinalized = budget?.status === 'FINALIZADO';
+  const itemsTotal = useMemo(
+    () => getBudgetItemsTotal(form.itens, produtos),
+    [form.itens, produtos],
+  );
+  const itemsTotalCents = Math.round(itemsTotal * 100);
+  const canUseItemsTotal =
+    itemsTotalCents > 0 && itemsTotalCents !== Math.round(form.valor * 100);
+
+  // O valor acompanha a soma dos produtos enquanto não for combinado à mão.
+  const handleItemsChange = (itens: BudgetFormItem[]) => {
+    const nextTotal = getBudgetItemsTotal(itens, produtos);
+
+    setItemsErrors(undefined);
+    setForm((current) => ({
+      ...current,
+      itens,
+      valor: suggestBudgetValue(current.valor, itemsTotal, nextTotal),
+    }));
+  };
 
   const handleDialogClose = () => {
     if (isBusy) return;
@@ -208,10 +289,15 @@ export default function NewBudgetDialog({
 
   const handleSubmit = async () => {
     const validationErrors = validateForm();
+    const nextItemsErrors = validateBudgetItems(form.itens);
     setLocalErrors(validationErrors);
+    setItemsErrors(nextItemsErrors);
     setProblem(null);
 
-    if (Object.keys(validationErrors).length > 0) {
+    if (
+      Object.keys(validationErrors).length > 0 ||
+      hasBudgetItemsErrors(nextItemsErrors)
+    ) {
       return;
     }
 
@@ -231,6 +317,11 @@ export default function NewBudgetDialog({
             : undefined,
         idFeira: form.idFeira === '' ? undefined : form.idFeira,
         valor: form.valor > 0 ? Math.round(form.valor * 100) : undefined,
+        // Na alteração, lista vazia remove os produtos; ausente os mantém.
+        itens:
+          isEditMode || form.itens.length > 0
+            ? buildBudgetItemsInput(form.itens)
+            : undefined,
       };
       const result =
         isEditMode && budget
@@ -550,6 +641,16 @@ export default function NewBudgetDialog({
               </Stack>
             </Paper>
 
+            <BudgetProductsSection
+              itens={form.itens}
+              produtos={produtos}
+              isLoadingProdutos={isLoadingProdutos}
+              disabled={isDeleting || isFinalized}
+              errors={itemsErrors}
+              problem={problem}
+              onChange={handleItemsChange}
+            />
+
             <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 1 }}>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -565,9 +666,28 @@ export default function NewBudgetDialog({
                       localErrors.valor || getFieldMessage(problem, 'valor'),
                     )}
                     helperText={
-                      localErrors.valor ?? getFieldMessage(problem, 'valor')
+                      localErrors.valor ??
+                      getFieldMessage(problem, 'valor') ??
+                      (itemsTotalCents > 0 && !canUseItemsTotal
+                        ? 'Igual à soma dos produtos.'
+                        : undefined)
                     }
                   />
+                  {canUseItemsTotal ? (
+                    <Button
+                      size="small"
+                      sx={{ mt: 0.5 }}
+                      disabled={isDeleting}
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          valor: itemsTotal,
+                        }))
+                      }
+                    >
+                      Usar soma dos produtos ({formatCurrency(itemsTotalCents)})
+                    </Button>
+                  ) : null}
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 6 }}>

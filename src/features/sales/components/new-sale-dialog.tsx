@@ -6,7 +6,6 @@ import {
   saleStoreSelectors,
   useSaleStore,
 } from '@/features/sales/store/use-sale-store';
-import { useAuth } from '@/features/auth';
 import {
   emptySaleItem,
   initialSaleFormState,
@@ -47,13 +46,13 @@ import {
   getResetFormState,
   mapSaleToForm,
   saleTypeLabels,
-  undoCreatedSale,
   type PersistedSaleConfig,
 } from './new-sale/sale-form-helpers';
 import {
   scrollToFirstSaleFormError,
   validateSaleForm,
 } from './new-sale/sale-form-validation';
+import { useBudgetTotalReconciliation } from './new-sale/use-budget-total-reconciliation';
 import { useFairProductPrices } from './new-sale/use-fair-product-prices';
 import { useTopSellerIds } from './new-sale/use-top-seller-ids';
 import SaleConfigSection from './new-sale/sale-config-section';
@@ -73,6 +72,8 @@ interface NewSaleDialogProps {
   onMinimize?: () => void;
   onSaved?: () => void | Promise<void>;
   sale?: Venda | null;
+  /** Valor combinado do orçamento (centavos) a ser fechado pela venda. */
+  budgetTargetCents?: number;
 }
 
 export default function NewSaleDialog({
@@ -84,6 +85,7 @@ export default function NewSaleDialog({
   onMinimize,
   onSaved,
   sale = null,
+  budgetTargetCents,
 }: NewSaleDialogProps) {
   const isOnline = useOnlineStatus();
   const {
@@ -149,10 +151,9 @@ export default function NewSaleDialog({
     fairProductPrices,
     fairProductPricesErrorMessage,
     isLoadingFairProductPrices,
+    loadedFairId,
   } = useFairProductPrices(open && form.tipo === 'FEIRA' ? form.idFeira : '');
   const topSellerIds = useTopSellerIds(open && !isEditMode && isOnline);
-  const { user } = useAuth();
-  const canDeleteSale = user?.permissions.includes('venda.excluir') ?? false;
   const persistedConfigRef = useRef(persistedConfig);
   const preservedDraftRef = useRef(false);
   const preservedDraftSaleIdRef = useRef<number | null>(null);
@@ -172,6 +173,17 @@ export default function NewSaleDialog({
       typeof nextForm === 'function' ? nextForm(currentForm) : nextForm,
     );
   };
+
+  const budgetNotice = useBudgetTotalReconciliation({
+    open: open && !isEditMode,
+    targetCents: budgetTargetCents,
+    initialForm,
+    form,
+    setForm: setInternalForm,
+    catalogProducts,
+    fairProductPrices,
+    loadedFairId,
+  });
 
   useEffect(() => {
     persistedConfigRef.current = persistedConfig;
@@ -779,19 +791,10 @@ export default function NewSaleDialog({
 
       await fetchVendas();
       await onSaved?.();
-      const createdSaleId = result.data.id;
       showSuccess(
         isEditMode
           ? 'Venda alterada com sucesso.'
           : 'Venda cadastrada com sucesso.',
-        !isEditMode && canDeleteSale
-          ? {
-              label: 'Desfazer',
-              onClick: () => {
-                void undoCreatedSale(createdSaleId);
-              },
-            }
-          : undefined,
       );
       handleClose();
     } finally {
@@ -894,6 +897,7 @@ export default function NewSaleDialog({
               isEditMode={isEditMode}
               isOnline={isOnline}
               isCaixaFromCache={isCaixaFromCache}
+              budgetNotice={budgetNotice}
             />
 
             <SaleConfigSection

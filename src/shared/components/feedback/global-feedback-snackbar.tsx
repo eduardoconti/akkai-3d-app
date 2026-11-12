@@ -7,7 +7,7 @@ export default function GlobalFeedbackSnackbar() {
   return (
     <Snackbar
       open={open}
-      // Mais tempo quando há uma ação (ex.: "Desfazer") para dar chance de usá-la.
+      // Mais tempo quando há uma ação para dar chance de usá-la.
       autoHideDuration={action ? 8000 : severity === 'error' ? 6000 : 3500}
       onClose={(_, reason) => {
         if (reason === 'clickaway') {
