@@ -6,6 +6,7 @@ import {
   type SaleFormState,
 } from '@/features/sales/types/sale-form';
 import {
+  addCatalogProductToItems,
   buildSalePayload,
   mergeRepeatedCatalogItems,
 } from './sale-form-helpers';
@@ -82,6 +83,35 @@ describe('mergeRepeatedCatalogItems', () => {
     ]);
 
     expect(result).toHaveLength(4);
+  });
+});
+
+describe('addCatalogProductToItems', () => {
+  const produto = { id: 1, nome: 'Produto 1', valor: 1000 };
+
+  it('preenche a primeira linha vazia de catálogo', () => {
+    const result = addCatalogProductToItems(
+      [avulso('Chaveiro', 1), { ...emptySaleItem }],
+      produto,
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[1]).toMatchObject({
+      idProduto: 1,
+      nomeProduto: 'Produto 1',
+      valorUnitario: 10,
+      quantidade: 1,
+      brinde: false,
+    });
+  });
+
+  it('cria uma linha nova em vez de somar no mesmo produto', () => {
+    const result = addCatalogProductToItems([catalogo(1, 5)], produto);
+
+    expect(result.map((item) => [item.idProduto, item.quantidade])).toEqual([
+      [1, 5],
+      [1, 1],
+    ]);
   });
 });
 

@@ -38,6 +38,7 @@ import {
 } from '@/shared';
 import { useShallow } from 'zustand/react/shallow';
 import {
+  addCatalogProductToItems,
   buildSalePayload,
   calculateSaleTotals,
   cloneSaleFormState,
@@ -444,48 +445,19 @@ export default function NewSaleDialog({
     handleClose();
   };
 
-  /** Adiciona 1 unidade do produto, somando se já estiver na venda. */
+  /**
+   * Atalho dos mais vendidos: adiciona 1 unidade do produto em uma linha
+   * própria (ou na linha vazia), para que ela possa ser marcada como brinde.
+   * Linhas repetidas são somadas no envio.
+   */
   const handleQuickAddProduct = (product: Produto) => {
-    const duplicatedIndex = form.itens.findIndex(
-      (item) =>
-        item.tipoItem === 'CATALOGO' &&
-        item.idProduto === product.id &&
-        !item.brinde,
-    );
+    const itens = addCatalogProductToItems(form.itens, product);
 
-    if (duplicatedIndex >= 0) {
-      updateItem(duplicatedIndex, {
-        quantidade: form.itens[duplicatedIndex]!.quantidade + 1,
-      });
-      return;
+    setForm((current) => ({ ...current, itens }));
+
+    if (itens.length > form.itens.length) {
+      setItemErrors((current) => [...current, {}]);
     }
-
-    const emptyIndex = form.itens.findIndex(
-      (item) => item.tipoItem === 'CATALOGO' && item.idProduto === null,
-    );
-
-    if (emptyIndex >= 0) {
-      updateItem(emptyIndex, {
-        idProduto: product.id,
-        nomeProduto: product.nome,
-        valorUnitario: product.valor / 100,
-      });
-      return;
-    }
-
-    setForm((current) => ({
-      ...current,
-      itens: [
-        ...current.itens,
-        {
-          ...emptySaleItem,
-          idProduto: product.id,
-          nomeProduto: product.nome,
-          valorUnitario: product.valor / 100,
-        },
-      ],
-    }));
-    setItemErrors((current) => [...current, {}]);
   };
 
   const topSellerProducts = topSellerIds

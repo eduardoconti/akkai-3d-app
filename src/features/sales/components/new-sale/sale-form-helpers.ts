@@ -1,4 +1,5 @@
 import {
+  emptySaleItem,
   initialSaleFormState,
   type DiscountMode,
   type SaleFormItem,
@@ -147,6 +148,41 @@ export function calculateSaleTotals(
     total: Math.max(0, subtotal - saleDiscount),
     totalQuantidadeItens,
   };
+}
+
+/**
+ * Coloca 1 unidade do produto na primeira linha de catálogo ainda vazia ou, se
+ * não houver, em uma linha nova. Não soma em linha existente do mesmo produto:
+ * cada linha pode virar brinde separadamente (ex.: 5× A + 1× A brinde).
+ */
+export function addCatalogProductToItems(
+  itens: SaleFormItem[],
+  product: { id: number; nome: string; valor: number },
+): SaleFormItem[] {
+  const filled: SaleFormItem = {
+    ...emptySaleItem,
+    idProduto: product.id,
+    nomeProduto: product.nome,
+    valorUnitario: product.valor / 100,
+  };
+  const emptyIndex = itens.findIndex(
+    (item) => item.tipoItem === 'CATALOGO' && item.idProduto === null,
+  );
+
+  if (emptyIndex < 0) {
+    return [...itens, filled];
+  }
+
+  return itens.map((item, index) =>
+    index === emptyIndex
+      ? {
+          ...item,
+          idProduto: filled.idProduto,
+          nomeProduto: filled.nomeProduto,
+          valorUnitario: filled.valorUnitario,
+        }
+      : item,
+  );
 }
 
 /**

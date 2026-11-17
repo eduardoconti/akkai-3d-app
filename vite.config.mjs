@@ -62,12 +62,12 @@ export default defineConfig({
             return undefined;
           }
 
-          if (id.includes('@mui') || id.includes('@emotion')) {
-            return 'mui';
-          }
-
           if (id.includes('@mui/x-date-pickers') || id.includes('dayjs')) {
             return 'date';
+          }
+
+          if (id.includes('@mui') || id.includes('@emotion')) {
+            return 'mui';
           }
 
           if (id.includes('react-router')) {
