@@ -33,6 +33,7 @@ export {
   httpClient,
   ApiProblemError,
   getProblemDetailsFromError,
+  isServerUnavailableStatus,
 } from './lib/api/http-client';
 export { useOnlineStatus } from './lib/offline/use-online-status';
 export { useSwUpdate } from './lib/offline/use-sw-update';

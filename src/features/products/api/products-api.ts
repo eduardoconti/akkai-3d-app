@@ -45,25 +45,9 @@ export function listProductStockMovements(
   );
 }
 
-export async function listAllProducts(): Promise<Produto[]> {
-  const produtos: Produto[] = [];
-  let pagina = 1;
-  let totalPaginas = 1;
-
-  do {
-    const resposta = await listProducts({
-      pagina,
-      tamanhoPagina: DEFAULT_PAGE_SIZE,
-      termo: '',
-      ordenarPor: 'nome',
-      direcao: 'asc',
-    });
-    produtos.push(...resposta.itens);
-    totalPaginas = resposta.totalPaginas;
-    pagina += 1;
-  } while (pagina <= totalPaginas);
-
-  return produtos;
+/** Catálogo completo em uma única requisição (sem paginar em várias idas). */
+export function listAllProducts(): Promise<Produto[]> {
+  return httpClient.get<Produto[]>('/produto/catalogo');
 }
 
 export function listCategories(

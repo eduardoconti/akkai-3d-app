@@ -9,7 +9,10 @@ import {
   AuthContext,
   type AuthContextValue,
 } from '@/features/auth/context/auth-context';
-import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import {
+  getProblemDetailsFromError,
+  isServerUnavailableStatus,
+} from '@/shared/lib/api/http-client';
 import {
   AUTH_SNAPSHOT_KEY,
   clearTokens,
@@ -96,7 +99,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         const problem = getProblemDetailsFromError(error);
 
-        if (problem.status === 0) {
+        // Servidor fora do ar ou acordando (cold start) não invalida a sessão:
+        // segue com o usuário salvo e renova o token quando a API voltar.
+        if (isServerUnavailableStatus(problem.status)) {
           const snapshot = readUserSnapshot();
           if (snapshot) {
             setUser(snapshot);

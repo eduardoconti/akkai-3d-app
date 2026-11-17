@@ -149,6 +149,44 @@ export function calculateSaleTotals(
   };
 }
 
+/**
+ * Junta as linhas de catálogo com o mesmo produto e a mesma marcação de brinde,
+ * somando as quantidades (a API aceita um item por produto/brinde na venda).
+ * Assim "5× A" + "1× A brinde" seguem como dois itens, e "2× A" + "3× A" como
+ * um item de 5. Itens avulsos não são agrupados. A ordem da primeira
+ * ocorrência é mantida.
+ */
+export function mergeRepeatedCatalogItems(
+  itens: SaleFormItem[],
+): SaleFormItem[] {
+  const merged: SaleFormItem[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const item of itens) {
+    if (item.tipoItem !== 'CATALOGO' || item.idProduto === null) {
+      merged.push(item);
+      continue;
+    }
+
+    const key = `${item.idProduto}:${item.brinde}`;
+    const existingIndex = indexByKey.get(key);
+
+    if (existingIndex === undefined) {
+      indexByKey.set(key, merged.length);
+      merged.push(item);
+      continue;
+    }
+
+    const existing = merged[existingIndex]!;
+    merged[existingIndex] = {
+      ...existing,
+      quantidade: existing.quantidade + item.quantidade,
+    };
+  }
+
+  return merged;
+}
+
 export function buildSalePayload({
   caixaId,
   catalogProducts,
@@ -179,7 +217,7 @@ export function buildSalePayload({
           ? totals.total
           : Math.round(pagamento.valor * 100),
     })),
-    itens: form.itens.map((item) => {
+    itens: mergeRepeatedCatalogItems(form.itens).map((item) => {
       if (item.tipoItem === 'CATALOGO') {
         return {
           idProduto: item.idProduto ?? undefined,

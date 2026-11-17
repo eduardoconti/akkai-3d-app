@@ -128,6 +128,11 @@ function getServerSnapshot() {
   return true;
 }
 
+/** Último status conhecido da API, para quem está fora de componentes React. */
+export function getOnlineStatus(): boolean {
+  return currentStatus;
+}
+
 export function useOnlineStatus() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

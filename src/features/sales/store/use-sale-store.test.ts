@@ -5,6 +5,8 @@ import {
   addPendingSale,
   listPendingSales,
   removePendingSale,
+  saveCachedFairs,
+  saveCachedWallets,
 } from '@/shared/lib/offline/indexed-db';
 import type { InserirVendaInput } from '@/shared/lib/types/domain';
 
@@ -23,8 +25,14 @@ vi.mock('@/features/sales/api/sales-api', () => ({
   updateSale: vi.fn(),
 }));
 
-const { createSale, listSales } =
+vi.mock('@/shared/lib/offline/use-online-status', () => ({
+  getOnlineStatus: vi.fn(() => true),
+}));
+
+const { createSale, listFairs, listSales, listWallets } =
   await import('@/features/sales/api/sales-api');
+const { getOnlineStatus } =
+  await import('@/shared/lib/offline/use-online-status');
 const { useSaleStore } = await import('./use-sale-store');
 
 const createSaleMock = vi.mocked(createSale);
@@ -69,6 +77,9 @@ beforeEach(async () => {
   await clearQueue();
   window.localStorage.setItem('akkai-auth-snapshot', JSON.stringify({ id: 1 }));
   createSaleMock.mockReset();
+  vi.mocked(getOnlineStatus).mockReturnValue(true);
+  vi.mocked(listFairs).mockReset();
+  vi.mocked(listWallets).mockReset();
   vi.mocked(listSales).mockResolvedValue({
     itens: [],
     pagina: 1,
@@ -81,6 +92,9 @@ beforeEach(async () => {
     pendingSalesCount: 0,
     rejectedSalesCount: 0,
     isSyncingPendingSales: false,
+    feiras: [],
+    carteiras: [],
+    fetchErrorMessage: null,
   });
 });
 
@@ -98,6 +112,20 @@ describe('sincronizarVendasPendentes', () => {
     ).toEqual(['chave-1', 'chave-2']);
     expect(await listPendingSales()).toHaveLength(0);
     expect(useSaleStore.getState().pendingSalesCount).toBe(0);
+  });
+
+  it('marca as vendas sincronizadas como offline para o servidor resolver o caixa', async () => {
+    await seed(1);
+    createSaleMock.mockResolvedValue({ id: 99 } as never);
+
+    await useSaleStore.getState().sincronizarVendasPendentes();
+
+    expect(createSaleMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chaveIdempotencia: 'chave-1',
+        vendaOffline: true,
+      }),
+    );
   });
 
   it('interrompe ao perder a conexão e mantém a fila intacta', async () => {
@@ -280,5 +308,75 @@ describe('criarVenda sem conexão', () => {
 
     expect(result.success).toBe(false);
     expect(await listPendingSales()).toHaveLength(0);
+  });
+});
+
+describe('criarVenda com a API fora do ar', () => {
+  it('guarda a venda quando o servidor responde 5xx (acordando)', async () => {
+    createSaleMock.mockRejectedValue(problem(503));
+
+    const result = await useSaleStore.getState().criarVenda(payload(1));
+
+    expect(result.success && result.data.id).toBeLessThan(0);
+    expect(await listPendingSales()).toHaveLength(1);
+  });
+
+  it('guarda direto, sem esperar a requisição, quando a API já está offline', async () => {
+    vi.mocked(getOnlineStatus).mockReturnValue(false);
+
+    const result = await useSaleStore.getState().criarVenda(payload(1));
+
+    expect(createSaleMock).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(await listPendingSales()).toHaveLength(1);
+  });
+
+  it('não guarda orçamento quando o servidor falha e mostra o erro', async () => {
+    createSaleMock.mockRejectedValue(problem(500, 'Erro interno.'));
+
+    const result = await useSaleStore
+      .getState()
+      .criarVenda({ ...payload(1), idOrcamento: 10 });
+
+    expect(result.success).toBe(false);
+    expect(!result.success && result.problem.detail).toBe('Erro interno.');
+    expect(await listPendingSales()).toHaveLength(0);
+  });
+});
+
+describe('fetchFeiras e fetchCarteiras', () => {
+  it('mostram o cache do aparelho quando a API está acordando', async () => {
+    await saveCachedFairs([{ id: 1, nome: 'Feira', ativa: true }] as never);
+    await saveCachedWallets([{ id: 2, nome: 'Caixa', ativa: true }] as never);
+    vi.mocked(listFairs).mockRejectedValue(problem(502));
+    vi.mocked(listWallets).mockRejectedValue(problem(0));
+
+    await useSaleStore.getState().fetchFeiras();
+    await useSaleStore.getState().fetchCarteiras();
+
+    const state = useSaleStore.getState();
+    expect(state.feiras).toHaveLength(1);
+    expect(state.carteiras).toHaveLength(1);
+    expect(state.fetchErrorMessage).toBeNull();
+    expect(state.isFetchingFeiras).toBe(false);
+    expect(state.isFetchingCarteiras).toBe(false);
+  });
+
+  it('não consultam a API de novo enquanto os dados são recentes', async () => {
+    vi.mocked(listFairs).mockResolvedValue([{ id: 1 }] as never);
+
+    await useSaleStore.getState().fetchFeiras();
+    await useSaleStore.getState().fetchFeiras({ idadeMaximaMs: 60_000 });
+
+    expect(listFairs).toHaveBeenCalledTimes(1);
+  });
+
+  it('informam o erro quando não há dados nem cache', async () => {
+    await saveCachedWallets(null as never);
+    vi.mocked(listWallets).mockRejectedValue(problem(400, 'Recusado.'));
+
+    await useSaleStore.getState().fetchCarteiras();
+
+    expect(useSaleStore.getState().fetchErrorMessage).toBe('Recusado.');
   });
 });

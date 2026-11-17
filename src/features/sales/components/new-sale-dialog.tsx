@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Dialog, DialogContent, Stack } from '@mui/material';
-import { listAllProducts } from '@/features/products/api/products-api';
 import { getOpenCashRegister } from '@/features/finance/api/finance-api';
 import {
   saleStoreSelectors,
@@ -19,9 +18,7 @@ import {
 } from '@/features/sales/types/sale-form';
 import {
   getCachedOpenCashRegister,
-  getCachedProductCatalog,
   saveCachedOpenCashRegister,
-  saveCachedProductCatalog,
 } from '@/shared/lib/offline/indexed-db';
 import {
   ConfirmDialog,
@@ -29,6 +26,7 @@ import {
   formatLocalDate,
   getFieldMessage,
   getProblemDetailsFromError,
+  isServerUnavailableStatus,
   useFeedbackStore,
   useOnlineStatus,
   type MeioPagamento,
@@ -54,6 +52,10 @@ import {
 } from './new-sale/sale-form-validation';
 import { useBudgetTotalReconciliation } from './new-sale/use-budget-total-reconciliation';
 import { useFairProductPrices } from './new-sale/use-fair-product-prices';
+import {
+  invalidarCatalogoVenda,
+  useSaleCatalog,
+} from './new-sale/use-sale-catalog';
 import { useTopSellerIds } from './new-sale/use-top-seller-ids';
 import SaleConfigSection from './new-sale/sale-config-section';
 import SaleDialogAlerts from './new-sale/sale-dialog-alerts';
@@ -62,6 +64,9 @@ import SaleDialogHeader from './new-sale/sale-dialog-header';
 import SaleDiscountSection from './new-sale/sale-discount-section';
 import SaleItemsSection from './new-sale/sale-items-section';
 import SalePaymentSection from './new-sale/sale-payment-section';
+
+/** Feiras e carteiras mudam pouco: reaberturas do modal reaproveitam a lista. */
+const IDADE_MAXIMA_LISTAS_VENDA_MS = 5 * 60 * 1000;
 
 interface NewSaleDialogProps {
   open: boolean;
@@ -97,7 +102,6 @@ export default function NewSaleDialog({
     feiras,
     fetchFeiras,
     fetchVendas,
-    isFetchingSales,
     isSubmitting,
     submitErrorMessage,
     clearSubmitError,
@@ -111,7 +115,6 @@ export default function NewSaleDialog({
       feiras: saleStoreSelectors.feiras(state),
       fetchFeiras: saleStoreSelectors.fetchFeiras(state),
       fetchVendas: saleStoreSelectors.fetchVendas(state),
-      isFetchingSales: saleStoreSelectors.isFetching(state),
       isSubmitting: saleStoreSelectors.isSubmitting(state),
       submitErrorMessage: saleStoreSelectors.submitErrorMessage(state),
       clearSubmitError: saleStoreSelectors.clearSubmitError(state),
@@ -121,6 +124,10 @@ export default function NewSaleDialog({
   const [form, setInternalForm] = useState<SaleFormState>(initialSaleFormState);
   const [caixaAberto, setCaixaAberto] = useState<Caixa | null>(null);
   const [isCaixaFromCache, setIsCaixaFromCache] = useState(false);
+  // Só o servidor pode afirmar que a feira está sem caixa; sem essa resposta
+  // (offline, API acordando) a venda segue e o servidor resolve o caixa.
+  const [isCaixaAusenteNoServidor, setIsCaixaAusenteNoServidor] =
+    useState(false);
   const carteirasDisponiveis = useMemo(() => {
     if (form.tipo !== 'FEIRA' || !caixaAberto) return carteiras;
     const ids = new Set(
@@ -132,12 +139,8 @@ export default function NewSaleDialog({
     tipo: initialSaleFormState.tipo,
     idFeira: initialSaleFormState.idFeira,
   });
-  const [catalogProducts, setCatalogProducts] = useState<Produto[]>([]);
-  const [catalogErrorMessage, setCatalogErrorMessage] = useState<string | null>(
-    null,
-  );
-  const [isLoadingCatalogProducts, setIsLoadingCatalogProducts] =
-    useState(false);
+  const { catalogProducts, catalogErrorMessage, isLoadingCatalogProducts } =
+    useSaleCatalog(open);
   const [problem, setProblem] = useState<ProblemDetails | null>(null);
   const [localErrors, setLocalErrors] = useState<SaleFormErrors>({});
   const [itemErrors, setItemErrors] = useState<SaleItemErrors>([]);
@@ -196,30 +199,6 @@ export default function NewSaleDialog({
   }, [form, isEditMode, onDraftChange, open]);
 
   useEffect(() => {
-    async function loadCatalogProducts() {
-      setIsLoadingCatalogProducts(true);
-      setCatalogErrorMessage(null);
-
-      try {
-        const nextProducts = await listAllProducts();
-        setCatalogProducts(nextProducts);
-        await saveCachedProductCatalog(nextProducts);
-      } catch {
-        const cachedProducts = await getCachedProductCatalog();
-
-        if (cachedProducts) {
-          setCatalogProducts(cachedProducts);
-          setCatalogErrorMessage(null);
-        } else {
-          setCatalogErrorMessage(
-            'Nao foi possivel carregar o catalogo de produtos.',
-          );
-        }
-      } finally {
-        setIsLoadingCatalogProducts(false);
-      }
-    }
-
     if (open) {
       const currentSaleId = sale?.id ?? null;
       canEmitDraftChangeRef.current = false;
@@ -240,9 +219,8 @@ export default function NewSaleDialog({
         setForm(nextForm);
       }
 
-      void loadCatalogProducts();
-      void fetchFeiras();
-      void fetchCarteiras();
+      void fetchFeiras({ idadeMaximaMs: IDADE_MAXIMA_LISTAS_VENDA_MS });
+      void fetchCarteiras({ idadeMaximaMs: IDADE_MAXIMA_LISTAS_VENDA_MS });
       canEmitDraftChangeRef.current = true;
       return;
     }
@@ -297,48 +275,58 @@ export default function NewSaleDialog({
     if (!open || form.tipo !== 'FEIRA' || form.idFeira === '') {
       setCaixaAberto(null);
       setIsCaixaFromCache(false);
+      setIsCaixaAusenteNoServidor(false);
       return;
     }
 
     const idFeira = form.idFeira;
     let active = true;
 
-    // Sem conexão (ou com a API fora do ar) usa o último caixa aberto visto
-    // neste aparelho; o servidor revalida o caixa quando a venda sincronizar.
-    const loadCashRegisterFromCache = async () => {
+    // Mostra primeiro o último caixa visto neste aparelho e confirma com o
+    // servidor em seguida; sem conexão (ou com a API fora do ar) o cache vale
+    // e o servidor revalida o caixa quando a venda sincronizar.
+    const loadCashRegister = async () => {
       const cachedCaixa = await getCachedOpenCashRegister(idFeira).catch(
         () => null,
       );
+      const caixaDoCache =
+        cachedCaixa?.status === 'ABERTO' ? cachedCaixa : null;
 
-      if (active) {
-        setCaixaAberto(cachedCaixa?.status === 'ABERTO' ? cachedCaixa : null);
-        setIsCaixaFromCache(cachedCaixa?.status === 'ABERTO');
+      if (!active) {
+        return;
       }
-    };
 
-    if (!isOnline) {
-      void loadCashRegisterFromCache();
-      return () => {
-        active = false;
-      };
-    }
+      setCaixaAberto(caixaDoCache);
+      setIsCaixaFromCache(caixaDoCache !== null);
+      setIsCaixaAusenteNoServidor(false);
 
-    getOpenCashRegister(idFeira)
-      .then((caixa) => {
+      if (!isOnline) {
+        return;
+      }
+
+      try {
+        const caixa = await getOpenCashRegister(idFeira);
+
         if (active) {
           setCaixaAberto(caixa);
           setIsCaixaFromCache(false);
+          setIsCaixaAusenteNoServidor(caixa === null);
         }
         void saveCachedOpenCashRegister(idFeira, caixa).catch(() => undefined);
-      })
-      .catch((error: unknown) => {
-        if (getProblemDetailsFromError(error).status === 0) {
-          void loadCashRegisterFromCache();
-        } else if (active) {
+      } catch (error) {
+        // Servidor indisponível mantém o cache; outra recusa (ex.: sem
+        // permissão) apenas deixa o caixa sem confirmação.
+        if (
+          active &&
+          !isServerUnavailableStatus(getProblemDetailsFromError(error).status)
+        ) {
           setCaixaAberto(null);
           setIsCaixaFromCache(false);
         }
-      });
+      }
+    };
+
+    void loadCashRegister();
 
     return () => {
       active = false;
@@ -444,7 +432,7 @@ export default function NewSaleDialog({
   };
 
   const handleAskCancel = () => {
-    if (isBusy) {
+    if (isSavingSale) {
       return;
     }
 
@@ -526,39 +514,8 @@ export default function NewSaleDialog({
     index: number,
     product: { id: number; nome: string; valor: number } | null,
   ) => {
-    const duplicatedIndex = product
-      ? form.itens.findIndex(
-          (item, currentIndex) =>
-            currentIndex !== index &&
-            item.tipoItem === 'CATALOGO' &&
-            item.idProduto === product.id &&
-            !item.brinde &&
-            !form.itens[index]?.brinde,
-        )
-      : -1;
-
-    if (product && duplicatedIndex >= 0) {
-      const addedQuantity = Math.max(1, form.itens[index]?.quantidade ?? 1);
-
-      setForm((current) => ({
-        ...current,
-        itens: current.itens
-          .map((item, currentIndex) =>
-            currentIndex === duplicatedIndex
-              ? { ...item, quantidade: item.quantidade + addedQuantity }
-              : item,
-          )
-          .filter((_, currentIndex) => currentIndex !== index),
-      }));
-      setItemErrors((current) =>
-        current.filter((_, currentIndex) => currentIndex !== index),
-      );
-      showSuccess(
-        `${product.nome}: quantidade somada a um item já adicionado à venda.`,
-      );
-      return;
-    }
-
+    // Cada linha fica independente para permitir, por exemplo, 5× A pago +
+    // 1× A brinde. Linhas iguais (mesmo produto e brinde) são somadas no envio.
     updateItem(index, {
       idProduto: product?.id ?? null,
       nomeProduto: product?.nome ?? '',
@@ -690,6 +647,12 @@ export default function NewSaleDialog({
     });
   };
 
+  const isCaixaNaoConfirmado =
+    !isEditMode &&
+    form.tipo === 'FEIRA' &&
+    form.idFeira !== '' &&
+    (!caixaAberto || isCaixaFromCache);
+
   const handleSubmit = async () => {
     const { nextLocalErrors, nextItemErrors, nextPaymentErrors } =
       validateSaleForm(form, totals.total, getAvailableMeiosPagamento);
@@ -698,12 +661,15 @@ export default function NewSaleDialog({
     setPaymentErrors(nextPaymentErrors);
     setProblem(null);
 
-    if (!isEditMode && form.tipo === 'FEIRA' && !caixaAberto) {
+    if (
+      !isEditMode &&
+      form.tipo === 'FEIRA' &&
+      !caixaAberto &&
+      isCaixaAusenteNoServidor
+    ) {
       setLocalErrors((current) => ({
         ...current,
-        idFeira: isOnline
-          ? 'Abra o caixa desta feira antes de registrar vendas.'
-          : 'Não há caixa aberto desta feira salvo neste aparelho. Conecte-se com o caixa aberto ao menos uma vez antes de vender offline.',
+        idFeira: 'Abra o caixa desta feira antes de registrar vendas.',
       }));
       setShowConfig(true);
       scrollToFirstSaleFormError();
@@ -734,14 +700,19 @@ export default function NewSaleDialog({
       return;
     }
 
-    const payload = buildSalePayload({
-      form,
-      sale: isEditMode ? sale : null,
-      caixaId: caixaAberto?.id,
-      totals,
-      catalogProducts,
-      fairProductPrices,
-    });
+    const payload = {
+      ...buildSalePayload({
+        form,
+        sale: isEditMode ? sale : null,
+        caixaId: caixaAberto?.id,
+        totals,
+        catalogProducts,
+        fairProductPrices,
+      }),
+      // Caixa não confirmado pelo servidor nesta sessão: o servidor vincula ao
+      // caixa aberto que aceite a venda ou a grava sem caixa.
+      ...(isCaixaNaoConfirmado ? { vendaOffline: true } : {}),
+    };
 
     if (isEditMode && !isOnline) {
       setProblem({
@@ -780,6 +751,7 @@ export default function NewSaleDialog({
       }
 
       submissionKeyRef.current = null;
+      invalidarCatalogoVenda();
 
       if (result.data.id < 0) {
         showSuccess(
@@ -789,7 +761,8 @@ export default function NewSaleDialog({
         return;
       }
 
-      await fetchVendas();
+      // Atualizar a lista não precisa segurar o fechamento do modal.
+      void fetchVendas();
       await onSaved?.();
       showSuccess(
         isEditMode
@@ -802,9 +775,10 @@ export default function NewSaleDialog({
     }
   };
 
-  const isFetching =
-    isLoadingCatalogProducts || isLoadingFairProductPrices || isFetchingSales;
-  const isBusy = isSubmitting || isFetching || isSaving;
+  // Carregamento só bloqueia quando não há dados (nem em cache) para vender.
+  const isFetching = isLoadingCatalogProducts || isLoadingFairProductPrices;
+  const isSavingSale = isSubmitting || isSaving;
+  const isBusy = isSavingSale || isFetching;
   const globalMessage =
     problem?.detail ??
     submitErrorMessage ??
@@ -852,7 +826,7 @@ export default function NewSaleDialog({
     _event: object,
     reason: 'backdropClick' | 'escapeKeyDown',
   ) => {
-    if (isBusy) {
+    if (isSavingSale) {
       return;
     }
 
@@ -882,7 +856,7 @@ export default function NewSaleDialog({
       >
         <SaleDialogHeader
           configSummary={configSummary}
-          isBusy={isBusy}
+          isBusy={isSavingSale}
           isEditMode={isEditMode}
           saleId={sale?.id}
           onAskCancel={handleAskCancel}
@@ -901,6 +875,9 @@ export default function NewSaleDialog({
               isEditMode={isEditMode}
               isOnline={isOnline}
               isCaixaFromCache={isCaixaFromCache}
+              isCaixaSemConfirmacao={
+                isCaixaNaoConfirmado && !caixaAberto && !isEditMode
+              }
               budgetNotice={budgetNotice}
             />
 
@@ -992,6 +969,7 @@ export default function NewSaleDialog({
           isEditMode={isEditMode}
           isFetching={isFetching}
           isOnline={isOnline}
+          isSaving={isSavingSale}
           subtotal={totals.subtotal}
           total={totals.total}
           totalItems={totals.totalQuantidadeItens}
@@ -1007,7 +985,7 @@ export default function NewSaleDialog({
         cancelLabel="Continuar editando"
         loadingLabel="Descartar"
         destructive
-        isLoading={isBusy}
+        isLoading={isSavingSale}
         onConfirm={handleClose}
         onClose={() => setIsCancelConfirmOpen(false)}
       />

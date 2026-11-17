@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getProblemDetailsFromError,
   httpClient,
+  isServerUnavailableStatus,
   setNetworkActivityListener,
 } from './http-client';
 import {
@@ -68,6 +69,28 @@ describe('atividade de rede', () => {
     await httpClient.get('/b').catch(() => undefined);
 
     expect(listener.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('trata 502/503/504 do proxy (API acordando) como API fora do ar', async () => {
+    const listener = vi.fn();
+    setNetworkActivityListener(listener);
+
+    fetchMock.mockResolvedValueOnce(jsonResponse({}, 503));
+    await httpClient.get('/a').catch(() => undefined);
+    fetchMock.mockResolvedValueOnce(jsonResponse({}, 500));
+    await httpClient.get('/b').catch(() => undefined);
+
+    expect(listener.mock.calls).toEqual([[false], [true]]);
+  });
+});
+
+describe('isServerUnavailableStatus', () => {
+  it('considera indisponível sem conexão e erros 5xx, mas não recusas 4xx', () => {
+    expect(isServerUnavailableStatus(0)).toBe(true);
+    expect(isServerUnavailableStatus(500)).toBe(true);
+    expect(isServerUnavailableStatus(503)).toBe(true);
+    expect(isServerUnavailableStatus(400)).toBe(false);
+    expect(isServerUnavailableStatus(409)).toBe(false);
   });
 });
 

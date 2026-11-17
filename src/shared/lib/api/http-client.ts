@@ -42,6 +42,19 @@ export class ApiProblemError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
+
+function isGatewayUnavailableStatus(status: number): boolean {
+  return status === 502 || status === 503 || status === 504;
+}
+
+/**
+ * Falhas em que a API não chegou a processar o pedido: sem conexão, tempo
+ * esgotado ou servidor fora do ar/acordando. Nesses casos vale usar o cache
+ * local ou guardar a operação para reenviar depois.
+ */
+export function isServerUnavailableStatus(status: number): boolean {
+  return status === 0 || status >= 500;
+}
 const DOWNLOAD_TIMEOUT_MS = 120_000;
 const HEALTH_TIMEOUT_MS = 5_000;
 
@@ -82,7 +95,9 @@ async function fetchWithTimeout(
 
   try {
     const response = await fetch(input, { ...init, signal: controller.signal });
-    networkActivityListener?.(true);
+    // 502/503/504 vêm do proxy da hospedagem enquanto a API acorda (cold
+    // start): para o app a API ainda está fora do ar.
+    networkActivityListener?.(!isGatewayUnavailableStatus(response.status));
     return response;
   } catch (error) {
     if (!externalSignal?.aborted) {

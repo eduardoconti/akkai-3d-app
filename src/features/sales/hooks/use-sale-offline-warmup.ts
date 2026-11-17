@@ -44,23 +44,31 @@ export async function warmUpSaleOfflineData(): Promise<void> {
 
   await saveCachedFairs(feiras.value).catch(() => undefined);
 
-  for (const feira of feiras.value.filter((current) => current.ativa)) {
-    const [caixa, precos] = await Promise.allSettled([
-      getOpenCashRegister(feira.id),
-      listFairProductPrices(feira.id),
-    ]);
+  // Feiras em paralelo: com a API recém-acordada, ir uma a uma multiplicava
+  // o tempo até o aparelho ter tudo para vender offline.
+  await Promise.all(
+    feiras.value
+      .filter((current) => current.ativa)
+      .map((feira) => warmUpFairData(feira.id)),
+  );
+}
 
-    if (caixa.status === 'fulfilled') {
-      await saveCachedOpenCashRegister(feira.id, caixa.value).catch(
-        () => undefined,
-      );
-    }
+async function warmUpFairData(idFeira: number): Promise<void> {
+  const [caixa, precos] = await Promise.allSettled([
+    getOpenCashRegister(idFeira),
+    listFairProductPrices(idFeira),
+  ]);
 
-    if (precos.status === 'fulfilled') {
-      await saveCachedFairProductPrices(feira.id, precos.value).catch(
-        () => undefined,
-      );
-    }
+  if (caixa.status === 'fulfilled') {
+    await saveCachedOpenCashRegister(idFeira, caixa.value).catch(
+      () => undefined,
+    );
+  }
+
+  if (precos.status === 'fulfilled') {
+    await saveCachedFairProductPrices(idFeira, precos.value).catch(
+      () => undefined,
+    );
   }
 }
 

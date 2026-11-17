@@ -313,6 +313,11 @@ export interface InserirVendaInput {
   desconto?: number;
   /** Identifica a tentativa de venda; reenvios com a mesma chave não duplicam. */
   chaveIdempotencia?: string;
+  /**
+   * Venda feita sem conexão (ou sem confirmar o caixa): o servidor vincula ao
+   * caixa aberto que a aceite ou grava sem caixa, em vez de recusar.
+   */
+  vendaOffline?: boolean;
   itens: InserirVendaItemInput[];
   pagamentos: Array<{
     idCarteira: number;

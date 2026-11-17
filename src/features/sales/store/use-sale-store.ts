@@ -1,6 +1,10 @@
 import { create } from 'zustand';
-import { getProblemDetailsFromError } from '@/shared/lib/api/http-client';
+import {
+  getProblemDetailsFromError,
+  isServerUnavailableStatus,
+} from '@/shared/lib/api/http-client';
 import { getStoredUserId } from '@/shared/lib/api/token-storage';
+import { getOnlineStatus } from '@/shared/lib/offline/use-online-status';
 import { DEFAULT_PAGE_SIZE } from '@/shared/lib/constants/pagination';
 import { formatLocalDate } from '@/shared/utils/date';
 import { getMonthRangeInput } from '@/shared/utils/date-range';
@@ -195,6 +199,64 @@ function isTransientSyncStatus(status: number): boolean {
   );
 }
 
+interface OpcoesCarregamento {
+  /**
+   * Não consulta a API se os dados em memória têm menos que isso (ms). Evita
+   * refazer a mesma requisição a cada abertura do modal de venda.
+   */
+  idadeMaximaMs?: number;
+}
+
+const ultimaAtualizacao = { feiras: 0, carteiras: 0 };
+
+function dadosRecentes(
+  chave: keyof typeof ultimaAtualizacao,
+  possuiDados: boolean,
+  opcoes?: OpcoesCarregamento,
+): boolean {
+  return (
+    possuiDados &&
+    opcoes?.idadeMaximaMs !== undefined &&
+    Date.now() - ultimaAtualizacao[chave] < opcoes.idadeMaximaMs
+  );
+}
+
+/**
+ * Mostra primeiro o que está guardado no aparelho e atualiza pela API em
+ * seguida. Com a API fora do ar (ou acordando) o cache continua valendo.
+ */
+async function carregarComCacheOffline<T>(etapas: {
+  possuiDados: () => boolean;
+  lerCache: () => Promise<T | null>;
+  buscar: () => Promise<T>;
+  salvarCache: (dados: T) => Promise<void>;
+  aplicar: (dados: T) => void;
+  falhar: (mensagem: string) => void;
+}): Promise<boolean> {
+  if (!etapas.possuiDados()) {
+    const cache = await etapas.lerCache().catch(() => null);
+
+    if (cache && !etapas.possuiDados()) {
+      etapas.aplicar(cache);
+    }
+  }
+
+  try {
+    const dados = await etapas.buscar();
+    etapas.aplicar(dados);
+    await etapas.salvarCache(dados).catch(() => undefined);
+    return true;
+  } catch (error) {
+    const problem = getProblemDetailsFromError(error);
+
+    if (!isServerUnavailableStatus(problem.status) || !etapas.possuiDados()) {
+      etapas.falhar(problem.detail);
+    }
+
+    return false;
+  }
+}
+
 function buildOfflineSale(
   dados: InserirVendaInput,
   produtos: Produto[],
@@ -261,6 +323,33 @@ function buildOfflineSale(
   };
 }
 
+/** Guarda a venda no aparelho; o envio acontece na sincronização. */
+async function guardarVendaOffline(
+  dados: InserirVendaInput,
+  feiras: Feira[],
+  carteiras: Carteira[],
+) {
+  const venda = buildOfflineSale(
+    dados,
+    (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] })
+      .__AKKAI_PRODUCTS__ ?? [],
+    feiras,
+    carteiras,
+  );
+
+  await addPendingSale({
+    id: window.crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    payload: dados,
+    idUsuario: getStoredUserId() ?? undefined,
+  });
+
+  return {
+    venda,
+    resumo: summarizePendingSales(await listCurrentUserPendingSales()),
+  };
+}
+
 interface SaleStoreState {
   vendas: Venda[];
   feiras: Feira[];
@@ -277,6 +366,8 @@ interface SaleStoreState {
   pendingSalesCount: number;
   rejectedSalesCount: number;
   isFetching: boolean;
+  isFetchingFeiras: boolean;
+  isFetchingCarteiras: boolean;
   isSubmitting: boolean;
   isSyncingPendingSales: boolean;
   fetchErrorMessage: string | null;
@@ -284,7 +375,7 @@ interface SaleStoreState {
   fetchVendas: (
     query?: Partial<PesquisaPaginadaVendas>,
   ) => Promise<ResultadoPaginado<Venda> | void>;
-  fetchFeiras: () => Promise<void>;
+  fetchFeiras: (opcoes?: OpcoesCarregamento) => Promise<void>;
   fetchFeirasPaginadas: (
     query?: Partial<PesquisaPaginadaFeiras>,
   ) => Promise<ResultadoPaginado<Feira> | void>;
@@ -292,7 +383,7 @@ interface SaleStoreState {
     query?: Partial<PesquisaPaginadaPrecosProdutosFeira>,
   ) => void;
   obterFeiraPorId: (id: number) => Promise<Feira>;
-  fetchCarteiras: () => Promise<void>;
+  fetchCarteiras: (opcoes?: OpcoesCarregamento) => Promise<void>;
   criarFeira: (dados: FeiraInput) => Promise<ActionResult<Feira>>;
   atualizarFeira: (
     id: number,
@@ -331,6 +422,8 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   pendingSalesCount: 0,
   rejectedSalesCount: 0,
   isFetching: false,
+  isFetchingFeiras: false,
+  isFetchingCarteiras: false,
   isSubmitting: false,
   isSyncingPendingSales: false,
   fetchErrorMessage: null,
@@ -394,7 +487,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
 
-      if (problem.status === 0) {
+      if (isServerUnavailableStatus(problem.status)) {
         const cachedResponse = await getCachedSales();
 
         if (cachedResponse) {
@@ -427,27 +520,27 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
       set({ isFetching: false });
     }
   },
-  fetchFeiras: async () => {
-    set({ isFetching: true, fetchErrorMessage: null });
+  fetchFeiras: async (opcoes) => {
+    if (dadosRecentes('feiras', get().feiras.length > 0, opcoes)) {
+      return;
+    }
+
+    set({ isFetchingFeiras: true, fetchErrorMessage: null });
     try {
-      const feiras = await listFairs();
-      set({ feiras });
-      await saveCachedFairs(feiras);
-    } catch (error) {
-      const problem = getProblemDetailsFromError(error);
+      const atualizou = await carregarComCacheOffline({
+        possuiDados: () => get().feiras.length > 0,
+        lerCache: getCachedFairs,
+        buscar: listFairs,
+        salvarCache: saveCachedFairs,
+        aplicar: (feiras) => set({ feiras }),
+        falhar: (mensagem) => set({ fetchErrorMessage: mensagem }),
+      });
 
-      if (problem.status === 0) {
-        const feiras = await getCachedFairs();
-
-        if (feiras) {
-          set({ feiras, fetchErrorMessage: null });
-          return;
-        }
+      if (atualizou) {
+        ultimaAtualizacao.feiras = Date.now();
       }
-
-      set({ fetchErrorMessage: problem.detail });
     } finally {
-      set({ isFetching: false });
+      set({ isFetchingFeiras: false });
     }
   },
   fetchFeirasPaginadas: async (query) => {
@@ -489,27 +582,27 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   obterFeiraPorId: async (id) => {
     return getFairById(id);
   },
-  fetchCarteiras: async () => {
-    set({ isFetching: true, fetchErrorMessage: null });
+  fetchCarteiras: async (opcoes) => {
+    if (dadosRecentes('carteiras', get().carteiras.length > 0, opcoes)) {
+      return;
+    }
+
+    set({ isFetchingCarteiras: true, fetchErrorMessage: null });
     try {
-      const carteiras = await listWallets();
-      set({ carteiras });
-      await saveCachedWallets(carteiras);
-    } catch (error) {
-      const problem = getProblemDetailsFromError(error);
+      const atualizou = await carregarComCacheOffline({
+        possuiDados: () => get().carteiras.length > 0,
+        lerCache: getCachedWallets,
+        buscar: listWallets,
+        salvarCache: saveCachedWallets,
+        aplicar: (carteiras) => set({ carteiras }),
+        falhar: (mensagem) => set({ fetchErrorMessage: mensagem }),
+      });
 
-      if (problem.status === 0) {
-        const carteiras = await getCachedWallets();
-
-        if (carteiras) {
-          set({ carteiras, fetchErrorMessage: null });
-          return;
-        }
+      if (atualizou) {
+        ultimaAtualizacao.carteiras = Date.now();
       }
-
-      set({ fetchErrorMessage: problem.detail });
     } finally {
-      set({ isFetching: false });
+      set({ isFetchingCarteiras: false });
     }
   },
   criarFeira: async (dados) => {
@@ -553,48 +646,48 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
   },
   criarVenda: async (dados) => {
     set({ isSubmitting: true, submitErrorMessage: null });
+    const finalizaOrcamento = dados.idOrcamento !== undefined;
+    const guardarOffline = async (): Promise<ActionResult<Venda>> => {
+      const { venda, resumo } = await guardarVendaOffline(
+        dados,
+        get().feiras,
+        get().carteiras,
+      );
+      set({ ...resumo, submitErrorMessage: null });
+      return { success: true, data: venda };
+    };
+
     try {
+      // Com a API sabidamente fora do ar não adianta esperar o tempo limite
+      // da requisição: a venda vai direto para a fila do aparelho.
+      if (!finalizaOrcamento && !getOnlineStatus()) {
+        return await guardarOffline();
+      }
+
       const venda = await createSale(dados);
       return { success: true, data: venda };
     } catch (error) {
       const problem = getProblemDetailsFromError(error);
 
-      if (problem.status === 0) {
-        if (dados.idOrcamento !== undefined) {
-          const offlineBudgetProblem = {
-            type: 'about:blank',
-            title: 'Venda online obrigatória',
-            status: 0,
-            detail:
-              'Não é possível finalizar orçamento offline. Conecte-se à internet e tente novamente.',
-            instance: '',
-          };
+      if (finalizaOrcamento && problem.status === 0) {
+        const offlineBudgetProblem = {
+          type: 'about:blank',
+          title: 'Venda online obrigatória',
+          status: 0,
+          detail:
+            'Não é possível finalizar orçamento offline. Conecte-se à internet e tente novamente.',
+          instance: '',
+        };
 
-          set({ submitErrorMessage: offlineBudgetProblem.detail });
-          return { success: false, problem: offlineBudgetProblem };
-        }
+        set({ submitErrorMessage: offlineBudgetProblem.detail });
+        return { success: false, problem: offlineBudgetProblem };
+      }
 
-        const localSale = buildOfflineSale(
-          dados,
-          (window as typeof window & { __AKKAI_PRODUCTS__?: Produto[] })
-            .__AKKAI_PRODUCTS__ ?? [],
-          get().feiras,
-          get().carteiras,
-        );
-
-        await addPendingSale({
-          id: window.crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-          payload: dados,
-          idUsuario: getStoredUserId() ?? undefined,
-        });
-
-        set({
-          ...summarizePendingSales(await listCurrentUserPendingSales()),
-          submitErrorMessage: null,
-        });
-
-        return { success: true, data: localSale };
+      // Sem conexão, tempo esgotado ou servidor acordando (5xx): a venda não
+      // se perde. A chave de idempotência evita duplicar se ela chegou a ser
+      // gravada.
+      if (!finalizaOrcamento && isServerUnavailableStatus(problem.status)) {
+        return await guardarOffline();
       }
 
       set({ submitErrorMessage: problem.detail });
@@ -668,6 +761,7 @@ export const useSaleStore = create<SaleStoreState>((set, get) => ({
         try {
           await createSale({
             ...sale.payload,
+            vendaOffline: true,
             dataVenda:
               sale.payload.dataVenda ??
               formatLocalDate(new Date(sale.createdAt), 'api-date-time'),
@@ -739,6 +833,8 @@ export const saleStoreSelectors = {
   pendingSalesCount: (state: SaleStoreState) => state.pendingSalesCount,
   rejectedSalesCount: (state: SaleStoreState) => state.rejectedSalesCount,
   isFetching: (state: SaleStoreState) => state.isFetching,
+  isFetchingFeiras: (state: SaleStoreState) => state.isFetchingFeiras,
+  isFetchingCarteiras: (state: SaleStoreState) => state.isFetchingCarteiras,
   isSubmitting: (state: SaleStoreState) => state.isSubmitting,
   isSyncingPendingSales: (state: SaleStoreState) => state.isSyncingPendingSales,
   fetchErrorMessage: (state: SaleStoreState) => state.fetchErrorMessage,

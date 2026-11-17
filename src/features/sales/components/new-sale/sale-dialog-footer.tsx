@@ -8,6 +8,8 @@ interface SaleDialogFooterProps {
   isEditMode: boolean;
   isFetching: boolean;
   isOnline: boolean;
+  /** Venda sendo enviada; os demais estados ocupados são carregamento. */
+  isSaving: boolean;
   subtotal: number;
   total: number;
   totalItems: number;
@@ -20,6 +22,7 @@ export default function SaleDialogFooter({
   isEditMode,
   isFetching,
   isOnline,
+  isSaving,
   subtotal,
   total,
   totalItems,
@@ -69,13 +72,15 @@ export default function SaleDialogFooter({
           disabled={isBusy || (isEditMode && !isOnline)}
           sx={{ minWidth: { xs: 132, sm: 160 }, height: 56 }}
         >
-          {isBusy
+          {isSaving
             ? 'Salvando...'
-            : isEditMode
-              ? 'Salvar'
-              : isOnline
-                ? 'Finalizar'
-                : 'Salvar offline'}
+            : isBusy
+              ? 'Carregando...'
+              : isEditMode
+                ? 'Salvar'
+                : isOnline
+                  ? 'Finalizar'
+                  : 'Salvar offline'}
         </Button>
       </Box>
 

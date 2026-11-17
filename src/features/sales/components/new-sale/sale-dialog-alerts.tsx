@@ -9,6 +9,8 @@ interface SaleDialogAlertsProps {
   isEditMode: boolean;
   isOnline: boolean;
   isCaixaFromCache?: boolean;
+  /** Caixa da feira não confirmado (offline ou API fora do ar, sem cache). */
+  isCaixaSemConfirmacao?: boolean;
   /** Aviso sobre o ajuste do total ao valor do orçamento finalizado. */
   budgetNotice?: BudgetNotice | null;
 }
@@ -20,6 +22,7 @@ export default function SaleDialogAlerts({
   isEditMode,
   isOnline,
   isCaixaFromCache = false,
+  isCaixaSemConfirmacao = false,
   budgetNotice = null,
 }: SaleDialogAlertsProps) {
   return (
@@ -41,6 +44,13 @@ export default function SaleDialogAlerts({
         <Alert severity="info">
           Caixa da feira carregado do último acesso. O servidor confirma que ele
           ainda está aberto quando a venda for sincronizada.
+        </Alert>
+      ) : null}
+
+      {isCaixaSemConfirmacao ? (
+        <Alert severity="info">
+          Não foi possível confirmar o caixa desta feira agora. A venda será
+          registrada e vinculada ao caixa aberto quando chegar ao servidor.
         </Alert>
       ) : null}
 
