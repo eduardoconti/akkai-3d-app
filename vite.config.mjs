@@ -55,6 +55,9 @@ export default defineConfig({
     css: false,
   },
   build: {
+    // O chunk do MUI passa um pouco de 500 kB (~155 kB gzip); separar mais cria
+    // dependencia circular entre chunks e quebra a inicializacao em producao.
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -62,12 +65,12 @@ export default defineConfig({
             return undefined;
           }
 
-          if (id.includes('@mui/x-date-pickers') || id.includes('dayjs')) {
-            return 'date';
-          }
-
           if (id.includes('@mui') || id.includes('@emotion')) {
             return 'mui';
+          }
+
+          if (id.includes('@mui/x-date-pickers') || id.includes('dayjs')) {
+            return 'date';
           }
 
           if (id.includes('react-router')) {

@@ -27,6 +27,26 @@ function mockViewportWidth(width: number) {
   });
 }
 
+function renderAppBarProps() {
+  return {
+    drawerWidth: 256,
+    sectionTitle: 'Vendas',
+    userName: 'Maria Souza',
+    userInitials: 'MA',
+    hideValues: false,
+    pendingSalesCount: 0,
+    rejectedSalesCount: 0,
+    isSyncingPendingSales: false,
+    onToggleMobileMenu: vi.fn(),
+    onOpenSearch: vi.fn(),
+    onOpenPendingSales: vi.fn(),
+    onToggleHideValues: vi.fn(),
+    onOpenCashRegister: vi.fn(),
+    onNewSale: vi.fn(),
+    onOpenUserMenu: vi.fn(),
+  };
+}
+
 function renderAppBar(
   overrides: Partial<Parameters<typeof MainLayoutAppBar>[0]> = {},
 ) {
@@ -144,5 +164,30 @@ describe('MainLayoutAppBar', () => {
       // O título da seção fica no cabeçalho da página, não na barra.
       expect(screen.queryByText('Vendas')).not.toBeInTheDocument();
     });
+  });
+
+  it('exibe o botão de notificações no celular e no desktop', () => {
+    mockViewportWidth(375);
+    const { unmount } = render(
+      <ThemeProvider theme={buildTheme('light')}>
+        <MainLayoutAppBar
+          {...renderAppBarProps()}
+          notifications={<button type="button">Sino</button>}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Sino' })).toBeInTheDocument();
+    unmount();
+
+    mockViewportWidth(1440);
+    render(
+      <ThemeProvider theme={buildTheme('light')}>
+        <MainLayoutAppBar
+          {...renderAppBarProps()}
+          notifications={<button type="button">Sino</button>}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByRole('button', { name: 'Sino' })).toBeInTheDocument();
   });
 });

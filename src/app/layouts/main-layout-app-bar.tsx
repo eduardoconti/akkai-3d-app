@@ -45,6 +45,8 @@ interface MainLayoutAppBarProps {
   pendingSalesCount: number;
   rejectedSalesCount: number;
   isSyncingPendingSales: boolean;
+  /** Botão de notificações (sino), exibido no desktop e no celular. */
+  notifications?: ReactNode;
   onToggleMobileMenu: () => void;
   onOpenSearch: () => void;
   onOpenPendingSales: () => void;
@@ -122,6 +124,7 @@ export default function MainLayoutAppBar({
   pendingSalesCount,
   rejectedSalesCount,
   isSyncingPendingSales,
+  notifications,
   onToggleMobileMenu,
   onOpenSearch,
   onOpenPendingSales,
@@ -229,6 +232,7 @@ export default function MainLayoutAppBar({
             showLabel={isWideDesktop}
             onClick={onOpenCashRegister}
           />
+          {notifications}
 
           <Divider orientation="vertical" flexItem />
 
@@ -306,6 +310,8 @@ export default function MainLayoutAppBar({
           >
             <SearchIcon />
           </IconButton>
+
+          {notifications}
 
           <IconButton
             onClick={onNewSale}

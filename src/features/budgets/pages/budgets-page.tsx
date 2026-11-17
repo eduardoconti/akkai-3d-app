@@ -15,6 +15,8 @@ import {
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { PointOfSale } from '@mui/icons-material';
+import { useSearchParams } from 'react-router-dom';
+import { parseBudgetStatusParam } from '@/features/budgets/utils/budget-search-params';
 import NewBudgetDialog from '@/features/budgets/components/new-budget-dialog';
 import { buildSaleFormFromBudget } from '@/features/budgets/utils/build-sale-form-from-budget';
 import NewSaleDialog from '@/features/sales/components/new-sale-dialog';
@@ -190,10 +192,30 @@ export default function BudgetsPage() {
   const [canalAtendimentoSelecionado, setCanalAtendimentoSelecionado] =
     useState<CanalAtendimentoOrcamento | ''>(paginacao.canalAtendimento ?? '');
   const { openNewBudgetDialog } = useMainLayoutActions();
+  const [searchParams] = useSearchParams();
+  const statusParam = searchParams.get('status');
 
+  // `?status=PENDENTE` (link das notificações) substitui os filtros atuais.
   useEffect(() => {
-    void fetchOrcamentos();
-  }, [fetchOrcamentos]);
+    const statusDaUrl = parseBudgetStatusParam(statusParam);
+
+    if (!statusDaUrl) {
+      void fetchOrcamentos();
+      return;
+    }
+
+    setStatusSelecionados(statusDaUrl);
+    setSearchInput('');
+    setTipoSelecionado('');
+    setCanalAtendimentoSelecionado('');
+    void fetchOrcamentos({
+      pagina: 1,
+      termo: '',
+      status: statusDaUrl,
+      tipo: undefined,
+      canalAtendimento: undefined,
+    });
+  }, [fetchOrcamentos, statusParam]);
 
   const handleStatusChange = async (id: number, status: StatusOrcamento) => {
     const result = await atualizarOrcamento(id, { status });

@@ -10,6 +10,8 @@ import {
   Tooltip,
 } from '@mui/material';
 import Grid from '@mui/material/Grid';
+import { useSearchParams } from 'react-router-dom';
+import { parseProductListParams } from '@/features/products/utils/product-search-params';
 import { Inventory2 } from '@mui/icons-material';
 import EditProductDialog from '../components/edit-product-dialog';
 import StockManagementDialog from '../components/stock-management-dialog';
@@ -162,10 +164,32 @@ export default function ProductsPage() {
     });
   };
 
+  const [searchParams] = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+
+  // `?ordenarPor=nivelEstoque&direcao=asc` (link das notificações) substitui
+  // os filtros atuais; sem parâmetros, mantém a última pesquisa.
   useEffect(() => {
     void fetchCategorias();
-    void fetchProdutos();
-  }, [fetchCategorias, fetchProdutos]);
+    const params = parseProductListParams(new URLSearchParams(searchParamsKey));
+
+    if (!params) {
+      void fetchProdutos();
+      return;
+    }
+
+    setSearchInput(params.termo);
+    setCategoriasSelecionadas([]);
+    setOrdenarPor(params.ordenarPor);
+    setDirecao(params.direcao);
+    void fetchProdutos({
+      pagina: 1,
+      termo: params.termo,
+      idsCategorias: [],
+      ordenarPor: params.ordenarPor,
+      direcao: params.direcao,
+    });
+  }, [fetchCategorias, fetchProdutos, searchParamsKey]);
 
   useEffect(() => {
     const idsCategoriasSelecionadas = paginacao.idsCategorias ?? [];

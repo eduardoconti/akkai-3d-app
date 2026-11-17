@@ -839,3 +839,34 @@ export interface ResultadoPaginadoDespesas extends ResultadoPaginado<Despesa> {
 
 export type ResultadoPaginadoTransferenciasCarteira =
   ResultadoPaginado<TransferenciaCarteira>;
+
+export type TipoAlerta =
+  | 'ORCAMENTO_PENDENTE'
+  | 'CAIXA_ABERTO_PROLONGADO'
+  | 'ESTOQUE_NEGATIVO';
+
+export type SeveridadeAlerta = 'AVISO' | 'CRITICO';
+
+export interface ItemAlerta {
+  id: number;
+  titulo: string;
+  detalhe?: string;
+  /** Data de referência em ISO 8601 (ex.: abertura do caixa). */
+  data?: string;
+}
+
+export interface Alerta {
+  tipo: TipoAlerta;
+  severidade: SeveridadeAlerta;
+  titulo: string;
+  descricao: string;
+  quantidade: number;
+  /** Muda quando os itens do alerta mudam (reexibe um alerta dispensado). */
+  chave: string;
+  itens: ItemAlerta[];
+}
+
+export interface ListaAlertas {
+  total: number;
+  alertas: Alerta[];
+}

@@ -111,6 +111,8 @@ import {
 import { getActiveMenuStyles, getActiveSubmenuStyles } from '@/theme/theme';
 import { useThemeMode } from '@/theme/use-theme-mode';
 import { useShallow } from 'zustand/react/shallow';
+import NotificationsButton from '@/features/notifications/components/notifications-button';
+import { useNotificationsPolling } from '@/features/notifications/store/use-notifications-polling';
 
 const DRAWER_WIDTH = 256;
 
@@ -239,6 +241,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
   const isOnline = useOnlineStatus();
+  useNotificationsPolling(user?.id ?? null, isOnline);
   const { needsUpdate, update } = useSwUpdate();
   const showSuccess = useFeedbackStore((state) => state.showSuccess);
   const showError = useFeedbackStore((state) => state.showError);
@@ -1620,6 +1623,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         pendingSalesCount={pendingSalesCount}
         rejectedSalesCount={rejectedSalesCount}
         isSyncingPendingSales={isSyncingPendingSales}
+        notifications={<NotificationsButton />}
         onToggleMobileMenu={() => setMobileOpen((current) => !current)}
         onOpenSearch={openPalette}
         onOpenPendingSales={() => setPendingSalesDialogOpen(true)}
