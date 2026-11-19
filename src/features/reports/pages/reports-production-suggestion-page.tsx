@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import {
+  Chip,
+  FormControlLabel,
+  FormHelperText,
+  MenuItem,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid';
 import {
   getProductionSuggestionReport,
@@ -28,6 +37,10 @@ function formatCoverage(value: number | null): string {
   return value === null ? 'Sem venda' : `${formatQuantity(value)} feira(s)`;
 }
 
+function formatFairs(value: number): string {
+  return `${value} feira${value === 1 ? '' : 's'}`;
+}
+
 type SuggestionOrderBy =
   | 'codigo'
   | 'nome'
@@ -42,6 +55,7 @@ interface AppliedFilters {
   feirasHistorico: number;
   feirasPlanejamento: number;
   feirasEstoqueSeguranca: number;
+  apenasCoberturaInsuficiente: boolean;
   ordenarPor: SuggestionOrderBy;
   direcao: SortDirection;
 }
@@ -50,6 +64,8 @@ export default function ReportsProductionSuggestionPage() {
   const [feirasHistorico, setFeirasHistorico] = useState(8);
   const [feirasPlanejamento, setFeirasPlanejamento] = useState(2);
   const [feirasEstoqueSeguranca, setFeirasEstoqueSeguranca] = useState(1);
+  const [apenasCoberturaInsuficiente, setApenasCoberturaInsuficiente] =
+    useState(false);
   const [tamanhoPagina, setTamanhoPagina] = useState(DEFAULT_PAGE_SIZE);
   const [ordenarPor, setOrdenarPor] =
     useState<SuggestionOrderBy>('sugestaoProducao');
@@ -75,6 +91,7 @@ export default function ReportsProductionSuggestionPage() {
         feirasHistorico: filters.feirasHistorico,
         feirasPlanejamento: filters.feirasPlanejamento,
         feirasEstoqueSeguranca: filters.feirasEstoqueSeguranca,
+        apenasCoberturaInsuficiente: filters.apenasCoberturaInsuficiente,
         pagina: nextPage,
         tamanhoPagina: nextPageSize,
         ordenarPor: filters.ordenarPor,
@@ -99,6 +116,7 @@ export default function ReportsProductionSuggestionPage() {
       feirasHistorico,
       feirasPlanejamento,
       feirasEstoqueSeguranca,
+      apenasCoberturaInsuficiente,
       ordenarPor,
       direcao,
     });
@@ -111,6 +129,7 @@ export default function ReportsProductionSuggestionPage() {
     setFeirasHistorico(8);
     setFeirasPlanejamento(2);
     setFeirasEstoqueSeguranca(1);
+    setApenasCoberturaInsuficiente(false);
     setOrdenarPor('sugestaoProducao');
     setDirecao('desc');
     setProblem(null);
@@ -164,7 +183,30 @@ export default function ReportsProductionSuggestionPage() {
       id: 'mediaFeira',
       header: 'Média/feira',
       align: 'right',
-      cell: (item) => formatQuantity(item.mediaVendaPorFeira),
+      cell: (item) => (
+        <Stack component="span" alignItems="flex-end">
+          <span>{formatQuantity(item.mediaVendaPorFeira)}</span>
+          <Typography component="span" variant="caption" color="text.secondary">
+            em {formatFairs(item.feirasConsideradas)}
+          </Typography>
+        </Stack>
+      ),
+    },
+    {
+      id: 'emFalta',
+      header: 'Em falta',
+      align: 'right',
+      cell: (item) =>
+        item.feirasSemEstoque > 0 ? (
+          <Chip
+            label={formatFairs(item.feirasSemEstoque)}
+            color="warning"
+            size="small"
+            variant="outlined"
+          />
+        ) : (
+          '—'
+        ),
     },
     {
       id: 'cobertura',
@@ -195,7 +237,7 @@ export default function ReportsProductionSuggestionPage() {
     <Stack spacing={3}>
       <PageHeader
         title="Sugestão de produção"
-        description="Compare as últimas vendas de feira, estoque atual e estoque mínimo para decidir o que produzir para os próximos eventos."
+        description="Compare as últimas vendas de feira (até ontem), estoque atual e estoque mínimo para decidir o que produzir para os próximos eventos. A média de cada produto considera só as feiras em que ele estava disponível."
       />
 
       <SearchFilterPanel
@@ -289,6 +331,23 @@ export default function ReportsProductionSuggestionPage() {
             <MenuItem value="asc">Crescente</MenuItem>
           </TextField>
         </Grid>
+
+        <Grid size={{ xs: 12, sm: 6, md: 2.4, lg: 4 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={apenasCoberturaInsuficiente}
+                onChange={(_event, checked) =>
+                  setApenasCoberturaInsuficiente(checked)
+                }
+              />
+            }
+            label="Só cobertura insuficiente"
+          />
+          <FormHelperText>
+            Mostra apenas produtos cujo estoque não cobre as feiras a cobrir.
+          </FormHelperText>
+        </Grid>
       </SearchFilterPanel>
 
       <FormFeedbackAlert message={problem?.detail} />
@@ -314,6 +373,13 @@ export default function ReportsProductionSuggestionPage() {
               label={`Segurança: ${result.feirasEstoqueSeguranca} feira(s)`}
               size="small"
             />
+            {result.apenasCoberturaInsuficiente ? (
+              <Chip
+                label="Só cobertura insuficiente"
+                color="warning"
+                size="small"
+              />
+            ) : null}
           </Stack>
 
           <ResponsiveDataTable

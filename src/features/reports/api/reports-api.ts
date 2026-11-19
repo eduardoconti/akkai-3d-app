@@ -171,6 +171,7 @@ export interface ProductionSuggestionReportFilter {
   feirasHistorico?: number;
   feirasPlanejamento?: number;
   feirasEstoqueSeguranca?: number;
+  apenasCoberturaInsuficiente?: boolean;
   pagina?: number;
   tamanhoPagina?: number;
   ordenarPor?:
@@ -195,6 +196,8 @@ export interface ProductionSuggestionReportItem {
   estoqueAtual: number;
   estoqueMinimo: number;
   quantidadeVendida: number;
+  feirasConsideradas: number;
+  feirasSemEstoque: number;
   mediaVendaPorFeira: number;
   demandaPlanejada: number;
   estoqueSeguranca: number;
@@ -211,6 +214,7 @@ export interface ProductionSuggestionReportResponse {
   feirasConsideradas: number;
   feirasPlanejamento: number;
   feirasEstoqueSeguranca: number;
+  apenasCoberturaInsuficiente: boolean;
   itens: ProductionSuggestionReportItem[];
   pagina: number;
   tamanhoPagina: number;
